@@ -68,7 +68,6 @@
  * @license   http://www.horde.org/licenses/gpl GPLv2
  * @copyright 2010-2017 Horde LLC (http://www.horde.org/)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
- * @link      http://pear.horde.org/index.php?package=ActiveSync
  * @package   ActiveSync
  */
 class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implements Horde_Mongo_Collection_Index
