@@ -10,7 +10,7 @@
   <email>mrubinsk@horde.org</email>
   <active>yes</active>
  </lead>
- <date>2017-08-28</date>
+ <date>2017-10-17</date>
  <version>
   <release>2.38.9</release>
   <api>2.38.0</api>
@@ -28,7 +28,6 @@
    <dir name="doc">
     <dir name="Horde">
      <dir name="ActiveSync">
-      <file name="COPYING" role="doc" />
       <file name="TODO" role="doc" />
      </dir> <!-- /doc/Horde/ActiveSync -->
     </dir> <!-- /doc/Horde -->
@@ -333,6 +332,7 @@
      </dir> <!-- /test/Horde/ActiveSync -->
     </dir> <!-- /test/Horde -->
    </dir> <!-- /test -->
+   <file name="LICENSE" role="doc" />
   </dir> <!-- / -->
  </contents>
  <dependencies>
@@ -473,30 +473,20 @@
  </dependencies>
  <phprelease>
   <filelist>
-   <install as="COPYING" name="doc/Horde/ActiveSync/COPYING" />
    <install as="TODO" name="doc/Horde/ActiveSync/TODO" />
    <install as="Horde/ActiveSync.php" name="lib/Horde/ActiveSync.php" />
    <install as="Horde/ActiveSync/Collections.php" name="lib/Horde/ActiveSync/Collections.php" />
-   <install as="Horde/ActiveSync/Credentials.php" name="lib/Horde/ActiveSync/Credentials.php" />
-   <install as="Horde/ActiveSync/Device.php" name="lib/Horde/ActiveSync/Device.php" />
-   <install as="Horde/ActiveSync/Exception.php" name="lib/Horde/ActiveSync/Exception.php" />
-   <install as="Horde/ActiveSync/Mime.php" name="lib/Horde/ActiveSync/Mime.php" />
-   <install as="Horde/ActiveSync/Policies.php" name="lib/Horde/ActiveSync/Policies.php" />
-   <install as="Horde/ActiveSync/Rfc822.php" name="lib/Horde/ActiveSync/Rfc822.php" />
-   <install as="Horde/ActiveSync/Status.php" name="lib/Horde/ActiveSync/Status.php" />
-   <install as="Horde/ActiveSync/SyncCache.php" name="lib/Horde/ActiveSync/SyncCache.php" />
-   <install as="Horde/ActiveSync/Timezone.php" name="lib/Horde/ActiveSync/Timezone.php" />
-   <install as="Horde/ActiveSync/Translation.php" name="lib/Horde/ActiveSync/Translation.php" />
-   <install as="Horde/ActiveSync/Utils.php" name="lib/Horde/ActiveSync/Utils.php" />
-   <install as="Horde/ActiveSync/Wbxml.php" name="lib/Horde/ActiveSync/Wbxml.php" />
-   <install as="Horde/ActiveSync/Connector/Importer.php" name="lib/Horde/ActiveSync/Connector/Importer.php" />
    <install as="Horde/ActiveSync/Connector/Exporter/Base.php" name="lib/Horde/ActiveSync/Connector/Exporter/Base.php" />
    <install as="Horde/ActiveSync/Connector/Exporter/FolderSync.php" name="lib/Horde/ActiveSync/Connector/Exporter/FolderSync.php" />
    <install as="Horde/ActiveSync/Connector/Exporter/Sync.php" name="lib/Horde/ActiveSync/Connector/Exporter/Sync.php" />
+   <install as="Horde/ActiveSync/Connector/Importer.php" name="lib/Horde/ActiveSync/Connector/Importer.php" />
+   <install as="Horde/ActiveSync/Credentials.php" name="lib/Horde/ActiveSync/Credentials.php" />
+   <install as="Horde/ActiveSync/Device.php" name="lib/Horde/ActiveSync/Device.php" />
    <install as="Horde/ActiveSync/Device/Ios.php" name="lib/Horde/ActiveSync/Device/Ios.php" />
    <install as="Horde/ActiveSync/Driver/Base.php" name="lib/Horde/ActiveSync/Driver/Base.php" />
    <install as="Horde/ActiveSync/Driver/Mock.php" name="lib/Horde/ActiveSync/Driver/Mock.php" />
    <install as="Horde/ActiveSync/Driver/MockConnector.php" name="lib/Horde/ActiveSync/Driver/MockConnector.php" />
+   <install as="Horde/ActiveSync/Exception.php" name="lib/Horde/ActiveSync/Exception.php" />
    <install as="Horde/ActiveSync/Exception/EmailFatalFailure.php" name="lib/Horde/ActiveSync/Exception/EmailFatalFailure.php" />
    <install as="Horde/ActiveSync/Exception/FolderExists.php" name="lib/Horde/ActiveSync/Exception/FolderExists.php" />
    <install as="Horde/ActiveSync/Exception/FolderGone.php" name="lib/Horde/ActiveSync/Exception/FolderGone.php" />
@@ -510,12 +500,12 @@
    <install as="Horde/ActiveSync/Folder/RI.php" name="lib/Horde/ActiveSync/Folder/RI.php" />
    <install as="Horde/ActiveSync/Imap/Adapter.php" name="lib/Horde/ActiveSync/Imap/Adapter.php" />
    <install as="Horde/ActiveSync/Imap/EasMessageBuilder.php" name="lib/Horde/ActiveSync/Imap/EasMessageBuilder.php" />
-   <install as="Horde/ActiveSync/Imap/Message.php" name="lib/Horde/ActiveSync/Imap/Message.php" />
-   <install as="Horde/ActiveSync/Imap/MessageBodyData.php" name="lib/Horde/ActiveSync/Imap/MessageBodyData.php" />
    <install as="Horde/ActiveSync/Imap/EasMessageBuilder/Html.php" name="lib/Horde/ActiveSync/Imap/EasMessageBuilder/Html.php" />
    <install as="Horde/ActiveSync/Imap/EasMessageBuilder/Mime.php" name="lib/Horde/ActiveSync/Imap/EasMessageBuilder/Mime.php" />
    <install as="Horde/ActiveSync/Imap/EasMessageBuilder/Plain.php" name="lib/Horde/ActiveSync/Imap/EasMessageBuilder/Plain.php" />
    <install as="Horde/ActiveSync/Imap/EasMessageBuilder/TwoFive.php" name="lib/Horde/ActiveSync/Imap/EasMessageBuilder/TwoFive.php" />
+   <install as="Horde/ActiveSync/Imap/Message.php" name="lib/Horde/ActiveSync/Imap/Message.php" />
+   <install as="Horde/ActiveSync/Imap/MessageBodyData.php" name="lib/Horde/ActiveSync/Imap/MessageBodyData.php" />
    <install as="Horde/ActiveSync/Imap/Strategy/Base.php" name="lib/Horde/ActiveSync/Imap/Strategy/Base.php" />
    <install as="Horde/ActiveSync/Imap/Strategy/Initial.php" name="lib/Horde/ActiveSync/Imap/Strategy/Initial.php" />
    <install as="Horde/ActiveSync/Imap/Strategy/Modseq.php" name="lib/Horde/ActiveSync/Imap/Strategy/Modseq.php" />
@@ -559,7 +549,9 @@
    <install as="Horde/ActiveSync/Message/SendMailSource.php" name="lib/Horde/ActiveSync/Message/SendMailSource.php" />
    <install as="Horde/ActiveSync/Message/Task.php" name="lib/Horde/ActiveSync/Message/Task.php" />
    <install as="Horde/ActiveSync/Message/TaskRecurrence.php" name="lib/Horde/ActiveSync/Message/TaskRecurrence.php" />
+   <install as="Horde/ActiveSync/Mime.php" name="lib/Horde/ActiveSync/Mime.php" />
    <install as="Horde/ActiveSync/Mime/Iterator.php" name="lib/Horde/ActiveSync/Mime/Iterator.php" />
+   <install as="Horde/ActiveSync/Policies.php" name="lib/Horde/ActiveSync/Policies.php" />
    <install as="Horde/ActiveSync/Request/Autodiscover.php" name="lib/Horde/ActiveSync/Request/Autodiscover.php" />
    <install as="Horde/ActiveSync/Request/Base.php" name="lib/Horde/ActiveSync/Request/Base.php" />
    <install as="Horde/ActiveSync/Request/FolderCreate.php" name="lib/Horde/ActiveSync/Request/FolderCreate.php" />
@@ -581,12 +573,19 @@
    <install as="Horde/ActiveSync/Request/Sync.php" name="lib/Horde/ActiveSync/Request/Sync.php" />
    <install as="Horde/ActiveSync/Request/SyncBase.php" name="lib/Horde/ActiveSync/Request/SyncBase.php" />
    <install as="Horde/ActiveSync/Request/ValidateCert.php" name="lib/Horde/ActiveSync/Request/ValidateCert.php" />
+   <install as="Horde/ActiveSync/Rfc822.php" name="lib/Horde/ActiveSync/Rfc822.php" />
    <install as="Horde/ActiveSync/State/Base.php" name="lib/Horde/ActiveSync/State/Base.php" />
    <install as="Horde/ActiveSync/State/Mongo.php" name="lib/Horde/ActiveSync/State/Mongo.php" />
    <install as="Horde/ActiveSync/State/Sql.php" name="lib/Horde/ActiveSync/State/Sql.php" />
+   <install as="Horde/ActiveSync/Status.php" name="lib/Horde/ActiveSync/Status.php" />
+   <install as="Horde/ActiveSync/SyncCache.php" name="lib/Horde/ActiveSync/SyncCache.php" />
+   <install as="Horde/ActiveSync/Timezone.php" name="lib/Horde/ActiveSync/Timezone.php" />
+   <install as="Horde/ActiveSync/Translation.php" name="lib/Horde/ActiveSync/Translation.php" />
+   <install as="Horde/ActiveSync/Utils.php" name="lib/Horde/ActiveSync/Utils.php" />
+   <install as="Horde/ActiveSync/Wbxml.php" name="lib/Horde/ActiveSync/Wbxml.php" />
    <install as="Horde/ActiveSync/Wbxml/Decoder.php" name="lib/Horde/ActiveSync/Wbxml/Decoder.php" />
    <install as="Horde/ActiveSync/Wbxml/Encoder.php" name="lib/Horde/ActiveSync/Wbxml/Encoder.php" />
-   <install as="locale/Horde_ActiveSync.pot" name="locale/Horde_ActiveSync.pot" />
+   <install as="LICENSE" name="LICENSE" />
    <install as="locale/da/LC_MESSAGES/Horde_ActiveSync.mo" name="locale/da/LC_MESSAGES/Horde_ActiveSync.mo" />
    <install as="locale/da/LC_MESSAGES/Horde_ActiveSync.po" name="locale/da/LC_MESSAGES/Horde_ActiveSync.po" />
    <install as="locale/de/LC_MESSAGES/Horde_ActiveSync.mo" name="locale/de/LC_MESSAGES/Horde_ActiveSync.mo" />
@@ -597,6 +596,7 @@
    <install as="locale/eu/LC_MESSAGES/Horde_ActiveSync.po" name="locale/eu/LC_MESSAGES/Horde_ActiveSync.po" />
    <install as="locale/fr/LC_MESSAGES/Horde_ActiveSync.mo" name="locale/fr/LC_MESSAGES/Horde_ActiveSync.mo" />
    <install as="locale/fr/LC_MESSAGES/Horde_ActiveSync.po" name="locale/fr/LC_MESSAGES/Horde_ActiveSync.po" />
+   <install as="locale/Horde_ActiveSync.pot" name="locale/Horde_ActiveSync.pot" />
    <install as="locale/hu/LC_MESSAGES/Horde_ActiveSync.mo" name="locale/hu/LC_MESSAGES/Horde_ActiveSync.mo" />
    <install as="locale/hu/LC_MESSAGES/Horde_ActiveSync.po" name="locale/hu/LC_MESSAGES/Horde_ActiveSync.po" />
    <install as="locale/ja/LC_MESSAGES/Horde_ActiveSync.mo" name="locale/ja/LC_MESSAGES/Horde_ActiveSync.mo" />
@@ -634,16 +634,6 @@
    <install as="Horde/ActiveSync/conf.php.dist" name="test/Horde/ActiveSync/conf.php.dist" />
    <install as="Horde/ActiveSync/ContactTest.php" name="test/Horde/ActiveSync/ContactTest.php" />
    <install as="Horde/ActiveSync/DeviceTest.php" name="test/Horde/ActiveSync/DeviceTest.php" />
-   <install as="Horde/ActiveSync/ImapAdapterTest.php" name="test/Horde/ActiveSync/ImapAdapterTest.php" />
-   <install as="Horde/ActiveSync/ImapFolderTest.php" name="test/Horde/ActiveSync/ImapFolderTest.php" />
-   <install as="Horde/ActiveSync/InviteTest.php" name="test/Horde/ActiveSync/InviteTest.php" />
-   <install as="Horde/ActiveSync/MessageBodyDataTest.php" name="test/Horde/ActiveSync/MessageBodyDataTest.php" />
-   <install as="Horde/ActiveSync/MimeTest.php" name="test/Horde/ActiveSync/MimeTest.php" />
-   <install as="Horde/ActiveSync/phpunit.xml" name="test/Horde/ActiveSync/phpunit.xml" />
-   <install as="Horde/ActiveSync/PolicyTest.php" name="test/Horde/ActiveSync/PolicyTest.php" />
-   <install as="Horde/ActiveSync/Rfc822Test.php" name="test/Horde/ActiveSync/Rfc822Test.php" />
-   <install as="Horde/ActiveSync/ServerTest.php" name="test/Horde/ActiveSync/ServerTest.php" />
-   <install as="Horde/ActiveSync/UtilsTest.php" name="test/Horde/ActiveSync/UtilsTest.php" />
    <install as="Horde/ActiveSync/Factory/TestServer.php" name="test/Horde/ActiveSync/Factory/TestServer.php" />
    <install as="Horde/ActiveSync/fixtures/allday_appointment.wbxml" name="test/Horde/ActiveSync/fixtures/allday_appointment.wbxml" />
    <install as="Horde/ActiveSync/fixtures/appointment.wbxml" name="test/Horde/ActiveSync/fixtures/appointment.wbxml" />
@@ -662,6 +652,15 @@
    <install as="Horde/ActiveSync/fixtures/rfc822_multipart.eml" name="test/Horde/ActiveSync/fixtures/rfc822_multipart.eml" />
    <install as="Horde/ActiveSync/fixtures/signed_attachment.eml" name="test/Horde/ActiveSync/fixtures/signed_attachment.eml" />
    <install as="Horde/ActiveSync/fixtures/simpleexception.wbxml" name="test/Horde/ActiveSync/fixtures/simpleexception.wbxml" />
+   <install as="Horde/ActiveSync/ImapAdapterTest.php" name="test/Horde/ActiveSync/ImapAdapterTest.php" />
+   <install as="Horde/ActiveSync/ImapFolderTest.php" name="test/Horde/ActiveSync/ImapFolderTest.php" />
+   <install as="Horde/ActiveSync/InviteTest.php" name="test/Horde/ActiveSync/InviteTest.php" />
+   <install as="Horde/ActiveSync/MessageBodyDataTest.php" name="test/Horde/ActiveSync/MessageBodyDataTest.php" />
+   <install as="Horde/ActiveSync/MimeTest.php" name="test/Horde/ActiveSync/MimeTest.php" />
+   <install as="Horde/ActiveSync/phpunit.xml" name="test/Horde/ActiveSync/phpunit.xml" />
+   <install as="Horde/ActiveSync/PolicyTest.php" name="test/Horde/ActiveSync/PolicyTest.php" />
+   <install as="Horde/ActiveSync/Rfc822Test.php" name="test/Horde/ActiveSync/Rfc822Test.php" />
+   <install as="Horde/ActiveSync/ServerTest.php" name="test/Horde/ActiveSync/ServerTest.php" />
    <install as="Horde/ActiveSync/StateTest/Base.php" name="test/Horde/ActiveSync/StateTest/Base.php" />
    <install as="Horde/ActiveSync/StateTest/Mongo/BaseTest.php" name="test/Horde/ActiveSync/StateTest/Mongo/BaseTest.php" />
    <install as="Horde/ActiveSync/StateTest/Sql/Base.php" name="test/Horde/ActiveSync/StateTest/Sql/Base.php" />
@@ -671,6 +670,7 @@
    <install as="Horde/ActiveSync/StateTest/Sql/Pdo/MysqlTest.php" name="test/Horde/ActiveSync/StateTest/Sql/Pdo/MysqlTest.php" />
    <install as="Horde/ActiveSync/StateTest/Sql/Pdo/SqliteTest.php" name="test/Horde/ActiveSync/StateTest/Sql/Pdo/SqliteTest.php" />
    <install as="Horde/ActiveSync/Stub/ImapFactory.php" name="test/Horde/ActiveSync/Stub/ImapFactory.php" />
+   <install as="Horde/ActiveSync/UtilsTest.php" name="test/Horde/ActiveSync/UtilsTest.php" />
   </filelist>
  </phprelease>
  <changelog>
@@ -3474,7 +3474,7 @@
    <stability>
     <release>stable</release>
     <api>stable</api></stability>
-   <date>2017-08-28</date>
+   <date>2017-10-17</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * 
