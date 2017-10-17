@@ -28,7 +28,7 @@
    <dir name="doc">
     <dir name="Horde">
      <dir name="ActiveSync">
-      <file name="TODO" role="doc" />
+      <file name="TODO.rst" role="doc" />
      </dir> <!-- /doc/Horde/ActiveSync -->
     </dir> <!-- /doc/Horde -->
    </dir> <!-- /doc -->
@@ -473,7 +473,7 @@
  </dependencies>
  <phprelease>
   <filelist>
-   <install as="TODO" name="doc/Horde/ActiveSync/TODO" />
+   <install as="TODO.rst" name="doc/Horde/ActiveSync/TODO.rst" />
    <install as="Horde/ActiveSync.php" name="lib/Horde/ActiveSync.php" />
    <install as="Horde/ActiveSync/Collections.php" name="lib/Horde/ActiveSync/Collections.php" />
    <install as="Horde/ActiveSync/Connector/Exporter/Base.php" name="lib/Horde/ActiveSync/Connector/Exporter/Base.php" />
