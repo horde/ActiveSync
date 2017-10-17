@@ -16,7 +16,7 @@
  *
  *   � Zarafa Deutschland GmbH, www.zarafaserver.de
  *   This file is distributed under GPL-2.0.
- *   Consult COPYING file for details
+ *   Consult LICENSE file for details
  *
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *            NOTE: According to sec. 8 of the GENERAL PUBLIC LICENSE (GPL),
