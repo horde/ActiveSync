@@ -10,7 +10,7 @@
   <email>mrubinsk@horde.org</email>
   <active>yes</active>
  </lead>
- <date>2017-10-17</date>
+ <date>2017-10-20</date>
  <version>
   <release>2.38.9</release>
   <api>2.38.0</api>
@@ -182,9 +182,7 @@
       <file name="Utils.php" role="php" />
       <file name="Wbxml.php" role="php" />
      </dir> <!-- /lib/Horde/ActiveSync -->
-     <file name="ActiveSync.php" role="php">
-       <tasks:replace from="2.x.y-git" to="version" type="package-info" />
-     </file>
+     <file name="ActiveSync.php" role="php" />
     </dir> <!-- /lib/Horde -->
    </dir> <!-- /lib -->
    <dir name="locale">
@@ -324,7 +322,6 @@
       <file name="InviteTest.php" role="test" />
       <file name="MessageBodyDataTest.php" role="test" />
       <file name="MimeTest.php" role="test" />
-      <file name="phpunit.xml" role="test" />
       <file name="PolicyTest.php" role="test" />
       <file name="Rfc822Test.php" role="test" />
       <file name="ServerTest.php" role="test" />
@@ -657,7 +654,6 @@
    <install as="Horde/ActiveSync/InviteTest.php" name="test/Horde/ActiveSync/InviteTest.php" />
    <install as="Horde/ActiveSync/MessageBodyDataTest.php" name="test/Horde/ActiveSync/MessageBodyDataTest.php" />
    <install as="Horde/ActiveSync/MimeTest.php" name="test/Horde/ActiveSync/MimeTest.php" />
-   <install as="Horde/ActiveSync/phpunit.xml" name="test/Horde/ActiveSync/phpunit.xml" />
    <install as="Horde/ActiveSync/PolicyTest.php" name="test/Horde/ActiveSync/PolicyTest.php" />
    <install as="Horde/ActiveSync/Rfc822Test.php" name="test/Horde/ActiveSync/Rfc822Test.php" />
    <install as="Horde/ActiveSync/ServerTest.php" name="test/Horde/ActiveSync/ServerTest.php" />
@@ -3474,7 +3470,7 @@
    <stability>
     <release>stable</release>
     <api>stable</api></stability>
-   <date>2017-10-17</date>
+   <date>2017-10-20</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * 
