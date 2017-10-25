@@ -5,3 +5,45 @@ full: ActiveSync server library
 description: Library for implementing an ActiveSync server.
 list: dev
 type: library
+homepage: https://www.horde.org/libraries/Horde_ActiveSync
+authors:
+  -
+    name: Michael J Rubinsky
+    user: mrubinsk
+    email: mrubinsk@horde.org
+    active: true
+    role: lead
+version:
+  release: 2.38.9
+  api: 2.38.0
+state:
+  release: stable
+  api: stable
+license:
+  identifier: GPL-2.0
+  uri: http://www.horde.org/licenses/gpl
+dependencies:
+  required:
+    php: ^5.3 || ^7
+    pear:
+      pear.horde.org/Horde_Compress: ^2
+      pear.horde.org/Horde_Date: ^2.3
+      pear.horde.org/Horde_Exception: ^2
+      pear.horde.org/Horde_Icalendar: ^2
+      pear.horde.org/Horde_Log: ^2.3
+      pear.horde.org/Horde_Mapi: ^1
+      pear.horde.org/Horde_Mime: ^2.5
+      pear.horde.org/Horde_Stream: ^1.4
+      pear.horde.org/Horde_Support: ^2
+      pear.horde.org/Horde_Translation: ^2.2
+      pear.horde.org/Horde_Util: ^2
+    ext:
+      ctype: '*'
+  optional:
+    pear:
+      pear.horde.org/Horde_Db: ^2.1
+      pear.horde.org/Horde_Imap_Client: ^2.28.1
+      pear.horde.org/Horde_Mail: ^2
+      pear.horde.org/Horde_Mongo: ^1.0.2
+      pear.horde.org/Horde_Text_Filter: ^2
+      pear.horde.org/Horde_Test: ^2.1
