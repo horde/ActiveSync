@@ -10,7 +10,7 @@
   <email>mrubinsk@horde.org</email>
   <active>yes</active>
  </lead>
- <date>2017-10-20</date>
+ <date>2017-10-27</date>
  <version>
   <release>2.38.9</release>
   <api>2.38.0</api>
@@ -27,6 +27,7 @@
    <dir name="doc">
     <dir name="Horde">
      <dir name="ActiveSync">
+      <file name="CHANGES" role="doc" />
       <file name="TODO.rst" role="doc" />
      </dir> <!-- /doc/Horde/ActiveSync -->
     </dir> <!-- /doc/Horde -->
@@ -469,6 +470,7 @@
  </dependencies>
  <phprelease>
   <filelist>
+   <install as="CHANGES" name="doc/Horde/ActiveSync/CHANGES" />
    <install as="TODO.rst" name="doc/Horde/ActiveSync/TODO.rst" />
    <install as="Horde/ActiveSync.php" name="lib/Horde/ActiveSync.php" />
    <install as="Horde/ActiveSync/Collections.php" name="lib/Horde/ActiveSync/Collections.php" />
@@ -3467,7 +3469,7 @@
    <stability>
     <release>stable</release>
     <api>stable</api></stability>
-   <date>2017-10-20</date>
+   <date>2017-10-27</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
    </notes>
