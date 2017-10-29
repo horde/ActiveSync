@@ -401,13 +401,11 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
 
             $msg = $this->_as->messageFactory('Appointment');
             $msg->uid = $serverid;
-            $msg->airsyncbaseattachments = $this->_as->messageFactory('AirSyncBaseAttachments');
-            $msg->airsyncbaseattachments->attachment = array();
             foreach ($collection['atchash'][$serverid]['add'] as $clientid => $filereference) {
                 $atc = $this->_as->messageFactory('AirSyncBaseAttachment');
                 $atc->clientid = $clientid;
                 $atc->attname = $filereference;
-                $msg->airsyncbaseattachments->attachment[] = $atc;
+                $msg->airsyncbaseattachments[] = $atc;
             }
             $this->_encoder->startTag(Horde_ActiveSync::SYNC_DATA);
             $msg->encodeStream($this->_encoder);
