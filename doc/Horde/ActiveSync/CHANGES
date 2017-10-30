@@ -2,6 +2,9 @@
 v2.38.9-git
 -----------
 
+[mjr] Fix broken handling of calendar attachments.
+
+
 
 -------
 v2.38.8
