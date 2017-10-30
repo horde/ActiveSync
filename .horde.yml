@@ -5,6 +5,3 @@ full: ActiveSync server library
 description: Library for implementing an ActiveSync server.
 list: dev
 type: library
-version:
-  release: 2.38.9 
-  api: 2.38.0 
