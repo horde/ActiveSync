@@ -21,7 +21,7 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* [mjr] Fix broken handling of calendar attachments.
+* 
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -1116,7 +1116,7 @@
    <date>2012-10-26</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* *
+*
    </notes>
   </release>
   <release>
@@ -1707,7 +1707,7 @@
    <date>2013-06-20</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* *
+*
    </notes>
   </release>
   <release>
@@ -3477,7 +3477,7 @@
    <date>2017-08-28</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* [mjr] Fix broken handling of calendar attachments.
+* 
    </notes>
   </release>
  </changelog>
