@@ -10,10 +10,10 @@
   <email>mrubinsk@horde.org</email>
   <active>yes</active>
  </lead>
- <date>2017-10-30</date>
+ <date>2017-11-12</date>
  <version>
-  <release>2.38.9</release>
-  <api>2.38.0</api>
+  <release>2.39.0</release>
+  <api>2.39.0</api>
  </version>
  <stability>
   <release>stable</release>
@@ -55,6 +55,7 @@
        <file name="MockConnector.php" role="php" />
       </dir> <!-- /lib/Horde/ActiveSync/Driver -->
       <dir name="Exception">
+       <file name="DeletionNotSupported.php" role="php" />
        <file name="EmailFatalFailure.php" role="php" />
        <file name="FolderExists.php" role="php" />
        <file name="FolderGone.php" role="php" />
@@ -500,6 +501,11 @@
    <install as="Horde/ActiveSync/Driver/Base.php" name="lib/Horde/ActiveSync/Driver/Base.php" />
    <install as="Horde/ActiveSync/Driver/Mock.php" name="lib/Horde/ActiveSync/Driver/Mock.php" />
    <install as="Horde/ActiveSync/Driver/MockConnector.php" name="lib/Horde/ActiveSync/Driver/MockConnector.php" />
+<<<<<<< HEAD
+=======
+   <install as="Horde/ActiveSync/Exception.php" name="lib/Horde/ActiveSync/Exception.php" />
+   <install as="Horde/ActiveSync/Exception/DeletionNotSupported.php" name="lib/Horde/ActiveSync/Exception/DeletionNotSupported.php" />
+>>>>>>> 6eebba7b... Bump minor version number, update various changelogs.
    <install as="Horde/ActiveSync/Exception/EmailFatalFailure.php" name="lib/Horde/ActiveSync/Exception/EmailFatalFailure.php" />
    <install as="Horde/ActiveSync/Exception/FolderExists.php" name="lib/Horde/ActiveSync/Exception/FolderExists.php" />
    <install as="Horde/ActiveSync/Exception/FolderGone.php" name="lib/Horde/ActiveSync/Exception/FolderGone.php" />
@@ -1119,7 +1125,7 @@
    <date>2012-10-26</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+*
    </notes>
   </release>
   <release>
@@ -1710,7 +1716,7 @@
    <date>2013-06-20</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+*
    </notes>
   </release>
   <release>
@@ -3472,12 +3478,12 @@
   </release>
   <release>
    <version>
-    <release>2.38.9</release>
-    <api>2.38.0</api></version>
+    <release>2.39.0</release>
+    <api>2.39.0</api></version>
    <stability>
     <release>stable</release>
     <api>stable</api></stability>
-   <date>2017-10-30</date>
+   <date>2017-11-12</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * [mjr] Return appropriate status code when deleting a folder fails (Bug #14723).

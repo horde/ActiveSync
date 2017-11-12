@@ -22,6 +22,7 @@
  * @copyright 2010-2017 Horde LLC (http://www.horde.org)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
+ * @since     2.39.0
  */
 class Horde_ActiveSync_Exception_DeletionNotSupported extends Horde_ActiveSync_Exception
 {
