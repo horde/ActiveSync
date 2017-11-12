@@ -483,7 +483,6 @@
    <install as="Horde/ActiveSync/Collections.php" name="lib/Horde/ActiveSync/Collections.php" />
    <install as="Horde/ActiveSync/Credentials.php" name="lib/Horde/ActiveSync/Credentials.php" />
    <install as="Horde/ActiveSync/Device.php" name="lib/Horde/ActiveSync/Device.php" />
-   <install as="Horde/ActiveSync/Exception.php" name="lib/Horde/ActiveSync/Exception.php" />
    <install as="Horde/ActiveSync/Mime.php" name="lib/Horde/ActiveSync/Mime.php" />
    <install as="Horde/ActiveSync/Policies.php" name="lib/Horde/ActiveSync/Policies.php" />
    <install as="Horde/ActiveSync/Rfc822.php" name="lib/Horde/ActiveSync/Rfc822.php" />
@@ -501,11 +500,8 @@
    <install as="Horde/ActiveSync/Driver/Base.php" name="lib/Horde/ActiveSync/Driver/Base.php" />
    <install as="Horde/ActiveSync/Driver/Mock.php" name="lib/Horde/ActiveSync/Driver/Mock.php" />
    <install as="Horde/ActiveSync/Driver/MockConnector.php" name="lib/Horde/ActiveSync/Driver/MockConnector.php" />
-<<<<<<< HEAD
-=======
    <install as="Horde/ActiveSync/Exception.php" name="lib/Horde/ActiveSync/Exception.php" />
    <install as="Horde/ActiveSync/Exception/DeletionNotSupported.php" name="lib/Horde/ActiveSync/Exception/DeletionNotSupported.php" />
->>>>>>> 6eebba7b... Bump minor version number, update various changelogs.
    <install as="Horde/ActiveSync/Exception/EmailFatalFailure.php" name="lib/Horde/ActiveSync/Exception/EmailFatalFailure.php" />
    <install as="Horde/ActiveSync/Exception/FolderExists.php" name="lib/Horde/ActiveSync/Exception/FolderExists.php" />
    <install as="Horde/ActiveSync/Exception/FolderGone.php" name="lib/Horde/ActiveSync/Exception/FolderGone.php" />
