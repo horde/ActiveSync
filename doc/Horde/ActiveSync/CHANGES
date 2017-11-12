@@ -2,8 +2,8 @@
 v2.38.9-git
 -----------
 
+[mjr] Return appropriate status code when deleting a folder fails (Bug #14723).
 [mjr] Fix broken handling of calendar attachments.
-
 
 
 -------
