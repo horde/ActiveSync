@@ -464,6 +464,24 @@ abstract class Horde_ActiveSync_Driver_Base
     }
 
     /**
+     * Return if the specified folder is a special folder.
+     *
+     * @param string $server_id  The server id of the folder.
+     *
+     * @return  True if $server_id is a special folder, otherwise false.
+     */
+    protected function _isSpecialMailbox($server_id)
+    {
+        $folder = $this->getFolder($server_id);
+        return in_array($folder->type, array(
+                Horde_ActiveSync::FOLDER_TYPE_INBOX,
+                Horde_ActiveSync::FOLDER_TYPE_DRAFTS,
+                Horde_ActiveSync::FOLDER_TYPE_WASTEBASKET,
+                Horde_ActiveSync::FOLDER_TYPE_SENTMAIL,
+                Horde_ActiveSync::FOLDER_TYPE_OUTBOX));
+    }
+
+    /**
      * Return the SyncStamp - the value used to determine the end of the current
      * sync range. Default implementation uses timestamps. Concrete drivers
      * can override this to provide another method to do this, such as

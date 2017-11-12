@@ -42,6 +42,8 @@ class Horde_ActiveSync_Request_FolderCreate extends Horde_ActiveSync_Request_Bas
     const FOLDERUPDATE  = 'FolderHierarchy:FolderUpdate';
 
     const STATUS_SUCCESS = 1;
+    const STATUS_DELETION_NOT_SUPPORTED = 3;
+    const STATUS_FOLDER_DOES_NOT_EXIST = 4;
     const STATUS_ERROR   = 6;
     const STATUS_KEYMISM = 9;
 
@@ -157,6 +159,10 @@ class Horde_ActiveSync_Request_FolderCreate extends Horde_ActiveSync_Request_Bas
             } else {
                 try {
                    $importer->importFolderDeletion($server_uid);
+                } catch (Horde_ActiveSync_Exception_DeletionNotSupported $e) {
+                    $status = self::STATUS_DELETION_NOT_SUPPORTED;
+                } catch (Horde_ActiveSync_Exception_FolderGone $e) {
+                    $status = self::STATUS_FOLDER_DOES_NOT_EXIST;
                 } catch (Horde_ActiveSync_Exception $e) {
                     $status = self::STATUS_ERROR;
                 }
