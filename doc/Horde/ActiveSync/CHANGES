@@ -1,5 +1,5 @@
 -----------
-v2.38.9-git
+v2.39.0-git
 -----------
 
 [mjr] Return appropriate status code when deleting a folder fails (Bug #14723).
