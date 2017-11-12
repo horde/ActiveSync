@@ -21,7 +21,7 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* [mjr] Return appropriate status code when deleting a folder fails (Bug #14723).
+* [mjr] Return appropriate status code when deleting a folder fails (Bug #14732).
 * [mjr] Fix broken handling of calendar attachments.
  </notes>
  <contents>
@@ -1117,7 +1117,7 @@
    <date>2012-10-26</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+*
    </notes>
   </release>
   <release>
@@ -1708,7 +1708,7 @@
    <date>2013-06-20</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+*
    </notes>
   </release>
   <release>
@@ -3478,7 +3478,7 @@
    <date>2017-11-12</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* [mjr] Return appropriate status code when deleting a folder fails (Bug #14723).
+* [mjr] Return appropriate status code when deleting a folder fails (Bug #14732).
 * [mjr] Fix broken handling of calendar attachments.
    </notes>
   </release>
