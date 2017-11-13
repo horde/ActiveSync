@@ -381,6 +381,7 @@ abstract class Horde_ActiveSync_State_Base
      *              being the result of a client originated change.
      *
      * @throws Horde_ActiveSync_Exception_StaleState
+     * @throws Horde_ActiveSync_Exception_FolderGone
      */
     public function getChanges(array $options = array())
     {
@@ -421,16 +422,27 @@ abstract class Horde_ActiveSync_State_Base
             );
 
             // No existing changes, poll the backend
-            $changes = $this->_backend->getServerChanges(
-                $this->_folder,
-                (int)$this->_lastSyncStamp,
-                (int)$this->_thisSyncStamp,
-                $cutoffdate,
-                !empty($options['ping']),
-                $this->_folder->haveInitialSync,
-                !empty($options['maxitems']) ? $options['maxitems'] : 100,
-                !empty($this->_collection['forcerefresh'])
-            );
+            try {
+                $changes = $this->_backend->getServerChanges(
+                    $this->_folder,
+                    (int)$this->_lastSyncStamp,
+                    (int)$this->_thisSyncStamp,
+                    $cutoffdate,
+                    !empty($options['ping']),
+                    $this->_folder->haveInitialSync,
+                    !empty($options['maxitems']) ? $options['maxitems'] : 100,
+                    !empty($this->_collection['forcerefresh'])
+                );
+            } catch (Horde_Exception_AuthenticationFailure $e) {
+                // @todo For BC reasons, we need to treat AuthenticationFailure
+                //  here as a need to resync folders since to the backend, the
+                //  end result is the same, the folder is "missing".
+                $this->_logger->meta(sprintf(
+                    'STATE: Unable to find folder %s. Could be vanished, or permissions denied.',
+                    $this->_folder->serverId())
+                );
+                throw new Horde_ActiveSync_Exception_FolderGone($e->getMessage());
+            }
 
             // Only update the folderstate if we are not PINGing.
             if (empty($options['ping'])) {
