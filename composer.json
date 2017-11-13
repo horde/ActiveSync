@@ -1,8 +1,8 @@
 {
     "name": "horde/activesync",
-    "description": "Horde ActiveSync Server Library",
+    "description": "ActiveSync server library",
     "type": "library",
-    "homepage": "https://pear.horde.org",
+    "homepage": "https://www.horde.org/libraries/Horde_ActiveSync",
     "license": "GPL-2.0",
     "authors": [
         {
@@ -12,7 +12,7 @@
         }
     ],
     "version": "2.39.0",
-    "time": "2017-11-12",
+    "time": "2017-11-13",
     "repositories": [
         {
             "type": "pear",
