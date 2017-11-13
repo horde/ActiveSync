@@ -246,8 +246,6 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
      * Actually load the state data into the object from the query results.
      *
      * @param array $results  The results array from the state query.
-     *
-     * @throws Horde_ActiveSync_Exception_StateGone
      */
     protected function _loadStateFromResults($results)
     {
@@ -294,7 +292,6 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             }
         }
     }
-
 
     /**
      * Update the syncStamp in the collection state, outside of any other changes.
