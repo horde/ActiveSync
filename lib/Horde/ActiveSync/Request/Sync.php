@@ -781,10 +781,6 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                 $this->_statusCode = self::STATUS_NOTFOUND;
                 $this->_handleError($collection);
                 return false;
-            } catch (Horde_ActiveSync_Exception $e) {
-                $this->_statusCode = self::STATUS_SERVERERROR;
-                $this->_handleError($collection);
-                return false;
             }
 
             if (!empty($collection['importedchanges'])) {
