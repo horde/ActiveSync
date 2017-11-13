@@ -587,7 +587,8 @@ abstract class Horde_ActiveSync_Driver_Base
      * Get a list of server changes that occured during the specified time
      * period.
      *
-     * @param string $folderId     The server id of the collection to check.
+     * @param Horde_ActiveSync_Folder_Base $folder
+     *      The ActiveSync folder object to request changes for.
      * @param integer $from_ts     The starting timestamp.
      * @param integer $to_ts       The ending timestamp.
      * @param integer $cutoffdate  The earliest date to retrieve back to.
@@ -601,6 +602,11 @@ abstract class Horde_ActiveSync_Driver_Base
      * @return array A list of messge uids that have chnaged in the specified
      *               time period.
      *
+     * @throws  Horde_Exception_AuthenticationFailure  Thrown when the
+     *          requested collection appears to be no longer available. For H6,
+     *          we should have the application APIs be responsible for
+     *          differentiating between deleted/not-visible.
+     *
      * @todo Horde 6
      * - Change return structure to (optionally) include the actual $to_ts value
      *   that was used. This is needed because if using something like
@@ -613,7 +619,7 @@ abstract class Horde_ActiveSync_Driver_Base
      *   sent.
      */
     abstract public function getServerChanges(
-        $folderId, $from_ts, $to_ts, $cutoffdate, $ping);
+        $folder, $from_ts, $to_ts, $cutoffdate, $ping);
 
     /**
      * Get a message stat.
