@@ -602,6 +602,12 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
     /**
      * Helper method for parsing incoming SYNC_FOLDERS nodes.
      *
+     * @return  boolean  False if any errors were encountered and handled.
+     *                   Otherwise, true.
+     *
+     * @throws  Horde_ActiveSync_Exception when an error cannot be handled
+     *          gracefully, and thus not able to send status code to client.
+     *
      */
     protected function _parseSyncFolders()
     {
