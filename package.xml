@@ -328,7 +328,6 @@
       <file name="InviteTest.php" role="test" />
       <file name="MessageBodyDataTest.php" role="test" />
       <file name="MimeTest.php" role="test" />
-      <file name="phpunit.xml" role="test" />
       <file name="PolicyTest.php" role="test" />
       <file name="Rfc822Test.php" role="test" />
       <file name="ServerTest.php" role="test" />
@@ -644,7 +643,6 @@
    <install as="Horde/ActiveSync/InviteTest.php" name="test/Horde/ActiveSync/InviteTest.php" />
    <install as="Horde/ActiveSync/MessageBodyDataTest.php" name="test/Horde/ActiveSync/MessageBodyDataTest.php" />
    <install as="Horde/ActiveSync/MimeTest.php" name="test/Horde/ActiveSync/MimeTest.php" />
-   <install as="Horde/ActiveSync/phpunit.xml" name="test/Horde/ActiveSync/phpunit.xml" />
    <install as="Horde/ActiveSync/PolicyTest.php" name="test/Horde/ActiveSync/PolicyTest.php" />
    <install as="Horde/ActiveSync/Rfc822Test.php" name="test/Horde/ActiveSync/Rfc822Test.php" />
    <install as="Horde/ActiveSync/ServerTest.php" name="test/Horde/ActiveSync/ServerTest.php" />
