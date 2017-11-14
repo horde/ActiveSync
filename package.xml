@@ -2,15 +2,15 @@
 <package packagerversion="1.9.2" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0 http://pear.php.net/dtd/tasks-1.0.xsd http://pear.php.net/dtd/package-2.0 http://pear.php.net/dtd/package-2.0.xsd">
  <name>Horde_ActiveSync</name>
  <channel>pear.horde.org</channel>
- <summary>Horde ActiveSync Server Library</summary>
- <description>Libraries for implementing an ActiveSync server.</description>
+ <summary>ActiveSync server library</summary>
+ <description>Library for implementing an ActiveSync server.</description>
  <lead>
   <name>Michael J Rubinsky</name>
   <user>mrubinsk</user>
   <email>mrubinsk@horde.org</email>
   <active>yes</active>
  </lead>
- <date>2017-11-12</date>
+ <date>2017-11-14</date>
  <version>
   <release>2.39.0</release>
   <api>2.39.0</api>
@@ -438,11 +438,11 @@
     <exclude>3.0.0alpha1</exclude>
    </package>
    <package>
-     <name>Horde_Imap_Client</name>
-     <channel>pear.horde.org</channel>
-     <min>2.28.1</min>
-     <max>3.0.0alpha1</max>
-     <exclude>3.0.0alpha1</exclude>
+    <name>Horde_Imap_Client</name>
+    <channel>pear.horde.org</channel>
+    <min>2.28.1</min>
+    <max>3.0.0alpha1</max>
+    <exclude>3.0.0alpha1</exclude>
    </package>
    <package>
     <name>Horde_Mail</name>
@@ -3479,7 +3479,7 @@
    <stability>
     <release>stable</release>
     <api>stable</api></stability>
-   <date>2017-11-12</date>
+   <date>2017-11-14</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * [mjr] Return appropriate status code when deleting a folder fails (Bug #14732).
