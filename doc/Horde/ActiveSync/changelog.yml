@@ -9,6 +9,7 @@
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
   notes: |
+    [mjr] Fix bug causing setting of the status of Out of Office messages from the server to client to fail in certain cases.
     [mjr] Return appropriate status code when deleting a folder fails (Bug #14732).
     [mjr] Fix broken handling of calendar attachments.
 2.38.8:
