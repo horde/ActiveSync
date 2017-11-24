@@ -2,6 +2,8 @@
 v2.39.0-git
 -----------
 
+[mjr] Fix bug causing setting of the status of Out of Office messages from the
+      server to client to fail in certain cases.
 [mjr] Return appropriate status code when deleting a folder fails (Bug #14732).
 [mjr] Fix broken handling of calendar attachments.
 

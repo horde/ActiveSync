@@ -21,6 +21,7 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
+* [mjr] Fix bug causing setting of the status of Out of Office messages from the server to client to fail in certain cases.
 * [mjr] Return appropriate status code when deleting a folder fails (Bug #14732).
 * [mjr] Fix broken handling of calendar attachments.
  </notes>
@@ -1119,7 +1120,6 @@
    <date>2012-10-26</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-*
    </notes>
   </release>
   <release>
@@ -1710,7 +1710,6 @@
    <date>2013-06-20</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-*
    </notes>
   </release>
   <release>
@@ -3480,6 +3479,7 @@
    <date>2017-11-14</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
+* [mjr] Fix bug causing setting of the status of Out of Office messages from the server to client to fail in certain cases.
 * [mjr] Return appropriate status code when deleting a folder fails (Bug #14732).
 * [mjr] Fix broken handling of calendar attachments.
    </notes>
