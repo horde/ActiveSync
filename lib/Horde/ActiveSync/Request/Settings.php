@@ -88,6 +88,7 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
 
     /** Out of office constants **/
     const OOF_STATE_TIMEBASED               = 2;
+    // @todo - this is called OOF_STATE_GLOBAL in the docs
     const OOF_STATE_ENABLED                 = 1;
     const OOF_STATE_DISABLED                = 0;
 
@@ -352,7 +353,7 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
         }
         $msg = Horde_ActiveSync::messageFactory('OofMessage');
         $msg->internal = '';
-        $msg->enabled = $info['oofmsgs'][0]['enabled'];
+        $msg->enabled = $info['oofmsgs'][0]['enabled'] ? 1 : "0";
         $msg->reply = $info['oofmsgs'][0]['replymessage'];
         $msg->bodytype = 'text';
         $oof->messages[] = $msg;
