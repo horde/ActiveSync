@@ -346,8 +346,10 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
         $info = new Horde_Support_Array($info);
         $oof = Horde_ActiveSync::messageFactory('Oof');
         $oof->state = $info['oofstate'];
-        $oof->starttime = new Horde_Date($info['starttime']);
-        $oof->endtime = new Horde_Date($info['endtime']);
+        if (!empty($info['starttime'])) {
+            $oof->starttime = new Horde_Date($info['starttime']);
+            $oof->endtime = new Horde_Date($info['endtime']);
+        }
         $msg = Horde_ActiveSync::messageFactory('OofMessage');
         $msg->internal = '';
         $msg->enabled = $info['oofmsgs'][0]['enabled'];
