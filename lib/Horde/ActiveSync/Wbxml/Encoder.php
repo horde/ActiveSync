@@ -461,7 +461,7 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
     {
         $indent = count($this->_logStack);
         if ($output_empty) {
-            $this->_logger->server(sprintf('<%s>', $tag), $indent);
+            $this->_logger->server(sprintf('<%s />', $tag), $indent);
         } else {
             $this->_logStack[] = $tag;
             $this->_logger->server(sprintf('<%s>', $tag), $indent);
