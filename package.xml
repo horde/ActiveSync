@@ -10,7 +10,7 @@
   <email>mrubinsk@horde.org</email>
   <active>yes</active>
  </lead>
- <date>2017-11-26</date>
+ <date>2018-01-14</date>
  <version>
   <release>2.39.1</release>
   <api>2.39.0</api>
@@ -21,7 +21,7 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* 
+*
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -135,6 +135,9 @@
        <file name="TaskRecurrence.php" role="php" />
       </dir> <!-- /lib/Horde/ActiveSync/Message -->
       <dir name="Mime">
+       <dir name="Headers">
+        <file name="Addresses.php" role="php" />
+       </dir> <!-- /lib/Horde/ActiveSync/Mime/Headers -->
        <file name="Iterator.php" role="php" />
       </dir> <!-- /lib/Horde/ActiveSync/Mime -->
       <dir name="Request">
@@ -562,6 +565,7 @@
    <install as="Horde/ActiveSync/Message/SendMailSource.php" name="lib/Horde/ActiveSync/Message/SendMailSource.php" />
    <install as="Horde/ActiveSync/Message/Task.php" name="lib/Horde/ActiveSync/Message/Task.php" />
    <install as="Horde/ActiveSync/Message/TaskRecurrence.php" name="lib/Horde/ActiveSync/Message/TaskRecurrence.php" />
+   <install as="Horde/ActiveSync/Mime/Headers/Addresses.php" name="lib/Horde/ActiveSync/Mime/Headers/Addresses.php" />
    <install as="Horde/ActiveSync/Mime/Iterator.php" name="lib/Horde/ActiveSync/Mime/Iterator.php" />
    <install as="Horde/ActiveSync/Request/Autodiscover.php" name="lib/Horde/ActiveSync/Request/Autodiscover.php" />
    <install as="Horde/ActiveSync/Request/Base.php" name="lib/Horde/ActiveSync/Request/Base.php" />
@@ -3492,7 +3496,7 @@
    <date>2017-11-26</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+*
    </notes>
   </release>
  </changelog>
