@@ -1,4 +1,16 @@
 ---
+2.39.1:
+  api: 2.39.0
+  state:
+    release: stable
+    api: stable
+  date: 2018-01-14
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |+
+    [mjr] Better handling of broken Idna address encoding.
+    
 2.39.0:
   api: 2.39.0
   state:
