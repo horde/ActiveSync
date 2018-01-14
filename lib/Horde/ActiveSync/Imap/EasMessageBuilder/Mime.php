@@ -98,16 +98,49 @@ class Horde_ActiveSync_Imap_EasMessageBuilder_Mime extends Horde_ActiveSync_Imap
             $base = $mime;
         }
 
+        // We need to catch Idna exceptions that are leaked up through
+        // Horde_Mail and Horde_Mime. However, just ignoring them leads
+        // to completely blank emails being generated and sent to the client
+        // because they are being thrown while generating the entire Mime
+        // structure. Therefore, if we catch an exception, we try again,
+        // but this time do not attempt to encode Idna addresses. This
+        // could potentially lead to incorrect email addresses being sent
+        // to the client, but it is a better alternative than simply removing
+        // the email address from the email, thus leaving no record of the
+        // recipient/sender/cc etc...
         try {
+            $headers = $this->_getHeaders();
             // Populate the EAS body structure with the MIME data.
             $this->_airsyncBody->data = $base->toString(array(
-                'headers' => $this->_getHeaders(),
+                'headers' => $headers,
                 'stream' => true)
             );
         } catch (Horde_Idna_Exception $e) {
             $this->_logger->err($e->getMessage());
+            $this->_handleIdnaErrors($headers);
+            $this->_airsyncBody->data = $base->toString(array(
+                'headers' => $headers,
+                'stream' => true)
+            );
         }
         $this->_airsyncBody->estimateddatasize = $base->getBytes();
+    }
+
+    /**
+     * Replace any Horde_Mime-Headers_Addresses objects with
+     * our own override, which prevents Idna encoding.
+     *
+     * @param  Horde_Mime_Headers $headers  The headers object.
+     */
+    protected function _handleIdnaErrors(Horde_Mime_Headers $headers)
+    {
+        foreach (array('from', 'to', 'cc') as $name) {
+            if ($obj = $headers->getHeader($name)) {
+                $obj_idn = new Horde_ActiveSync_Mime_Headers_Addresses($name, $obj->full_value);
+                $headers->removeHeader($name);
+                $headers->addHeaderOb($obj_idn);
+            }
+        }
     }
 
     /**
