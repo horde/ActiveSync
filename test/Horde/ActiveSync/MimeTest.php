@@ -95,4 +95,30 @@ class Horde_ActiveSync_MimeTest extends Horde_Test_Case
         $this->assertEquals(true, (boolean)$mime->hasiCalendar());
    }
 
+   public function testIdna()
+   {
+      $fixture = file_get_contents(__DIR__ . '/fixtures/idna.eml');
+      $headers = Horde_Mime_Headers::parseHeaders($fixture);
+      foreach (array('from', 'to', 'cc') as $n) {
+          if ($header = $headers->getHeader($n)) {
+              $obj = new Horde_ActiveSync_Mime_Headers_Addresses($n, $header->full_value);
+              $headers->removeHeader($n);
+              $headers->addHeaderOb($obj);
+          }
+      }
+      $this->assertEquals('Subject: TT Belieferungsstart der Schulfrei-Exemplare =?utf-8?b?ZsO8cg==?=
+ das Schuljahr 2017/2018
+Date: Fri, 1 Sep 2017 09:52:05 +0100
+Message-ID: <CC5F7757CE6E614EB669EF841EE099F067CB1F@srvmbx01.moserholding.com.i>
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="----=_NextPart_000_0674_01D36791.91B0D380"
+from: Michael J Rubinsky <mrubinsk@horde.org>
+to: Jan Schneider <jan@horde.org>
+cc: direktion@-abc.at, direktion@nms.-nd.abc.de
+
+', $headers->toString());
+   }
+
+
 }
