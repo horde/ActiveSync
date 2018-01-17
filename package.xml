@@ -555,11 +555,8 @@
    <install as="Horde/ActiveSync/Message/SendMailSource.php" name="lib/Horde/ActiveSync/Message/SendMailSource.php" />
    <install as="Horde/ActiveSync/Message/Task.php" name="lib/Horde/ActiveSync/Message/Task.php" />
    <install as="Horde/ActiveSync/Message/TaskRecurrence.php" name="lib/Horde/ActiveSync/Message/TaskRecurrence.php" />
-<<<<<<< HEAD
    <install as="Horde/ActiveSync/Mime.php" name="lib/Horde/ActiveSync/Mime.php" />
-=======
    <install as="Horde/ActiveSync/Mime/Headers/Addresses.php" name="lib/Horde/ActiveSync/Mime/Headers/Addresses.php" />
->>>>>>> 21cb7b33... Better handling of broken Idna email addresses.
    <install as="Horde/ActiveSync/Mime/Iterator.php" name="lib/Horde/ActiveSync/Mime/Iterator.php" />
    <install as="Horde/ActiveSync/Policies.php" name="lib/Horde/ActiveSync/Policies.php" />
    <install as="Horde/ActiveSync/Request/Autodiscover.php" name="lib/Horde/ActiveSync/Request/Autodiscover.php" />
