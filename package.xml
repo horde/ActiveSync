@@ -10,7 +10,7 @@
   <email>mrubinsk@horde.org</email>
   <active>yes</active>
  </lead>
- <date>2017-11-13</date>
+ <date>2018-01-20</date>
  <version>
   <release>2.39.0</release>
   <api>2.39.0</api>
@@ -21,9 +21,7 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* [mjr] Fix bug causing setting of the status of Out of Office messages from the server to client to fail in certain cases.
-* [mjr] Return appropriate status code when deleting a folder fails (Bug #14732).
-* [mjr] Fix broken handling of calendar attachments.
+* [mjr] Better handling of broken Idna address encoding.
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -288,6 +286,7 @@
        <file name="email_signed.eml" role="test" />
        <file name="encrypted.eml" role="test" />
        <file name="fixture_fetch" role="test" />
+       <file name="idna.eml" role="test" />
        <file name="invitation_one.eml" role="test" />
        <file name="iOSMultipartAlternative.eml" role="test" />
        <file name="meeting_request_one.wbxml" role="test" />
@@ -651,6 +650,7 @@
    <install as="Horde/ActiveSync/fixtures/email_signed.eml" name="test/Horde/ActiveSync/fixtures/email_signed.eml" />
    <install as="Horde/ActiveSync/fixtures/encrypted.eml" name="test/Horde/ActiveSync/fixtures/encrypted.eml" />
    <install as="Horde/ActiveSync/fixtures/fixture_fetch" name="test/Horde/ActiveSync/fixtures/fixture_fetch" />
+   <install as="Horde/ActiveSync/fixtures/idna.eml" name="test/Horde/ActiveSync/fixtures/idna.eml" />
    <install as="Horde/ActiveSync/fixtures/invitation_one.eml" name="test/Horde/ActiveSync/fixtures/invitation_one.eml" />
    <install as="Horde/ActiveSync/fixtures/iOSMultipartAlternative.eml" name="test/Horde/ActiveSync/fixtures/iOSMultipartAlternative.eml" />
    <install as="Horde/ActiveSync/fixtures/meeting_request_one.wbxml" name="test/Horde/ActiveSync/fixtures/meeting_request_one.wbxml" />
@@ -1174,7 +1174,7 @@
    <date>2012-10-26</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-*
+* 
    </notes>
   </release>
   <release>
@@ -1847,7 +1847,7 @@
    <date>2013-06-20</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-*
+* 
    </notes>
   </release>
   <release>
@@ -3864,7 +3864,7 @@
     <release>stable</release>
     <api>stable</api>
    </stability>
-   <date>2017-10-20</date>
+   <date>2017-11-26</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * [mjr] Fix bug causing setting of the status of Out of Office messages from the server to client to fail in certain cases.
@@ -3881,7 +3881,7 @@
     <release>stable</release>
     <api>stable</api>
    </stability>
-   <date>2018-01-14</date>
+   <date>2018-01-20</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * [mjr] Better handling of broken Idna address encoding.
