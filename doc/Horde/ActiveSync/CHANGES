@@ -1,6 +1,14 @@
------------
-v2.39.0-git
------------
+-------
+v2.39.1
+-------
+
+[mjr] Better handling of broken Idna address encoding.
+
+
+
+-------
+v2.39.0
+-------
 
 [mjr] Fix bug causing setting of the status of Out of Office messages from the
       server to client to fail in certain cases.
