@@ -350,11 +350,13 @@ class Horde_ActiveSync_Message_Base
             $entity = $decoder->getElement();
 
             if ($entity[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_STARTTAG) {
+
+                // Tag without content set to a sane empty value.
                 if (!($entity[Horde_ActiveSync_Wbxml::EN_FLAGS] & Horde_ActiveSync_Wbxml::EN_FLAGS_CONTENT)) {
                     $map = $this->_mapping[$entity[Horde_ActiveSync_Wbxml::EN_TAG]];
-                    if (!isset($map[self::KEY_TYPE])) {
-                        $this->{$map[self::KEY_ATTRIBUTE]} = '';
-                    } elseif ($map[self::KEY_TYPE] == self::TYPE_DATE || $map[self::KEY_TYPE] == self::TYPE_DATE_DASHES ) {
+                    if (isset($map[self::KEY_VALUES])) {
+                        $this->{$map[self::KEY_ATTRIBUTE]} = array():
+                    } elseif (!isset($map[self::KEY_TYPE]) || $map[self::KEY_TYPE] == self::TYPE_DATE || $map[self::KEY_TYPE] == self::TYPE_DATE_DASHES) {
                         $this->{$map[self::KEY_ATTRIBUTE]} = '';
                     }
                     continue;
