@@ -2,7 +2,8 @@
 v2.39.2
 -------
 
-
+[mjr] Fix PHP error due to null array value (Bug #14783).
+|+
 
 
 -------

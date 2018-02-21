@@ -21,7 +21,8 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* 
+* [mjr] Fix PHP error due to null array value (Bug #14783).
+* |+
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -3866,7 +3867,7 @@
     <release>stable</release>
     <api>stable</api>
    </stability>
-   <date>2017-11-26</date>
+   <date>2017-10-20</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * [mjr] Fix bug causing setting of the status of Out of Office messages from the server to client to fail in certain cases.
@@ -3901,7 +3902,8 @@
    <date>2018-01-20</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+* [mjr] Fix PHP error due to null array value (Bug #14783).
+* |+
    </notes>
   </release>
  </changelog>
