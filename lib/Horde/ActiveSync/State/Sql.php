@@ -1357,7 +1357,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                         $results[$row['message_uid']][$change['type']] =
                             (!is_null($row['sync_read']) && $row['sync_read'] == $change['flags']['read']) ||
                             (!is_null($row['sync_flagged']) && $row['sync_flagged'] == $change['flags']['flagged']) ||
-                            (!is_null($row['sync_category']) && $row['sync_category'] == md5(implode('', $change['categories'])));
+                            (!is_null($row['sync_category']) && !empty($change['categories']) && $row['sync_category'] == md5(implode('', $change['categories'])));
                         continue 3;
                     case Horde_ActiveSync::CHANGE_TYPE_DELETE:
                         $results[$row['message_uid']][$change['type']] =
