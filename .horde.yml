@@ -14,7 +14,7 @@ authors:
     active: true
     role: lead
 version:
-  release: 2.39.2
+  release: 2.39.3
   api: 2.39.0
 state:
   release: stable
