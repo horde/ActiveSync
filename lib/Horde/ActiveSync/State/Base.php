@@ -462,7 +462,8 @@ abstract class Horde_ActiveSync_State_Base
                 switch ($this->_collection['class']) {
                 case Horde_ActiveSync::CLASS_EMAIL:
                     // @todo Fix me with a changes object that transparently
-                    // deals with different data structure for initial sync.
+                    // deals with different data structure for initial sync and
+                    // knows how to filter out client-sourced changes
                     if (!empty($changes) && !is_array($changes[0])) {
                         $this->_changes = $changes;
                         break;
