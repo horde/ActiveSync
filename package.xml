@@ -10,7 +10,7 @@
   <email>mrubinsk@horde.org</email>
   <active>yes</active>
  </lead>
- <date>2018-01-20</date>
+ <date>2018-02-21</date>
  <version>
   <release>2.39.2</release>
   <api>2.39.0</api>
@@ -22,7 +22,6 @@
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
 * [mjr] Fix PHP error due to null array value (Bug #14783).
-* |+
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -1177,7 +1176,7 @@
    <date>2012-10-26</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+*
    </notes>
   </release>
   <release>
@@ -1850,7 +1849,7 @@
    <date>2013-06-20</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+*
    </notes>
   </release>
   <release>
@@ -3899,11 +3898,10 @@
     <release>stable</release>
     <api>stable</api>
    </stability>
-   <date>2018-01-20</date>
+   <date>2018-02-21</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * [mjr] Fix PHP error due to null array value (Bug #14783).
-* |+
    </notes>
   </release>
  </changelog>
