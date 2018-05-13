@@ -9,7 +9,7 @@
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
   notes: |+
-    
+
 2.39.2:
   api: 2.39.0
   state:
@@ -21,7 +21,6 @@
     uri: http://www.horde.org/licenses/gpl
   notes: |
     [mjr] Fix PHP error due to null array value (Bug #14783).
-    |+
 2.39.1:
   api: 2.39.0
   state:
