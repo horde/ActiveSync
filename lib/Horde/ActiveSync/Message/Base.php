@@ -363,10 +363,23 @@ class Horde_ActiveSync_Message_Base
                 // Found start tag
                 if (!isset($this->_mapping[$entity[Horde_ActiveSync_Wbxml::EN_TAG]])) {
                     $this->_logger->err(sprintf(
-                        'Tag %s unexpected in type XML type %s.',
+                        'Tag %s unexpected in type XML type %s. Attempting to ignore unknown tag.',
                          $entity[Horde_ActiveSync_Wbxml::EN_TAG],
                          get_class($this))
                     );
+                    if ($decoder->isEmptyElement($entity)) {
+                        $this->_logger->err('Tag was empty element. Continuing');
+                        continue;
+                    }
+                    $entity = $decoder->getElement();
+                    if ($entity[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_CONTENT) {
+                        $entity = $entity->getElement();
+                        if ($entity[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_ENDTAG) {
+                            $this->_logger->err('Found end tag, continuing.');
+                            continue;
+                        }
+                    }
+                    $this->_logger->err('Unable to ignore unknown tag. Giving up.');
                     throw new Horde_ActiveSync_Exception('Unexpected tag');
                 } else {
                     $map = $this->_mapping[$entity[Horde_ActiveSync_Wbxml::EN_TAG]];
