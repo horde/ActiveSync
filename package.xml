@@ -10,7 +10,7 @@
   <email>mrubinsk@horde.org</email>
   <active>yes</active>
  </lead>
- <date>2018-02-21</date>
+ <date>2018-06-10</date>
  <version>
   <release>2.39.3</release>
   <api>2.39.0</api>
@@ -3914,7 +3914,7 @@
     <release>stable</release>
     <api>stable</api>
    </stability>
-   <date>2018-02-21</date>
+   <date>2018-06-10</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * [mjr] Attempt to be more forgiving to broken WBXML requests.
