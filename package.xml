@@ -22,7 +22,6 @@
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
 * [mjr] Fix PHP error due to null array value (Bug #14783).
-* |+
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -3903,7 +3902,21 @@
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * [mjr] Fix PHP error due to null array value (Bug #14783).
-* |+
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>2.39.3</release>
+    <api>2.39.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2018-02-21</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* [mjr] Attempt to be more forgiving to broken WBXML requests.
    </notes>
   </release>
  </changelog>
