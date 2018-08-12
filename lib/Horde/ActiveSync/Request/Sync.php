@@ -828,6 +828,7 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
             $this->_handleGlobalSyncError();
             return false;
         } catch (Horde_ActiveSync_Exception_FolderGone $e) {
+            $this->_logger->notice($e->getMessage());
             $this->_statusCode = self::STATUS_FOLDERSYNC_REQUIRED;
             $this->_handleError($collection);
             return false;
