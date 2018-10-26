@@ -36,7 +36,7 @@ class Horde_ActiveSync_Factory_TestServer extends Horde_Test_Case
     public $server;
     public $driver;
     public $input;
-    public $output;
+    public $_output;
     public $request;
 
     public function __construct($params = array())
@@ -44,8 +44,8 @@ class Horde_ActiveSync_Factory_TestServer extends Horde_Test_Case
         $this->driver = $this->getMockSkipConstructor('Horde_ActiveSync_Driver_Base');
         $this->input = fopen('php://memory', 'wb+');
         $decoder = new Horde_ActiveSync_Wbxml_Decoder($this->input);
-        $this->output = fopen('php://memory', 'wb+');
-        $encoder = new Horde_ActiveSync_Wbxml_Encoder($this->output);
+        $this->_output = fopen('php://memory', 'wb+');
+        $encoder = new Horde_ActiveSync_Wbxml_Encoder($this->_output);
         $state = $this->getMockSkipConstructor('Horde_ActiveSync_State_Base');
         $this->request = $this->getMockSkipConstructor('Horde_Controller_Request_Http');
         $this->request->expects($this->any())
