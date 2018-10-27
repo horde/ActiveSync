@@ -2,7 +2,7 @@
 v2.39.4
 -------
 
-
+[mjr] Fix subscribing to imap folder that already exists.
 
 
 -------
@@ -10,7 +10,6 @@ v2.39.3
 -------
 
 [mjr] Attempt to be more forgiving to broken WBXML requests.
-|+
 
 
 -------
