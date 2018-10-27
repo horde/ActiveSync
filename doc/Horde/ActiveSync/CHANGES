@@ -2,6 +2,7 @@
 v2.39.2
 -------
 
+[mjr] Fix subscribing to imap folder that already exists.
 [mjr] Fix PHP error due to null array value (Bug #14783).
 
 
