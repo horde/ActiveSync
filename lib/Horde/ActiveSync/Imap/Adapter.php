@@ -132,8 +132,9 @@ class Horde_ActiveSync_Imap_Adapter
                     // *really* wrong.
                     throw new Horde_ActiveSync_Exception_FolderExists('Folder Exists!');
                 }
+            } else {
+                throw new Horde_ActiveSync_Exception($e);
             }
-            throw new Horde_ActiveSync_Exception($e);
         }
 
         return $mbox->utf8;
