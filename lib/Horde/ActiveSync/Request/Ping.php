@@ -214,9 +214,9 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
             $changes = $collections->pollForChanges($heartbeat, $interval, array('pingable' => true));
             if ($changes !== true && $changes !== false) {
                 // If we received a status indicating we need to issue a full
-                // PING, but we already did, treat it as a status_needsync.
+                // PING, but we already did, treat it as a FOLDERSYNC_REQUIRED
                 if (!$isEmpty && $changes == Horde_ActiveSync_Collections::COLLECTION_ERR_PING_NEED_FULL) {
-                    $changes = Horde_ActiveSync_Collections::COLLECTION_ERR_SYNC_REQUIRED;
+                    $changes = Horde_ActiveSync_Collections::COLLECTION_ERR_FOLDERSYNC_REQUIRED;
                 }
                 switch ($changes) {
                 case Horde_ActiveSync_Collections::COLLECTION_ERR_PING_NEED_FULL:
@@ -231,7 +231,7 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
                     $this->_handleGlobalError();
                     return true;
                 case Horde_ActiveSync_Collections::COLLECTION_ERR_AUTHENTICATION;
-                    // If we loose authentication here, it means it was
+                    // If we lose authentication here, it means it was
                     // successful initially, but later failed for some reason.
                     // Send it as a general ping error, which should allow the
                     // client to retry later. If the auth is still bad, it will
