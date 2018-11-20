@@ -31,7 +31,6 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
     const COLLECTION_ERR_SERVER              = -2;
     const COLLECTION_ERR_STALE               = -3;
     const COLLECTION_ERR_SYNC_REQUIRED       = -4;
-    const COLLECTION_ERR_PING_NEED_FULL      = -5;
     const COLLECTION_ERR_AUTHENTICATION      = -6;
 
     /**
@@ -1183,12 +1182,9 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                     $this->initCollectionState($collection, true);
                 } catch (Horde_ActiveSync_Exception_StateGone $e) {
                     $this->_logger->notice(sprintf(
-                        'COLLECTIONS: State not found for %s. Continuing.',
+                        'COLLECTIONS: State not found for %s. Continuing by rquesting a SYNC.',
                         $id)
                     );
-                    if (!empty($options['pingable'])) {
-                        return self::COLLECTION_ERR_PING_NEED_FULL;
-                    }
                     $dataavailable = true;
                     $this->setGetChangesFlag($id);
                     continue;
