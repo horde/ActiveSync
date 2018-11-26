@@ -213,16 +213,7 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
         if ($this->_statusCode == self::STATUS_NOCHANGES) {
             $changes = $collections->pollForChanges($heartbeat, $interval, array('pingable' => true));
             if ($changes !== true && $changes !== false) {
-                // If we received a status indicating we need to issue a full
-                // PING, but we already did, treat it as a FOLDERSYNC_REQUIRED
-                if (!$isEmpty && $changes == Horde_ActiveSync_Collections::COLLECTION_ERR_PING_NEED_FULL) {
-                    $changes = Horde_ActiveSync_Collections::COLLECTION_ERR_FOLDERSYNC_REQUIRED;
-                }
                 switch ($changes) {
-                case Horde_ActiveSync_Collections::COLLECTION_ERR_PING_NEED_FULL:
-                    $this->_statusCode = self::STATUS_MISSING;
-                    $this->_handleGlobalError();
-                    return true;
                 case Horde_ActiveSync_Collections::COLLECTION_ERR_STALE:
                     $this->_logger->info('Changes in cache detected during PING, exiting here.');
                     return true;
