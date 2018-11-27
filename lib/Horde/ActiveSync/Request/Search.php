@@ -111,18 +111,18 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
             !$this->_decoder->getElementStartTag(self::SEARCH_STORE) ||
             !$this->_decoder->getElementStartTag(self::SEARCH_NAME)) {
 
-            $search_status = self::SEARCH_STATUS_ERROR;
+            throw new Horde_ActiveSync_Exception_InvalidRequest('Missing required SEARCH|STORE|NAME');
         }
+
         $search_name = $this->_decoder->getElementContent();
         if (!$this->_decoder->getElementEndTag()) {
-            $search_status = self::SEARCH_STATUS_ERROR;
-            $store_status = self::STORE_STATUS_PROTERR;
+            return false;
         }
 
         if (!$this->_decoder->getElementStartTag(self::SEARCH_QUERY)) {
-            $search_status = self::SEARCH_STATUS_ERROR;
-            $store_status = self::STORE_STATUS_PROTERR;
+            throw new Horde_ActiveSync_Exception_InvalidRequest('Missing required SEARCH_QUERY.');
         }
+
         $search_query = array();
         switch (Horde_String::lower($search_name)) {
         case 'documentlibrary':
@@ -135,10 +135,11 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
         case 'gal':
             $search_query['query'] = $this->_decoder->getElementContent();
         }
+
         if (!$this->_decoder->getElementEndTag()) {
-            $search_status = self::SEARCH_STATUS_ERROR;
-            $store_status = self::STORE_STATUS_PROTERR;
+            return false;
         }
+
         $mime = Horde_ActiveSync::MIME_SUPPORT_NONE;
         if ($this->_decoder->getElementStartTag(self::SEARCH_OPTIONS)) {
             $searchbodypreference = array();
@@ -146,8 +147,7 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
                 if ($this->_decoder->getElementStartTag(self::SEARCH_RANGE)) {
                     $search_query['range'] = $this->_decoder->getElementContent();
                     if (!$this->_decoder->getElementEndTag()) {
-                        $search_status = self::SEARCH_STATUS_ERROR;
-                        $store_status = self::STORE_STATUS_PROTERR;
+                        return false;
                     }
                 }
                 if ($this->_decoder->getElementStartTag(self::SEARCH_DEEPTRAVERSAL)) {
@@ -231,12 +231,11 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
         }
 
         if (!$this->_decoder->getElementEndTag()) { //store
-            $search_status = self::SEARCH_STATUS_ERROR;
-            $store_status = self::STORE_STATUS_PROTERR;
+            return false;
         }
+
         if (!$this->_decoder->getElementEndTag()) { //search
-            $search_status = self::SEARCH_STATUS_ERROR;
-            $store_status = self::STORE_STATUS_PROTERR;
+            return false;
         }
 
         $search_query['range'] = empty($search_query['range']) ? '0-99' : $search_query['range'];
@@ -481,7 +480,7 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
     {
         $this->_decoder->getElementEndTag(); // end SYNC_ITEMOPERATIONS_ITEMOPERATIONS
         $this->_encoder->startWBXML($this->_activeSync->multipart);
-        $this->_encoder->startTag(self::ITEMOPERATIONS_ITEMOPERATIONS);
+        $this->_encoder->startTag(self::SEARCH_SEARCH);
         $this->_encoder->startTag(self::SEARCH_STATUS);
         $this->_encoder->content($this->_statusCode);
         $this->_encoder->endTag();
