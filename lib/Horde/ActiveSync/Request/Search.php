@@ -87,6 +87,7 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
     const STORE_STATUS_NOTFOUND      = 6;
     const STORE_STATUS_CONNECTIONERR = 7;
     const STORE_STATUS_COMPLEX       = 8;
+    const STORE_STATUS_FOLDERSYNC    = 11;
 
     /**
      * @var Horde_ActiveSync_Collections
@@ -126,7 +127,10 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
         switch (Horde_String::lower($search_name)) {
         case 'documentlibrary':
         case 'mailbox':
-            $search_query['query'] = $this->_parseQuery();
+            if (!($search_query['query'] = $this->_parseQuery())) {
+                $search_status = self::SEARCH_STATUS_ERROR;
+                $store_status = self::STORE_STATUS_FOLDERSYNC;
+            }
             break;
         case 'gal':
             $search_query['query'] = $this->_decoder->getElementContent();
@@ -244,13 +248,16 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
         }
 
         // Get search results from backend
-        $search_result = $this->_driver->getSearchResults($search_name, $search_query);
-
-        // @TODO: Remove for H6. Total should be returned from the search call,
-        // if it's not, do the best we can an use the count of results from
-        // this page.
-        if (empty($search_result['total'])) {
-            $search_result['total'] = count($search_result['rows']);
+        if ($search_query['query']) {
+            $search_result = $this->_driver->getSearchResults($search_name, $search_query);
+            // @TODO: Remove for H6. Total should be returned from the search call,
+            // if it's not, do the best we can an use the count of results from
+            // this page.
+            if (empty($search_result['total'])) {
+                $search_result['total'] = count($search_result['rows']);
+            }
+        } else {
+            $search_result = array();
         }
 
         /* Send output */
@@ -408,7 +415,7 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
      *
      * @param boolean $subquery  Parsing a subquery.
      *
-     * @return array
+     * @return array | false on error
      */
     protected function _parseQuery($subquery = null)
     {
@@ -446,7 +453,11 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
             default:
                 if (($query[$type] = $this->_decoder->getElementContent())) {
                     if ($type == Horde_ActiveSync::SYNC_FOLDERID) {
-                        $query['serverid'] = $this->_collections->getBackendIdForFolderUid($query[$type]);
+                        try {
+                            $query['serverid'] = $this->_collections->getBackendIdForFolderUid($query[$type]);
+                        } catch (Horde_ActiveSync_Exception_FolderGone $e) {
+                            $this->_logger->err($e->getMessage());
+                        }
                     }
                     $this->_decoder->getElementEndTag();
                 } else {
