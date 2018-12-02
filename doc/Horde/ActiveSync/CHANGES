@@ -2,6 +2,7 @@
 v2.39.5
 -------
 
+[mjr] Improve handling of SEARCH command when target folder is not found.
 [mjr] Improve handling of PING requests when folder state is gone.
 [mjr] More workarounds for broken wbxml.
 
