@@ -371,9 +371,12 @@ class Horde_ActiveSync_Message_Base
                         $this->_logger->err('Tag was empty element. Continuing');
                         continue;
                     }
-                    $entity = $decoder->getElement();
+                    $entity = $decoder->getToken();
                     if ($entity[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_CONTENT) {
-                        $entity = $entity->getElement();
+                        while($unknownContent = $decoder->getElementContent()) {
+                            $this->_logger->err('Content of unknown tag: %s', $unknownContent);
+                        }
+                        $entity = $this->getToken();
                         if ($entity[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_ENDTAG) {
                             $this->_logger->err('Found end tag, continuing.');
                             continue;
