@@ -1,4 +1,15 @@
 ---
+2.39.5:
+  api: 2.39.0
+  state:
+    release: stable
+    api: stable
+  date: 2018-10-27
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |
+    [mjr] More workarounds for broken wbxml.
 2.39.4:
   api: 2.39.0
   state:
