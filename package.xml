@@ -21,8 +21,8 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
+* [mjr] Improve handling of PING requests when folder state is gone.
 * [mjr] More workarounds for broken wbxml.
-* |+
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -3947,8 +3947,8 @@
    <date>2018-10-27</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
+* [mjr] Improve handling of PING requests when folder state is gone.
 * [mjr] More workarounds for broken wbxml.
-* |+
    </notes>
   </release>
  </changelog>

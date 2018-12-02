@@ -2,8 +2,8 @@
 v2.39.5
 -------
 
+[mjr] Improve handling of PING requests when folder state is gone.
 [mjr] More workarounds for broken wbxml.
-|+
 
 
 -------
