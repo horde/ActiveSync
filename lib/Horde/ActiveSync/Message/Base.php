@@ -562,90 +562,92 @@ class Horde_ActiveSync_Message_Base
         }
 
         foreach ($this->_mapping as $tag => $map) {
-            if (isset($this->{$map[self::KEY_ATTRIBUTE]})) {
-                // Variable is available
-                if (is_object($this->{$map[self::KEY_ATTRIBUTE]}) &&
-                    !($this->{$map[self::KEY_ATTRIBUTE]} instanceof Horde_Date)) {
-                    // Objects can do their own encoding
-                    $encoder->startTag($tag);
-                    $this->{$map[self::KEY_ATTRIBUTE]}->encodeStream($encoder);
-                    $encoder->endTag();
-                } elseif (isset($map[self::KEY_VALUES]) &&
-                          is_array($this->{$map[self::KEY_ATTRIBUTE]})) {
-                    // Array of objects. Note that some array values must be
-                    // send as an empty tag if they contain no elements.
-                    if (count($this->{$map[self::KEY_ATTRIBUTE]})) {
-                        if (!isset($map[self::KEY_PROPERTY]) ||
-                            $map[self::KEY_PROPERTY] != self::PROPERTY_NO_CONTAINER) {
-                            $encoder->startTag($tag);
-                        }
-                        foreach ($this->{$map[self::KEY_ATTRIBUTE]} as $element) {
-                            if (is_object($element)) {
-                                // Hanlde multi-typed array containers.
-                                if (is_array($map[self::KEY_VALUES])) {
-                                    $idx = array_search(get_class($element), $map[self::KEY_TYPE]);
-                                    $tag = $map[self::KEY_VALUES][$idx];
-                                } else {
-                                    $tag = $map[self::KEY_VALUES];
-                                }
-                                // Outputs object container (eg Attachment)
-                                $encoder->startTag($tag);
-                                $element->encodeStream($encoder);
-                                $encoder->endTag();
+            if (!isset($this->{$map[self::KEY_ATTRIBUTE]})) {
+                continue;
+            }
+
+            // Variable is available
+            if (is_object($this->{$map[self::KEY_ATTRIBUTE]}) &&
+                !($this->{$map[self::KEY_ATTRIBUTE]} instanceof Horde_Date)) {
+                // Objects can do their own encoding
+                $encoder->startTag($tag);
+                $this->{$map[self::KEY_ATTRIBUTE]}->encodeStream($encoder);
+                $encoder->endTag();
+            } elseif (isset($map[self::KEY_VALUES]) &&
+                      is_array($this->{$map[self::KEY_ATTRIBUTE]})) {
+                // Array of objects. Note that some array values must be
+                // sent as an empty tag if they contain no elements.
+                if (count($this->{$map[self::KEY_ATTRIBUTE]})) {
+                    if (!isset($map[self::KEY_PROPERTY]) ||
+                        $map[self::KEY_PROPERTY] != self::PROPERTY_NO_CONTAINER) {
+                        $encoder->startTag($tag);
+                    }
+                    foreach ($this->{$map[self::KEY_ATTRIBUTE]} as $element) {
+                        if (is_object($element)) {
+                            // Hanlde multi-typed array containers.
+                            if (is_array($map[self::KEY_VALUES])) {
+                                $idx = array_search(get_class($element), $map[self::KEY_TYPE]);
+                                $tag = $map[self::KEY_VALUES][$idx];
                             } else {
-                                // Do not ever output empty items here
-                                if(strlen($element) > 0) {
-                                    $encoder->startTag($map[self::KEY_VALUES]);
-                                    $encoder->content($element);
-                                    $encoder->endTag();
-                                }
+                                $tag = $map[self::KEY_VALUES];
+                            }
+                            // Outputs object container (eg Attachment)
+                            $encoder->startTag($tag);
+                            $element->encodeStream($encoder);
+                            $encoder->endTag();
+                        } else {
+                            // Do not ever output empty items here
+                            if(strlen($element) > 0) {
+                                $encoder->startTag($map[self::KEY_VALUES]);
+                                $encoder->content($element);
+                                $encoder->endTag();
                             }
                         }
-                        if (!isset($map[self::KEY_PROPERTY]) || $map[self::KEY_PROPERTY] != self::PROPERTY_NO_CONTAINER) {
-                            $encoder->endTag();
-                        }
-                    } elseif ($this->_checkSendEmpty($tag)) {
-                        $encoder->startTag($tag, null, true);
                     }
-                } else {
-                    // Simple type
-                    if (!is_resource($this->{$map[self::KEY_ATTRIBUTE]}) &&
-                        strlen($this->{$map[self::KEY_ATTRIBUTE]}) == 0) {
-                          // Do not output empty items except for the following:
-                          if ($this->_checkSendEmpty($tag)) {
-                              $encoder->startTag($tag, $this->{$map[self::KEY_ATTRIBUTE]}, true);
-                          }
-                          continue;
-                    } elseif ($encoder->multipart &&
-                              in_array($tag, array(
-                                Horde_ActiveSync::SYNC_DATA,
-                                Horde_ActiveSync::AIRSYNCBASE_DATA,
-                                Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_DATA)
-                              )) {
-                        $this->_logger->meta('HANDLING MULTIPART OUTPUT');
-                        $encoder->addPart($this->{$map[self::KEY_ATTRIBUTE]});
-                        $encoder->startTag(Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_PART);
-                        $encoder->content((string)(count($encoder->getParts()) - 1));
+                    if (!isset($map[self::KEY_PROPERTY]) || $map[self::KEY_PROPERTY] != self::PROPERTY_NO_CONTAINER) {
                         $encoder->endTag();
-                        continue;
                     }
-
-                    $encoder->startTag($tag);
-                    if (isset($map[self::KEY_TYPE]) &&
-                        (in_array($map[self::KEY_TYPE], array(self::TYPE_DATE, self::TYPE_DATE_DASHES, self::TYPE_DATE_LOCAL)))) {
-                        if (!empty($this->{$map[self::KEY_ATTRIBUTE]})) { // don't output 1-1-1970
-                            $encoder->content($this->_formatDate($this->{$map[self::KEY_ATTRIBUTE]}, $map[self::KEY_TYPE]));
-                        }
-                    } elseif (isset($map[self::KEY_TYPE]) && $map[self::KEY_TYPE] == self::TYPE_HEX) {
-                        $encoder->content(Horde_String::upper(bin2hex($this->{$map[self::KEY_ATTRIBUTE]})));
-                    } elseif (isset($map[self::KEY_TYPE]) && $map[self::KEY_TYPE] == self::TYPE_MAPI_STREAM) {
-                        $encoder->content($this->{$map[self::KEY_ATTRIBUTE]});
-                    } else {
-                        $encoder->content(
-                            $this->_checkEncoding($this->{$map[self::KEY_ATTRIBUTE]}, $tag));
-                    }
-                    $encoder->endTag();
+                } elseif ($this->_checkSendEmpty($tag)) {
+                    $encoder->startTag($tag, null, true);
                 }
+            } else {
+                // Simple type
+                if (!is_resource($this->{$map[self::KEY_ATTRIBUTE]}) &&
+                    strlen($this->{$map[self::KEY_ATTRIBUTE]}) == 0) {
+                      // Do not output empty items except for the following:
+                      if ($this->_checkSendEmpty($tag)) {
+                          $encoder->startTag($tag, $this->{$map[self::KEY_ATTRIBUTE]}, true);
+                      }
+                      continue;
+                } elseif ($encoder->multipart &&
+                          in_array($tag, array(
+                            Horde_ActiveSync::SYNC_DATA,
+                            Horde_ActiveSync::AIRSYNCBASE_DATA,
+                            Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_DATA)
+                          )) {
+                    $this->_logger->meta('HANDLING MULTIPART OUTPUT');
+                    $encoder->addPart($this->{$map[self::KEY_ATTRIBUTE]});
+                    $encoder->startTag(Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_PART);
+                    $encoder->content((string)(count($encoder->getParts()) - 1));
+                    $encoder->endTag();
+                    continue;
+                }
+
+                $encoder->startTag($tag);
+                if (isset($map[self::KEY_TYPE]) &&
+                    (in_array($map[self::KEY_TYPE], array(self::TYPE_DATE, self::TYPE_DATE_DASHES, self::TYPE_DATE_LOCAL)))) {
+                    if (!empty($this->{$map[self::KEY_ATTRIBUTE]})) { // don't output 1-1-1970
+                        $encoder->content($this->_formatDate($this->{$map[self::KEY_ATTRIBUTE]}, $map[self::KEY_TYPE]));
+                    }
+                } elseif (isset($map[self::KEY_TYPE]) && $map[self::KEY_TYPE] == self::TYPE_HEX) {
+                    $encoder->content(Horde_String::upper(bin2hex($this->{$map[self::KEY_ATTRIBUTE]})));
+                } elseif (isset($map[self::KEY_TYPE]) && $map[self::KEY_TYPE] == self::TYPE_MAPI_STREAM) {
+                    $encoder->content($this->{$map[self::KEY_ATTRIBUTE]});
+                } else {
+                    $encoder->content(
+                        $this->_checkEncoding($this->{$map[self::KEY_ATTRIBUTE]}, $tag));
+                }
+                $encoder->endTag();
             }
         }
     }
