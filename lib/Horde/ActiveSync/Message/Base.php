@@ -394,8 +394,10 @@ class Horde_ActiveSync_Message_Base
                 // that here, since we need to handle it differently.
                 $entity = $decoder->getToken();
                 if ($entity[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_CONTENT) {
-                    while($unknownContent = $decoder->getElementContent()) {
+                    $unknownContent = $decoder->getElementContent();
+                    while($unknownContent !== false) {
                         $this->_logger->err('Content of unknown tag: %s', $unknownContent);
+                        $unknownContent = $decoder->getElementContent();
                     }
                     // The only safe way out of this is if we found an ENDTAG.
                     $entity = $this->getToken();
