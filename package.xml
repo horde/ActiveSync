@@ -12,7 +12,7 @@
  </lead>
  <date>2018-12-02</date>
  <version>
-  <release>2.39.5</release>
+  <release>2.39.6</release>
   <api>2.39.0</api>
  </version>
  <stability>
@@ -21,9 +21,7 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* [mjr] Improve handling of SEARCH command when target folder is not found.
-* [mjr] Improve handling of PING requests when folder state is gone.
-* [mjr] More workarounds for broken wbxml.
+* 
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -3951,6 +3949,21 @@
 * [mjr] Improve handling of SEARCH command when target folder is not found.
 * [mjr] Improve handling of PING requests when folder state is gone.
 * [mjr] More workarounds for broken wbxml.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>2.39.6</release>
+    <api>2.39.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2018-12-02</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* 
    </notes>
   </release>
  </changelog>
