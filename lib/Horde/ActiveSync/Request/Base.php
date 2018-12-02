@@ -235,9 +235,10 @@ abstract class Horde_ActiveSync_Request_Base
     public function handle()
     {
         $this->_logger->info(sprintf(
-            '%sRequest being handled for device: %s, Supporting protocol version: %s, Using Horde_ActiveSync v%s',
+            '%sRequest being handled for device: %s, of type: %s, supporting protocol version: %s, using Horde_ActiveSync v%s',
             str_repeat('-', 10),
             $this->_device->id,
+            $this->_device->deviceType,
             $this->_device->version,
             Horde_ActiveSync::LIBRARY_VERSION)
         );
@@ -245,6 +246,12 @@ abstract class Horde_ActiveSync_Request_Base
             'GET VARIABLES: %s',
             print_r($this->_activeSync->getGetVars(), true))
         );
+        $this->_logger->meta(sprintf(
+            '%sDevice data: %s',
+            str_repeat('-', 10),
+            $this->_device->__toString()
+        ));
+
         try {
             return $this->_handle();
         } catch (Exception $e) {

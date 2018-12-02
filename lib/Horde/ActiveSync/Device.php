@@ -820,4 +820,8 @@ class Horde_ActiveSync_Device
         return false;
     }
 
+    public function __toString()
+    {
+        return serialize($this->_properties);
+    }
 }
