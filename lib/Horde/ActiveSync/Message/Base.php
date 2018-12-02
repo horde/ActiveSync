@@ -347,83 +347,92 @@ class Horde_ActiveSync_Message_Base
     public function decodeStream(Horde_ActiveSync_Wbxml_Decoder &$decoder)
     {
         while (1) {
+
+            // Get next element and sanity check the type. We MUST have a
+            // STARTTAG here, or it's time to break out.
             $entity = $decoder->getElement();
+            if ($entity[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_ENDTAG) {
+                $decoder->_ungetElement($entity);
+                break;
+            }
 
-            if ($entity[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_STARTTAG) {
+            if ($entity[Horde_ActiveSync_Wbxml::EN_TYPE] != Horde_ActiveSync_Wbxml::EN_TYPE_STARTTAG) {
+                $this->_logger->err('Unexpected content in type');
+                break;
+            }
 
-                // Tag without content set to a sane empty value.
-                if (!($entity[Horde_ActiveSync_Wbxml::EN_FLAGS] & Horde_ActiveSync_Wbxml::EN_FLAGS_CONTENT)) {
-                    $map = $this->_mapping[$entity[Horde_ActiveSync_Wbxml::EN_TAG]];
-                    if (isset($map[self::KEY_VALUES])) {
-                        $this->{$map[self::KEY_ATTRIBUTE]} = array();
-                    } elseif (!isset($map[self::KEY_TYPE]) || $map[self::KEY_TYPE] == self::TYPE_DATE || $map[self::KEY_TYPE] == self::TYPE_DATE_DASHES) {
-                        $this->{$map[self::KEY_ATTRIBUTE]} = '';
-                    }
+            // Tag without content set to a sane empty value.
+            if (!($entity[Horde_ActiveSync_Wbxml::EN_FLAGS] & Horde_ActiveSync_Wbxml::EN_FLAGS_CONTENT)) {
+                $map = $this->_mapping[$entity[Horde_ActiveSync_Wbxml::EN_TAG]];
+                if (isset($map[self::KEY_VALUES])) {
+                    $this->{$map[self::KEY_ATTRIBUTE]} = array();
+                } elseif (!isset($map[self::KEY_TYPE]) || $map[self::KEY_TYPE] == self::TYPE_DATE || $map[self::KEY_TYPE] == self::TYPE_DATE_DASHES) {
+                    $this->{$map[self::KEY_ATTRIBUTE]} = '';
+                }
+                continue;
+            }
+
+            // Try to deal with bad clients sending unexpected/unknown tags
+            // for this message type. Best we can do is try to ignore simple
+            // content types or empty tags. Otherwise fatal out, as it's a
+            // protocol error.
+            if (!isset($this->_mapping[$entity[Horde_ActiveSync_Wbxml::EN_TAG]])) {
+                $this->_logger->err(sprintf(
+                    'Tag %s unexpected in type XML type %s. Attempting to ignore unknown tag.',
+                     $entity[Horde_ActiveSync_Wbxml::EN_TAG],
+                     get_class($this))
+                );
+
+                // Empty?
+                if ($decoder->isEmptyElement($entity)) {
+                    $this->_logger->err('The unexpected tag entity was an empty element. Continuing!');
                     continue;
                 }
 
-                // Found start tag
-                if (!isset($this->_mapping[$entity[Horde_ActiveSync_Wbxml::EN_TAG]])) {
-                    $this->_logger->err(sprintf(
-                        'Tag %s unexpected in type XML type %s. Attempting to ignore unknown tag.',
-                         $entity[Horde_ActiveSync_Wbxml::EN_TAG],
-                         get_class($this))
-                    );
-                    if ($decoder->isEmptyElement($entity)) {
-                        $this->_logger->err('Tag was empty element. Continuing');
+                // See if we have content. Note: not using getElement() here
+                // since it automatically pulls in all content. We don't want
+                // that here, since we need to handle it differently.
+                $entity = $decoder->getToken();
+                if ($entity[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_CONTENT) {
+                    while($unknownContent = $decoder->getElementContent()) {
+                        $this->_logger->err('Content of unknown tag: %s', $unknownContent);
+                    }
+                    // The only safe way out of this is if we found an ENDTAG.
+                    $entity = $this->getToken();
+                    if ($entity[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_ENDTAG) {
+                        $this->_logger->err('Found end tag, continuing.');
                         continue;
                     }
-                    $entity = $decoder->getToken();
-                    if ($entity[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_CONTENT) {
-                        while($unknownContent = $decoder->getElementContent()) {
-                            $this->_logger->err('Content of unknown tag: %s', $unknownContent);
-                        }
-                        $entity = $this->getToken();
-                        if ($entity[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_ENDTAG) {
-                            $this->_logger->err('Found end tag, continuing.');
-                            continue;
-                        }
-                    }
-                    $this->_logger->err('Unable to ignore unknown tag. Giving up.');
-                    throw new Horde_ActiveSync_Exception('Unexpected tag');
-                } else {
-                    $map = $this->_mapping[$entity[Horde_ActiveSync_Wbxml::EN_TAG]];
-                    if (isset($map[self::KEY_VALUES])) {
-                        // Handle arrays of attribute values
-                        while (1) {
-                            // If we can have multiple types of objects in this
-                            // container, or we are parsing a NO_CONTAINER,
-                            // check that we are not at the end tag of the
-                            // or we have a valid start tag for the NO_CONTAINER
-                            // object. If not, break out of loop.
-                            if (is_array($map[self::KEY_VALUES])) {
-                                $token = $decoder->peek();
-                                if ($token[Horde_ActiveSync_Wbxml_Decoder::EN_TYPE] == Horde_ActiveSync_Wbxml_Decoder::EN_TYPE_ENDTAG) {
-                                    break;
-                                }
-                            } elseif (!(isset($map[self::KEY_PROPERTY]) && $map[self::KEY_PROPERTY] == self::PROPERTY_NO_CONTAINER) &&
-                                      !$decoder->getElementStartTag($map[self::KEY_VALUES])) {
+                }
+                $this->_logger->err('Unable to ignore unknown tag. Giving up.');
+                throw new Horde_ActiveSync_Exception('Unexpected tag');
+            } else {
+                $map = $this->_mapping[$entity[Horde_ActiveSync_Wbxml::EN_TAG]];
+                if (isset($map[self::KEY_VALUES])) {
+                    // Handle arrays of attribute values
+                    while (1) {
+                        // If we can have multiple types of objects in this
+                        // container, or we are parsing a NO_CONTAINER,
+                        // check that we are not at the end tag of the
+                        // or we have a valid start tag for the NO_CONTAINER
+                        // object. If not, break out of loop.
+                        if (is_array($map[self::KEY_VALUES])) {
+                            $token = $decoder->peek();
+                            if ($token[Horde_ActiveSync_Wbxml_Decoder::EN_TYPE] == Horde_ActiveSync_Wbxml_Decoder::EN_TYPE_ENDTAG) {
                                 break;
                             }
+                        } elseif (!(isset($map[self::KEY_PROPERTY]) && $map[self::KEY_PROPERTY] == self::PROPERTY_NO_CONTAINER) &&
+                                  !$decoder->getElementStartTag($map[self::KEY_VALUES])) {
+                            break;
+                        }
 
-                            // We know we have some valid value, parse out what
-                            // it is. Either an array of (possibly varied)
-                            // objects, a single object, or simple value.
-                            if (is_array($map[self::KEY_VALUES])) {
-                                $token = $decoder->getToken();
-                                if (($idx = array_search($token[Horde_ActiveSync_Wbxml_Decoder::EN_TAG], $map[self::KEY_VALUES])) !== false) {
-                                    $class = $map[self::KEY_TYPE][$idx];
-                                    $decoded = new $class(array(
-                                        'protocolversion' => $this->_version,
-                                        'logger' => $this->_logger)
-                                    );
-                                    $decoded->commandType = $this->commandType;
-                                    $decoded->decodeStream($decoder);
-                                } else {
-                                    throw new Horde_ActiveSync_Exception('Error in message map configuration');
-                                }
-                            } elseif (isset($map[self::KEY_TYPE])) {
-                                $class = $map[self::KEY_TYPE];
+                        // We know we have some valid value, parse out what
+                        // it is. Either an array of (possibly varied)
+                        // objects, a single object, or simple value.
+                        if (is_array($map[self::KEY_VALUES])) {
+                            $token = $decoder->getToken();
+                            if (($idx = array_search($token[Horde_ActiveSync_Wbxml_Decoder::EN_TAG], $map[self::KEY_VALUES])) !== false) {
+                                $class = $map[self::KEY_TYPE][$idx];
                                 $decoded = new $class(array(
                                     'protocolversion' => $this->_version,
                                     'logger' => $this->_logger)
@@ -431,88 +440,92 @@ class Horde_ActiveSync_Message_Base
                                 $decoded->commandType = $this->commandType;
                                 $decoded->decodeStream($decoder);
                             } else {
-                                $decoded = $decoder->getElementContent();
+                                throw new Horde_ActiveSync_Exception('Error in message map configuration');
                             }
-
-                            // Assign the parsed value to the mapped attribute.
-                            if (!isset($this->{$map[self::KEY_ATTRIBUTE]})) {
-                                $this->{$map[self::KEY_ATTRIBUTE]} = array($decoded);
-                            } else {
-                                $this->{$map[self::KEY_ATTRIBUTE]}[] = $decoded;
-                            }
-
-                            // Get the end tag of this attribute node.
-                            if (!$decoder->getElementEndTag()) {
-                                throw new Horde_ActiveSync_Exception('Missing expected wbxml end tag');
-                            }
-
-                            // For NO_CONTAINER attributes, need some magic to
-                            // make sure we break out properly.
-                            if (isset($map[self::KEY_PROPERTY]) && $map[self::KEY_PROPERTY] == self::PROPERTY_NO_CONTAINER) {
-                                $e = $decoder->peek();
-                                // Go back to the initial while if another block
-                                // of a non-container element is found.
-                                if ($e[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_STARTTAG) {
-                                    continue 2;
-                                }
-                                // Break on end tag because no other container
-                                // elements block end is reached.
-                                if ($e[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_ENDTAG || empty($e)) {
-                                    break;
-                                }
-                            }
-                        }
-
-                        // Do not get container end tag for an array without a container
-                        if (!(isset($map[self::KEY_PROPERTY]) && $map[self::KEY_PROPERTY] == self::PROPERTY_NO_CONTAINER) &&
-                            !$decoder->getElementEndTag()) {
-                            return false;
-                        }
-                    } else {
-                        // Handle a simple attribute value
-                        if (isset($map[self::KEY_TYPE])) {
-                            if (in_array($map[self::KEY_TYPE], array(self::TYPE_DATE, self::TYPE_DATE_DASHES, self::TYPE_DATE_LOCAL))) {
-                                $decoded = $this->_parseDate($decoder->getElementContent());
-                            } elseif ($map[self::KEY_TYPE] == self::TYPE_HEX) {
-                                $decoded = self::_hex2bin($decoder->getElementContent());
-                            } else {
-                                // Complex type, decode recursively
-                                $class = $map[self::KEY_TYPE];
-                                $subdecoder = new $class(array(
-                                    'protocolversion' => $this->_version,
-                                    'logger' => $this->_logger)
-                                );
-                                $subdecoder->commandType = $this->commandType;
-                                $subdecoder->decodeStream($decoder);
-                                $decoded = $subdecoder;
-                            }
-                        } else {
-                            // Simple type, just get content
-                            $decoded = $decoder->getElementContent();
-                            if ($decoded === false) {
-                                $decoded = '';
-                                $this->_logger->notice(sprintf(
-                                    'Unable to get expected content for %s: Setting to an empty string.',
-                                    $entity[Horde_ActiveSync_Wbxml::EN_TAG])
-                                );
-                            }
-                        }
-                        if (!$decoder->getElementEndTag()) {
-                            $this->_logger->err(sprintf(
-                                'Unable to get end tag for %s.',
-                                $entity[Horde_ActiveSync_Wbxml::EN_TAG])
+                        } elseif (isset($map[self::KEY_TYPE])) {
+                            $class = $map[self::KEY_TYPE];
+                            $decoded = new $class(array(
+                                'protocolversion' => $this->_version,
+                                'logger' => $this->_logger)
                             );
+                            $decoded->commandType = $this->commandType;
+                            $decoded->decodeStream($decoder);
+                        } else {
+                            $decoded = $decoder->getElementContent();
+                        }
+
+                        // Assign the parsed value to the mapped attribute.
+                        if (!isset($this->{$map[self::KEY_ATTRIBUTE]})) {
+                            $this->{$map[self::KEY_ATTRIBUTE]} = array($decoded);
+                        } else {
+                            $this->{$map[self::KEY_ATTRIBUTE]}[] = $decoded;
+                        }
+
+                        // Get the end tag of this attribute node.
+                        if (!$decoder->getElementEndTag()) {
                             throw new Horde_ActiveSync_Exception('Missing expected wbxml end tag');
                         }
-                        $this->{$map[self::KEY_ATTRIBUTE]} = $decoded;
+
+                        // For NO_CONTAINER attributes, need some magic to
+                        // make sure we break out properly.
+                        if (isset($map[self::KEY_PROPERTY]) && $map[self::KEY_PROPERTY] == self::PROPERTY_NO_CONTAINER) {
+                            $e = $decoder->peek();
+                            // Go back to the initial while if another block
+                            // of a non-container element is found.
+                            if ($e[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_STARTTAG) {
+                                continue 2;
+                            }
+                            // Break on end tag because no other container
+                            // elements block end is reached.
+                            if ($e[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_ENDTAG || empty($e)) {
+                                break;
+                            }
+                        }
                     }
+
+                    // Do not get container end tag for an array without a container
+                    if (!(isset($map[self::KEY_PROPERTY]) && $map[self::KEY_PROPERTY] == self::PROPERTY_NO_CONTAINER) &&
+                        !$decoder->getElementEndTag()) {
+                        return false;
+                    }
+                } else {
+                    // Handle a simple attribute value
+                    if (isset($map[self::KEY_TYPE])) {
+                        if (in_array($map[self::KEY_TYPE], array(self::TYPE_DATE, self::TYPE_DATE_DASHES, self::TYPE_DATE_LOCAL))) {
+                            $decoded = $this->_parseDate($decoder->getElementContent());
+                        } elseif ($map[self::KEY_TYPE] == self::TYPE_HEX) {
+                            $decoded = self::_hex2bin($decoder->getElementContent());
+                        } else {
+                            // Complex type, decode recursively
+                            $class = $map[self::KEY_TYPE];
+                            $subdecoder = new $class(array(
+                                'protocolversion' => $this->_version,
+                                'logger' => $this->_logger)
+                            );
+                            $subdecoder->commandType = $this->commandType;
+                            $subdecoder->decodeStream($decoder);
+                            $decoded = $subdecoder;
+                        }
+                    } else {
+                        // Simple type, just get content
+                        $decoded = $decoder->getElementContent();
+                        if ($decoded === false) {
+                            $decoded = '';
+                            $this->_logger->notice(sprintf(
+                                'Unable to get expected content for %s: Setting to an empty string.',
+                                $entity[Horde_ActiveSync_Wbxml::EN_TAG])
+                            );
+                        }
+                    }
+                    if (!$decoder->getElementEndTag()) {
+                        $this->_logger->err(sprintf(
+                            'Unable to get end tag for %s.',
+                            $entity[Horde_ActiveSync_Wbxml::EN_TAG])
+                        );
+                        throw new Horde_ActiveSync_Exception('Missing expected wbxml end tag');
+                    }
+                    $this->{$map[self::KEY_ATTRIBUTE]} = $decoded;
                 }
-            } elseif ($entity[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_ENDTAG) {
-                $decoder->_ungetElement($entity);
-                break;
-            } else {
-                $this->_logger->err('Unexpected content in type');
-                break;
             }
         }
         if (!$this->_validateDecodedValues()) {
