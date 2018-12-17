@@ -518,11 +518,53 @@ class Horde_ActiveSync_Message_Appointment extends Horde_ActiveSync_Message_Base
      */
     public function getDatetime()
     {
+        $this->_checkDatetime();
         return array(
             'start' => $this->_properties['starttime'],
             'end' => $this->_properties['endtime'],
             'allday' => !empty($this->_properties['alldayevent']) ? true : false
         );
+    }
+
+    public function getStarttime()
+    {
+        $this->_checkDatetime();
+        return $this->_properties['starttime'];
+    }
+
+    public function getEndtime()
+    {
+        $this->_checkDatetime();
+        return $this->_properties['endtime'];
+    }
+
+    /**
+     * Checks that the start and end times are populated correctly.
+     *
+     * @throws  Horde_ActiveSync_Exception if starttime is empty but endtime is
+     *          not.
+     */
+    protected function _checkDatetime()
+    {
+        // MS-ASCAL 3.2.4.4
+        if (empty($this->_properties['starttime'])) {
+            if (empty($this->_properties['endtime'])) {
+                $now = new Horde_Date(time());
+                $now->min = ($now->min > 0 && $now->min < 30) ? 30 : 60;
+                $this->_properties['starttime'] = clone $now;
+                $now->add(array('min' => 30));
+                $this->_properties['endtime'] = clone $now;
+            } else {
+                throw new Horde_ActiveSync_Exception("Invalid dates");
+            }
+        } elseif (empty($this->_properties['endtime'])) {
+            if ($this->_properties['starttime']->timestamp() > time()) {
+                throw new Horde_ActiveSync_Exception("Invalid dates");
+            }
+            $end = clone $this->_properties['starttime'];
+            $end->add(array('min' => 30));
+            $this->_properties['endtime'] = $end;
+        }
     }
 
     /**
