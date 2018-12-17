@@ -1,4 +1,15 @@
 ---
+2.39.6:
+  api: 2.39.0
+  state:
+    release: stable
+    api: stable
+  date: 2018-12-02
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |
+    [mjr] Return default dates as specified by MS-ASCAL when start or end times are omitted.
 2.39.5:
   api: 2.39.0
   state:
