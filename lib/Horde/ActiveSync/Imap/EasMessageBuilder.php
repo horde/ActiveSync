@@ -252,7 +252,12 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
         reset($ids);
         $part1_id = next($ids);
         $part2_id = Horde_Mime::mimeIdArithmetic($part1_id, 'next');
-        $lines = explode(chr(13), $this->_imapMessage->getBodyPart($part2_id, array('decode' => true)));
+        try {
+            $lines = explode(chr(13), $this->_imapMessage->getBodyPart($part2_id, array('decode' => true)));
+        } catch (Horde_ActiveSync_Exception $e) {
+            return;
+        }
+
         switch ($part->getContentTypeParameter('report-type')) {
         case 'delivery-status':
             foreach ($lines as $line) {

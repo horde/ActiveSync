@@ -451,14 +451,17 @@ class Horde_ActiveSync_Imap_Message
             empty($options['nocontents']) &&
             !$part->getContents(array('stream' => true))) {
 
-            $body = $this->getBodyPart(
-                $id,
-                array(
-                    'decode' => true,
-                    'length' => empty($options['length']) ? null : $options['length'],
-                    'stream' => true)
-            );
-            $part->setContents($body, array('encoding' => $this->_lastBodyPartDecode, 'usestream' => true));
+            try {
+                $body = $this->getBodyPart(
+                    $id,
+                    array(
+                        'decode' => true,
+                        'length' => empty($options['length']) ? null : $options['length'],
+                        'stream' => true)
+                );
+                $part->setContents($body, array('encoding' => $this->_lastBodyPartDecode, 'usestream' => true));
+            } catch (Horde_ActiveSync_Exception $e) {
+            }
         }
 
         return $part;
@@ -543,6 +546,7 @@ class Horde_ActiveSync_Imap_Message
      *
      * @return mixed  The text of the part or a stream resource if 'stream'
      *                is true.
+     * @throws  Horde_ActiveSync_Exception when a bodypart cannot be found.
      * @todo Simplify by removing 'mimeheaders' parameter (not used).
      */
     public function getBodyPart($id, $options)
@@ -580,6 +584,10 @@ class Horde_ActiveSync_Imap_Message
             $query,
             array('ids' => new Horde_Imap_Client_Ids(array($this->uid)))
         );
+
+        if (empty($fetch_res[$this->uid])) {
+            throw new Horde_ActiveSync_Exception('Message not found!');
+        }
 
         if (empty($options['mimeheaders'])) {
             $this->_lastBodyPartDecode = $fetch_res[$this->uid]->getBodyPartDecode($id);
