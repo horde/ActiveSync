@@ -785,6 +785,10 @@ class Horde_ActiveSync_Message_Appointment extends Horde_ActiveSync_Message_Base
      */
     public function getExceptions()
     {
+        foreach ($this->_properties['exceptions'] as $ex) {
+            $ex->setParentAppointment($this);
+        }
+
         return $this->_properties['exceptions'];
     }
 
