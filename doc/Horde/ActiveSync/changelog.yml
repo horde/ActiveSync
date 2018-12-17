@@ -10,8 +10,6 @@
     uri: http://www.horde.org/licenses/gpl
   notes: |
     [mjr] Return default dates as specified by MS-ASCAL when start or end times are omitted.
-    [mjr] Return default dates as specified by MS-ASCAL when start or end times are omitted.
-    |+
 2.39.5:
   api: 2.39.0
   state:

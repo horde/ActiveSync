@@ -4,9 +4,6 @@ v2.39.6
 
 [mjr] Return default dates as specified by MS-ASCAL when start or end times
       are omitted.
-[mjr] Return default dates as specified by MS-ASCAL when start or end times
-      are omitted.
-|+
 
 
 -------

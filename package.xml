@@ -22,8 +22,6 @@
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
 * [mjr] Return default dates as specified by MS-ASCAL when start or end times are omitted.
-* [mjr] Return default dates as specified by MS-ASCAL when start or end times are omitted.
-* |+
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -1178,7 +1176,7 @@
    <date>2012-10-26</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+*
    </notes>
   </release>
   <release>
@@ -1851,7 +1849,7 @@
    <date>2013-06-20</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+*
    </notes>
   </release>
   <release>
@@ -3966,8 +3964,6 @@
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * [mjr] Return default dates as specified by MS-ASCAL when start or end times are omitted.
-* [mjr] Return default dates as specified by MS-ASCAL when start or end times are omitted.
-* |+
    </notes>
   </release>
  </changelog>
