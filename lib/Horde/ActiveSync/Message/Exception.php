@@ -102,6 +102,14 @@ class Horde_ActiveSync_Message_Exception extends Horde_ActiveSync_Message_Appoin
     );
 
     /**
+     * The parent appointment for this exception. Only set when client code
+     * retrieves list of exceptions from the parent.
+     *
+     * @var Horde_ActiveSync_Message_Appointment
+     */
+    private $_parentAppointment = null;
+
+    /**
      * Const'r
      *
      * @see Horde_ActiveSync_Message_Base::__construct()
@@ -167,6 +175,57 @@ class Horde_ActiveSync_Message_Exception extends Horde_ActiveSync_Message_Appoin
     public function setExceptionStartTime($date)
     {
         $this->exceptionstarttime = $date;
+    }
+
+    public function setParentAppointment(Horde_ActiveSync_Message_Appointment $parent)
+    {
+        $this->_parentAppointment = $parent;
+    }
+
+    /**
+     * Get the appointment's time data
+     *
+     * @return array  An array containing:
+     *   - start: (Horde_Date) The start time.
+     *   - end: (Horde_Date) The end time.
+     *   - allday: (boolean) If true, this is an allday event.
+     *  @deprecated
+     */
+    public function getDatetime()
+    {
+        return array(
+            'start' => $this->getStarttime(),
+            'end' => $this->getEndtime(),
+            'allday' => !empty($this->_properties['alldayevent']) ? true : false
+        );
+    }
+
+    /**
+     * Return the starttime for this exception, honoring MS-ASCAL 2.2.2.42 and
+     * returning the parent's starttime if emtpy.
+     *
+     * @return Horde_Date
+     */
+    public function getStarttime()
+    {
+        if (empty($this->_properties['starttime'])) {
+            return $this->_parentAppointment->getStarttime();
+        }
+        return $this->_properties['starttime'];
+    }
+
+    /**
+     * Return the endtime for this exception, honoring MS-ASCAL 2.2.2.42 and
+     * returning the parent's endtime if emtpy.
+     *
+     * @return Horde_Date
+     */
+    public function getEndtime()
+    {
+        if (empty($this->_properties['endtime'])) {
+            return $this->_parentAppointment->getEndtime();
+        }
+        return $this->_properties['endtime'];
     }
 
     /**
