@@ -21,6 +21,7 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
+* [mjr] Fix PHP warning when categories is false.
 * [mjr] Prevent exception when fetching MIME part of an already vanished message.
 * [mjr] Honor MS-ASCAL 3.2.4.4 with respect to empty datetime values in appointments and exceptions.
 * [mjr] Return default dates as specified by MS-ASCAL when start or end times are omitted.
@@ -3965,6 +3966,7 @@
    <date>2018-12-02</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
+* [mjr] Fix PHP warning when categories is false.
 * [mjr] Prevent exception when fetching MIME part of an already vanished message.
 * [mjr] Honor MS-ASCAL 3.2.4.4 with respect to empty datetime values in appointments and exceptions.
 * [mjr] Return default dates as specified by MS-ASCAL when start or end times are omitted.
