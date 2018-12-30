@@ -9,6 +9,7 @@
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
   notes: |
+    [mjr] Fix PHP warning when categories is false.
     [mjr] Prevent exception when fetching MIME part of an already vanished message.
     [mjr] Honor MS-ASCAL 3.2.4.4 with respect to empty datetime values in appointments and exceptions.
     [mjr] Return default dates as specified by MS-ASCAL when start or end times are omitted.
