@@ -12,7 +12,7 @@
  </lead>
  <date>2018-12-30</date>
  <version>
-  <release>2.39.6</release>
+  <release>2.39.7</release>
   <api>2.39.0</api>
  </version>
  <stability>
@@ -21,10 +21,7 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* [mjr] Fix PHP warning when categories is false.
-* [mjr] Prevent exception when fetching MIME part of an already vanished message.
-* [mjr] Honor MS-ASCAL 3.2.4.4 with respect to empty datetime values in appointments and exceptions.
-* [mjr] Return default dates as specified by MS-ASCAL when start or end times are omitted.
+* 
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -3970,6 +3967,21 @@
 * [mjr] Prevent exception when fetching MIME part of an already vanished message.
 * [mjr] Honor MS-ASCAL 3.2.4.4 with respect to empty datetime values in appointments and exceptions.
 * [mjr] Return default dates as specified by MS-ASCAL when start or end times are omitted.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>2.39.7</release>
+    <api>2.39.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2018-12-30</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* 
    </notes>
   </release>
  </changelog>
