@@ -10,7 +10,7 @@
   <email>mrubinsk@horde.org</email>
   <active>yes</active>
  </lead>
- <date>2018-12-02</date>
+ <date>2018-12-30</date>
  <version>
   <release>2.39.6</release>
   <api>2.39.0</api>
@@ -3963,7 +3963,7 @@
     <release>stable</release>
     <api>stable</api>
    </stability>
-   <date>2018-12-02</date>
+   <date>2018-12-30</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * [mjr] Fix PHP warning when categories is false.
