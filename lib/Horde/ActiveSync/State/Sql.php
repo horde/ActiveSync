@@ -485,7 +485,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                             . ' VALUES (?, ?, ?, ?, ?, ?)';
                         $flag_value = !empty($change['flags']['flagged']);
                     }
-                    if (isset($change['categories'])) {
+                    if (isset($change['categories']) && $change['categories']) {
                          $sql = 'INSERT INTO ' . $this->_syncMailMapTable
                             . ' (message_uid, sync_key, sync_devid,'
                             . ' sync_folderid, sync_user, sync_category)'
