@@ -22,6 +22,9 @@ TODO
   instance using DEADRECUR etc... (most work is in Nag, but put here to keep
   sync todos together).
 
+- Add support for throttling via HTTP 503 and the X-MS-Throttle header.
+  (See https://docs.microsoft.com/en-us/previous-versions/office/developer/exchange-server-interoperability-guidance/jj899829(v%3dexchg.140))
+
 BC BREAKING (i.e., Horde 6).
 ============================
 
