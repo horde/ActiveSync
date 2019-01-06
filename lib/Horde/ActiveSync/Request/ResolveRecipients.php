@@ -106,7 +106,8 @@ class Horde_ActiveSync_Request_ResolveRecipients extends Horde_ActiveSync_Reques
                     ($this->_decoder->getElementStartTag(self::TAG_MAXCERTIFICATES) ? self::TAG_MAXCERTIFICATES :
                     ($this->_decoder->getElementStartTag(self::TAG_MAXAMBIGUOUSRECIPIENTS) ? self::TAG_MAXAMBIGUOUSRECIPIENTS :
                     ($this->_decoder->getElementStartTag(self::TAG_AVAILABILITY) ? self::TAG_AVAILABILITY :
-                    -1))))) != -1) {
+                    ($this->_decoder->getElementStartTag(self::TAG_PICTURE) ? self::TAG_PICTURE :
+                    -1)))))) != -1) {
 
                     if ($option == self::TAG_AVAILABILITY) {
                         $options[self::TAG_AVAILABILITY] = true;
