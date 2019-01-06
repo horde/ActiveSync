@@ -36,8 +36,8 @@ class Horde_ActiveSync_Message_ResolveRecipientsPicture extends Horde_ActiveSync
      * @var array
      */
     protected $_mapping = array(
-        Horde_ActiveSync_Message_ResolveRecipients::TAG_STATUS => array(self::KEY_ATTRIBUTE => 'status'),
-        Horde_ActiveSync_Message_ResolveRecipients::TAG_DATA   => array(self::KEY_ATTRIBUTE => 'data')
+        Horde_ActiveSync_Request_ResolveRecipients::TAG_STATUS => array(self::KEY_ATTRIBUTE => 'status'),
+        Horde_ActiveSync_Request_ResolveRecipients::TAG_DATA   => array(self::KEY_ATTRIBUTE => 'data')
     );
 
     /**
