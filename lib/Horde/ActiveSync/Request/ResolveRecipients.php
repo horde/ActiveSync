@@ -120,24 +120,28 @@ class Horde_ActiveSync_Request_ResolveRecipients extends Horde_ActiveSync_Reques
                                 $status = self::STATUS_PROTERR;
                             }
                         }
+                    } elseif ($option == self::TAG_PICTURE) {
+                        $options[self::TAG_PICTURE] = true;
+                        while ($status == self::STATUS_SUCCESS &&
+                            ($tag = ($this->_decoder->getElementStartTag(self::TAG_MAXSIZE) ? self::TAG_MAXSIZE :
+                            ($this->_decoder->getElementStartTag(self::TAG_MAXPICTURES) ? self::TAG_MAXPICTURES :
+                            -1 ))) != -1) {
+
+                            if ($tag == self::TAG_MAXSIZE) {
+                                $options[self::TAG_MAXSIZE] = $this->_decoder->getElementContent();
+                                if (!$this->_decoder->getElementEndTag()) {
+                                    $status = self::STATUS_PROTERR;
+                                }
+                            }
+                            if ($tag == self::TAG_MAXPICTURES) {
+                                $options[self::TAG_MAXPICTURES] = $this->_decoder->getElementContent();
+                                if (!$this->_decoder->getElementEndTag()) {
+                                   $status = self::STATUS_PROTERR;
+                                }
+                            }
+                        }
                     } else {
                         $options[$option] = $this->_decoder->getElementContent();
-                    }
-
-                    if ($option == self::TAG_PICTURE) {
-                        $options[self::TAG_PICTURE] = true;
-                        if ($this->_decoder->getElementStartTag(self::TAG_MAXSIZE)) {
-                            $options[self::TAG_MAXSIZE] = $this->_decoder->getElementContent();
-                        }
-                        if (!$this->_decoder->getElementEndTag()) {
-                            $status = self::STATUS_PROTERR;
-                        }
-                        if ($this->_decoder->getElementStartTag(self::TAG_MAXPICTURES)) {
-                            $options[self::TAG_MAXPICTURES] = $this->_decoder->getElementContent();
-                        }
-                        if (!$this->_decoder->getElementEndTag()) {
-                                $status = self::STATUS_PROTERR;
-                        }
                     }
 
                     if (!$this->_decoder->getElementEndTag()) {
