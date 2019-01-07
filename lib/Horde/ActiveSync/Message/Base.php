@@ -634,7 +634,9 @@ class Horde_ActiveSync_Message_Base
                 }
 
                 $encoder->startTag($tag);
-                if (isset($map[self::KEY_TYPE]) &&
+                if (isset($map[self::KEY_TYPE]) && $map[self::KEY_TYPE] == 'opaque') {
+                    $encoder->content($this->{$map[self::KEY_ATTRIBUTE]}, true);
+                } elseif (isset($map[self::KEY_TYPE]) &&
                     (in_array($map[self::KEY_TYPE], array(self::TYPE_DATE, self::TYPE_DATE_DASHES, self::TYPE_DATE_LOCAL)))) {
                     if (!empty($this->{$map[self::KEY_ATTRIBUTE]})) { // don't output 1-1-1970
                         $encoder->content($this->_formatDate($this->{$map[self::KEY_ATTRIBUTE]}, $map[self::KEY_TYPE]));

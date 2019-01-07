@@ -205,18 +205,23 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
      * @param mixed $content  The value to output for this tag. A string or
      *                        a stream resource.
      */
-    public function content($content)
+    public function content($content, $opaque = false)
     {
-        // Don't try to send a string containing \0 - it's the wbxml string
-        // terminator.
-        if (!is_resource($content)) {
-            $content = str_replace("\0", '', $content);
-            if ('x' . $content == 'x') {
-                return;
+        if (!$opaque) {
+            // Don't try to send a string containing \0 - it's the wbxml string
+            // terminator.
+            if (!is_resource($content)) {
+                $content = str_replace("\0", '', $content);
+                if ('x' . $content == 'x') {
+                    return;
+                }
             }
         }
+
         $this->_outputStack();
-        $this->_content($content);
+
+
+        $this->_content($content, $opaque);
 
         if (is_resource($content)) {
             fclose($content);
@@ -299,7 +304,7 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
      *
      * @param mixed $content  A string or stream resource to write to the output
      */
-    private function _content($content)
+    private function _content($content, $opaque = false)
     {
         if (!is_resource($content)) {
             if ($this->_logLevel == self::LOG_PROTOCOL &&
@@ -316,6 +321,18 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
             } else {
                 $this->_logContent('[STREAM]');
             }
+        }
+        if ($opaque) {
+            if (!is_resource($content)) {
+                $len = strlen($content);
+            } else {
+                $len = 0;
+            }
+            $this->_outByte(self::OPAQUE);
+            $this->_outMBUInt($len);
+            //$content = base64_encode($content);
+            $this->_stream->add($content);
+            return;
         }
         $this->_outByte(self::STR_I);
         $this->_outTermStr($content);
