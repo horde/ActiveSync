@@ -21,7 +21,8 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* 
+* [mjr] Fix parsing of ResolveRecipients command when a picture is requested.
+* |+
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -3981,7 +3982,8 @@
    <date>2018-12-30</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+* [mjr] Fix parsing of ResolveRecipients command when a picture is requested.
+* |+
    </notes>
   </release>
  </changelog>

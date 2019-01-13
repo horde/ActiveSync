@@ -2,7 +2,8 @@
 v2.39.7
 -------
 
-
+[mjr] Fix parsing of ResolveRecipients command when a picture is requested.
+|+
 
 
 -------
