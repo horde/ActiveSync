@@ -9,6 +9,7 @@
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
   notes: |
+    [mjr] Fix returning picture data in GAL responses.
     [mjr] Improve support for Outlook mobile application.
     [mjr] Support outputting OPAQUE wbxml data.
     [mjr] Fix parsing of ResolveRecipients command when a picture is requested.
