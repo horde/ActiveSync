@@ -4,7 +4,7 @@
   state:
     release: stable
     api: stable
-  date: 2018-12-30
+  date: 2019-01-13
   license:
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
@@ -13,7 +13,6 @@
     [mjr] Improve support for Outlook mobile application.
     [mjr] Support outputting OPAQUE wbxml data.
     [mjr] Fix parsing of ResolveRecipients command when a picture is requested.
-    |+
 2.39.6:
   api: 2.39.0
   state:
