@@ -34,7 +34,7 @@ class Horde_ActiveSync_Message_GalPicture extends Horde_ActiveSync_Message_Base
      */
     protected $_mapping = array(
         Horde_ActiveSync::GAL_STATUS => array(self::KEY_ATTRIBUTE => 'status'),
-        Horde_ActiveSync::GAL_DATA   => array(self::KEY_ATTRIBUTE => 'data', self::KEY_TYPE => 'opaque')
+        Horde_ActiveSync::GAL_DATA   => array(self::KEY_ATTRIBUTE => 'data')
     );
 
     /**
