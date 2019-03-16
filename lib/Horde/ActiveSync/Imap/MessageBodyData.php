@@ -265,10 +265,10 @@ class Horde_ActiveSync_Imap_MessageBodyData
             $want_html_as_plain = true;
         }
 
-
         if (!empty($html_id) && $want_html_text) {
             $html_body_part = $this->_basePart->getPart($html_id);
-        } elseif ($want_html_text) {
+        } elseif ($want_html_text &&
+                  empty($this->_options['bodyprefs'][Horde_ActiveSync::BODYPREF_TYPE_MIME])) {
             // Want HTML text, but do not have a text/html part.
             $want_plain_as_html = true;
         }
