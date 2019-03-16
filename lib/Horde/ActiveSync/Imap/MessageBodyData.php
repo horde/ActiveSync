@@ -255,6 +255,8 @@ class Horde_ActiveSync_Imap_MessageBodyData
         $want_plain_text = $this->_wantPlainText($html_id, $want_html_text);
 
         $want_html_as_plain = false;
+        $want_plain_as_html = false;
+
         if (!empty($text_id) && $want_plain_text) {
             $text_body_part = $this->_basePart->getPart($text_id);
         } elseif ($want_plain_text && !empty($html_id) &&
@@ -262,8 +264,13 @@ class Horde_ActiveSync_Imap_MessageBodyData
             $want_html_text = true;
             $want_html_as_plain = true;
         }
+
+
         if (!empty($html_id) && $want_html_text) {
             $html_body_part = $this->_basePart->getPart($html_id);
+        } elseif ($want_html_text) {
+            // Want HTML text, but do not have a text/html part.
+            $want_plain_as_html = true;
         }
 
         // Make sure we have truncation if needed.
@@ -279,8 +286,11 @@ class Horde_ActiveSync_Imap_MessageBodyData
 
         // Fetch the data from the IMAP client.
         $data = $this->_fetchData(array('html_id' => $html_id, 'text_id' => $text_id));
+
         if (!empty($text_id) && $want_plain_text) {
-            $this->_plain = $this->_getPlainPart($data, $text_body_part);
+            $plain = $this->_getPlainPart($data, $text_body_part, $want_plain_as_html);
+            $this->_plain = !empty($plain['plain']) ? $plain['plain'] : null;
+            $this->_html = !empty($plain['html']) ? $plain['html'] : null;
         }
 
         if (!empty($html_id) && $want_html_text) {
@@ -399,6 +409,8 @@ class Horde_ActiveSync_Imap_MessageBodyData
      *
      * @param  Horde_Imap_Client_Data_Fetch $data  The FETCH results.
      * @param  Horde_Mime_Part $text_mime          The plaintext MIME part.
+     * @param  boolean  $convert_to_html           If true, convert plain text
+     *                                             to HTML.
      *
      * @return array  The plain part data.
      *     - charset:  (string)   The charset of the text.
@@ -407,15 +419,58 @@ class Horde_ActiveSync_Imap_MessageBodyData
      *     - size: (integer)      The original part size, in bytes.
      */
     protected function _getPlainPart(
-        Horde_Imap_Client_Data_Fetch $data, Horde_Mime_Part $text_mime)
+        Horde_Imap_Client_Data_Fetch $data,
+        Horde_Mime_Part $text_mime,
+         $convert_to_html = false)
     {
+        $results = array();
         $text_id = $text_mime->getMimeId();
         $text = $data->getBodyPart($text_id);
+
         if (!$data->getBodyPartDecode($text_id)) {
             $text_mime->setContents($text);
             $text = $text_mime->getContents();
         }
 
+        $charset = $text_mime->getCharset();
+
+        if ($convert_to_html) {
+            // Perform barebones conversion.
+            $html_text = Horde_Text_Filter::filter(
+                $text,
+                'Text2html',
+                 array(
+                    'charset' => $charset,
+                    'parselevel' => Horde_Text_Filter_Text2html::NOHTML
+                )
+            );
+
+            // Truncation
+            $html_text_size = strlen($html_text);
+            if (!empty($this->_options['bodyprefs'][Horde_ActiveSync::BODYPREF_TYPE_HTML]['truncationsize'])) {
+                $html_text = Horde_String::substr(
+                    $html_text,
+                    0,
+                    $this->_options['bodyprefs'][Horde_ActiveSync::BODYPREF_TYPE_HTML]['truncationsize'],
+                    $charset
+                );
+            }
+            $html_truncated = $html_text_size > strlen($html_text);
+
+            // Build return structure.
+            if ($this->_version >= Horde_ActiveSync::VERSION_TWELVE &&
+                !($html_truncated && !empty($this->_options['bodyprefs'][Horde_ActiveSync::BODYPREF_TYPE_HTML]['allornone']))) {
+
+                $results['html'] = array(
+                    'charset' => $charset,
+                    'body' => $html_text,
+                    'estimated_size' => $html_text_size,
+                    'truncated' => $html_truncated
+                );
+            }
+        }
+
+        // Size of original part.
         $text_size = !is_null($data->getBodyPartSize($text_id))
                 ? $data->getBodyPartSize($text_id)
                 : strlen($text);
@@ -435,11 +490,15 @@ class Horde_ActiveSync_Imap_MessageBodyData
             $truncated && !empty($this->_options['bodyprefs'][Horde_ActiveSync::BODYPREF_TYPE_PLAIN]['allornone'])) {
             $text = '';
         }
-        return array(
+
+        $results['plain'] = array(
             'charset' => $text_mime->getCharset(),
             'body' => $text,
             'truncated' => $truncated,
-            'size' => $text_size);
+            'size' => $text_size
+        );
+
+        return $results;
     }
 
     /**
@@ -641,8 +700,6 @@ class Horde_ActiveSync_Imap_MessageBodyData
      *
      * @param array $data  The body data. @see self::_bodyPartText() for
      *                     structure.
-     *
-     * @return array  The validated body data array. @see self::_bodyPartText()
      */
     protected function _validateBodyData(&$data)
     {
