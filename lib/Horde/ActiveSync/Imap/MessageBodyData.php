@@ -40,6 +40,10 @@
  *     - body: (Horde_Stream) The body text in a stream.
  *     - truncated: (boolean) True if text was truncated.
  *     - size: (integer)      The original part size, in bytes.
+ *
+ * @property boolean|integer  The Horde_ActiveSync::BODYPREF_TYPE of the
+ *                            original email on the server, or false if
+ *                            not able to be determined.
  */
 class Horde_ActiveSync_Imap_MessageBodyData
 {
@@ -111,6 +115,15 @@ class Horde_ActiveSync_Imap_MessageBodyData
     protected $_validatedHtml;
 
     /**
+     * The body part type of the original email if potentially different
+     * than the BODYPREF_TYPE that is being requested.
+     *
+     * @var boolean | integer  False if not specified, otherwise a
+     *      Horde_ActiveSync::BODYPREF_TYPE constant.
+     */
+    protected $_nativeType = false;
+
+    /**
      * Const'r
      *
      * @param array $params  Parameters:
@@ -162,6 +175,8 @@ class Horde_ActiveSync_Imap_MessageBodyData
         case 'bodyPart':
             $body = $this->bodyPartBody();
             return $body;
+        case 'nativeBodyType':
+            return $this->_nativeType;
         default:
             throw new InvalidArgumentException("Unknown property: $property");
         }
@@ -291,6 +306,7 @@ class Horde_ActiveSync_Imap_MessageBodyData
             $plain = $this->_getPlainPart($data, $text_body_part, $want_plain_as_html);
             $this->_plain = !empty($plain['plain']) ? $plain['plain'] : null;
             $this->_html = !empty($plain['html']) ? $plain['html'] : null;
+            $this->_nativeType = Horde_ActiveSync::BODYPREF_TYPE_PLAIN;
         }
 
         if (!empty($html_id) && $want_html_text) {
@@ -301,6 +317,7 @@ class Horde_ActiveSync_Imap_MessageBodyData
             $this->_plain = !empty($results['plain'])
                 ? $results['plain']
                 : null;
+            $this->_nativeType = Horde_ActiveSync::BODYPREF_TYPE_HTML;
         }
 
         if (!empty($this->_options['bodypartprefs'])) {

@@ -35,9 +35,6 @@ class Horde_ActiveSync_Imap_EasMessageBuilder_Mime extends Horde_ActiveSync_Imap
         Horde_ActiveSync_Imap_Message $imap_message, array $options, $logger)
     {
         parent::__construct($imap_message, $options, $logger);
-        $this->_easMessage->airsyncbasenativebodytype = $this->_mbd->html
-            ? Horde_ActiveSync::BODYPREF_TYPE_HTML
-            : Horde_ActiveSync::BODYPREF_TYPE_PLAIN;
 
         $this->_airsyncBody->type = Horde_ActiveSync::BODYPREF_TYPE_MIME;
     }

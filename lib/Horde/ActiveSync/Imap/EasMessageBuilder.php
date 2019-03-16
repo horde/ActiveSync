@@ -89,6 +89,10 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
         $this->_airsyncBody = Horde_ActiveSync::messageFactory('AirSyncBaseBody');
         $this->_logger = Horde_ActiveSync::_wrapLogger($logger);
         $this->_procid = getmypid();
+
+        if ($this->_version > Horde_ActiveSync::VERSION_TWOFIVE) {
+            $this->_easMessage->airsyncbasenativebodytype = $this->_mbd->nativeBodyType;
+        }
     }
 
     /**
