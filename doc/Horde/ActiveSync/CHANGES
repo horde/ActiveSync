@@ -4,7 +4,6 @@ v2.39.8
 
 [mjr] Fix issue causing the loss of reply text in SMARTREPLY requests (Bug
       #14841).
-|+
 
 
 -------
