@@ -21,7 +21,8 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* 
+* [mjr] Fix issue causing the loss of reply text in SMARTREPLY requests (Bug #14841).
+* |+
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -3999,7 +4000,8 @@
    <date>2019-01-13</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+* [mjr] Fix issue causing the loss of reply text in SMARTREPLY requests (Bug #14841).
+* |+
    </notes>
   </release>
  </changelog>
