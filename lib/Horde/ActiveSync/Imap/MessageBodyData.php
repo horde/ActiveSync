@@ -317,10 +317,7 @@ class Horde_ActiveSync_Imap_MessageBodyData
         // Get the text/html part if needed, possibly converting it to
         // text/plain if required.
         if (!empty($html_id) && $want_html_text) {
-            $results = $this->_getHtmlPart($data, $html_body_part);
-            $this->_html = !empty($results['html'])
-                ? $results['html']
-                : null;
+            $this->_html = $this->_getHtmlPart($data, $html_body_part);
             if ($want_html_as_plain) {
                 $this->_plain = $this->_getHtmlPart2Plain($data, $html_body_part);
             }
@@ -562,9 +559,8 @@ class Horde_ActiveSync_Imap_MessageBodyData
      * @param  Horde_Imap_Client_Data_Fetch $data  FETCH results.
      * @param  Horde_Mime_Part  $html_mime         The text/html MIME part.
      *
-     * @return array  An array containing 'html' and if $convert_to_true is set,
-     *                a 'plain' part as well. @see self::_getPlainPart for
-     *                structure of each entry.
+     * @return array  An array containing the html data.
+     *                @see self::_getPlainPart for structure.
      */
     protected function _getHtmlPart(
         Horde_Imap_Client_Data_Fetch $data, Horde_Mime_Part $html_mime)
