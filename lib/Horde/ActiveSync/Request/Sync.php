@@ -975,7 +975,7 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                             $collection['class'], $collection['synckey']
                         );
                         if (is_array($ires) && !empty($ires['error'])) {
-                            $collection['importedfailures'][$ires[0]] = $ires['error'];
+                            $collection['importfailures'][$ires[0]] = $ires['error'];
                         } elseif (is_array($ires)) {
                             $collection['importedchanges'] = true;
                             if (empty($collection['modifiedids'])) {
