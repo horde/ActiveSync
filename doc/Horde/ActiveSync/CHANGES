@@ -2,7 +2,8 @@
 v2.39.9
 -------
 
-
+[mjr] Fix returning update failures to the client.
+|+
 
 
 -------

@@ -21,7 +21,8 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* 
+* [mjr] Fix returning update failures to the client.
+* |+
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -4014,7 +4015,8 @@
    <date>2019-03-17</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+* [mjr] Fix returning update failures to the client.
+* |+
    </notes>
   </release>
  </changelog>
