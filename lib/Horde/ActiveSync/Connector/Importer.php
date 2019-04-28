@@ -204,7 +204,7 @@ class Horde_ActiveSync_Connector_Importer
                 'Change message failed when updating %s', $id)
             );
             return $id
-                ? array(0 => $id, 'error' => Horde_ActiveSync_Request_Sync::STATUS_NOTFOUND)
+                ? array(0 => $id, 'error' => Horde_ActiveSync_Request_Sync::STATUS_SERVERERROR)
                 : array(0 => false, 'error' => Horde_ActiveSync_Request_Sync::STATUS_SERVERERROR);
         }
         $stat['serverid'] = $this->_folderId;
