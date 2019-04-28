@@ -8,8 +8,9 @@
   license:
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
-  notes: |+
-    
+  notes: |
+    [mjr] Fix returning update failures to the client.
+    |+
 2.39.8:
   api: 2.39.0
   state:
