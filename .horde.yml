@@ -2,7 +2,7 @@
 id: ActiveSync
 name: ActiveSync
 full: ActiveSync server library
-description: Library for implementing an ActiveSync server.
+description: A library for implementing an ActiveSync server.
 list: dev
 type: library
 homepage: https://www.horde.org/libraries/Horde_ActiveSync
