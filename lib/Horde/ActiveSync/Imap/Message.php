@@ -33,6 +33,8 @@
  */
 class Horde_ActiveSync_Imap_Message
 {
+    const ATTACHMENT_OPTIONS_DECODE_TNEF = "decode_tnef";
+
     /**
      * Message data.
      *
@@ -76,6 +78,13 @@ class Horde_ActiveSync_Imap_Message
     protected $_mbd;
 
     /**
+     * Additional message options
+     *
+     * @var array @since 2.40.0
+     */
+    protected $_options;
+
+    /**
      * Constructor
      *
      * @param Horde_Imap_Client_Base $imap        The imap client object.
@@ -83,15 +92,24 @@ class Horde_ActiveSync_Imap_Message
      * @param Horde_Imap_Client_Data_Fetch $data  The data returned from a FETCH
      *                                            must contain at least uid,
      *                                            structure and flags.
+     * @param array $options                      Additional Options
+     *                                            @Since 2.40.0
+     *  ATTACHEMENT_OPTIONS_DECODE_TNEF  - if true will attempt to decode TNEF
+     *      MIME Parts. If false, will return TNEF data as-is. DEFAULT: True.
      */
     public function __construct(
         Horde_Imap_Client_Base $imap,
         Horde_Imap_Client_Mailbox $mbox,
-        Horde_Imap_Client_Data_Fetch $data)
+        Horde_Imap_Client_Data_Fetch $data,
+        array $options = array())
     {
         $this->_imap = $imap;
         $this->_mbox = $mbox;
         $this->_data = $data;
+        $this->_options = array_merge(
+            array(self::ATTACHMENT_OPTIONS_DECODE_TNEF => true),
+            $options
+        );
     }
 
     public function __destruct()
@@ -303,12 +321,15 @@ class Horde_ActiveSync_Imap_Message
     public function getAttachments($version)
     {
         $ret = array();
+
         $iterator = new Horde_ActiveSync_Mime_Iterator($this->_basePart->base);
         foreach ($iterator as $part) {
             $type = $part->getType();
             $id = $part->getMimeId();
             if ($this->isAttachment($id, $type)) {
-                if ($type != 'application/ms-tnef' || (!$mime_part = $this->_decodeTnefData($id))) {
+                if ($type != 'application/ms-tnef' ||
+                    empty($this->_options[self::ATTACHMENT_OPTIONS_DECODE_TNEF]) ||
+                    (!$mime_part = $this->_decodeTnefData($id))) {
                     $mime_part = $this->getMimePart($id, array('nocontents' => true));
                 }
                 $ret[] = $this->_buildEasAttachmentFromMime($id, $mime_part, $version);
