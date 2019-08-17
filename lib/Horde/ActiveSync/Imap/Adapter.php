@@ -53,6 +53,13 @@ class Horde_ActiveSync_Imap_Adapter
     protected $_procid;
 
     /**
+     * Additional options
+     *
+     * @since  2.40.0
+     */
+    protected $_options = array();
+
+    /**
      * Cont'r
      *
      * @param array $params  Parameters:
@@ -66,6 +73,17 @@ class Horde_ActiveSync_Imap_Adapter
         Horde_Mime_Headers::$defaultCharset = 'UTF-8';
         $this->_procid = getmypid();
         $this->_logger = new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null());
+    }
+
+    /**
+     * Set additional options for this request.
+     *
+     * @param array $options [description]
+     * @since  2.40.0
+     */
+    public function setOptions(array $options)
+    {
+        $this->_options = $options;
     }
 
     /**
@@ -238,10 +256,6 @@ class Horde_ActiveSync_Imap_Adapter
         if (empty($messages[$uid]) || !$messages[$uid]->exists(Horde_Imap_Client::FETCH_STRUCTURE)) {
             throw new Horde_ActiveSync_Exception('Message Gone');
         }
-        $options = array(
-            Horde_ActiveSync_Imap_Message::ATTACHMENT_OPTIONS_DECODE_TNEF =>
-                !$this->_device->hasQuirk(Horde_ActiveSync_Device::QUIRK_SUPPORTS_TNEF)
-        );
         $msg = new Horde_ActiveSync_Imap_Message($imap, $mbox, $messages[$uid], $options);
         $part = $msg->getMimePart($part);
 
@@ -295,13 +309,9 @@ class Horde_ActiveSync_Imap_Adapter
         $options['envelope'] = true;
         $messages = $this->_getMailMessages($mbox, $uid, $options);
         $res = array();
-        $msg_options = array(
-            Horde_ActiveSync_Imap_Message::ATTACHMENT_OPTIONS_DECODE_TNEF =>
-                !$this->_device->hasQuirk(Horde_ActiveSync_Device::QUIRK_SUPPORTS_TNEF)
-        );
         foreach ($messages as $id => $message) {
             if ($message->exists(Horde_Imap_Client::FETCH_STRUCTURE)) {
-                $res[$id] = new Horde_ActiveSync_Imap_Message($this->_getImapOb(), $mbox, $message, $msg_options);
+                $res[$id] = new Horde_ActiveSync_Imap_Message($this->_getImapOb(), $mbox, $message, $this->_options);
             }
         }
 
@@ -801,11 +811,7 @@ class Horde_ActiveSync_Imap_Adapter
             ? Horde_ActiveSync::VERSION_TWOFIVE
             : $options['protocolversion'];
 
-        $msg_options = array(
-            Horde_ActiveSync_Imap_Message::ATTACHMENT_OPTIONS_DECODE_TNEF =>
-                !$this->_device->hasQuirk(Horde_ActiveSync_Device::QUIRK_SUPPORTS_TNEF)
-        );
-        $imap_message = new Horde_ActiveSync_Imap_Message($this->_getImapOb(), $mbox, $data, $msg_options);
+        $imap_message = new Horde_ActiveSync_Imap_Message($this->_getImapOb(), $mbox, $data, $this->_options);
 
         // Build the message body.
         $easBodyBuilder = Horde_ActiveSync_Imap_EasMessageBuilder::create(
