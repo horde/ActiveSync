@@ -433,7 +433,8 @@ class Horde_ActiveSync_Imap_Message
                     $mpart->setDisposition('inline');
                 }
                 if ($mpart->getType() != 'application/ms-tnef' ||
-                    ($mpart->getType() == 'application/ms-tnef' && !$part = $this->_decodeTnefData($mpart))) {
+                    empty($this->_options[self::ATTACHMENT_OPTIONS_DECODE_TNEF]) ||
+                    (!$part = $this->_decodeTnefData($mpart))) {
                     $part = $mpart;
                 }
                 $mime_parts[] = $part;
