@@ -256,7 +256,7 @@ class Horde_ActiveSync_Imap_Adapter
         if (empty($messages[$uid]) || !$messages[$uid]->exists(Horde_Imap_Client::FETCH_STRUCTURE)) {
             throw new Horde_ActiveSync_Exception('Message Gone');
         }
-        $msg = new Horde_ActiveSync_Imap_Message($imap, $mbox, $messages[$uid], $options);
+        $msg = new Horde_ActiveSync_Imap_Message($imap, $mbox, $messages[$uid], $this->_options);
         $part = $msg->getMimePart($part);
 
         return $part;
