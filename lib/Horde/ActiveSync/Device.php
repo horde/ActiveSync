@@ -94,6 +94,13 @@ class Horde_ActiveSync_Device
     const QUIRK_INCORRECTLY_SENDS_EMPTY_PICTURE_TAG = 2;
 
     /**
+     * These client can support TNEF data without decoding it first.
+     *
+     * @since 2.40.0
+     */
+    const QUIRK_SUPPORTS_TNEF = 3;
+
+    /**
      * Device properties.
      *
      * @var array
@@ -675,6 +682,12 @@ class Horde_ActiveSync_Device
 
             case self::QUIRK_INCORRECTLY_SENDS_EMPTY_PICTURE_TAG:
                 return ($this->_isIos() && $this->getMajorVersion() >= 8 && $this->getMinorVersion() > 1);
+
+            case self::QUIRK_SUPPORTS_TNEF:
+                // These clients can support TNEF data naitively.
+                return (strpos($this->deviceType, 'MicrosoftOutlook') !== false ||
+                    strpos($this->deviceType, 'WindowsOutlook') != false ||
+                    strpos($this->userAgent, 'Outlook') !== false);
 
             default:
                 return false;
