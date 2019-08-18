@@ -3,7 +3,7 @@
  <name>Horde_ActiveSync</name>
  <channel>pear.horde.org</channel>
  <summary>ActiveSync server library</summary>
- <description>Library for implementing an ActiveSync server.</description>
+ <description>A library for implementing an ActiveSync server.</description>
  <lead>
   <name>Michael J Rubinsky</name>
   <user>mrubinsk</user>
