@@ -21,7 +21,8 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* 
+* [mjr] Improve support for TNEF attachments.
+* |+
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -4029,7 +4030,8 @@
    <date>2019-04-28</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+* [mjr] Improve support for TNEF attachments.
+* |+
    </notes>
   </release>
  </changelog>
