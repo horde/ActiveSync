@@ -1,16 +1,15 @@
 ---
-2.39.10:
-  api: 2.39.0
+2.40.0:
+  api: 2.40.0
   state:
     release: stable
     api: stable
-  date: 2019-04-28
+  date: 2019-08-18
   license:
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
   notes: |
     [mjr] Improve support for TNEF attachments.
-    |+
 2.39.9:
   api: 2.39.0
   state:
