@@ -85,6 +85,13 @@ class Horde_ActiveSync_Imap_Message
     protected $_options;
 
     /**
+     * Flag to indicate the mime map was processed for potential TNEF parts.
+     *
+     * @var boolean
+     */
+    protected $_tnefPrepared = false;
+
+    /**
      * Constructor
      *
      * @param Horde_Imap_Client_Base $imap        The imap client object.
@@ -110,6 +117,8 @@ class Horde_ActiveSync_Imap_Message
             array(self::ATTACHMENT_OPTIONS_DECODE_TNEF => true),
             $options
         );
+
+        $this->_prepareTnef();
     }
 
     public function __destruct()
@@ -321,17 +330,12 @@ class Horde_ActiveSync_Imap_Message
     public function getAttachments($version)
     {
         $ret = array();
-
         $iterator = new Horde_ActiveSync_Mime_Iterator($this->_basePart->base);
         foreach ($iterator as $part) {
             $type = $part->getType();
             $id = $part->getMimeId();
             if ($this->isAttachment($id, $type)) {
-                if ($type != 'application/ms-tnef' ||
-                    empty($this->_options[self::ATTACHMENT_OPTIONS_DECODE_TNEF]) ||
-                    (!$mime_part = $this->_decodeTnefData($id))) {
-                    $mime_part = $this->getMimePart($id, array('nocontents' => true));
-                }
+                $mime_part = $this->getMimePart($id, array('nocontents' => true));
                 $ret[] = $this->_buildEasAttachmentFromMime($id, $mime_part, $version);
                 $mime_part = null;
             }
@@ -390,6 +394,9 @@ class Horde_ActiveSync_Imap_Message
         } else {
             $mime_part = $data;
         }
+        $wrapper->setName($mime_part->getName());
+        $wrapper->setMimeId($mime_part->getMimeId());
+
         $tnef_parser = Horde_Compress::factory('Tnef');
         try {
             $tnef_data = $tnef_parser->decompress($mime_part->getContents());
@@ -414,6 +421,8 @@ class Horde_ActiveSync_Imap_Message
             $wrapper->addPart($tmp_part);
         }
 
+        $wrapper->buildMimeIds();
+
         return $wrapper;
     }
 
@@ -432,18 +441,35 @@ class Horde_ActiveSync_Imap_Message
                 if ($mpart->getType() == 'text/calendar') {
                     $mpart->setDisposition('inline');
                 }
-                if ($mpart->getType() != 'application/ms-tnef' ||
-                    empty($this->_options[self::ATTACHMENT_OPTIONS_DECODE_TNEF]) ||
-                    (!$part = $this->_decodeTnefData($mpart))) {
-                    $part = $mpart;
-                }
-                $mime_parts[] = $part;
+                $mime_parts[] = $mpart;
                 $mpart = null;
-                $part = null;
             }
         }
 
         return $mime_parts;
+    }
+
+    /**
+     * Check the mime structure for any TNEF data, and if neccessary attempt
+     * to decode data and inject back into the base mime part.
+     */
+    protected function _prepareTnef()
+    {
+        if ($this->_tnefPrepared) {
+            return;
+        }
+        $map = $this->basePart->contentTypeMap();
+        foreach ($map as $id => $type) {
+            if ($type == 'application/ms-tnef' &&
+                !empty($this->_options[self::ATTACHMENT_OPTIONS_DECODE_TNEF])) {
+
+                $mpart = $this->getMimePart($id);
+                $tnef_part = $this->_decodeTnefData($mpart);
+                $this->basePart->alterPart($id, $tnef_part);
+            }
+        }
+        $this->basePart->buildMimeIds(null, false);
+        $this->_tnefPrepared = true;
     }
 
     /**
