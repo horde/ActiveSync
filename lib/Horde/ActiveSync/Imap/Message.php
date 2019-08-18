@@ -367,9 +367,13 @@ class Horde_ActiveSync_Imap_Message
         $atc->attsize = intval($mime_part->getBytes(true));
         $atc->attname = $this->_mbox . ':' . $this->uid . ':' . $id;
         $atc->displayname = $this->getPartName($mime_part, true);
-        $atc->attmethod = in_array($mime_part->getType(), array('message/rfc822', 'message/disposition-notification'))
+        $atc->attmethod = in_array($mime_part->getType(), array('message/disposition-notification'))
             ? Horde_ActiveSync_Message_AirSyncBaseAttachment::ATT_TYPE_EMBEDDED
             : Horde_ActiveSync_Message_AirSyncBaseAttachment::ATT_TYPE_NORMAL;
+
+        if ($mime_part->getType() == 'message/rfc822') {
+            $atc->displayname .= ".eml";
+        }
 
         return $atc;
     }
