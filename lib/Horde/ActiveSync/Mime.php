@@ -267,4 +267,15 @@ class Horde_ActiveSync_Mime
         return null;
     }
 
+    /**
+     * Replace the specified MimePart with the provided part.
+     *
+     * @param string $id               The part id of the part to replace.
+     * @param Horde_Mime_Part $newPart The new mimePart.
+     */
+    public function alterPart($id, $newPart)
+    {
+        $this->_base[$id] = $newPart;
+    }
+
 }
