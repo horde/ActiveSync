@@ -33,7 +33,7 @@
  */
 class Horde_ActiveSync_Imap_Message
 {
-    const ATTACHMENT_OPTIONS_DECODE_TNEF = "decode_tnef";
+    const OPTIONS_DECODE_TNEF = "decode_tnef";
 
     /**
      * Message data.
@@ -114,7 +114,7 @@ class Horde_ActiveSync_Imap_Message
         $this->_mbox = $mbox;
         $this->_data = $data;
         $this->_options = array_merge(
-            array(self::ATTACHMENT_OPTIONS_DECODE_TNEF => true),
+            array(self::OPTIONS_DECODE_TNEF => true),
             $options
         );
 
@@ -465,7 +465,7 @@ class Horde_ActiveSync_Imap_Message
         $map = $this->basePart->contentTypeMap();
         foreach ($map as $id => $type) {
             if ($type == 'application/ms-tnef' &&
-                !empty($this->_options[self::ATTACHMENT_OPTIONS_DECODE_TNEF])) {
+                !empty($this->_options[self::OPTIONS_DECODE_TNEF])) {
 
                 $mpart = $this->getMimePart($id);
                 $tnef_part = $this->_decodeTnefData($mpart);
