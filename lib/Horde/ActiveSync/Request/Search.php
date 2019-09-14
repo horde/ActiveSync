@@ -299,7 +299,7 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
                     $this->_encoder->endTag();
 
                     $this->_encoder->endTag();
-                    continue;
+                    break;
 
                 case 'gal':
                     $this->_encoder->startTag(self::SEARCH_RESULT);
