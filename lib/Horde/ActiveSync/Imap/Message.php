@@ -385,8 +385,9 @@ class Horde_ActiveSync_Imap_Message
      *                                        Horde_Mime_Part object containing
      *                                        the TNEF attachment.
      *
-     * @return Horde_Mime_Part  The multipart/mixed MIME part containing any
-     *                          attachment data we can decode.
+     * @return Horde_Mime_Part|boolean  The multipart/mixed MIME part containing
+     *                                  any attachment data we can decode or
+     *                                  false on failure.
      */
     protected function _decodeTnefData($data)
     {
@@ -469,7 +470,9 @@ class Horde_ActiveSync_Imap_Message
 
                 $mpart = $this->getMimePart($id);
                 $tnef_part = $this->_decodeTnefData($mpart);
-                $this->basePart->alterPart($id, $tnef_part);
+                if ($tnef_part) {
+                    $this->basePart->alterPart($id, $tnef_part);
+                }
             }
         }
         $this->basePart->buildMimeIds(null, false);
