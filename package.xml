@@ -21,7 +21,8 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* 
+* [mjr] Prevent fatal error if TNEF data isn&apos;t decoded.
+* |+
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -4044,7 +4045,8 @@
    <date>2019-08-18</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+* [mjr] Prevent fatal error if TNEF data isn&apos;t decoded.
+* |+
    </notes>
   </release>
  </changelog>

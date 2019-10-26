@@ -2,7 +2,8 @@
 v2.40.1
 -------
 
-
+[mjr] Prevent fatal error if TNEF data isn't decoded.
+|+
 
 
 -------
