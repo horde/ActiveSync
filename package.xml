@@ -10,7 +10,7 @@
   <email>mrubinsk@horde.org</email>
   <active>yes</active>
  </lead>
- <date>2019-08-18</date>
+ <date>2019-10-26</date>
  <version>
   <release>2.40.1</release>
   <api>2.40.0</api>
@@ -22,7 +22,6 @@
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
 * [mjr] Prevent fatal error if TNEF data isn&apos;t decoded.
-* |+
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -1177,7 +1176,7 @@
    <date>2012-10-26</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+*
    </notes>
   </release>
   <release>
@@ -1850,7 +1849,7 @@
    <date>2013-06-20</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+*
    </notes>
   </release>
   <release>
@@ -4042,11 +4041,10 @@
     <release>stable</release>
     <api>stable</api>
    </stability>
-   <date>2019-08-18</date>
+   <date>2019-10-26</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * [mjr] Prevent fatal error if TNEF data isn&apos;t decoded.
-* |+
    </notes>
   </release>
  </changelog>
