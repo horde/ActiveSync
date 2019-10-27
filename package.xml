@@ -21,7 +21,8 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* 
+* [mjr] Don&apos;t let error in iCal throw a fatal error. (Bug #14955).
+* |+
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -4059,7 +4060,8 @@
    <date>2019-10-26</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+* [mjr] Don&apos;t let error in iCal throw a fatal error. (Bug #14955).
+* |+
    </notes>
   </release>
  </changelog>
