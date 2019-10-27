@@ -313,10 +313,15 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
 
         // Parse the iTip.
         $vCal = new Horde_Icalendar();
-        if ($vCal->parsevCalendar($data, 'VCALENDAR', $mime_part->getCharset())) {
-            $classes = $vCal->getComponentClasses();
-        } else {
-            $classes = array();
+        try {
+            if ($vCal->parsevCalendar($data, 'VCALENDAR', $mime_part->getCharset())) {
+                $classes = $vCal->getComponentClasses();
+            } else {
+                $classes = array();
+            }
+        } catch (Horde_Icalendar_Exception $e) {
+            $this->_logger->err($e->getMessage());
+            return;
         }
 
         // Exit if we can't parse/find any data.
