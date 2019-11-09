@@ -4,13 +4,12 @@
   state:
     release: stable
     api: stable
-  date: 2019-10-26
+  date: 2019-11-09
   license:
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
   notes: |
     [mjr] Don't let error in iCal throw a fatal error. (Bug #14955).
-    |+
 2.40.1:
   api: 2.40.0
   state:

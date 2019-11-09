@@ -10,7 +10,7 @@
   <email>mrubinsk@horde.org</email>
   <active>yes</active>
  </lead>
- <date>2019-10-26</date>
+ <date>2019-11-09</date>
  <version>
   <release>2.40.2</release>
   <api>2.40.0</api>
@@ -4057,7 +4057,7 @@
     <release>stable</release>
     <api>stable</api>
    </stability>
-   <date>2019-10-26</date>
+   <date>2019-11-09</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * [mjr] Don&apos;t let error in iCal throw a fatal error. (Bug #14955).
