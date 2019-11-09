@@ -3,7 +3,6 @@ v2.40.2
 -------
 
 [mjr] Don't let error in iCal throw a fatal error. (Bug #14955).
-|+
 
 
 -------
