@@ -12,7 +12,7 @@
  </lead>
  <date>2019-11-09</date>
  <version>
-  <release>2.40.2</release>
+  <release>2.40.3</release>
   <api>2.40.0</api>
  </version>
  <stability>
@@ -21,8 +21,7 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* [mjr] Don&apos;t let error in iCal throw a fatal error. (Bug #14955).
-* |+
+* 
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -4061,7 +4060,21 @@
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * [mjr] Don&apos;t let error in iCal throw a fatal error. (Bug #14955).
-* |+
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>2.40.3</release>
+    <api>2.40.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2019-11-09</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* 
    </notes>
   </release>
  </changelog>
