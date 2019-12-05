@@ -10,10 +10,10 @@
   <email>mrubinsk@horde.org</email>
   <active>yes</active>
  </lead>
- <date>2019-11-09</date>
+ <date>2019-12-05</date>
  <version>
-  <release>2.40.3</release>
-  <api>2.40.0</api>
+  <release>2.41.0</release>
+  <api>2.41.0</api>
  </version>
  <stability>
   <release>stable</release>
@@ -21,7 +21,8 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* 
+* [mjr] Support for autodiscover.json
+* |+
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -4064,17 +4065,18 @@
   </release>
   <release>
    <version>
-    <release>2.40.3</release>
-    <api>2.40.0</api>
+    <release>2.41.0</release>
+    <api>2.41.0</api>
    </version>
    <stability>
     <release>stable</release>
     <api>stable</api>
    </stability>
-   <date>2019-11-09</date>
+   <date>2019-12-05</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+* [mjr] Support for autodiscover.json
+* |+
    </notes>
   </release>
  </changelog>
