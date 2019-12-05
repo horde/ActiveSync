@@ -39,7 +39,7 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
         $server = $request->getServerVars();
 
         // Version 2 Autodisover request. Version 2 is always unauthenticated.
-        if (stripos($server['REQUEST_URI'], 'autodiscover/autodiscover.json') !== false) {
+        if (!empty($server['REQUEST_URI']) && stripos($server['REQUEST_URI'], 'autodiscover/autodiscover.json') !== false) {
           $params = array('protocol' => $request->getGetVars()['Protocol']);
           $results = $this->_driver->autoDiscover($params, 2);
           if (!empty($results['url'])) {
