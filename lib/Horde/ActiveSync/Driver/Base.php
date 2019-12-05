@@ -814,7 +814,13 @@ abstract class Horde_ActiveSync_Driver_Base
     /**
      * Return properties for an AUTODISCOVER request.
      *
+     * @param array $params     Optional array of parameters.
+     * @param integer $version  The Autodisover protocol version. Defaults to 1.
+     *                          @since 2.41.0
      * @return array  An array of properties.
+     * @todo  Purposely leaving out parameters from the signature to avoid
+     *        php warnings when using older implementations that only take the
+     *        one argument.
      */
     abstract public function autoDiscover();
 
