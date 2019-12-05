@@ -42,7 +42,9 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
         if (stripos($server['REQUEST_URI'], 'autodiscover/autodiscover.json') !== false) {
           $params = array('protocol' => $request->getGetVars()['Protocol']);
           $results = $this->_driver->autoDiscover($params, 2);
-          $this->_encoder->getStream()->add('{"Protocol": "' . $params['protocol'] . '", "Url": "' . $results['url'] . '"}');
+          if (!empty($results['url'])) {
+            $this->_encoder->getStream()->add('{"Protocol": "' . $params['protocol'] . '", "Url": "' . $results['url'] . '"}');
+          }
           return 'application/json';
         }
 
