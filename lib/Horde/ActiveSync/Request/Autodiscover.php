@@ -34,13 +34,22 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
     public function handle(Horde_Controller_Request $request = null)
     {
         $parser = xml_parser_create();
+
+        // Get $_SERVER
+        $server = $request->getServerVars();
+
+        // Version 2 Autodisover request. Version 2 is always unauthenticated.
+        if (stripos($server['REQUEST_URI'], 'autodiscover/autodiscover.json') !== false) {
+          $params = array('protocol' => $request->getGetVars()['Protocol']);
+          $results = $this->_driver->autoDiscover($params, 2);
+          $this->_encoder->getStream()->add('{"Protocol": "' . $params['protocol'] . '", "Url": "' . $results['url'] . '"}');
+          return 'application/json';
+        }
+
         xml_parse_into_struct(
           $parser,
           $this->_decoder->getStream()->getString(),
           $values);
-
-        // Get $_SERVER
-        $server = $request->getServerVars();
 
         // Obtain the credentials sent by the client.
         // NOTE: Some broken clients *cough* android *cough* don't send the
