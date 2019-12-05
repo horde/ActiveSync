@@ -10,7 +10,6 @@
     uri: http://www.horde.org/licenses/gpl
   notes: |
     [mjr] Support for autodiscover.json
-    |+
 2.40.2:
   api: 2.40.0
   state:
