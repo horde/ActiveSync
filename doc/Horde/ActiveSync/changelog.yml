@@ -4,13 +4,12 @@
   state:
     release: stable
     api: stable
-  date: 2019-12-05
+  date: 2019-12-23
   license:
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
   notes: |
     [mjr] Improve PHP 7.3 compatibility.
-    |+
 2.41.0:
   api: 2.41.0
   state:
