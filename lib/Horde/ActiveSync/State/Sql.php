@@ -368,7 +368,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                     $params['sync_mod'],
                     $params['sync_folderid'],
                     $params['sync_user'],
-                    count($this->_changes),
+                    $this->_changes ? count($this->_changes) : 0,
                     time()))
                 )
             );
