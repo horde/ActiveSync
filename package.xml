@@ -21,7 +21,8 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* 
+* [mjr] Improve PHP 7.3 compatibility.
+* |+
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -4089,7 +4090,8 @@
    <date>2019-12-05</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+* [mjr] Improve PHP 7.3 compatibility.
+* |+
    </notes>
   </release>
  </changelog>
