@@ -349,7 +349,7 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
             switch ($byte) {
             case self::SWITCH_PAGE:
                 $this->_tagcp = $this->_getByte();
-                continue;
+                break;
 
             case self::END:
                 $element[self::EN_TYPE] = self::EN_TYPE_ENDTAG;
@@ -377,12 +377,12 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
             case self::EXT_I_2:
                 $this->_getTermStr();
                 // Ignore extensions
-                continue;
+                break;
 
             case self::PI:
                 // Ignore PI
                 $this->_getAttributes();
-                continue;
+                break;
 
             case self::LITERAL_C:
                 $element[self::EN_TYPE] = self::EN_TYPE_STARTTAG;
@@ -395,7 +395,7 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
             case self::EXT_T_2:
                 $this->_getMBUInt();
                 // Ingore extensions;
-                continue;
+                break;
 
             case self::STR_T:
                 $element[self::EN_TYPE] = self::EN_TYPE_CONTENT;
@@ -411,7 +411,7 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
             case self::EXT_0:
             case self::EXT_1:
             case self::EXT_2:
-                continue;
+                break;
 
             case self::OPAQUE:
                 $length = $this->_getMBUInt();
@@ -513,7 +513,7 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
             case self::EXT_I_1:
             case self::EXT_I_2:
                 $this->_getTermStr();
-                continue;
+                break;
 
             case self::PI:
             case self::LITERAL_C:
@@ -524,7 +524,7 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
             case self::EXT_T_1:
             case self::EXT_T_2:
                 $this->_getMBUInt();
-                continue;
+                break;
 
             case self::STR_T:
                 $attr .= $this->_getStringTableEntry($this->_getMBUInt());
@@ -536,7 +536,7 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
             case self::EXT_0:
             case self::EXT_1:
             case self::EXT_2:
-                continue;
+                break;
 
             case self::OPAQUE:
                 $length = $this->_getMBUInt();
