@@ -633,9 +633,10 @@ class Horde_ActiveSync_Device
             if ($this->getMajorVersion() >= 5) {
                 // iOS >= 5 handles it correctly more or less.
                 if ($toEas) {
-                    return new Horde_Date($date->format('Y-m-d 00:00:00'));
+                    return new Horde_Date($date->format('Y-m-d 00:00:00'), 'UTC');
                 } else {
-                    return $date;
+                    $date = new Horde_Date($date->format('Y-m-d'));
+                    return $date->setTimezone('UTC');
                 }
             } else {
                 if ($toEas) {
