@@ -611,10 +611,9 @@ class Horde_ActiveSync_Device
         case 'wp':  // Legacy. Remove in H6.
             if ($toEas) {
                 return new Horde_Date($date->format('Y-m-d'), 'UTC');
-            } else {
-                $date = new Horde_Date($date->format('Y-m-d'));
-                return $date->setTimezone('UTC');
             }
+            $date = new Horde_Date($date->format('Y-m-d'));
+            return $date->setTimezone('UTC');
 
         case self::TYPE_GMAIL:
             if ($toEas) {
@@ -638,15 +637,14 @@ class Horde_ActiveSync_Device
             if ($this->getMajorVersion() >= 4 && $this->getMajorVersion() <= 10) {
                 if ($toEas) {
                     return new Horde_Date($date->format('Y-m-d 08:00:00'), 'UTC');
-                } else {
-                    $date = new Horde_Date($date->format('Y-m-d'));
-                    return $date->setTimezone('UTC');
                 }
-            } else {
-                // POOMCONTACTS:BIRTHDAY not really supported in early Android
-                // versions. Return as is.
-                return $date;
+                $date = new Horde_Date($date->format('Y-m-d'));
+                return $date->setTimezone('UTC');
+
             }
+            // POOMCONTACTS:BIRTHDAY not really supported in early Android
+            // versions. Return as is.
+            return $date;
 
         case self::TYPE_IPAD:
         case self::TYPE_IPHONE:
@@ -655,32 +653,27 @@ class Horde_ActiveSync_Device
                 // iOS >= 5 handles it correctly more or less.
                 if ($toEas) {
                     return new Horde_Date($date->format('Y-m-d 00:00:00'), 'UTC');
-                } else {
-                    $date = new Horde_Date($date->format('Y-m-d'));
-                    return $date->setTimezone('UTC');
                 }
-            } else {
-                if ($toEas) {
-                    return new Horde_Date($date->format('Y-m-d'), 'UTC');
-                } else {
-                    return new Horde_Date($date->format('Y-m-d'));
-                }
+                $date = new Horde_Date($date->format('Y-m-d'));
+                return $date->setTimezone('UTC');
             }
+            if ($toEas) {
+                return new Horde_Date($date->format('Y-m-d'), 'UTC');
+            }
+            return new Horde_Date($date->format('Y-m-d'));
 
         case self::TYPE_NINE:
-                if ($toEas) {
-                    return new Horde_Date($date->format('Y-m-d 00:00:00'), 'UTC');
-                } else {
-                    return $date;
-                }
+            if ($toEas) {
+                return new Horde_Date($date->format('Y-m-d 00:00:00'), 'UTC');
+            }
+            return $date;
 
         case self::TYPE_BLACKBERRY:
             if ($toEas) {
                 return new Horde_Date($date->format('Y-m-d 11:00:00'), 'UTC');
-            } else {
-                $date = new Horde_Date($date->format('Y-m-d'));
-                return $date->setTimezone('UTC');
             }
+            $date = new Horde_Date($date->format('Y-m-d'));
+            return $date->setTimezone('UTC');
 
         case self::TYPE_TOUCHDOWN:
         case self::TYPE_UNKNOWN:
