@@ -523,7 +523,7 @@ class Horde_ActiveSync_Imap_MessageBodyData
             'Text2html',
              array(
                 'charset' => $charset,
-                'parselevel' => Horde_Text_Filter_Text2html::NOHTML
+                'parselevel' => Horde_Text_Filter_Text2html::MICRO
             )
         );
 
