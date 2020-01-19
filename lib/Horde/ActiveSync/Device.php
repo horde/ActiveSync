@@ -79,6 +79,7 @@ class Horde_ActiveSync_Device
     const TYPE_TOUCHDOWN       = 'touchdown';
     const TYPE_UNKNOWN         = 'unknown';
     const TYPE_NINE            = 'nine';
+    const TYPE_GMAIL           = 'gmail';
 
     /**
      * Quirk to specify if the client fails to property ghost the
@@ -525,7 +526,11 @@ class Horde_ActiveSync_Device
     /**
      * Return the number of hours to offset a POOMCONTACTS:BIRTHDAY
      * or ANNIVERSARY field in an attempt to work around a bug in the
-     * protocol - which doesn't define a standard time for birthdays to occur.
+     * protocol - the protocol states that "the time portion SHOULD be ignored,
+     * so that synchronizing between different timezones does not change the
+     * date" (MS-ASCNTC 2.2.2.6). However, it appears that next to zero clients
+     * actually honor this.
+     *
      *
      *  WP:
      *     Devices seem to send the birthdays at the entered date, with
@@ -546,6 +551,15 @@ class Horde_ActiveSync_Device
      *     midnight on date_default_timezone() converted to UTC.
      *
      *   Android:
+     *     Lollipop and newer got rid of the stock "Email" app in favor of
+     *     GMail. Gmail seems to send birthdays up at 12:00:00 UTC, but doesn't
+     *     expect them at that time. It *seems* that sending them down at
+     *     00:00:00 UTC works, but Unfortunately I don't know the version
+     *     history here as to if they always did this, so will rely on bug
+     *     reports if this is not correct :)
+     *
+     *     For legacy android:
+     *
      *     For contacts originating on the SERVER, the following is true:
      *
      *     Stock 4.3 Takes the down-synched bday value which is assumed to be
@@ -601,6 +615,13 @@ class Horde_ActiveSync_Device
                 $date = new Horde_Date($date->format('Y-m-d'));
                 return $date->setTimezone('UTC');
             }
+
+        case self::TYPE_GMAIL:
+            if ($toEas) {
+                return new Horde_Date($date->format('Y-m-d'), 'UTC');
+            }
+            $date = new Horde_Date($date->format('Y-m-d'));
+            return $date->setTimezone('UTC');
 
         case self::TYPE_ANDROID:
             // Need to protect against clients that don't send the actual Android
@@ -714,6 +735,9 @@ class Horde_ActiveSync_Device
                 return self::TYPE_TOUCHDOWN;
             } else if ($this->_isNine()) {
                 return self::TYPE_NINE;
+            } else if (stripos($this->userAgent, 'Android-Mail') !== false) {
+                // Modern android OS uses GMAIL as the stock client.
+                return self::TYPE_GMAIL;
             } else if (stripos($this->userAgent, 'Android') !== false) {
                 return $this->deviceType;
             } else {
