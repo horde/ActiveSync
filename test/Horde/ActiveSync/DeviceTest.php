@@ -209,7 +209,7 @@ class Horde_ActiveSync_DeviceTest extends Horde_Test_Case
         $date = new Horde_Date('1966-07-22T23:00:00.000Z');
         $bday = $device->normalizePoomContactsDates($date);
         $bday->setTimezone(date_default_timezone_get());
-        $this->assertEquals('1966-07-23', $bday->format('Y-m-d'));
+        $this->assertEquals('1966-07-22', $bday->format('Y-m-d'));
 
         // Android
         date_default_timezone_set('Pacific/Honolulu');
