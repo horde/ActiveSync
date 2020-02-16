@@ -409,6 +409,7 @@ class Horde_ActiveSync_Message_Contact extends Horde_ActiveSync_Message_Base
         if ($date->timezone != 'UTC') {
             $date->setTimezone('UTC');
         }
+
         // @todo: Remove this in H6.
         if (empty($this->_device)) {
             return $date;
