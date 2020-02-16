@@ -1,4 +1,15 @@
 ---
+2.41.3:
+  api: 2.41.0
+  state:
+    release: stable
+    api: stable
+  date: 2020-02-16
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |+
+    
 2.41.2:
   api: 2.41.0
   state:
