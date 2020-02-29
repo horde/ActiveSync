@@ -21,7 +21,8 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* 
+* [mjr] Fix issue causing initial sync of certain collections to fail (Bug #14987).
+* |+
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -4120,7 +4121,8 @@
    <date>2020-02-16</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+* [mjr] Fix issue causing initial sync of certain collections to fail (Bug #14987).
+* |+
    </notes>
   </release>
  </changelog>
