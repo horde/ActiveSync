@@ -1252,6 +1252,13 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
      */
     protected function _getPIMChangeTS(array $changes)
     {
+        // Initial sync.
+        // @TODO implement a changes object that encapsulates
+        // this knowledge.
+        if (count($changes) > 0 && !is_array($changes[0])) {
+            return null;
+        }
+
         $sql = 'SELECT message_uid, MAX(sync_modtime) FROM ' . $this->_syncMapTable
             . ' WHERE sync_devid = ? AND sync_user = ? AND sync_folderid = ? AND sync_key IN (?, ?) ';
 
