@@ -8,7 +8,8 @@
   license:
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
-  notes: |+
+  notes: |
+    [mjr] Fix issue causing initial sync of certain collections to fail (Bug #14987).
 2.41.2:
   api: 2.41.0
   state:
