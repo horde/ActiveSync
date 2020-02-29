@@ -514,6 +514,12 @@ abstract class Horde_ActiveSync_State_Base
                 default:
                     $client_timestamps = $this->_getPIMChangeTS($changes);
                     $cnt = count($changes);
+
+                    if (!empty($changes) && !is_array($changes[0])) {
+                        $this->_changes = $changes;
+                        break;
+                    }
+
                     for ($i = 0; $i < $cnt; $i++) {
                         if (empty($client_timestamps[$changes[$i]['id']])) {
                             $this->_changes[] = $changes[$i];
