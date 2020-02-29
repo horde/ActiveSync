@@ -4,7 +4,6 @@ v2.41.3
 
 [mjr] Fix issue causing initial sync of certain collections to fail (Bug
       #14987).
-|+
 
 
 -------

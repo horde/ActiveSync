@@ -10,7 +10,7 @@
   <email>mrubinsk@horde.org</email>
   <active>yes</active>
  </lead>
- <date>2020-02-16</date>
+ <date>2020-02-29</date>
  <version>
   <release>2.41.3</release>
   <api>2.41.0</api>
@@ -22,7 +22,6 @@
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
 * [mjr] Fix issue causing initial sync of certain collections to fail (Bug #14987).
-* |+
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -1177,7 +1176,7 @@
    <date>2012-10-26</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+*
    </notes>
   </release>
   <release>
@@ -1850,7 +1849,7 @@
    <date>2013-06-20</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+*
    </notes>
   </release>
   <release>
@@ -4118,11 +4117,10 @@
     <release>stable</release>
     <api>stable</api>
    </stability>
-   <date>2020-02-16</date>
+   <date>2020-02-29</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * [mjr] Fix issue causing initial sync of certain collections to fail (Bug #14987).
-* |+
    </notes>
   </release>
  </changelog>
