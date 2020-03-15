@@ -3,17 +3,17 @@
  <name>Horde_ActiveSync</name>
  <channel>pear.horde.org</channel>
  <summary>ActiveSync server library</summary>
- <description>Library for implementing an ActiveSync server.</description>
+ <description>A library for implementing an ActiveSync server.</description>
  <lead>
   <name>Michael J Rubinsky</name>
   <user>mrubinsk</user>
   <email>mrubinsk@horde.org</email>
   <active>yes</active>
  </lead>
- <date>2018-01-20</date>
+ <date>2020-02-29</date>
  <version>
-  <release>2.39.2</release>
-  <api>2.39.0</api>
+  <release>2.41.4</release>
+  <api>2.41.0</api>
  </version>
  <stability>
   <release>stable</release>
@@ -21,8 +21,7 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* [mjr] Fix subscribing to imap folder that already exists.
-* [mjr] Fix PHP error due to null array value (Bug #14783).
+* 
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -3867,7 +3866,7 @@
     <release>stable</release>
     <api>stable</api>
    </stability>
-   <date>2017-10-20</date>
+   <date>2017-11-26</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * [mjr] Fix bug causing setting of the status of Out of Office messages from the server to client to fail in certain cases.
@@ -3899,10 +3898,9 @@
     <release>stable</release>
     <api>stable</api>
    </stability>
-   <date>2018-01-20</date>
+   <date>2018-02-21</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* [mjr] Fix subscribing to imap folder that already exists.
 * [mjr] Fix PHP error due to null array value (Bug #14783).
    </notes>
   </release>
@@ -3915,10 +3913,229 @@
     <release>stable</release>
     <api>stable</api>
    </stability>
-   <date>2018-02-21</date>
+   <date>2018-06-10</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * [mjr] Attempt to be more forgiving to broken WBXML requests.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>2.39.4</release>
+    <api>2.39.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2018-10-27</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* [mjr] Fix subscribing to imap folder that already exists.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>2.39.5</release>
+    <api>2.39.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2018-12-02</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* [mjr] Improve handling of SEARCH command when target folder is not found.
+* [mjr] Improve handling of PING requests when folder state is gone.
+* [mjr] More workarounds for broken wbxml.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>2.39.6</release>
+    <api>2.39.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2018-12-30</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* [mjr] Fix PHP warning when categories is false.
+* [mjr] Prevent exception when fetching MIME part of an already vanished message.
+* [mjr] Honor MS-ASCAL 3.2.4.4 with respect to empty datetime values in appointments and exceptions.
+* [mjr] Return default dates as specified by MS-ASCAL when start or end times are omitted.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>2.39.7</release>
+    <api>2.39.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2019-01-13</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* [mjr] Fix returning picture data in GAL responses.
+* [mjr] Improve support for Outlook mobile application.
+* [mjr] Support outputting OPAQUE wbxml data.
+* [mjr] Fix parsing of ResolveRecipients command when a picture is requested.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>2.39.8</release>
+    <api>2.39.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2019-03-17</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* [mjr] Fix issue causing the loss of reply text in SMARTREPLY requests (Bug #14841).
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>2.39.9</release>
+    <api>2.39.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2019-04-28</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* [mjr] Fix returning update failures to the client.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>2.40.0</release>
+    <api>2.40.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2019-08-18</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* [mjr] Improve support for TNEF attachments.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>2.40.1</release>
+    <api>2.40.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2019-10-26</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* [mjr] Prevent fatal error if TNEF data isn&apos;t decoded.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>2.40.2</release>
+    <api>2.40.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2019-11-09</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* [mjr] Don&apos;t let error in iCal throw a fatal error. (Bug #14955).
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>2.41.0</release>
+    <api>2.41.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2019-12-05</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* [mjr] Support for autodiscover.json
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>2.41.1</release>
+    <api>2.41.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2019-12-23</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* [mjr] Improve PHP 7.3 compatibility.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>2.41.2</release>
+    <api>2.41.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2020-02-16</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* [mjr] Fix issue causing formating to become broken when converting plain text emails to html.
+* [mjr] Update handling of birthday fields to reflect recent EAS client behaviors.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>2.41.3</release>
+    <api>2.41.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2020-02-29</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* [mjr] Fix issue causing initial sync of certain collections to fail (Bug #14987).
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>2.41.4</release>
+    <api>2.41.0</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2020-02-29</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* 
    </notes>
   </release>
  </changelog>

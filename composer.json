@@ -11,8 +11,8 @@
             "role": "lead"
         }
     ],
-    "version": "2.39.1",
-    "time": "2018-01-20",
+    "version": "2.41.4",
+    "time": "2020-03-15",
     "repositories": [
         {
             "type": "pear",
@@ -27,7 +27,7 @@
         "pear-pear.horde.org/Horde_Icalendar": "^2",
         "pear-pear.horde.org/Horde_Log": "^2.3",
         "pear-pear.horde.org/Horde_Mapi": "^1",
-        "pear-pear.horde.org/Horde_Mime": "^2.5",
+        "pear-pear.horde.org/Horde_Mime": "^2.11",
         "pear-pear.horde.org/Horde_Stream": "^1.4",
         "pear-pear.horde.org/Horde_Support": "^2",
         "pear-pear.horde.org/Horde_Translation": "^2.2",

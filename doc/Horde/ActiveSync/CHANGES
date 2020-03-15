@@ -1,8 +1,125 @@
 -------
-v2.39.2
+v2.41.4
+-------
+
+
+-------
+v2.41.3
+-------
+
+[mjr] Fix issue causing initial sync of certain collections to fail (Bug
+      #14987).
+
+
+-------
+v2.41.2
+-------
+
+[mjr] Fix issue causing formating to become broken when converting plain text
+      emails to html.
+[mjr] Update handling of birthday fields to reflect recent EAS client
+      behaviors.
+
+
+-------
+v2.41.1
+-------
+
+[mjr] Improve PHP 7.3 compatibility.
+
+
+-------
+v2.41.0
+-------
+
+[mjr] Support for autodiscover.json
+
+
+-------
+v2.40.2
+-------
+
+[mjr] Don't let error in iCal throw a fatal error. (Bug #14955).
+
+
+-------
+v2.40.1
+-------
+
+[mjr] Prevent fatal error if TNEF data isn't decoded.
+
+
+-------
+v2.40.0
+-------
+
+[mjr] Improve support for TNEF attachments.
+
+
+-------
+v2.39.9
+-------
+
+[mjr] Fix returning update failures to the client.
+
+
+-------
+v2.39.8
+-------
+
+[mjr] Fix issue causing the loss of reply text in SMARTREPLY requests (Bug
+      #14841).
+
+
+-------
+v2.39.7
+-------
+
+[mjr] Fix returning picture data in GAL responses.
+[mjr] Improve support for Outlook mobile application.
+[mjr] Support outputting OPAQUE wbxml data.
+[mjr] Fix parsing of ResolveRecipients command when a picture is requested.
+
+
+-------
+v2.39.6
+-------
+
+[mjr] Fix PHP warning when categories is false.
+[mjr] Prevent exception when fetching MIME part of an already vanished message.
+[mjr] Honor MS-ASCAL 3.2.4.4 with respect to empty datetime values in
+      appointments and exceptions.
+[mjr] Return default dates as specified by MS-ASCAL when start or end times
+      are omitted.
+
+
+-------
+v2.39.5
+-------
+
+[mjr] Improve handling of SEARCH command when target folder is not found.
+[mjr] Improve handling of PING requests when folder state is gone.
+[mjr] More workarounds for broken wbxml.
+
+
+-------
+v2.39.4
 -------
 
 [mjr] Fix subscribing to imap folder that already exists.
+
+
+-------
+v2.39.3
+-------
+
+[mjr] Attempt to be more forgiving to broken WBXML requests.
+
+
+-------
+v2.39.2
+-------
+
 [mjr] Fix PHP error due to null array value (Bug #14783).
 
 
@@ -595,7 +712,8 @@ v2.20.0
 [mjr] Fix issue where sticky OPTIONS values were lost resulting in incorrect
       values for MIMESUPPORT and other values (Bug #12970).
 [mjr] Added support for differentiating between S/MIME signed and S/MIME
-      encrypted so the content-class property can be properly set (Bug #12970).
+      encrypted so the content-class property can be properly set (Bug
+      #12970).
 
 
 -------
@@ -1065,7 +1183,8 @@ v2.7.0
 [mjr] Fix broken wbxml in certain cases due to incorrect handling of encoding
       empty array values (Bug #12595).
 [mjr] Detect IMAP message deletions on non-CONDSTORE servers during PING
-      requests (Request #12597, Thomas Jarosch <thomas.jarosch@intra2net.com>).
+      requests (Request #12597, Thomas Jarosch
+      <thomas.jarosch@intra2net.com>).
 [mjr] Do not initiate a looping SYNC if there were any incoming changes, this
       prevents an unnecessary backend ping for each collection.
 [mjr] Fix issue that could cause message deletions on the server to not be
@@ -1087,7 +1206,8 @@ v2.6.2
       #12544).
 [mjr] Fix decoding EAS Timezone blobs on Big Endian systems.
 [mjr] Fix race condition where changes may not be sent to the client due to a
-      combination of a long running MOREAVAILABLE sync and server side changes.
+      combination of a long running MOREAVAILABLE sync and server side
+      changes.
 
 
 ------
