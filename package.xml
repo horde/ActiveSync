@@ -21,7 +21,7 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* 
+* [mjr] Remove GPLv2 Section 8 restrictions.
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -4135,7 +4135,7 @@
    <date>2020-02-29</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+* [mjr] Remove GPLv2 Section 8 restrictions.
    </notes>
   </release>
  </changelog>
