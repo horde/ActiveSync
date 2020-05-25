@@ -4,11 +4,12 @@
   state:
     release: stable
     api: stable
-  date: 2020-02-29
+  date: 2020-05-25
   license:
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
-  notes: |+
+  notes: |
+    ./
     [mjr] Remove GPLv2 Section 8 restrictions.
 2.41.3:
   api: 2.41.0
@@ -1726,7 +1727,7 @@
   license:
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
-  notes:
+  notes: ~
 2.5.1:
   api: 2.5.0
   state:
@@ -2234,7 +2235,7 @@
   license:
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
-  notes:
+  notes: ~
 2.0.0beta4:
   api: 2.0.0beta1
   state:
