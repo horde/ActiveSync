@@ -2,7 +2,7 @@
 /**
  * ActiveSync log factory.
  *
- * @copyright  2010-2017 Horde LLC (http://www.horde.org/)
+ * @copyright  2010-2020 Horde LLC (http://www.horde.org/)
  * @author     Michael J Rubinsky <mrubinsk@horde.org>
  * @category   Horde
  * @license    http://www.horde.org/licenses/bsd BSD
@@ -10,7 +10,7 @@
  * @since      2.38.0
  */
 /**
- * @copyright  2010-2017 Horde LLC (http://www.horde.org/)
+ * @copyright  2010-2020 Horde LLC (http://www.horde.org/)
  * @author     Michael J Rubinsky <mrubinsk@horde.org>
  * @category   Horde
  * @license    http://www.horde.org/licenses/bsd BSD

@@ -1,17 +1,14 @@
 <?php
 /**
- * Copyright 2014-2017 Horde LLC (http://www.horde.org/)
+ * Copyright 2014-2020 Horde LLC (http://www.horde.org/)
  *
- * See the enclosed file COPYING for license information (LGPL). If you
- * did not receive this file, see http://www.horde.org/licenses/lgpl21.
+ * See the enclosed file LICENSE for license information. If you
+ * did not receive this file, see http://www.horde.org/licenses/gpl.
  *
  * @category  Horde
- * @copyright 2011-2017 Horde LLC
+ * @copyright 2011-2020 Horde LLC
  * @license   http://www.horde.org/licenses/gpl GPLv2
- *            NOTE: According to sec. 8 of the GENERAL PUBLIC LICENSE (GPL),
- *            Version 2, the distribution of the Horde_ActiveSync module in or
- *            to the United States of America is excluded from the scope of this
- *            license.
+ *
  * @package   Horde_ActiveSync
  * @subpackage UnitTests
  */
@@ -21,13 +18,10 @@
  *
  * @author     Michael J Rubinsky <mrubinsk@horde.org>
  * @category   Horde
- * @copyright  2014-2016 Horde LLC
+ * @copyright  2014-2020 Horde LLC
  * @ignore
  * @license   http://www.horde.org/licenses/gpl GPLv2
- *            NOTE: According to sec. 8 of the GENERAL PUBLIC LICENSE (GPL),
- *            Version 2, the distribution of the Horde_ActiveSync module in or
- *            to the United States of America is excluded from the scope of this
- *            license.
+ *
  * @package    Horde_ActiveSync
  * @subpackage UnitTests
  */
