@@ -3,11 +3,8 @@
  * Horde_ActiveSync_Timezone::
  *
  * @license   http://www.horde.org/licenses/gpl GPLv2
- *            NOTE: According to sec. 8 of the GENERAL PUBLIC LICENSE (GPL),
- *            Version 2, the distribution of the Horde_ActiveSync module in or
- *            to the United States of America is excluded from the scope of this
- *            license.
- * @copyright 2009-2017 Horde LLC (http://www.horde.org)
+ *
+ * @copyright 2009-2020 Horde LLC (http://www.horde.org)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */
@@ -16,18 +13,15 @@
  *
  * Copyright 2009-2017 Horde LLC (http://www.horde.org/)
  *
- * See the enclosed file LICENSE for license information (LGPL). If you
- * did not receive this file, see http://www.horde.org/licenses/lgpl21.
+ * See the enclosed file LICENSE for license information. If you
+ * did not receive this file, see http://www.horde.org/licenses/gpl.
  *
  * Code dealing with searching for a timezone identifier from an AS timezone
  * blob inspired by code in the Tine20 Project (http://tine20.org).
  *
  * @license   http://www.horde.org/licenses/gpl GPLv2
- *            NOTE: According to sec. 8 of the GENERAL PUBLIC LICENSE (GPL),
- *            Version 2, the distribution of the Horde_ActiveSync module in or
- *            to the United States of America is excluded from the scope of this
- *            license.
- * @copyright 2009-2017 Horde LLC (http://www.horde.org)
+ *
+ * @copyright 2009-2020 Horde LLC (http://www.horde.org)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  * @deprecated To be removed for Horde 6. Use Horde_Mapi_Timezone::.

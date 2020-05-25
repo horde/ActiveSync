@@ -2,12 +2,12 @@
 /**
  * Copyright 2015-2017 Horde LLC (http://www.horde.org/)
  *
- * See the enclosed file LICENSE for license information (LGPL). If you
- * did not receive this file, see http://www.horde.org/licenses/lgpl21.
+ * See the enclosed file LICENSE for license information. If you
+ * did not receive this file, see http://www.horde.org/licenses/gpl.
  *
  * @category  Horde
- * @copyright 2015-2017 Horde LLC
- * @license   http://www.horde.org/licenses/lgpl21 LGPL 2.1
+ * @copyright 2015-2020 Horde LLC
+ * @license   http://www.horde.org/licenses/gpl GPLv2
  * @package   ActiveSync
  */
 
@@ -20,8 +20,8 @@
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @author    Michael Slusarz <slusarz@horde.org>
  * @category  Horde
- * @copyright 2015-2017 Horde LLC
- * @license   http://www.horde.org/licenses/lgpl21 LGPL 2.1
+ * @copyright 2015-2020 Horde LLC
+ * @license   http://www.horde.org/licenses/gpl GPLv2
  * @package   ActiveSync
  * @since     2.29.0
  */
