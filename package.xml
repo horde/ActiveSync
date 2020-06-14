@@ -10,7 +10,7 @@
   <email>mrubinsk@horde.org</email>
   <active>yes</active>
  </lead>
- <date>2020-02-29</date>
+ <date>2020-06-14</date>
  <version>
   <release>2.41.4</release>
   <api>2.41.0</api>
@@ -21,7 +21,7 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* 
+* [mjr] Remove GPLv2 Section 8 restrictions.
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -4132,10 +4132,10 @@
     <release>stable</release>
     <api>stable</api>
    </stability>
-   <date>2020-02-29</date>
+   <date>2020-06-14</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* 
+* [mjr] Remove GPLv2 Section 8 restrictions.
    </notes>
   </release>
  </changelog>
