@@ -515,7 +515,7 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
 
         // First, see if we are EAS 2.5
         if ($options['protocolversion'] == Horde_ActiveSync::VERSION_TWOFIVE) {
-            return new Horde_ActiveSync_Imap_EasMessageBuilder_TwoFive($imap_message, $options);
+            return new Horde_ActiveSync_Imap_EasMessageBuilder_TwoFive($imap_message, $options, $logger);
         }
 
         switch ($mbd->getBodyTypePreference()) {
