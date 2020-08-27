@@ -107,7 +107,7 @@ class Horde_ActiveSync_Imap_Adapter
             return false;
         }
 
-        return array_pop($ids->ids);
+        return array_slice($ids->ids, -1)[0];
     }
 
     /**
