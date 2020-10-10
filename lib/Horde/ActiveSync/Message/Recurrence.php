@@ -132,7 +132,7 @@ class Horde_ActiveSync_Message_Recurrence extends Horde_ActiveSync_Message_Base
     protected function _validateDecodedValues()
     {
         // Ensure the DOW setting is at least greater than 0.
-        if ($this->_properties['type'] == TYPE_WEEKLY && $this->_properties['dayofweek'] < 1) {
+        if ($this->_properties['type'] == self::TYPE_WEEKLY && $this->_properties['dayofweek'] < 1) {
             return false;
         }
 
@@ -150,7 +150,7 @@ class Horde_ActiveSync_Message_Recurrence extends Horde_ActiveSync_Message_Base
     protected function _preEncodeValidation()
     {
         // Ensure the DOW setting is at least greater than 0.
-        if ($this->_properties['type'] == TYPE_WEEKLY && $this->_properties['dayofweek'] < 1) {
+        if ($this->_properties['type'] == self::TYPE_WEEKLY && $this->_properties['dayofweek'] < 1) {
             return false;
         }
 
