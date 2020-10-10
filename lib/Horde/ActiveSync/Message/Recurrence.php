@@ -129,4 +129,31 @@ class Horde_ActiveSync_Message_Recurrence extends Horde_ActiveSync_Message_Base
         }
     }
 
+    protected function _validateDecodedValues()
+    {
+        // Ensure the DOW setting is at least greater than 0.
+        if ($this->_properties['type'] == TYPE_WEEKLY && $this->_properties['dayofweek'] < 1) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Give concrete classes the chance to enforce rules before encoding
+     * messages to send to the client.
+     *
+     * @return boolean  True if values were valid (or could be made valid).
+     *     False if values are unable to be validated.
+     * @since  2.31.0
+     */
+    protected function _preEncodeValidation()
+    {
+        // Ensure the DOW setting is at least greater than 0.
+        if ($this->_properties['type'] == TYPE_WEEKLY && $this->_properties['dayofweek'] < 1) {
+            return false;
+        }
+
+        return true;
+    }
 }
