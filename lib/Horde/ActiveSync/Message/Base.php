@@ -345,7 +345,7 @@ class Horde_ActiveSync_Message_Base
             // Get next element and sanity check the type. We MUST have a
             // STARTTAG here, or it's time to break out.
             $entity = $decoder->getElement();
-            if ($entity[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_ENDTAG) {
+            if (empty($entity) || $entity[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_ENDTAG) {
                 $decoder->_ungetElement($entity);
                 break;
             }
