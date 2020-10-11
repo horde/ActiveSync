@@ -139,7 +139,9 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
     public function getElement()
     {
         $element = $this->getToken();
-
+        if (empty($element)) {
+            return false;
+        }
         switch ($element[self::EN_TYPE]) {
         case self::EN_TYPE_STARTTAG:
             return $element;
@@ -282,7 +284,10 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
         }
 
         $el = $this->_getToken();
-        $this->_logToken($el);
+
+        if (!empty($el)) {
+            $this->_logToken($el);
+        }
 
         return $el;
     }
