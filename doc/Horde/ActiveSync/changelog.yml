@@ -1,4 +1,16 @@
 ---
+2.41.5:
+  api: 2.41.0
+  state:
+    release: stable
+    api: stable
+  date: 2020-06-14
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |
+    [mjr] Minor php 7.4 compatibility changes.
+    |+
 2.41.4:
   api: 2.41.0
   state:
@@ -10,7 +22,7 @@
     uri: http://www.horde.org/licenses/gpl
   notes: |+
     [mjr] Remove GPLv2 Section 8 restrictions.
-    
+
 2.41.3:
   api: 2.41.0
   state:
