@@ -8,8 +8,9 @@
   license:
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
-  notes: |+
-    
+  notes: |
+    [mjr] Minor php 7.4 compatibility changes.
+    |+
 2.41.4:
   api: 2.41.0
   state:
