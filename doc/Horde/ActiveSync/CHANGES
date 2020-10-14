@@ -2,7 +2,9 @@
 v2.41.5
 -------
 
-
+[mjr] Prevent invalid weekly recurrence values.
+[mjr] Minor php 7.4 compatibility changes.
+|+
 
 
 -------
