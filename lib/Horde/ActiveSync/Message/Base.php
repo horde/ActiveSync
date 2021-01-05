@@ -550,7 +550,7 @@ class Horde_ActiveSync_Message_Base
                 get_class($this))
             );
             throw new Horde_ActiveSync_Exception(sprintf(
-                'Pre-encoding validation failded for %s item',
+                'Pre-encoding validation failed for %s item',
                 get_class($this))
             );
         }
