@@ -24,26 +24,26 @@ license:
   uri: http://www.horde.org/licenses/gpl
 dependencies:
   required:
-    php: ^5.3 || ^7
-    pear:
-      pear.horde.org/Horde_Compress: ^2
-      pear.horde.org/Horde_Date: ^2.3
-      pear.horde.org/Horde_Exception: ^2
-      pear.horde.org/Horde_Icalendar: ^2
-      pear.horde.org/Horde_Log: ^2.3
-      pear.horde.org/Horde_Mapi: ^1
-      pear.horde.org/Horde_Mime: ^2.11
-      pear.horde.org/Horde_Stream: ^1.4
-      pear.horde.org/Horde_Support: ^2
-      pear.horde.org/Horde_Translation: ^2.2
-      pear.horde.org/Horde_Util: ^2
+    php: ^7
+    composer:
+      horde/compress: ^3
+      horde/date: ^3
+      horde/exception: ^3
+      horde/icalendar: ^3
+      horde/log: ^3
+      horde/mapi: ^2
+      horde/mime: ^3
+      horde/stream: ^2
+      horde/support: ^3
+      horde/translation: ^3
+      horde/util: ^3
     ext:
       ctype: '*'
   optional:
-    pear:
-      pear.horde.org/Horde_Db: ^2.1
-      pear.horde.org/Horde_Imap_Client: ^2.28.1
-      pear.horde.org/Horde_Mail: ^2
-      pear.horde.org/Horde_Mongo: ^1.0.2
-      pear.horde.org/Horde_Text_Filter: ^2
-      pear.horde.org/Horde_Test: ^2.1
+    composer:
+      horde/db: ^3
+      horde/imap_client: ^3
+      horde/mail: ^3
+      horde/mongo: ^2
+      horde/text_filter: ^3
+      horde/test: ^3
