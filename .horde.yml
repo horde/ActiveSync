@@ -14,11 +14,11 @@ authors:
     active: true
     role: lead
 version:
-  release: 2.41.4
-  api: 2.41.0
+  release: 3.0.0-alpha1
+  api: 3.0.0-alpha1
 state:
-  release: stable
-  api: stable
+  release: alpha
+  api: alpha
 license:
   identifier: GPL-2.0
   uri: http://www.horde.org/licenses/gpl
