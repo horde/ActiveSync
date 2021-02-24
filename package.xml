@@ -4011,7 +4011,7 @@
     <release>alpha</release>
     <api>alpha</api>
    </stability>
-   <date>2020-02-29</date>
+   <date>2021-02-24</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
 * [mjr] Remove GPLv2 Section 8 restrictions.
