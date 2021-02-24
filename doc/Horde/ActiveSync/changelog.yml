@@ -1,4 +1,15 @@
 ---
+3.0.0alpha5:
+  api: 3.0.0alpha1
+  state:
+    release: alpha
+    api: alpha
+  date: 2022-05-18
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |+
+
 3.0.0alpha4:
   api: 3.0.0alpha1
   state:
@@ -19,8 +30,8 @@
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
   notes: |+
-3.0.0-alpha2:
-  api: 3.0.0-alpha1
+3.0.0alpha2:
+  api: 3.0.0alpha1
   state:
     release: alpha
     api: alpha
@@ -29,19 +40,7 @@
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
   notes: |+
-
-3.0.0-alpha1:
-  api: 3.0.0-alpha1
-  state:
-    release: stable
-    api: stable
-  date: 2021-02-24
-  license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: |+
-<<<<<<< HEAD
- 2.41.9:
+2.41.9:
   api: 2.41.0
   state:
     release: stable
@@ -85,20 +84,6 @@
     uri: http://www.horde.org/licenses/gpl
   notes: |
     [mjr] Don't update state if IMAP server goes away (Bug #15091).
-=======
-    [mjr] Remove GPLv2 Section 8 restrictions.
-
-3.0.0alpha1:
-  api: 3.0.0alpha1
-  state:
-    release: alpha
-    api: alpha
-  date: 2021-02-24
-  license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: |+
->>>>>>> 0df15457 (Development mode for ActiveSync-3.0.0alpha3)
 2.41.5:
   api: 2.41.0
   state:
