@@ -12,7 +12,7 @@
  </lead>
  <date>2021-02-24</date>
  <version>
-  <release>3.0.0alpha2</release>
+  <release>3.0.0alpha1</release>
   <api>3.0.0alpha1</api>
  </version>
  <stability>
@@ -4237,22 +4237,22 @@
   <release>
    <version>
     <release>3.0.0alpha1</release>
-    <api>3.0.0-alpha1</api>
+    <api>3.0.0alpha1</api>
    </version>
    <stability>
-    <release>stable</release>
-    <api>stable</api>
+    <release>alpha</release>
+    <api>alpha</api>
    </stability>
    <date>2021-02-24</date>
    <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
    <notes>
-* [mjr] Remove GPLv2 Section 8 restrictions.
+* 
    </notes>
   </release>
   <release>
    <version>
-    <release>3.0.0alpha2</release>
-    <api>3.0.0-alpha1</api>
+    <release>3.0.0alpha1</release>
+    <api>3.0.0alpha1</api>
    </version>
    <stability>
     <release>alpha</release>
