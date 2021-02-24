@@ -55,18 +55,12 @@
   notes: |
     [mjr] Prevent invalid weekly recurrence values.
     [mjr] Minor php 7.4 compatibility changes.
-<<<<<<< HEAD
 2.41.4:
   api: 2.41.0
-=======
-    |+
-3.0.0-alpha1:
-  api: 3.0.0-alpha1
->>>>>>> 1dfde446 (Components updated the package files.)
   state:
     release: stable
     api: stable
-  date: 2021-02-24
+  date: 2020-02-29
   license:
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
