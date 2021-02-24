@@ -1,7 +1,7 @@
 {
     "name": "horde/activesync",
     "description": "ActiveSync server library",
-    "type": "library",
+    "type": "horde-library",
     "homepage": "https://www.horde.org/libraries/Horde_ActiveSync",
     "license": "GPL-2.0",
     "authors": [
@@ -11,44 +11,44 @@
             "role": "lead"
         }
     ],
-    "version": "2.41.4",
-    "time": "2020-03-15",
+    "version": "3.0.0",
+    "time": "2021-02-24",
     "repositories": [
         {
-            "type": "pear",
-            "url": "https://pear.horde.org"
+            "type": "composer",
+            "url": "https://horde-satis.maintaina.com/"
         }
     ],
     "require": {
+        "horde/horde-installer-plugin": "*",
         "php": "^5.3 || ^7",
-        "pear-pear.horde.org/Horde_Compress": "^2",
-        "pear-pear.horde.org/Horde_Date": "^2.3",
-        "pear-pear.horde.org/Horde_Exception": "^2",
-        "pear-pear.horde.org/Horde_Icalendar": "^2",
-        "pear-pear.horde.org/Horde_Log": "^2.3",
-        "pear-pear.horde.org/Horde_Mapi": "^1",
-        "pear-pear.horde.org/Horde_Mime": "^2.11",
-        "pear-pear.horde.org/Horde_Stream": "^1.4",
-        "pear-pear.horde.org/Horde_Support": "^2",
-        "pear-pear.horde.org/Horde_Translation": "^2.2",
-        "pear-pear.horde.org/Horde_Util": "^2",
+        "horde/compress": "^2",
+        "horde/date": "^2.3",
+        "horde/exception": "^2",
+        "horde/icalendar": "^2",
+        "horde/log": "^2.3",
+        "horde/mapi": "^1",
+        "horde/mime": "^2.11",
+        "horde/stream": "^1.4",
+        "horde/support": "^2",
+        "horde/translation": "^2.2",
+        "horde/util": "^2",
         "ext-ctype": "*"
     },
     "suggest": {
-        "pear-pear.horde.org/Horde_Db": "^2.1",
-        "pear-pear.horde.org/Horde_Imap_Client": "^2.28.1",
-        "pear-pear.horde.org/Horde_Mail": "^2",
-        "pear-pear.horde.org/Horde_Mongo": "^1.0.2",
-        "pear-pear.horde.org/Horde_Text_Filter": "^2",
-        "pear-pear.horde.org/Horde_Test": "^2.1"
-    },
-    "replace": {
-        "pear-pear.horde.org/Horde_ActiveSync": "2.*",
-        "pear-horde/Horde_ActiveSync": "2.*"
+        "horde/db": "^2.1",
+        "horde/imap_client": "^2.28.1",
+        "horde/mail": "^2",
+        "horde/mongo": "^1.0.2",
+        "horde/text_filter": "^2",
+        "horde/test": "^2.1"
     },
     "autoload": {
         "psr-0": {
             "Horde_ActiveSync": "lib/"
+        },
+        "psr-4": {
+            "Horde\\ActiveSync\\": "src/"
         }
     }
 }
