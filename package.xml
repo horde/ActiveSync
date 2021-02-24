@@ -12,7 +12,7 @@
  </lead>
  <date>2021-02-24</date>
  <version>
-  <release>3.0.0alpha1</release>
+  <release>3.0.0alpha2</release>
   <api>3.0.0alpha1</api>
  </version>
  <stability>
@@ -21,7 +21,7 @@
  </stability>
  <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
  <notes>
-* [mjr] Remove GPLv2 Section 8 restrictions.
+* 
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -561,6 +561,221 @@
   </filelist>
  </phprelease>
  <changelog>
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
   <release>
    <version>
     <release>1.0.0alpha1</release>
@@ -4004,21 +4219,6 @@
   </release>
   <release>
    <version>
-    <release>3.0.0alpha1</release>
-    <api>3.0.0alpha1</api>
-   </version>
-   <stability>
-    <release>alpha</release>
-    <api>alpha</api>
-   </stability>
-   <date>2021-02-24</date>
-   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
-   <notes>
-* [mjr] Remove GPLv2 Section 8 restrictions.
-   </notes>
-  </release>
-  <release>
-   <version>
     <release>2.41.5</release>
     <api>2.41.0</api>
    </version>
@@ -4032,6 +4232,36 @@
 * [mjr] Prevent invalid weekly recurrence values.
 * [mjr] Minor php 7.4 compatibility changes.
 * |+
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>3.0.0alpha1</release>
+    <api>3.0.0-alpha1</api>
+   </version>
+   <stability>
+    <release>stable</release>
+    <api>stable</api>
+   </stability>
+   <date>2021-02-24</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* [mjr] Remove GPLv2 Section 8 restrictions.
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>3.0.0alpha2</release>
+    <api>3.0.0-alpha1</api>
+   </version>
+   <stability>
+    <release>alpha</release>
+    <api>alpha</api>
+   </stability>
+   <date>2021-02-24</date>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <notes>
+* 
    </notes>
   </release>
  </changelog>
