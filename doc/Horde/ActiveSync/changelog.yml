@@ -19,7 +19,6 @@
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
   notes: |+
-    
 3.0.0-alpha1:
   api: 3.0.0-alpha1
   state:
