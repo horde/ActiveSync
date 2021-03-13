@@ -1,7 +1,7 @@
 {
     "name": "horde/activesync",
     "description": "ActiveSync server library",
-    "type": "horde-library",
+    "type": "library",
     "homepage": "https://www.horde.org/libraries/Horde_ActiveSync",
     "license": "GPL-2.0",
     "authors": [
@@ -11,8 +11,7 @@
             "role": "lead"
         }
     ],
-    "version": "3.0.0alpha3",
-    "time": "2021-02-24",
+    "time": "2021-03-13",
     "repositories": [
         {
             "type": "composer",
@@ -20,7 +19,6 @@
         }
     ],
     "require": {
-        "horde/horde-installer-plugin": "*",
         "php": "^7",
         "horde/compress": "^3",
         "horde/date": "^3",
