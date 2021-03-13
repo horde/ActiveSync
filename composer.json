@@ -1,4 +1,5 @@
 {
+    "minimum-stability": "dev",
     "name": "horde/activesync",
     "description": "ActiveSync server library",
     "type": "library",
@@ -20,26 +21,26 @@
     ],
     "require": {
         "php": "^7",
-        "horde/compress": "^3",
-        "horde/date": "^3",
-        "horde/exception": "^3",
-        "horde/icalendar": "^3",
-        "horde/log": "^3",
-        "horde/mapi": "^2",
-        "horde/mime": "^3",
-        "horde/stream": "^2",
-        "horde/support": "^3",
-        "horde/translation": "^3",
-        "horde/util": "^3",
+        "horde/compress": "^3 || dev-FRAMEWORK_6_0",
+        "horde/date": "^3 || dev-FRAMEWORK_6_0",
+        "horde/exception": "^3 || dev-FRAMEWORK_6_0",
+        "horde/icalendar": "^3 || dev-FRAMEWORK_6_0",
+        "horde/log": "^3 || dev-FRAMEWORK_6_0",
+        "horde/mapi": "^2 || dev-FRAMEWORK_6_0",
+        "horde/mime": "^3 || dev-FRAMEWORK_6_0",
+        "horde/stream": "^2 || dev-FRAMEWORK_6_0",
+        "horde/support": "^3 || dev-FRAMEWORK_6_0",
+        "horde/translation": "^3 || dev-FRAMEWORK_6_0",
+        "horde/util": "^3 || dev-FRAMEWORK_6_0",
         "ext-ctype": "*"
     },
     "suggest": {
-        "horde/db": "^3",
-        "horde/imap_client": "^3",
-        "horde/mail": "^3",
-        "horde/mongo": "^2",
-        "horde/text_filter": "^3",
-        "horde/test": "^3"
+        "horde/db": "^3 || dev-FRAMEWORK_6_0",
+        "horde/imap_client": "^3 || dev-FRAMEWORK_6_0",
+        "horde/mail": "^3 || dev-FRAMEWORK_6_0",
+        "horde/mongo": "^2 || dev-FRAMEWORK_6_0",
+        "horde/text_filter": "^3 || dev-FRAMEWORK_6_0",
+        "horde/test": "^3 || dev-FRAMEWORK_6_0"
     },
     "autoload": {
         "psr-0": {
