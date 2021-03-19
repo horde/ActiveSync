@@ -16,6 +16,7 @@ use \Horde_ActiveSync;
 use \Horde_ActiveSync_Message_Appointment;
 use \Horde_Date;
 use \Horde_ActiveSync_Device;
+use \Horde_Date_Recurrence;
 
 class AppointmentTest extends TestCase
 {
