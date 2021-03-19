@@ -103,6 +103,7 @@ class Horde_ActiveSync_StateTest_Sql_Base extends Horde_ActiveSync_StateTest_Bas
     public function testGetStateWithNoState()
     {
         $this->_testGetStateWithNoState();
+        $this->markTestIncomplete();
     }
 
     /**
