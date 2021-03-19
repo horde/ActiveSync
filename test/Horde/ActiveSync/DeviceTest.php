@@ -6,12 +6,18 @@
  * @category Horde
  * @package ActiveSync
  */
-class Horde_ActiveSync_DeviceTest extends Horde_Test_Case
+namespace Horde\ActiveSync;
+use Horde_Test_Case as TestCase;
+use \Horde_ActiveSync_Device;
+use \Horde_Date;
+use \Horde_String;
+
+class DeviceTest extends TestCase
 {
     public function testDeviceDetection()
     {
         // // iOS
-        $state = $this->getMockSkipConstructor('Horde_ActiveSync_State_Base');
+        $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
         $fixture = array(
             'deviceType' => 'iPod',
             'userAgent' => 'Apple-iPod5C1/1102.55400001',
@@ -176,7 +182,7 @@ class Horde_ActiveSync_DeviceTest extends Horde_Test_Case
         $tz = date_default_timezone_get();
 
         date_default_timezone_set('America/New_York');
-        $state = $this->getMockSkipConstructor('Horde_ActiveSync_State_Base');
+        $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
 
         // WindowsPhone.
         $fixture = array('deviceType' => 'windowsphone');
@@ -252,7 +258,7 @@ class Horde_ActiveSync_DeviceTest extends Horde_Test_Case
             'userAgent' => 'SAMSUNG-SM-N900V/101.403',
             'properties' => array(Horde_ActiveSync_Device::OS => 'Android')
         );
-        $device = new Horde_ActiveSync_Device($this->getMockSkipConstructor('Horde_ActiveSync_State_Base'), $fixture);
+        $device = new Horde_ActiveSync_Device($this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock(), $fixture);
         $this->assertEquals(Horde_ActiveSync_Device::TYPE_ANDROID, $device->clientType);
         $device->clientType = 'Samsung';
         $this->assertEquals('Samsung', $device->clientType);
@@ -265,7 +271,7 @@ class Horde_ActiveSync_DeviceTest extends Horde_Test_Case
             'userAgent' => 'SAMSUNG-SM-N900V/101.403',
             'properties' => array(Horde_ActiveSync_Device::OS => 'Android')
         );
-        $device = new Horde_ActiveSync_Device($this->getMockSkipConstructor('Horde_ActiveSync_State_Base'), $fixture);
+        $device = new Horde_ActiveSync_Device($this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock(), $fixture);
         $this->assertEmpty($device->supported);
         $device->supported = array();
         $device->supported['contacts'] = array('one', 'two');

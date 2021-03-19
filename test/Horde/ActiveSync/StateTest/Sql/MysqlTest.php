@@ -6,9 +6,12 @@
  * @package Horde_ActiveSync
  * @subpackage UnitTests
  */
-class Horde_ActiveSync_StateTest_Sql_MysqlTest extends Horde_ActiveSync_StateTest_Sql_Base
+namespace Horde\ActiveSync\StateTest\Sql;
+use Horde_ActiveSync_StateTest_Sql_Base as Base;
+
+class MysqlTest extends Base
 {
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         if (!extension_loaded('mysql')) {
             self::$reason = 'No mysql extension.';

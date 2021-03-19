@@ -8,8 +8,9 @@
  */
 namespace Horde\ActiveSync;
 use Horde_Test_Case as TestCase;
+use \Horde_ActiveSync_Factory_TestServer;
 
-class AutoDiscoverTest extends TestCase
+class AutodiscoverTest extends TestCase
 {
     /**
      * Tests autodiscover functionality when passed a proper XML data structure

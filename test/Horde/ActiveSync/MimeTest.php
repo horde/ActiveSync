@@ -6,7 +6,15 @@
  * @category Horde
  * @package ActiveSync
  */
-class Horde_ActiveSync_MimeTest extends Horde_Test_Case
+namespace Horde\ActiveSync;
+use Horde_Test_Case as TestCase;
+use \Horde_ActiveSync_Mime;
+use \Horde_Mime_Headers;
+use \Horde_Mime_Part;
+use \Horde_ActiveSync_Mime_Headers_Addresses;
+use \Horde_ActiveSync_Mime_Iterator;
+
+class MimeTest extends TestCase
 {
 
    public function testHasAttachmentsWithNoAttachment()

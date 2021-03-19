@@ -6,17 +6,22 @@
  * @category Horde
  * @package ActiveSync
  */
-class Horde_ActiveSync_ImapFolderTest extends Horde_Test_Case
+namespace Horde\ActiveSync;
+use Horde_Test_Case as TestCase;
+use \Horde_ActiveSync_Folder_Imap;
+use \Horde_ActiveSync;
+
+class ImapFolderTest extends TestCase
 {
     public function testInitialState()
     {
         $folder = new Horde_ActiveSync_Folder_Imap('INBOX', Horde_ActiveSync::CLASS_EMAIL);
         $thrown = false;
-        try {
-            $folder->checkValidity(array(Horde_ActiveSync_Folder_Imap::UIDVALIDITY => '123'));
-        } catch (Horde_ActiveSync_Exception $e) {
-            $thrown = true;
-        }
+        
+        $this->expectException('Horde_ActiveSync_Exception');
+        $folder->checkValidity(array(Horde_ActiveSync_Folder_Imap::UIDVALIDITY => '123'));
+        $thrown = true;
+
         $this->assertEquals(true, $thrown);
         $this->assertEquals(0, $folder->uidnext());
         $this->assertEquals(0, $folder->modseq());
