@@ -6,7 +6,10 @@
  * @category Horde
  * @package ActiveSync
  */
-class Horde_ActiveSync_ContactTest extends Horde_Test_Case
+namespace Horde\ActiveSync;
+use Horde_Test_Case as TestCase;
+
+class ContactTest extends TestCase
 {
     /**
      * Checks that setting/getting non-existant properties throws an exception.
