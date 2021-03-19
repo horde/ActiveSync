@@ -6,7 +6,11 @@
  * @category Horde
  * @package ActiveSync
  */
-class Horde_ActiveSync_UtilsTest extends Horde_Test_Case
+namespace Horde\ActiveSync;
+use Horde_Test_Case as TestCase;
+use \Horde_ActiveSync_Utils;
+
+class UtilsTest extends TestCase
 {
     public function testBase64Uri()
     {

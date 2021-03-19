@@ -8,6 +8,14 @@
  */
 namespace Horde\ActiveSync;
 use Horde_Test_Case as TestCase;
+use \Horde_ActiveSync_Log_Logger;
+use \Horde_Log_Handler_Null;
+use \Horde_ActiveSync_Wbxml_Decoder;
+use \Horde_ActiveSync_Wbxml_Encoder;
+use \Horde_ActiveSync;
+use \Horde_ActiveSync_Message_Appointment;
+use \Horde_Date;
+use \Horde_ActiveSync_Device;
 
 class AppointmentTest extends TestCase
 {
@@ -445,7 +453,7 @@ class AppointmentTest extends TestCase
 
     public function testMissingSupportedTag()
     {
-        $state = $this->getMockSkipConstructor('Horde_ActiveSync_State_Base');
+        $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
         $fixture = array(
             'userAgent' => 'Apple-iPad3C6/1202.435',
             'properties' => array(Horde_ActiveSync_Device::OS => 'iOS 8.1.1')
@@ -465,7 +473,7 @@ class AppointmentTest extends TestCase
 
     public function testEmptySupportedTag()
     {
-        $state = $this->getMockSkipConstructor('Horde_ActiveSync_State_Base');
+        $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
         $fixture = array(
             'userAgent' => 'Apple-iPad3C6/1202.435',
             'properties' => array(Horde_ActiveSync_Device::OS => 'iOS 8.1.1')

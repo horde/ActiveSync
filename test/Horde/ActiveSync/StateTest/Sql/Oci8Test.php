@@ -6,9 +6,12 @@
  * @package    Horde_ActiveSync
  * @subpackage UnitTests
  */
-class Horde_ActiveSync_StateTest_Sql_Oci8Test extends Horde_ActiveSync_StateTest_Sql_Base
+namespace Horde\ActiveSync\StateTest\Sql;
+use Horde_ActiveSync_StateTest_Sql_Base as Base;
+
+class Oci8Test extends Base
 {
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         if (!extension_loaded('oci8')) {
             self::$reason = 'No oci8 extension.';

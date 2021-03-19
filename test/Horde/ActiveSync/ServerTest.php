@@ -6,7 +6,12 @@
  * @category Horde
  * @package ActiveSync
  */
-class Horde_ActiveSync_ServerTest extends Horde_Test_Case
+namespace Horde\ActiveSync;
+use Horde_Test_Case as TestCase;
+use \Horde_ActiveSync_Factory_TestServer;
+use \Horde_ActiveSync;
+
+class ServerTest extends TestCase
 {
     public function testSupportedVersions()
     {

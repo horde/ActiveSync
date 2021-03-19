@@ -6,9 +6,13 @@
  * @package Horde_ActiveSync
  * @subpackage UnitTests
  */
-class Horde_ActiveSync_StateTest_Sql_Pdo_MysqlTest extends Horde_ActiveSync_StateTest_Sql_Base
+namespace Horde\ActiveSync\StateTest\Sql\Pdo;
+use Horde_ActiveSync_StateTest_Sql_Base as Base;
+use \PDO;
+
+class MysqlTest extends Base
 {
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         if (!extension_loaded('pdo') ||
             !in_array('mysql', PDO::getAvailableDrivers())) {

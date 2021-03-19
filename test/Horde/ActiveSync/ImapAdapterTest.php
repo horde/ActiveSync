@@ -6,7 +6,10 @@
  * @category Horde
  * @package ActiveSync
  */
-class Horde_ActiveSync_ImapAdapterTest extends Horde_Test_Case
+namespace Horde\ActiveSync;
+use Horde_Test_Case as TestCase;
+
+class ImapAdapterTest extends TestCase
 {
     public function testBug13711()
     {
