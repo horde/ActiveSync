@@ -6,7 +6,10 @@
  * @package Horde_ActiveSync
  * @subpackage UnitTests
  */
-class Horde_ActiveSync_StateTest_Base extends Horde_Test_Case
+namespace Horde\ActiveSync\StateTest;
+use Horde_Test_Case as TestCase;
+
+class TestBase extends TestCase
 {
     protected static $state;
     protected static $logger;

@@ -7,9 +7,9 @@
  * @subpackage UnitTests
  */
 namespace Horde\ActiveSync\StateTest\Sql;
-use Horde_ActiveSync_StateTest_Sql_Base as Base;
+use Horde\ActiveSync\StateTest\Sql\TestBase;
 
-class MysqlTest extends Base
+class MysqlTest extends TestBase
 {
     public static function setUpBeforeClass(): void
     {

@@ -8,14 +8,14 @@
  */
 namespace Horde\ActiveSync;
 use Horde_Test_Case as TestCase;
-use \Horde_ActiveSync_Factory_TestServer;
+use Horde\ActiveSync\Factory\TestServer;
 use \Horde_ActiveSync;
 
 class ServerTest extends TestCase
 {
     public function testSupportedVersions()
     {
-        $factory = new Horde_ActiveSync_Factory_TestServer();
+        $factory = new TestServer();
 
         $this->assertEquals('2.5,12.0,12.1,14.0,14.1,16.0', $factory->server->getSupportedVersions());
         $factory->server->setSupportedVersion(Horde_ActiveSync::VERSION_TWELVEONE);
@@ -27,7 +27,7 @@ class ServerTest extends TestCase
 
     public function testSupportedCommands()
     {
-        $factory = new Horde_ActiveSync_Factory_TestServer();
+        $factory = new TestServer();
         $this->assertEquals('Sync,SendMail,SmartForward,SmartReply,GetAttachment,GetHierarchy,CreateCollection,DeleteCollection,MoveCollection,FolderSync,FolderCreate,FolderDelete,FolderUpdate,MoveItems,GetItemEstimate,MeetingResponse,Search,Settings,Ping,ItemOperations,Provision,ResolveRecipients,ValidateCert', $factory->server->getSupportedCommands());
         $factory->server->setSupportedVersion(Horde_ActiveSync::VERSION_TWOFIVE);
         $this->assertEquals('Sync,SendMail,SmartForward,SmartReply,GetAttachment,GetHierarchy,CreateCollection,DeleteCollection,MoveCollection,FolderSync,FolderCreate,FolderDelete,FolderUpdate,MoveItems,GetItemEstimate,MeetingResponse,ResolveRecipients,ValidateCert,Provision,Search,Ping', $factory->server->getSupportedCommands());
