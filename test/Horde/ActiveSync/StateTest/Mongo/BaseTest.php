@@ -7,9 +7,9 @@
  * @subpackage UnitTests
  */
 namespace Horde\ActiveSync\StateTest\Mongo;
-use Horde_ActiveSync_StateTest_Base as Base;
+use Horde\ActiveSync\StateTest\TestBase;
 
-class BaseTest extends Base
+class BaseTest extends TestBase
 {
     protected static $mongo;
     protected static $reason;

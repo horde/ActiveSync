@@ -12,6 +12,10 @@
  * @package   Horde_ActiveSync
  * @subpackage UnitTests
  */
+namespace Horde\ActiveSync\Factory;
+use Horde_Test_Case as TestCase;
+use \Horde_ActiveSync_Wbxml_Decoder;
+use \Horde_ActiveSync_Wbxml_Encoder;
 
 /**
  * Factory to provide various test servers.
@@ -25,7 +29,7 @@
  * @package    Horde_ActiveSync
  * @subpackage UnitTests
  */
-class Horde_ActiveSync_Factory_TestServer extends Horde_Test_Case
+class TestServer extends TestCase
 {
     public $server;
     public $driver;
@@ -35,13 +39,19 @@ class Horde_ActiveSync_Factory_TestServer extends Horde_Test_Case
 
     public function __construct($params = array())
     {
-        $this->driver = $this->getMockBuilder('Horde_ActiveSync_Driver_Base')->disableOriginalConstructor()->getMock();
+        $this->driver = $this->getMockBuilder('Horde_ActiveSync_Driver_Base')
+                                ->disableOriginalConstructor()
+                                ->getMock();
         $this->input = fopen('php://memory', 'wb+');
         $decoder = new Horde_ActiveSync_Wbxml_Decoder($this->input);
         $this->_output = fopen('php://memory', 'wb+');
         $encoder = new Horde_ActiveSync_Wbxml_Encoder($this->_output);
-        $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
-        $this->request = $this->getMockBuilder('Horde_Controller_Request_Http')->disableOriginalConstructor()->getMock();
+        $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')
+                        ->disableOriginalConstructor()
+                        ->getMock();
+        $this->request = $this->getMockBuilder('Horde_Controller_Request_Http')
+                                ->disableOriginalConstructor()
+                                ->getMock();
         $this->request->expects($this->any())
             ->method('getHeader')
             ->will($this->returnValue('14.1'));

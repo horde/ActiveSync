@@ -7,10 +7,10 @@
  * @subpackage UnitTests
  */
 namespace Horde\ActiveSync\StateTest\Sql\Pdo;
-use Horde_ActiveSync_StateTest_Sql_Base as Base;
+use Horde\ActiveSync\StateTest\Sql\TestBase;
 use \PDO;
 
-class MysqlTest extends Base
+class MysqlTest extends TestBase
 {
     public static function setUpBeforeClass(): void
     {

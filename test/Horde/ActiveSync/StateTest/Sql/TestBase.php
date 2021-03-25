@@ -6,7 +6,10 @@
  * @package Horde_ActiveSync
  * @subpackage UnitTests
  */
-class Horde_ActiveSync_StateTest_Sql_Base extends Horde_ActiveSync_StateTest_Base
+namespace Horde\ActiveSync\StateTest\Sql;
+use Horde\ActiveSync\StateTest\TestBase as ExtTestBase;
+
+class TestBase extends ExtTestBase
 {
     protected static $db;
     protected static $migrator;
