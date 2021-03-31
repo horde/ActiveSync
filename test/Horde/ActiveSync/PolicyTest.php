@@ -6,7 +6,13 @@
  * @category Horde
  * @package ActiveSync
  */
-class Horde_ActiveSync_PolicyTest extends Horde_Test_Case
+namespace Horde\ActiveSync;
+use Horde_Test_Case as TestCase;
+use \Horde_ActiveSync_Wbxml_Encoder;
+use \Horde_Mime_Headers;
+use \Horde_ActiveSync_Policies;
+
+class PolicyTest extends TestCase
 {
     public function testDefaultWbxml()
     {

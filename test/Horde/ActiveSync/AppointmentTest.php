@@ -6,18 +6,30 @@
  * @category Horde
  * @package ActiveSync
  */
-class Horde_ActiveSync_AppointmentTest extends Horde_Test_Case
+namespace Horde\ActiveSync;
+use Horde_Test_Case as TestCase;
+use \Horde_ActiveSync_Log_Logger;
+use \Horde_Log_Handler_Null;
+use \Horde_ActiveSync_Wbxml_Decoder;
+use \Horde_ActiveSync_Wbxml_Encoder;
+use \Horde_ActiveSync;
+use \Horde_ActiveSync_Message_Appointment;
+use \Horde_Date;
+use \Horde_ActiveSync_Device;
+use \Horde_Date_Recurrence;
+
+class AppointmentTest extends TestCase
 {
 
     protected $_oldtz;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->_oldtz = date_default_timezone_get();
         date_default_timezone_set('America/New_York');
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         date_default_timezone_set($this->_oldtz);
     }
@@ -442,7 +454,7 @@ class Horde_ActiveSync_AppointmentTest extends Horde_Test_Case
 
     public function testMissingSupportedTag()
     {
-        $state = $this->getMockSkipConstructor('Horde_ActiveSync_State_Base');
+        $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
         $fixture = array(
             'userAgent' => 'Apple-iPad3C6/1202.435',
             'properties' => array(Horde_ActiveSync_Device::OS => 'iOS 8.1.1')
@@ -462,7 +474,7 @@ class Horde_ActiveSync_AppointmentTest extends Horde_Test_Case
 
     public function testEmptySupportedTag()
     {
-        $state = $this->getMockSkipConstructor('Horde_ActiveSync_State_Base');
+        $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
         $fixture = array(
             'userAgent' => 'Apple-iPad3C6/1202.435',
             'properties' => array(Horde_ActiveSync_Device::OS => 'iOS 8.1.1')

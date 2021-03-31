@@ -6,7 +6,11 @@
  * @category Horde
  * @package ActiveSync
  */
-class Horde_ActiveSync_AutoDiscoverTest extends Horde_Test_Case
+namespace Horde\ActiveSync;
+use Horde_Test_Case as TestCase;
+use Horde\ActiveSync\Factory\TestServer;
+
+class AutodiscoverTest extends TestCase
 {
     /**
      * Tests autodiscover functionality when passed a proper XML data structure
@@ -15,7 +19,7 @@ class Horde_ActiveSync_AutoDiscoverTest extends Horde_Test_Case
      */
     public function testAutodiscoverWithProperXML()
     {
-        $factory = new Horde_ActiveSync_Factory_TestServer();
+        $factory = new TestServer();
 
         $request = <<<EOT
 <?xml version="1.0" encoding="utf-8"?>
@@ -102,7 +106,7 @@ EOT;
     {
         // Basic auth: mike:password
         $auth = 'Basic bWlrZTpwYXNzd29yZA==';
-        $factory = new Horde_ActiveSync_Factory_TestServer();
+        $factory = new TestServer();
         $factory->request->expects($this->any())
             ->method('getServerVars')
             ->will($this->returnValue(array('HTTP_AUTHORIZATION' => $auth)));

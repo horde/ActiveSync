@@ -6,7 +6,10 @@
  * @package Horde_ActiveSync
  * @subpackage UnitTests
  */
-class Horde_ActiveSync_StateTest_Mongo_BaseTest extends Horde_ActiveSync_StateTest_Base
+namespace Horde\ActiveSync\StateTest\Mongo;
+use Horde\ActiveSync\StateTest\TestBase;
+
+class BaseTest extends TestBase
 {
     protected static $mongo;
     protected static $reason;
@@ -201,7 +204,7 @@ class Horde_ActiveSync_StateTest_Mongo_BaseTest extends Horde_ActiveSync_StateTe
         $this->_testPartialSyncWithOnlyChangedHbInterval();
     }
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         if (!(extension_loaded('mongo') || extension_loaded('mongodb')) ||
             !class_exists('Horde_Mongo_Client')) {
@@ -224,7 +227,7 @@ class Horde_ActiveSync_StateTest_Mongo_BaseTest extends Horde_ActiveSync_StateTe
         self::$logger = new Horde_Test_Log();
     }
 
-    public function setUp()
+    public function setUp(): void
     {
         if (empty(self::$mongo)) {
             $this->markTestSkipped(self::$reason);
@@ -234,7 +237,7 @@ class Horde_ActiveSync_StateTest_Mongo_BaseTest extends Horde_ActiveSync_StateTe
         self::$state->setBackend($backend);
     }
 
-    public static function tearDownAfterClass()
+    public static function tearDownAfterClass(): void
     {
         if ((extension_loaded('mongo') || extension_loaded('mongodb')) &&
             class_exists('Horde_Mongo_Client') &&

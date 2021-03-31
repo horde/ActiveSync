@@ -6,7 +6,12 @@
  * @category Horde
  * @package ActiveSync
  */
-class Horde_ActiveSync_Rfc822Test extends Horde_Test_Case
+namespace Horde\ActiveSync;
+use Horde_Test_Case as TestCase;
+use \Horde_ActiveSync_Rfc822;
+use \Horde_Mime_Headers;
+
+class Rfc822Test extends TestCase
 {
     /**
      * @dataProvider headersMultipartAlternativeProvider

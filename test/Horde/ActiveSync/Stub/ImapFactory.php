@@ -12,6 +12,7 @@
  * @package   Horde_ActiveSync
  * @subpackage UnitTestss
  */
+namespace Horde\ActiveSync\Stub;
 
 /**
  * Stub needed for the Imap Adapter tests.
@@ -25,7 +26,7 @@
  * @package    Horde_ActiveSync
  * @subpackage UnitTests
  */
-class Horde_ActiveSync_Stub_ImapFactory implements Horde_ActiveSync_Interface_ImapFactory
+class ImapFactory implements Horde_ActiveSync_Interface_ImapFactory
 {
 
     /**

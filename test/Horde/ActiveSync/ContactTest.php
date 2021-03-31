@@ -6,7 +6,14 @@
  * @category Horde
  * @package ActiveSync
  */
-class Horde_ActiveSync_ContactTest extends Horde_Test_Case
+namespace Horde\ActiveSync;
+use Horde_Test_Case as TestCase;
+use \Horde_ActiveSync_Message_Contact;
+use \Horde_ActiveSync_Device;
+use \Horde_ActiveSync;
+use \Horde_ActiveSync_SyncCache;
+
+class ContactTest extends TestCase
 {
     /**
      * Checks that setting/getting non-existant properties throws an exception.
@@ -15,7 +22,7 @@ class Horde_ActiveSync_ContactTest extends Horde_Test_Case
     {
         $contact = new Horde_ActiveSync_Message_Contact();
 
-        $this->setExpectedException('InvalidArgumentException');
+        $this->expectException('InvalidArgumentException');
         $contact->unknown = 'test';
         $test = $contact->unknown;
     }
@@ -34,7 +41,7 @@ class Horde_ActiveSync_ContactTest extends Horde_Test_Case
 
     public function testPictureGhosted()
     {
-        $state = $this->getMockSkipConstructor('Horde_ActiveSync_State_Base');
+        $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
         $fixture = array(
             'deviceType' => 'iPod',
             'userAgent' => 'Apple-iPod2C1/803.148'
@@ -57,7 +64,7 @@ class Horde_ActiveSync_ContactTest extends Horde_Test_Case
 
     public function testMissingSupportedTag()
     {
-        $state = $this->getMockSkipConstructor('Horde_ActiveSync_State_Base');
+        $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
         $fixture = array(
             'userAgent' => 'Apple-iPad3C6/1202.435',
             'properties' => array(Horde_ActiveSync_Device::OS => 'iOS 8.1.1')
@@ -70,7 +77,7 @@ class Horde_ActiveSync_ContactTest extends Horde_Test_Case
 
     public function testEmptySupportedTag()
     {
-        $state = $this->getMockSkipConstructor('Horde_ActiveSync_State_Base');
+        $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
         $fixture = array(
             'userAgent' => 'Apple-iPad3C6/1202.435',
             'properties' => array(Horde_ActiveSync_Device::OS => 'iOS 8.1.1')
