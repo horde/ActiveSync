@@ -52,6 +52,8 @@ jobs:
         COMPOSER_ROOT_VERSION=dev-FRAMEWORK_6_0 composer require --dev horde/test dev-FRAMEWORK_6_0 horde/log dev-FRAMEWORK_6_0
     - name: install horde/xml_wbxml ^3
       run: composer require horde/xml_wbxml ^3
+    - name: install horde/http ^3
+      run: composer require horde/http ^3
     - name: run phpunit
       run: phpunit --bootstrap test/Horde/ActiveSync/bootstrap.php test/Horde/ActiveSync/
 
