@@ -310,6 +310,7 @@ class Horde_ActiveSync
     /* Auth failure reasons */
     const AUTH_REASON_USER_DENIED               = 'user';
     const AUTH_REASON_DEVICE_DENIED             = 'device';
+    const AUTH_REASON_UNAVAILABLE               = 'unavailable';
 
     /* Internal flag indicates all possible fields are ghosted */
     const ALL_GHOSTED                           = 'allghosted';
@@ -409,9 +410,9 @@ class Horde_ActiveSync
     /**
      * Global error flag.
      *
-     * @var boolean
+     * @var int  ActiveSync global status code.
      */
-    protected $_globalError = false;
+    protected $_globalError = 0;
 
     /**
      * Process id (used in logging).
@@ -574,6 +575,12 @@ class Horde_ActiveSync
                 $this->_globalError = Horde_ActiveSync_Status::SYNC_NOT_ALLOWED;
             } elseif ($result === self::AUTH_REASON_DEVICE_DENIED) {
                 $this->_globalError = Horde_ActiveSync_Status::DEVICE_BLOCKED_FOR_USER;
+            } elseif ($result === self::AUTH_REASON_UNAVAILABLE) {
+                $this->_globalError = Horde_ActiveSync_Status::SERVER_ERROR_RETRY;
+                if ($this->getProtocolVersion() < Horde_ActiveSync::VERSION_FOURTEEN) {
+                    // Horde_ActiveSync_STATUS_SERVER_ERROR_RETRY only supported >= 14.0
+                    return false;
+                }
             } elseif ($result !== true) {
                 $this->_globalError = Horde_ActiveSync_Status::DENIED;
             }
@@ -748,7 +755,7 @@ class Horde_ActiveSync
             $this->activeSyncHeader();
             $this->versionHeader();
             $this->commandsHeader();
-            throw new Horde_Exception_AuthenticationFailure();
+            throw new Horde_Exception_AuthenticationFailure('', $this->_globalError);
         }
 
         self::$_logger->info(sprintf(
