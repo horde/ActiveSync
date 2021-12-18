@@ -4,7 +4,7 @@
     "description": "ActiveSync server library",
     "type": "library",
     "homepage": "https://www.horde.org/libraries/Horde_ActiveSync",
-    "license": "GPL-2.0",
+    "license": "GPL-2.0-only",
     "authors": [
         {
             "name": "Michael J Rubinsky",
@@ -20,7 +20,7 @@
         }
     ],
     "require": {
-        "php": "^7",
+        "php": "^7.4 || ^8",
         "horde/compress": "^3 || dev-FRAMEWORK_6_0",
         "horde/date": "^3 || dev-FRAMEWORK_6_0",
         "horde/exception": "^3 || dev-FRAMEWORK_6_0",
