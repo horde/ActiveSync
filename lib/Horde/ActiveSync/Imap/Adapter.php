@@ -1045,6 +1045,10 @@ class Horde_ActiveSync_Imap_Adapter
                 array('ids' => new Horde_Imap_Client_Ids($uids), 'exists' => true)
             );
         } catch (Horde_Imap_Client_Exception $e) {
+            if ($e->code == Horde_Imap_Client_Exception::DISCONNECT) {
+                $this->_logger->err("Connection to IMAP server lost");
+                throw new Horde_ActiveSync_Exception_TemporaryFailure($e);
+            }
             $this->_logger->err(sprintf(
                 'Unable to fetch message: %s',
                 $e->getMessage())
