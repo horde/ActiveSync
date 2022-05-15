@@ -8,8 +8,9 @@
   license:
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
-  notes: |+
-    
+  notes: |
+    [mjr] Don't update state if IMAP server goes away (Bug #15091).
+    |+
 2.41.5:
   api: 2.41.0
   state:
