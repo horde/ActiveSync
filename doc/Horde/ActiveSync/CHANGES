@@ -2,7 +2,8 @@
 v2.41.6
 -------
 
-
+[mjr] Don't update state if IMAP server goes away (Bug #15091).
+|+
 
 
 -------
