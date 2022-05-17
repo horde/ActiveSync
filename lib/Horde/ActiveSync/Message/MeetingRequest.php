@@ -191,7 +191,7 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
         } catch (Horde_Icalendar_Exception $e) {}
 
         try {
-            $this->globalobjid = Horde_Mapi::createGoid($vevent->getAttribute('UID'));
+            $this->globalobjid = Horde_Mapi::createGoid($vevent->getAttributeDefault('UID', 'nouid'));
             $this->starttime = new Horde_Date($vevent->getAttribute('DTSTART'));
         } catch (Horde_Exception $e) {
             throw new Horde_ActiveSync_Exception($e);
