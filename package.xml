@@ -10,7 +10,7 @@
   <email>mrubinsk@horde.org</email>
   <active>yes</active>
  </lead>
- <date>2021-03-13</date>
+ <date>2022-05-18</date>
  <version>
   <release>3.0.0alpha4</release>
   <api>3.0.0alpha1</api>
@@ -19,12 +19,20 @@
   <release>alpha</release>
   <api>alpha</api>
  </stability>
- <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+ <license uri="http://www.horde.org/licenses/gpl">GPL-2.0-only</license>
  <notes>
-* 
+* |+
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
+   <dir name=".github">
+    <dir name="workflows">
+     <file name="ci.yml" role="php" />
+     <file name="phpdoc.yml" role="php" />
+     <file name="release.yml" role="php" />
+     <file name="update-satis.yml" role="php" />
+    </dir> <!-- /.github/workflows -->
+   </dir> <!-- /.github -->
    <dir name="doc">
     <dir name="Horde">
      <dir name="ActiveSync">
@@ -307,12 +315,12 @@
          <file name="MysqlTest.php" role="test" />
          <file name="SqliteTest.php" role="test" />
         </dir> <!-- /test/Horde/ActiveSync/StateTest/Sql/Pdo -->
-        <file name="Base.php" role="test" />
         <file name="MysqliTest.php" role="test" />
         <file name="MysqlTest.php" role="test" />
         <file name="Oci8Test.php" role="test" />
+        <file name="TestBase.php" role="test" />
        </dir> <!-- /test/Horde/ActiveSync/StateTest/Sql -->
-       <file name="Base.php" role="test" />
+       <file name="TestBase.php" role="test" />
       </dir> <!-- /test/Horde/ActiveSync/StateTest -->
       <dir name="Stub">
        <file name="ImapFactory.php" role="test" />
@@ -343,9 +351,9 @@
  <dependencies>
   <required>
    <php>
-    <min>7.0.0</min>
-    <max>8.0.0alpha1</max>
-    <exclude>8.0.0alpha1</exclude>
+    <min>7.4.0</min>
+    <max>9.0.0alpha1</max>
+    <exclude>9.0.0alpha1</exclude>
    </php>
    <pearinstaller>
     <min>1.7.0</min>
@@ -357,6 +365,10 @@
  </dependencies>
  <phprelease>
   <filelist>
+   <install as="workflows/ci.yml" name=".github/workflows/ci.yml" />
+   <install as="workflows/phpdoc.yml" name=".github/workflows/phpdoc.yml" />
+   <install as="workflows/release.yml" name=".github/workflows/release.yml" />
+   <install as="workflows/update-satis.yml" name=".github/workflows/update-satis.yml" />
    <install as="CHANGES" name="doc/Horde/ActiveSync/CHANGES" />
    <install as="TODO.rst" name="doc/Horde/ActiveSync/TODO.rst" />
    <install as="Horde/ActiveSync.php" name="lib/Horde/ActiveSync.php" />
@@ -548,21 +560,19 @@
    <install as="Horde/ActiveSync/PolicyTest.php" name="test/Horde/ActiveSync/PolicyTest.php" />
    <install as="Horde/ActiveSync/Rfc822Test.php" name="test/Horde/ActiveSync/Rfc822Test.php" />
    <install as="Horde/ActiveSync/ServerTest.php" name="test/Horde/ActiveSync/ServerTest.php" />
-   <install as="Horde/ActiveSync/StateTest/Base.php" name="test/Horde/ActiveSync/StateTest/Base.php" />
    <install as="Horde/ActiveSync/StateTest/Mongo/BaseTest.php" name="test/Horde/ActiveSync/StateTest/Mongo/BaseTest.php" />
-   <install as="Horde/ActiveSync/StateTest/Sql/Base.php" name="test/Horde/ActiveSync/StateTest/Sql/Base.php" />
    <install as="Horde/ActiveSync/StateTest/Sql/MysqliTest.php" name="test/Horde/ActiveSync/StateTest/Sql/MysqliTest.php" />
    <install as="Horde/ActiveSync/StateTest/Sql/MysqlTest.php" name="test/Horde/ActiveSync/StateTest/Sql/MysqlTest.php" />
    <install as="Horde/ActiveSync/StateTest/Sql/Oci8Test.php" name="test/Horde/ActiveSync/StateTest/Sql/Oci8Test.php" />
    <install as="Horde/ActiveSync/StateTest/Sql/Pdo/MysqlTest.php" name="test/Horde/ActiveSync/StateTest/Sql/Pdo/MysqlTest.php" />
    <install as="Horde/ActiveSync/StateTest/Sql/Pdo/SqliteTest.php" name="test/Horde/ActiveSync/StateTest/Sql/Pdo/SqliteTest.php" />
+   <install as="Horde/ActiveSync/StateTest/Sql/TestBase.php" name="test/Horde/ActiveSync/StateTest/Sql/TestBase.php" />
+   <install as="Horde/ActiveSync/StateTest/TestBase.php" name="test/Horde/ActiveSync/StateTest/TestBase.php" />
    <install as="Horde/ActiveSync/Stub/ImapFactory.php" name="test/Horde/ActiveSync/Stub/ImapFactory.php" />
    <install as="Horde/ActiveSync/UtilsTest.php" name="test/Horde/ActiveSync/UtilsTest.php" />
   </filelist>
  </phprelease>
  <changelog>
- 
- 
   <release>
    <version>
     <release>3.0.0alpha3</release>
@@ -588,9 +598,9 @@
     <api>alpha</api>
    </stability>
    <date>2021-03-13</date>
-   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0</license>
+   <license uri="http://www.horde.org/licenses/gpl">GPL-2.0-only</license>
    <notes>
-* 
+* |+
    </notes>
   </release>
  </changelog>
