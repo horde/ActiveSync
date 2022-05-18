@@ -1,5 +1,4 @@
 {
-    "minimum-stability": "dev",
     "name": "horde/activesync",
     "description": "ActiveSync server library",
     "type": "library",
@@ -12,11 +11,11 @@
             "role": "lead"
         }
     ],
-    "time": "2021-03-13",
+    "time": "2022-05-18",
     "repositories": [
         {
             "type": "composer",
-            "url": "https://horde-satis.maintaina.com/"
+            "url": "https://horde-satis.maintaina.com"
         }
     ],
     "require": {
@@ -34,6 +33,7 @@
         "horde/util": "^3 || dev-FRAMEWORK_6_0",
         "ext-ctype": "*"
     },
+    "require-dev": {},
     "suggest": {
         "horde/db": "^3 || dev-FRAMEWORK_6_0",
         "horde/imap_client": "^3 || dev-FRAMEWORK_6_0",
@@ -45,6 +45,16 @@
     "autoload": {
         "psr-0": {
             "Horde_ActiveSync": "lib/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Horde\\ActiveSync\\Test\\": "test/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "horde/horde-installer-plugin": true
         }
     }
 }
