@@ -2,7 +2,7 @@
 v2.41.7
 -------
 
-
+[mjr] Fix various Array offset on null errors.
 
 
 -------
@@ -10,7 +10,6 @@ v2.41.6
 -------
 
 [mjr] Don't update state if IMAP server goes away (Bug #15091).
-|+
 
 
 -------
@@ -19,7 +18,6 @@ v2.41.5
 
 [mjr] Prevent invalid weekly recurrence values.
 [mjr] Minor php 7.4 compatibility changes.
-|+
 
 
 -------
