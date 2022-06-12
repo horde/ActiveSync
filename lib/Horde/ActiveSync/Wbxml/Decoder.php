@@ -221,7 +221,8 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
     {
         $element = $this->getToken();
 
-        if ($element[self::EN_TYPE] == self::EN_TYPE_STARTTAG &&
+        if (!empty($element[self::EN_TYPE]) &&
+            $element[self::EN_TYPE] == self::EN_TYPE_STARTTAG &&
             $element[self::EN_TAG] == $tag) {
 
             $this->_lastStartElement = $element;
