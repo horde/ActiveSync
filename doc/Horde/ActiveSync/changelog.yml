@@ -8,8 +8,9 @@
   license:
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
-  notes: |+
-    
+  notes: |
+    [mjr] Fix various Array offset on null errors.
+    |+
 2.41.6:
   api: 2.41.0
   state:
