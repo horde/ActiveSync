@@ -8,8 +8,9 @@
   license:
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
-  notes: |+
-    
+  notes: |
+    [mjr] Fix fatal error when exception is thrown from imap client (Bug # 15113).
+    |+
 2.41.7:
   api: 2.41.0
   state:
