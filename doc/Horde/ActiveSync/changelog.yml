@@ -8,8 +8,9 @@
   license:
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
-  notes: |+
-    
+  notes: |
+    [mjr] Improve client error when auth server is unavailable (Bug #15077).
+    |+
 2.41.8:
   api: 2.41.0
   state:
