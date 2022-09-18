@@ -2,7 +2,8 @@
 v2.41.9
 -------
 
-
+[mjr] Improve client error when auth server is unavailable (Bug #15077).
+|+
 
 
 -------
