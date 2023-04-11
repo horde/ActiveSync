@@ -122,6 +122,21 @@ class Horde_ActiveSync_Folder_RI extends Horde_ActiveSync_Folder_Base implements
     }
 
     /**
+     * Serialize this object.
+     *
+     * @return array  The data.
+     */
+    public function __serialize(): array
+    {
+        return
+        [
+            'd' => $this->_contacts,
+            'f' => $this->_serverid,
+            'c' => $this->_class,
+            'v' => self::VERSION
+        ];
+    }
+    /**
      * Reconstruct the object from serialized data.
      *
      * @param string $data  The serialized data.
@@ -138,4 +153,19 @@ class Horde_ActiveSync_Folder_RI extends Horde_ActiveSync_Folder_Base implements
         $this->_class = $data['c'];
     }
 
+        /**
+     * Reconstruct the object from serialized data.
+     *
+     * @param array $data  The serialized data.
+     * @throws Horde_ActiveSync_Exception_StaleState
+     */
+    public function __unserialize(array $data): void
+    {
+        if (!is_array($data) || empty($data['v']) || $data['v'] != self::VERSION) {
+            throw new Horde_ActiveSync_Exception_StaleState('Cache version change');
+        }
+        $this->_contacts = $data['d'];
+        $this->_serverid = $data['f'];
+        $this->_class = $data['c'];
+    }
 }

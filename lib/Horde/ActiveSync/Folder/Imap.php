@@ -450,7 +450,33 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
             'v' => self::VERSION)
         );
     }
+    /**
+     * Serialize this object. PHP 8+
+     *
+     * @return array  The data.
+     */
+    public function __serialize(): array
+    {
+        if (!empty($this->_status[self::HIGHESTMODSEQ])) {
+             $msgs = (count($this->_messages) > self::COMPRESSION_LIMIT) ?
+                $this->_toSequenceString($this->_messages) :
+                implode(',', $this->_messages);
+        } else {
+            $msgs = $this->_messages;
+        }
 
+        return
+        [
+            's' => $this->_status,
+            'm' => $msgs,
+            'f' => $this->_serverid,
+            'c' => $this->_class,
+            'lsd' => $this->_lastSinceDate,
+            'sd' => $this->_softDelete,
+            'hi' => $this->haveInitialSync,
+            'v' => self::VERSION
+        ];
+    }
     /**
      * Reconstruct the object from serialized data.
      *
@@ -474,6 +500,36 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
         $this->_lastSinceDate = $d_data['lsd'];
         $this->_softDelete = $d_data['sd'];
         $this->haveInitialSync = empty($d_data['hi']) ? !empty($this->_messages) : $d_data['hi'];
+
+        if (!empty($this->_status[self::HIGHESTMODSEQ]) && is_string($this->_messages)) {
+            $this->_messages = $this->_fromSequenceString($this->_messages);
+        }
+    }
+
+    /**
+     * Reconstruct the object from data.
+     *
+     * @param array $data  The serialized data.
+     * @throws Horde_ActiveSync_Exception_StaleState
+     */
+    public function __unserialize(array $data): void
+    {   
+        if (!is_array($data) || empty($data['v']) || $data['v'] != self::VERSION) {
+            // Try using the old serialization strategy, since this would save
+            // an expensive resync of email collections.
+            // TODO: Is this still neded? Or should we expand this one also to the json_decode?
+            //$d_data = @unserialize($data);
+            //if (!is_array($d_data) || empty($d_data['v']) || $d_data['v'] != 1) {
+                throw new Horde_ActiveSync_Exception_StaleState('Cache version change');
+            //}
+        }
+        $this->_status = $data['s'];
+        $this->_messages = $data['m'];
+        $this->_serverid = $data['f'];
+        $this->_class = $data['c'];
+        $this->_lastSinceDate = $data['lsd'];
+        $this->_softDelete = $data['sd'];
+        $this->haveInitialSync = empty($data['hi']) ? !empty($this->_messages) : $data['hi'];
 
         if (!empty($this->_status[self::HIGHESTMODSEQ]) && is_string($this->_messages)) {
             $this->_messages = $this->_fromSequenceString($this->_messages);
