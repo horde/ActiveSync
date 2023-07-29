@@ -11,7 +11,7 @@ class Horde_ActiveSync_MessageBodyDataTest extends Horde_Test_Case
     public function testReturnProperlyTruncatedHtml()
     {
         $factory = new Horde_ActiveSync_Factory_TestServer();
-        $imap_client = $this->getMockSkipConstructor('Horde_Imap_Client_Socket');
+        $imap_client = $this->getMockSkipConstructor('Horde_Imap_Client_Socket', array('fetch'));
         $imap_client->expects($this->any())
             ->method('fetch')
             ->will($this->_getFixturesFor13711());
@@ -51,7 +51,7 @@ class Horde_ActiveSync_MessageBodyDataTest extends Horde_Test_Case
     public function testReturnHtmlNoTruncation()
     {
         $factory = new Horde_ActiveSync_Factory_TestServer();
-        $imap_client = $this->getMockSkipConstructor('Horde_Imap_Client_Socket');
+        $imap_client = $this->getMockSkipConstructor('Horde_Imap_Client_Socket', array('fetch'));
         $imap_client->expects($this->any())
             ->method('fetch')
             ->will($this->_getFixturesFor13711());

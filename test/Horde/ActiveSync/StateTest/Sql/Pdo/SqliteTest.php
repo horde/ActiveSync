@@ -8,7 +8,7 @@
  */
 class Horde_ActiveSync_StateTest_Sql_Pdo_SqliteTest extends Horde_ActiveSync_StateTest_Sql_Base
 {
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         $factory_db = new Horde_Test_Factory_Db();
         try {

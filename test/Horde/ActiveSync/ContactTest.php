@@ -15,7 +15,7 @@ class Horde_ActiveSync_ContactTest extends Horde_Test_Case
     {
         $contact = new Horde_ActiveSync_Message_Contact();
 
-        $this->setExpectedException('InvalidArgumentException');
+        $this->expectException('InvalidArgumentException');
         $contact->unknown = 'test';
         $test = $contact->unknown;
     }

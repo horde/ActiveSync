@@ -11,13 +11,13 @@ class Horde_ActiveSync_AppointmentTest extends Horde_Test_Case
 
     protected $_oldtz;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->_oldtz = date_default_timezone_get();
         date_default_timezone_set('America/New_York');
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         date_default_timezone_set($this->_oldtz);
     }

@@ -102,6 +102,8 @@ class Horde_ActiveSync_StateTest_Sql_Base extends Horde_ActiveSync_StateTest_Bas
      */
     public function testGetStateWithNoState()
     {
+        $this->expectNotToPerformAssertions();
+
         $this->_testGetStateWithNoState();
     }
 
@@ -185,7 +187,7 @@ class Horde_ActiveSync_StateTest_Sql_Base extends Horde_ActiveSync_StateTest_Bas
         $this->_testPartialSyncWithOnlyChangedHbInterval();
     }
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         $dir = dirname(__FILE__) . '/../../../../../migration/Horde/ActiveSync';
         if (!is_dir($dir)) {
@@ -206,7 +208,7 @@ class Horde_ActiveSync_StateTest_Sql_Base extends Horde_ActiveSync_StateTest_Bas
         }
     }
 
-    public static function tearDownAfterClass()
+    public static function tearDownAfterClass(): void
     {
         if (self::$db) {
             if (self::$migrator) {
@@ -218,7 +220,7 @@ class Horde_ActiveSync_StateTest_Sql_Base extends Horde_ActiveSync_StateTest_Bas
         parent::tearDownAfterClass();
     }
 
-    public function setUp()
+    public function setUp(): void
     {
         if (!self::$db) {
             $this->markTestSkipped(self::$reason);

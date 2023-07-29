@@ -41,7 +41,7 @@ class Horde_ActiveSync_Factory_TestServer extends Horde_Test_Case
         $this->_output = fopen('php://memory', 'wb+');
         $encoder = new Horde_ActiveSync_Wbxml_Encoder($this->_output);
         $state = $this->getMockSkipConstructor('Horde_ActiveSync_State_Base');
-        $this->request = $this->getMockSkipConstructor('Horde_Controller_Request_Http');
+        $this->request = $this->getMockSkipConstructor('Horde_Controller_Request_Http', array('getHeader', 'getServerVars', 'getGetVars'), array(), "Horde_Controller_Request");
         $this->request->expects($this->any())
             ->method('getHeader')
             ->will($this->returnValue('14.1'));
