@@ -220,6 +220,9 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
     public function getElementStartTag($tag)
     {
         $element = $this->getToken();
+        if (!(is_array($element)) || (!(array_key_exists(1, $element)))) {
+                return false;
+        }
 
         if (!empty($element[self::EN_TYPE]) &&
             $element[self::EN_TYPE] == self::EN_TYPE_STARTTAG &&
@@ -243,6 +246,11 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
     public function getElementEndTag()
     {
         $element = $this->getToken();
+
+        if (!(is_array($element)) || (!(array_key_exists(1, $element)))) {
+            return false;
+        }
+
         if ($element[self::EN_TYPE] == self::EN_TYPE_ENDTAG) {
             return $element;
         } else {
@@ -262,6 +270,11 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
     public function getElementContent()
     {
         $element = $this->getToken();
+
+        if (!(is_array($element)) || (!(array_key_exists(1, $element)))) {
+            return false;
+        }
+
         if ($element[self::EN_TYPE] == self::EN_TYPE_CONTENT) {
             return $element[self::EN_CONTENT];
         }
@@ -302,6 +315,10 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
      */
     protected function _logToken($el)
     {
+        if (!(is_array($el)) || (!(array_key_exists(1, $el)))) {
+            return;
+        }
+
         switch ($el[self::EN_TYPE]) {
         case self::EN_TYPE_STARTTAG:
             $indent = count($this->_logStack);
@@ -436,6 +453,7 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
                 return $element;
             }
         }
+        return $element;
     }
 
     /**
