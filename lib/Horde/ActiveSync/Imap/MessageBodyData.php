@@ -712,7 +712,7 @@ class Horde_ActiveSync_Imap_MessageBodyData
             $this->_validateBodyData($this->_plain);
             $this->_validatedPlain = true;
         }
-        if ($this->_plain['body'] instanceof Horde_Stream) {
+        if (!empty($this->_plain) && $this->_plain['body'] instanceof Horde_Stream) {
             return $this->_plain;
         }
 
@@ -734,7 +734,7 @@ class Horde_ActiveSync_Imap_MessageBodyData
             $this->_validateBodyData($this->_html);
             $this->_validatedHtml = true;
         }
-        if ($this->_html['body'] instanceof Horde_Stream) {
+        if (!empty($this->_html['body']) && $this->_html['body'] instanceof Horde_Stream) {
             return $this->_html;
         }
 
