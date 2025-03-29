@@ -327,6 +327,8 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
             $method = $vCal->getAttribute('METHOD');
             $this->_easMessage->contentclass = 'urn:content-classes:calendarmessage';
         } catch (Horde_Icalendar_Exception $e) {
+            $this->_logger->err($e->getMessage());
+            return;
         }
 
         switch ($method) {
