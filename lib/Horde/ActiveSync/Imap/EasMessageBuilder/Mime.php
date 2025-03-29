@@ -125,7 +125,7 @@ class Horde_ActiveSync_Imap_EasMessageBuilder_Mime extends Horde_ActiveSync_Imap
      */
     protected function _handleIdnaErrors(Horde_Mime_Headers $headers)
     {
-        foreach (array('from', 'to', 'cc') as $name) {
+        foreach (array('from', 'to', 'cc', 'reply-to') as $name) {
             if ($obj = $headers->getHeader($name)) {
                 $obj_idn = new Horde_ActiveSync_Mime_Headers_Addresses($name, $obj->full_value);
                 $headers->removeHeader($name);
