@@ -718,7 +718,7 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
      * @param Horde_ActiveSync_Connector_Exporter_FolderSync $exporter  The exporter.
      * @param array $seenFolders                             An array of folders.
      */
-    public function validateHierarchyChanges(Horde_ActiveSync_Connector_Exporter_FolderSync $exporter, array $seenFolders)
+    public function validateHierarchyChanges(Horde_ActiveSync_Connector_Exporter_FolderSync $exporter, array $seenFolders = array())
     {
         if ($this->_as->device->version < Horde_ActiveSync::VERSION_TWELVEONE ||
             count($exporter->changed)) {
@@ -729,7 +729,7 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
         foreach ($exporter->changed as $key => $folder) {
             if (isset($folder->serverid) &&
                 $syncFolder = $this->_cache->getFolder($folder->serverid) &&
-                in_array($folder->serverid, $seenfolders) &&
+                in_array($folder->serverid, $seenFolders) &&
                 $syncFolder['parentid'] == $folder->parentid &&
                 $syncFolder['displayname'] == $folder->displayname &&
                 $syncFolder['type'] == $folder->type) {
@@ -745,7 +745,7 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
 
         // Remove unnecessary deletions.
         foreach ($exporter->deleted as $key => $folder) {
-            if (($sid = array_search($folder, $seenfolders)) === false) {
+            if (($sid = array_search($folder, $seenFolders)) === false) {
                 $this->_logger->meta(sprintf(
                     'COLLECTIONS: Ignoring %s from deleted list because the device does not know it',
                     $folder)
