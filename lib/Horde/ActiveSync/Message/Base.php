@@ -176,6 +176,38 @@ class Horde_ActiveSync_Message_Base
     }
 
     /**
+     * Retrieve property value
+     *
+     * @param string $property  The property name
+     *
+     * @return mixed  The value of the requested property.
+     * @todo: to be used instead of accessor method
+     */
+    public function getProperty($property) {
+        return $this->_getAttribute($property, false);
+    }
+
+    /**
+     * Set propery value
+     *
+     * @param string $property  The property to set.
+     * @param mixed  $value     The value to set it to.
+     *
+     * @throws InvalidArgumentException
+     * @todo   to be used instead of setter
+     */
+    public function setProperty($property, $value)
+    {
+        if ($this->propertyExists($property)) {
+            $this->_properties[$property] = $value;
+            $this->_exists[$property] = true;
+        } else {
+            $this->_logger->err('Unknown property: ' . $property);
+            throw new InvalidArgumentException(get_class($this) . ' Unknown property: ' . $property);
+        }
+    }
+
+    /**
      * Accessor
      *
      * @param string $property  Property to get.
@@ -185,12 +217,7 @@ class Horde_ActiveSync_Message_Base
      */
     public function &__get($property)
     {
-        if ($this->_properties[$property] !== false) {
-            return $this->_properties[$property];
-        } else {
-            $string = '';
-            return $string;
-        }
+        return $this->_getAttribute($property, '');
     }
 
     /**
@@ -203,12 +230,7 @@ class Horde_ActiveSync_Message_Base
      */
     public function __set($property, $value)
     {
-        if (!array_key_exists($property, $this->_properties)) {
-            $this->_logger->err('Unknown property: ' . $property);
-            throw new InvalidArgumentException(get_class($this) . ' Unknown property: ' . $property);
-        }
-        $this->_properties[$property] = $value;
-        $this->_exists[$property] = true;
+        $this->setProperty($property, $value);
     }
 
     /**
@@ -693,12 +715,10 @@ class Horde_ActiveSync_Message_Base
      */
     protected function _getAttribute($name, $default = null)
     {
-        if ((!is_array($this->_properties[$name]) && $this->_properties[$name] !== false) ||
-            is_array($this->_properties[$name])) {
+        if ($this->propertyExists($name) && $this->_properties[$name] !== false) {
             return $this->_properties[$name];
-        } else {
-            return $default;
         }
+        return $default;
     }
 
     /**
