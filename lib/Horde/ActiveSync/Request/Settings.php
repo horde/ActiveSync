@@ -210,123 +210,124 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
         }
 
         // Output response
-        $this->_encoder->startWBXML();
-        $this->_encoder->startTag(self::SETTINGS_SETTINGS);
-        $this->_encoder->startTag(self::SETTINGS_STATUS);
-        $this->_encoder->content(self::STATUS_SUCCESS);
-        $this->_encoder->endTag(); // end self::SETTINGS_STATUS
+        $encoder = $this->_encoder;
+        $encoder->startWBXML();
+        $encoder->startTag(self::SETTINGS_SETTINGS);
+        $encoder->startTag(self::SETTINGS_STATUS);
+        $encoder->content(self::STATUS_SUCCESS);
+        $encoder->endTag(); // end self::SETTINGS_STATUS
         if (isset($request['set']['oof'])) {
-            $this->_encoder->startTag(self::SETTINGS_OOF);
-            $this->_encoder->startTag(self::SETTINGS_STATUS);
+            $encoder->startTag(self::SETTINGS_OOF);
+            $encoder->startTag(self::SETTINGS_STATUS);
             if (!isset($result['set']['oof'])) {
-                $this->_encoder->content(self::OOF_STATE_DISABLED);
+                $encoder->content(self::OOF_STATE_DISABLED);
             } else {
-                $this->_encoder->content($result['set']['oof']);
+                $encoder->content($result['set']['oof']);
             }
-            $this->_encoder->endTag(); // end self::SETTINGS_STATUS
-            $this->_encoder->endTag(); // end self::SETTINGS_OOF
+            $encoder->endTag(); // end self::SETTINGS_STATUS
+            $encoder->endTag(); // end self::SETTINGS_OOF
         }
         if (isset($device_properties)) {
-            $this->_encoder->startTag(self::SETTINGS_DEVICEINFORMATION);
-            $this->_encoder->startTag(self::SETTINGS_STATUS);
-            $this->_encoder->content(Horde_ActiveSync_Request_Settings::STATUS_SUCCESS);
-            $this->_encoder->endTag(); // end self::SETTINGS_STATUS
-            $this->_encoder->endTag(); // end self::SETTINGS_DEVICEINFORMATION
+            $encoder->startTag(self::SETTINGS_DEVICEINFORMATION);
+            $encoder->startTag(self::SETTINGS_STATUS);
+            $encoder->content(Horde_ActiveSync_Request_Settings::STATUS_SUCCESS);
+            $encoder->endTag(); // end self::SETTINGS_STATUS
+            $encoder->endTag(); // end self::SETTINGS_DEVICEINFORMATION
         }
         if (isset($request['set']['devicepassword'])) {
-            $this->_encoder->startTag(self::SETTINGS_DEVICEPASSWORD);
-            $this->_encoder->startTag(self::SETTINGS_STATUS);
+            $encoder->startTag(self::SETTINGS_DEVICEPASSWORD);
+            $encoder->startTag(self::SETTINGS_STATUS);
             if (!isset($result['set']['devicepassword'])) {
-                $this->_encoder->content(0);
+                $encoder->content(0);
             } else {
-                $this->_encoder->content($result['set']['devicepassword']);
+                $encoder->content($result['set']['devicepassword']);
             }
-            $this->_encoder->endTag(); // end self::SETTINGS_STATUS
-            $this->_encoder->endTag(); // end self::SETTINGS_DEVICEPASSWORD
+            $encoder->endTag(); // end self::SETTINGS_STATUS
+            $encoder->endTag(); // end self::SETTINGS_DEVICEPASSWORD
         }
         if (isset($request['get']['userinformation']) && isset($result['get']['userinformation'])) {
-            $this->_encoder->startTag(self::SETTINGS_USERINFORMATION);
-            $this->_encoder->startTag(self::SETTINGS_STATUS);
-            $this->_encoder->content($result['get']['userinformation']['status']);
-            $this->_encoder->endTag(); // end self::SETTINGS_STATUS
-            $this->_encoder->startTag(self::SETTINGS_GET);
+            $encoder->startTag(self::SETTINGS_USERINFORMATION);
+            $encoder->startTag(self::SETTINGS_STATUS);
+            $encoder->content($result['get']['userinformation']['status']);
+            $encoder->endTag(); // end self::SETTINGS_STATUS
+            $encoder->startTag(self::SETTINGS_GET);
 
             // @todo remove accounts existence check for H6.
             if ($version >= Horde_ActiveSync::VERSION_FOURTEENONE &&
                 !empty($result['get']['userinformation']['accounts'])) {
-                $this->_encoder->startTag(self::SETTINGS_ACCOUNTS);
+                $encoder->startTag(self::SETTINGS_ACCOUNTS);
                 foreach ($result['get']['userinformation']['accounts'] as $account) {
-                    $this->_encoder->startTag(self::SETTINGS_ACCOUNT);
+                    $encoder->startTag(self::SETTINGS_ACCOUNT);
 
                     if (!empty($account['id'])) {
-                        $this->_encoder->startTag(self::SETTINGS_ACCOUNTID);
-                        $this->_encoder->content($account['id']);
-                        $this->_encoder->endTag();
+                        $encoder->startTag(self::SETTINGS_ACCOUNTID);
+                        $encoder->content($account['id']);
+                        $encoder->endTag();
                     }
                     if (!empty($account['accountname'])) {
-                        $this->_encoder->startTag(self::SETTINGS_ACCOUNTNAME);
-                        $this->_encoder->content($account['accountname']);
-                        $this->_encoder->endTag();
+                        $encoder->startTag(self::SETTINGS_ACCOUNTNAME);
+                        $encoder->content($account['accountname']);
+                        $encoder->endTag();
                     }
                     if (!empty($account['fullname'])) {
-                        $this->_encoder->startTag(self::SETTINGS_USERDISPLAYNAME);
-                        $this->_encoder->content($account['fullname']);
-                        $this->_encoder->endTag();
+                        $encoder->startTag(self::SETTINGS_USERDISPLAYNAME);
+                        $encoder->content($account['fullname']);
+                        $encoder->endTag();
                     }
                     if (!empty($account['emailaddresses'])) {
-                        $this->_encoder->startTag(self::SETTINGS_EMAILADDRESSES);
-                        $this->_encoder->startTag(self::SETTINGS_PRIMARYSMTPADDRESS);
-                        $this->_encoder->content($account['emailaddresses'][0]);
-                        $this->_encoder->endTag(); // end self::SETTINGS_PRIMARYSMTPADDRESS
+                        $encoder->startTag(self::SETTINGS_EMAILADDRESSES);
+                        $encoder->startTag(self::SETTINGS_PRIMARYSMTPADDRESS);
+                        $encoder->content($account['emailaddresses'][0]);
+                        $encoder->endTag(); // end self::SETTINGS_PRIMARYSMTPADDRESS
                         foreach($account['emailaddresses'] as $value) {
-                            $this->_encoder->startTag(self::SETTINGS_SMTPADDRESS);
-                            $this->_encoder->content($value);
-                            $this->_encoder->endTag(); // end self::SETTINGS_SMTPADDRESS
+                            $encoder->startTag(self::SETTINGS_SMTPADDRESS);
+                            $encoder->content($value);
+                            $encoder->endTag(); // end self::SETTINGS_SMTPADDRESS
                         }
-                        $this->_encoder->endTag(); // SETTINGS_EMAILADDRESSES
+                        $encoder->endTag(); // SETTINGS_EMAILADDRESSES
                     }
-                    $this->_encoder->endTag(); // SETTINGS_ACCOUNT
+                    $encoder->endTag(); // SETTINGS_ACCOUNT
                 }
-                $this->_encoder->endTag(); // SETTINGS_ACCOUNTS
+                $encoder->endTag(); // SETTINGS_ACCOUNTS
             } else {
-                $this->_encoder->startTag(self::SETTINGS_EMAILADDRESSES);
+                $encoder->startTag(self::SETTINGS_EMAILADDRESSES);
                 if (!empty($result['get']['userinformation']['emailaddresses'])) {
                     foreach($result['get']['userinformation']['emailaddresses'] as $value) {
-                        $this->_encoder->startTag(self::SETTINGS_SMTPADDRESS);
-                        $this->_encoder->content($value);
-                        $this->_encoder->endTag(); // end self::SETTINGS_SMTPADDRESS
+                        $encoder->startTag(self::SETTINGS_SMTPADDRESS);
+                        $encoder->content($value);
+                        $encoder->endTag(); // end self::SETTINGS_SMTPADDRESS
                     }
                 }
-                $this->_encoder->endTag(); // end self::SETTINGS_EMAILADDRESSES
+                $encoder->endTag(); // end self::SETTINGS_EMAILADDRESSES
             }
-            $this->_encoder->endTag(); // end self::SETTINGS_GET
-            $this->_encoder->endTag(); // end self::SETTINGS_USERINFORMATION
+            $encoder->endTag(); // end self::SETTINGS_GET
+            $encoder->endTag(); // end self::SETTINGS_USERINFORMATION
         }
         if (isset($request['get']['oof'])) {
             $oof = $this->_getOofObject($result['get']['oof']);
-            $this->_encoder->startTag(self::SETTINGS_OOF);
+            $encoder->startTag(self::SETTINGS_OOF);
 
-            $this->_encoder->startTag(self::SETTINGS_STATUS);
-            $this->_encoder->content($result['get']['oof']['status']);
-            $this->_encoder->endTag(); // end self::SETTINGS_STATUS
+            $encoder->startTag(self::SETTINGS_STATUS);
+            $encoder->content($result['get']['oof']['status']);
+            $encoder->endTag(); // end self::SETTINGS_STATUS
 
             if ($result['get']['oof']['status'] == self::STATUS_SUCCESS) {
-                $this->_encoder->startTag(self::SETTINGS_GET);
-                $oof->encodeStream($this->_encoder);
-                $this->_encoder->endTag(); // end self::SETTINGS_GET
+                $encoder->startTag(self::SETTINGS_GET);
+                $oof->encodeStream($encoder);
+                $encoder->endTag(); // end self::SETTINGS_GET
             }
 
-            $this->_encoder->endTag(); // end self::SETTINGS_OOF
+            $encoder->endTag(); // end self::SETTINGS_OOF
         }
         if (isset($request['get']['rightsmanagementinfo'])) {
-            $this->_encoder->startTag(self::SETTINGS_RIGHTSMANAGEMENTINFO);
-            $this->_encoder->startTag(self::SETTINGS_STATUS);
-            $this->_encoder->content(self::STATUS_SUCCESS);
-            $this->_encoder->endTag();
-            $this->_encoder->endTag();
+            $encoder->startTag(self::SETTINGS_RIGHTSMANAGEMENTINFO);
+            $encoder->startTag(self::SETTINGS_STATUS);
+            $encoder->content(self::STATUS_SUCCESS);
+            $encoder->endTag();
+            $encoder->endTag();
         }
 
-        $this->_encoder->endTag(); // end self::SETTINGS_SETTINGS
+        $encoder->endTag(); // end self::SETTINGS_SETTINGS
 
         return true;
     }
