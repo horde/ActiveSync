@@ -95,8 +95,10 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
     protected function _handle()
     {
         if (!$this->_decoder->getElementStartTag(self::SETTINGS_SETTINGS)) {
-            throw new Horde_ActiveSync_Exception('Protocol Errror');
+            throw new Horde_ActiveSync_Exception('Protocol Error');
         }
+
+        $version = $this->_device->version;
 
         $request = array();
         while (($reqtype = ($this->_decoder->getElementStartTag(self::SETTINGS_OOF) ? self::SETTINGS_OOF :
@@ -171,7 +173,7 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
                         $device_properties[self::SETTINGS_ENABLEOUTBOUNDSMS] = $settings->enableoutboundsms;
 
                         try {
-                            $device_properties['version'] = $this->_device->version;
+                            $device_properties['version'] = $version;
                             $this->_device->setDeviceProperties($device_properties);
                             $this->_device->save();
                         } catch (Horde_ActiveSync_Exception $e) {
@@ -250,10 +252,9 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
             $this->_encoder->startTag(self::SETTINGS_GET);
 
             // @todo remove accounts existence check for H6.
-            if ($this->_device->version >= Horde_ActiveSync::VERSION_FOURTEENONE &&
+            if ($version >= Horde_ActiveSync::VERSION_FOURTEENONE &&
                 !empty($result['get']['userinformation']['accounts'])) {
                 $this->_encoder->startTag(self::SETTINGS_ACCOUNTS);
-                $havePrimary = false;
                 foreach ($result['get']['userinformation']['accounts'] as $account) {
                     $this->_encoder->startTag(self::SETTINGS_ACCOUNT);
 
@@ -273,13 +274,10 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
                         $this->_encoder->endTag();
                     }
                     if (!empty($account['emailaddresses'])) {
-                        if (!$havePrimary) {
-                            $this->_encoder->startTag(self::SETTINGS_EMAILADDRESSES);
-                            $this->_encoder->startTag(self::SETTINGS_PRIMARYSMTPADDRESS);
-                            $this->_encoder->content($account['emailaddresses'][0]);
-                            $havePrimary = true;
-                        }
-                        $this->_encoder->endTag();
+                        $this->_encoder->startTag(self::SETTINGS_EMAILADDRESSES);
+                        $this->_encoder->startTag(self::SETTINGS_PRIMARYSMTPADDRESS);
+                        $this->_encoder->content($account['emailaddresses'][0]);
+                        $this->_encoder->endTag(); // end self::SETTINGS_PRIMARYSMTPADDRESS
                         foreach($account['emailaddresses'] as $value) {
                             $this->_encoder->startTag(self::SETTINGS_SMTPADDRESS);
                             $this->_encoder->content($value);
@@ -287,7 +285,6 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
                         }
                         $this->_encoder->endTag(); // SETTINGS_EMAILADDRESSES
                     }
-
                     $this->_encoder->endTag(); // SETTINGS_ACCOUNT
                 }
                 $this->_encoder->endTag(); // SETTINGS_ACCOUNTS
