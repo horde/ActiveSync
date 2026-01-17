@@ -200,8 +200,8 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
 
         $this->_decoder->getElementEndTag(); // SETTINGS
 
-
         // Tell the backend
+        $result = [];
         if (isset($request['set'])) {
             $result['set'] = $this->_driver->setSettings($request['set'], $this->_device->id);
         }
@@ -245,7 +245,9 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
             $encoder->endTag(); // end self::SETTINGS_STATUS
             $encoder->endTag(); // end self::SETTINGS_DEVICEPASSWORD
         }
-        if (isset($request['get']['userinformation']) && isset($result['get']['userinformation'])) {
+        if ($version >= Horde_ActiveSync::VERSION_TWELVE &&
+            isset($request['get']['userinformation']) &&
+            isset($result['get']['userinformation'])) {
             $encoder->startTag(self::SETTINGS_USERINFORMATION);
             $encoder->startTag(self::SETTINGS_STATUS);
             $encoder->content($result['get']['userinformation']['status']);
@@ -253,43 +255,44 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
             $encoder->startTag(self::SETTINGS_GET);
 
             // @todo remove accounts existence check for H6.
-            if ($version >= Horde_ActiveSync::VERSION_FOURTEENONE &&
-                !empty($result['get']['userinformation']['accounts'])) {
-                $encoder->startTag(self::SETTINGS_ACCOUNTS);
-                foreach ($result['get']['userinformation']['accounts'] as $account) {
-                    $encoder->startTag(self::SETTINGS_ACCOUNT);
+            if ($version >= Horde_ActiveSync::VERSION_FOURTEENONE) {
+                if (!empty($result['get']['userinformation']['accounts'])) {
+                    $encoder->startTag(self::SETTINGS_ACCOUNTS);
+                    foreach ($result['get']['userinformation']['accounts'] as $account) {
+                        $encoder->startTag(self::SETTINGS_ACCOUNT);
 
-                    if (!empty($account['id'])) {
-                        $encoder->startTag(self::SETTINGS_ACCOUNTID);
-                        $encoder->content($account['id']);
-                        $encoder->endTag();
-                    }
-                    if (!empty($account['accountname'])) {
-                        $encoder->startTag(self::SETTINGS_ACCOUNTNAME);
-                        $encoder->content($account['accountname']);
-                        $encoder->endTag();
-                    }
-                    if (!empty($account['fullname'])) {
-                        $encoder->startTag(self::SETTINGS_USERDISPLAYNAME);
-                        $encoder->content($account['fullname']);
-                        $encoder->endTag();
-                    }
-                    if (!empty($account['emailaddresses'])) {
-                        $encoder->startTag(self::SETTINGS_EMAILADDRESSES);
-                        $encoder->startTag(self::SETTINGS_PRIMARYSMTPADDRESS);
-                        $encoder->content($account['emailaddresses'][0]);
-                        $encoder->endTag(); // end self::SETTINGS_PRIMARYSMTPADDRESS
-                        foreach($account['emailaddresses'] as $value) {
-                            $encoder->startTag(self::SETTINGS_SMTPADDRESS);
-                            $encoder->content($value);
-                            $encoder->endTag(); // end self::SETTINGS_SMTPADDRESS
+                        if (!empty($account['id'])) {
+                            $encoder->startTag(self::SETTINGS_ACCOUNTID);
+                            $encoder->content($account['id']);
+                            $encoder->endTag();
                         }
-                        $encoder->endTag(); // SETTINGS_EMAILADDRESSES
+                        if (!empty($account['accountname'])) {
+                            $encoder->startTag(self::SETTINGS_ACCOUNTNAME);
+                            $encoder->content($account['accountname']);
+                            $encoder->endTag();
+                        }
+                        if (!empty($account['fullname'])) {
+                            $encoder->startTag(self::SETTINGS_USERDISPLAYNAME);
+                            $encoder->content($account['fullname']);
+                            $encoder->endTag();
+                        }
+                        if (!empty($account['emailaddresses'])) {
+                            $encoder->startTag(self::SETTINGS_EMAILADDRESSES);
+                            $encoder->startTag(self::SETTINGS_PRIMARYSMTPADDRESS);
+                            $encoder->content($account['emailaddresses'][0]);
+                            $encoder->endTag(); // end self::SETTINGS_PRIMARYSMTPADDRESS
+                            foreach($account['emailaddresses'] as $value) {
+                                $encoder->startTag(self::SETTINGS_SMTPADDRESS);
+                                $encoder->content($value);
+                                $encoder->endTag(); // end self::SETTINGS_SMTPADDRESS
+                            }
+                            $encoder->endTag(); // SETTINGS_EMAILADDRESSES
+                        }
+                        $encoder->endTag(); // SETTINGS_ACCOUNT
                     }
-                    $encoder->endTag(); // SETTINGS_ACCOUNT
+                    $encoder->endTag(); // SETTINGS_ACCOUNTS
                 }
-                $encoder->endTag(); // SETTINGS_ACCOUNTS
-            } else {
+            } else { // EAS 12.0, 12.1, 14.0
                 $encoder->startTag(self::SETTINGS_EMAILADDRESSES);
                 if (!empty($result['get']['userinformation']['emailaddresses'])) {
                     foreach($result['get']['userinformation']['emailaddresses'] as $value) {
