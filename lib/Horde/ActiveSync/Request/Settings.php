@@ -308,6 +308,7 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
         if (isset($request['get']['oof'])) {
             $oof = $this->_getOofObject($result['get']['oof']);
             $this->_encoder->startTag(self::SETTINGS_OOF);
+
             $this->_encoder->startTag(self::SETTINGS_STATUS);
             $this->_encoder->content($result['get']['oof']['status']);
             $this->_encoder->endTag(); // end self::SETTINGS_STATUS
@@ -317,8 +318,8 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
                 $oof->encodeStream($this->_encoder);
                 $this->_encoder->endTag(); // end self::SETTINGS_GET
             }
-            $this->_encoder->endTag();
-            $this->_encoder->endTag();
+
+            $this->_encoder->endTag(); // end self::SETTINGS_OOF
         }
         if (isset($request['get']['rightsmanagementinfo'])) {
             $this->_encoder->startTag(self::SETTINGS_RIGHTSMANAGEMENTINFO);
