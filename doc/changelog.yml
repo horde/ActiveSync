@@ -9,7 +9,6 @@
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
   notes: |+
-
 3.0.0alpha4:
   api: 3.0.0alpha1
   state:
@@ -40,6 +39,225 @@
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
   notes: |+
+3.0.0-alpha6:
+  api: 3.0.0-alpha6
+  state:
+    release: alpha
+    api: alpha
+  date: 2026-03-07
+  license:
+    identifier: GPL-2.0-only
+    uri: https://spdx.org/licenses/GPL-2.0-only.html
+  notes: |-
+    Merge pull request #10 from amulet1/fix_message_base
+    fix: Implement checks to avoid log errors when accessing undefined properties.
+    Create README.md
+    Update ci.yml
+    Merge pull request #8 from TDannhauer/FRAMEWORK_6_0
+    Merge branch 'horde:FRAMEWORK_6_0' into FRAMEWORK_6_0
+    Merge pull request #9 from horde/TDannhauer-handle_IDNA-errors-for_reply-to
+    Update Mime.php
+    Merge pull request #7 from TDannhauer/patch-1
+    Update Mime.php
+    Update Collections.php
+    Update EasMessageBuilder.php : Handle exception
+    allow horde-installer-plugin in release pipeline
+    Development mode for ActiveSync-3.0.0alpha5
+    Released ActiveSync-3.0.0alpha4
+    added release workflow
+    MeetingRequest UID attribute optional
+    Update workflows and metadata for PHP 8 support
+    Add CI job for satis repo update
+    no errors
+    WIP, adjusted ci.yml and bootstrap.php
+    six difficult errors left, added ci.yml
+    WIP six errors left
+    WIP six errors left
+    WIP
+    Development mode for ActiveSync-3.0.0alpha5
+    Released ActiveSync-3.0.0alpha3
+    Development mode for ActiveSync-3.0.0alpha4
+    Released ActiveSync-3.0.0alpha2
+    Development mode for ActiveSync-3.0.0alpha3
+    Released ActiveSync-3.0.0alpha1
+    Components updated the package files.
+    Development mode for ActiveSync-3.0.0alpha3
+    Released ActiveSync-3.0.0alpha1
+    Components updated the package files.
+    Development mode for ActiveSync-3.0.0alpha3
+    Released ActiveSync-3.0.0-alpha1
+    Components updated the package files.
+    Development mode for ActiveSync-3.0.0alpha3
+    Components updated the package files.
+    Released ActiveSync-3.0.0-alpha1
+    Components updated the package files.
+    Existence check
+    [mjr] Improve client error when auth server is unavailable (Bug #15077).
+    [mjr] Fix fatal error when exception is thrown from imap client (Bug # 15113).
+    Bug: 15113 Fix getting code from exception
+    [mjr] Fix various Array offset on null errors.
+    Avoid access array offeset on null errors
+    Avoid access array offset on null errors
+    [mjr] Don't update state if IMAP server goes away (Bug #15091).
+    Attempt to fix Bug: 15091
+    Bug: 15077 Support case where auth server is unavailable.
+    fix small typo
+    [mjr] Prevent invalid weekly recurrence values.
+    [mjr] Minor php 7.4 compatibility changes.
+    Avoid array access on null error in php 7.4
+    self::   This is PHP, not Java...
+    Add some simple validation for the EAS Recurrence message.
+    Avoid PHP errors about overloaded properties.
+    [mjr] Remove GPLv2 Section 8 restrictions.
+    [mjr] Remove GPLv2 Section 8 restrictions.
+    Remove GPLv2 Section 8 restriction. Update copyright dates.
+    Sync with FRAMEWORK_5_2 branch.
+    Update supported PHP versions and configuration names.
+    [mjr] Fix issue causing initial sync of certain collections to fail (Bug #14987).
+    Bug: 14987 Fix issues due to differing structure  during first sync.
+    Fix test to reflect new assumptions about ios birthday handling.
+    changelog
+    More birthday handling fixes.
+    Remove unneccessary else clauses.
+    Sniff out the GMAIL android client
+    Fix text2Html conversion loosing fixed formatting.
+    Attempt to fix birthdates for iOS again.
+    [mjr] Improve PHP 7.3 compatibility.
+    continue -> break
+    Avoid php warnings if _changes is empty.
+    Prevent warnings during testing.
+    [mjr] Support for autodiscover.json
+    Don't assume we got a url back.
+    Document these paramters;
+    version 2 Autodiscovery (autodisover.json).
+    [mjr] Don't let error in iCal throw a fatal error. (Bug #14955).
+    [mjr] Prevent fatal error if TNEF data isn't decoded.
+    Don't let error in iCal throw a fatal error.
+    Don't attempt to replace the mime_part if the decoding failed.
+    PHP 7.3 continue -> break fix.
+    [mjr] Improve support for TNEF attachments.
+    Add alterPart to the activesync mime wrapper.
+    Shorten const name
+    Prepend an '.eml' file extension for message/rfc822 attachments;
+    Fix issue with handling TNEF attachments;
+    Fix scope
+    Fix scope; the device object is not in Adapter...
+    Remove redundant check.
+    Only decode TNEF if our client can't handle natively.
+    Standardize descriptions.
+    Don't assume it's a STATUS_NOTFOUND
+    [mjr] Fix returning update failures to the client.
+    Fix detected importfailures.
+    Fix setting the html body part.
+    Clean up a bit, break down methods, more SRP-ish...
+    [mjr] Fix issue causing the loss of reply text in SMARTREPLY requests (Bug #14841).
+    Always attempt to populate the nativeBodyType.
+    Only flag plain-as-html if we aren't requesting TYPE_MIME.
+    Try to honor BODYPREF when we don't have an HTML part.
+    [mjr] Fix returning picture data in GAL responses.
+    [mjr] Improve support for Outlook mobile application.
+    [mjr] Support outputting OPAQUE wbxml data.
+    [mjr] Fix parsing of ResolveRecipients command when a picture is requested.
+    GAL picture data is NOT opaque dispite the docs.
+    POC/WIP for outputing opaque binary data.
+    Fix scope
+    This is an xs:all, not xs:sequence.
+    Fix broken TAG_PICTURE parsing.
+    @todo
+    [mjr] Fix PHP warning when categories is false.
+    categories might be false here for some clients.
+    [mjr] Prevent exception when fetching MIME part of an already vanished message.
+    Enforce MS-ASCAL 3.2.4.4:
+    [mjr] Honor MS-ASCAL 3.2.4.4 with respect to empty datetime values in appointments and exceptions.
+    Protect against fetching part of  an already vanished message.
+    [mjr] Return default dates as specified by MS-ASCAL when start or end times are omitted.
+    Return dates as specified by MS-ASCAL when exception object omits them.
+    [mjr] Improve handling of SEARCH command when target folder is not found.
+    [mjr] Improve handling of PING requests when folder state is gone.
+    [mjr] More workarounds for broken wbxml.
+    Simplify/reduce indent.
+    Simplify
+    This can return valid, false-ish values, need explicit type check
+    Simplify:
+    Attempt to better handle unknown tag.
+    Improve logging: add device data.
+    Attempt to ignore a single unknown Wbxml.
+    Clean up error cases a bit.
+    Handle error gracefully when folder not found during SEARCH.
+    Remove PING_NEED_FULL status completely.
+    Fix broken handling of PING requests when folder state is missing.
+    changes.
+    [mjr] Fix subscribing to imap folder that already exists.
+    [mjr] Fix subscribing to imap folder that already exists.
+    Fix logic.
+    Enable PHP 7.3 CI.
+    This property name collides with the extended PHPUnit_Framework_TestCase.
+    Log this exception.
+    Pass a logger for EAS 2.5 too.
+    BFN
+    [mjr] Attempt to be more forgiving to broken WBXML requests.
+    Remove stray |+
+    [mjr] Fix PHP error due to null array value (Bug #14783).
+    [mjr] Fix PHP error due to null array value (Bug #14783).
+    A change might not have any categories.
+    ws/wrap/comments
+    parse error
+    Don't set a string value for an empty KEY_VALUES attribute.
+    Replace version number.
+    Development mode for Horde_ActiveSync-2.39.2
+    Released Horde_ActiveSync-2.39.1
+    Update for release.
+    Remove merge artifacts.
+    Better handling of broken Idna email addresses.
+    Add test
+    Update .horde.yml
+    [mjr] Better handling of broken Idna address encoding.
+    [mjr] Better handling of broken Idna address encoding.
+    Bump min version of Horde_Mime
+    BFN
+    [mjr] Fix bug causing setting of the status of Out of Office messages from the server to client to fail in certain cases.
+    Fix setting of the 'enabled' property.
+    Don't attempt to set *time properties if not exist.
+    Properly log empty tags.
+    Update package definitions.
+    Fix getting exit code on PHP 7.2+.
+    Fix versions.
+    phpdoc
+    This exception isn't thrown in this code path.
+    phpdoc
+    Treat permission errors as folder vanished errors when checking for changes.
+    phpdoc
+    Fix phpdoc. This has always been passed a folder object, not id.
+    This exception isn't thrown from this code path.
+    Fix bug #.
+    Bump minor version number, update various changelogs.
+    BFN
+    [mjr] Return appropriate status code when deleting a folder fails (Bug #14723).
+    Bug: 14723 Send correct status message when attempting to delete special folders.
+    Changes.
+    Fix handling of calendar attachments.
+    package.xml must not contain empty <notes> tags.
+    Create CHANGES for all components.
+    Regenerate package.xml from changelog.yml.
+    Build changelog.yml from existing changelog(s).
+    Update .horde.yml with extended information.
+    Update composer.json.
+    Enable 7.2 builds.
+    PEAR on 5.6 and 7.0 is fixed.
+    Update file list
+    Move phpunit configuration to base directory.
+    Indicate markup language.
+    Update references to COPYING files.
+    Use LICENSE consistently and move to base directory.
+    Stop flooding #horde channel.
+    Use https URLs.
+    Remove incorrect links.
+    Install all dependencies but PECL extensions.
+    Hopefully this finally fixes Travis builds now.
+    Always discover channel manually, due to Travis bug.
+    Fix Travis tests.
+    Add Travis configuration and .gitignore files.
+    Development mode for Horde_ActiveSync-2.38.9
 2.41.9:
   api: 2.41.0
   state:
@@ -105,7 +323,7 @@
   license:
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
-  notes: |+
+  notes: |
     [mjr] Remove GPLv2 Section 8 restrictions.
 2.41.3:
   api: 2.41.0
@@ -1850,46 +2068,6 @@
     [mjr] Fix fetching email messages from search results using ITEMOPERATIONS command (Bug #12212).
     [jan] Add Spanish translation (Manuel P. Ayala <mayala@unex.es>).
     [mjr] Add support for SyncStamps - either timestamps or backend controlled modification sequences.
-2.4.0:
-  api: 2.4.0
-  state:
-    release: stable
-    api: stable
-  date: 2013-06-04
-  license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: |
-    [mjr] Fix some issues caused by broken non-mime part truncation.
-    [mjr] Fix handling MIMETRUNCATION for emails with attachments (Bug #12289).
-    [mjr] Fix missing email body data for certain clients (Bug #12203).
-    [mjr] Fix requesting email data via ITEMOPERATION command (Bug #12292).
-    [mjr] Fix a BC break that was causing FOLDERSYNC requests to f fail.
-2.4.0RC2:
-  api: 2.4.0
-  state:
-    release: beta
-    api: stable
-  date: 2013-05-31
-  license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: |
-    [mjr] Fixes for broken clients like the S3 that request SMS sync even when told there is no SMS collection.
-2.4.0RC1:
-  api: 2.4.0
-  state:
-    release: beta
-    api: stable
-  date: 2013-05-30
-  license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: |
-    [mjr] Fix issue that could cause some emails to be ignored when sending changes if the email has the same UID as another email from another collection synced in the same request.
-    [mjr] Fix issue that caused synching to fail due to COLLECTION_TYPE being sent in OPTIONS node in EAS 14+.
-    [mjr] Fix enforcing forced provisioning.
-    [mjr] Allow Outlook 2013 to connect even when provisioning is forced.
 2.4.0beta5:
   api: 2.4.0
   state:
@@ -1959,6 +2137,46 @@
     [mjr] Add support for EAS 14.0 and 14.1 (see http://wiki.horde.org/ActiveSync/FeatureGrid for complete feature list).
     [mjr] Fix synchronizing certain recurring tasks (Bug #12223,  Thomas Jarosch <thomas.jarosch@intra2net.com>)
     [mjr] Fix issue that could cause some attachments to become corrupt on the client.
+2.4.0RC2:
+  api: 2.4.0
+  state:
+    release: beta
+    api: stable
+  date: 2013-05-31
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |
+    [mjr] Fixes for broken clients like the S3 that request SMS sync even when told there is no SMS collection.
+2.4.0RC1:
+  api: 2.4.0
+  state:
+    release: beta
+    api: stable
+  date: 2013-05-30
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |
+    [mjr] Fix issue that could cause some emails to be ignored when sending changes if the email has the same UID as another email from another collection synced in the same request.
+    [mjr] Fix issue that caused synching to fail due to COLLECTION_TYPE being sent in OPTIONS node in EAS 14+.
+    [mjr] Fix enforcing forced provisioning.
+    [mjr] Allow Outlook 2013 to connect even when provisioning is forced.
+2.4.0:
+  api: 2.4.0
+  state:
+    release: stable
+    api: stable
+  date: 2013-06-04
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |
+    [mjr] Fix some issues caused by broken non-mime part truncation.
+    [mjr] Fix handling MIMETRUNCATION for emails with attachments (Bug #12289).
+    [mjr] Fix missing email body data for certain clients (Bug #12203).
+    [mjr] Fix requesting email data via ITEMOPERATION command (Bug #12292).
+    [mjr] Fix a BC break that was causing FOLDERSYNC requests to f fail.
 2.3.6:
   api: 2.3.0
   state:
@@ -2311,27 +2529,6 @@
     uri: http://www.horde.org/licenses/gpl
   notes: |
     [mjr] Fix moving/deleting messages on some devices.
-2.0.0:
-  api: 2.0.0
-  state:
-    release: stable
-    api: stable
-  date: 2012-10-30
-  license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: |
-    First stable release for Horde 5.
-2.0.0RC1:
-  api: 2.0.0beta1
-  state:
-    release: beta
-    api: beta
-  date: 2012-10-26
-  license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: ~
 2.0.0beta4:
   api: 2.0.0beta1
   state:
@@ -2400,6 +2597,27 @@
     [mjr] Add EAS version 12.1 support.
     [mjr] Add EAS version 12.0 support.
     [mjr] Add email support.
+2.0.0RC1:
+  api: 2.0.0beta1
+  state:
+    release: beta
+    api: beta
+  date: 2012-10-26
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: ~
+2.0.0:
+  api: 2.0.0
+  state:
+    release: stable
+    api: stable
+  date: 2012-10-30
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |
+    First stable release for Horde 5.
 1.2.6:
   api: 1.2.0
   state:
@@ -2638,40 +2856,6 @@
   notes: |
     [mjr] Fix race conditions caused by broken clients sending an inappropriate PING request.
     [mjr] Fix issue with initial Android pairing
-1.0.0:
-  api: 1.0.0
-  state:
-    release: stable
-    api: stable
-  date: 2011-04-06
-  license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: |
-    First stable release for Horde 4.
-    [jan] Use Horde_Support_Uuid to generate UUIDs.
-1.0.0RC2:
-  api: 1.0.0
-  state:
-    release: beta
-    api: beta
-  date: 2011-03-29
-  license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: |
-    Second release candidate for Horde 4.
-1.0.0RC1:
-  api: 1.0.0
-  state:
-    release: beta
-    api: beta
-  date: 2011-03-22
-  license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: |
-    First release candidate for Horde 4.
 1.0.0beta1:
   api: 1.0.0
   state:
@@ -2694,3 +2878,37 @@
     uri: http://www.horde.org/licenses/gpl
   notes: |
     First alpha release for Horde 4.
+1.0.0RC2:
+  api: 1.0.0
+  state:
+    release: beta
+    api: beta
+  date: 2011-03-29
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |
+    Second release candidate for Horde 4.
+1.0.0RC1:
+  api: 1.0.0
+  state:
+    release: beta
+    api: beta
+  date: 2011-03-22
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |
+    First release candidate for Horde 4.
+1.0.0:
+  api: 1.0.0
+  state:
+    release: stable
+    api: stable
+  date: 2011-04-06
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |
+    First stable release for Horde 4.
+    [jan] Use Horde_Support_Uuid to generate UUIDs.
