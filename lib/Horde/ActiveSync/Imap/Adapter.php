@@ -909,55 +909,67 @@ class Horde_ActiveSync_Imap_Adapter
     {
         $imap_query = new Horde_Imap_Client_Search_Query();
         $imap_query->charset('UTF-8', false);
-        $mboxes = array();
-        $results = array();
+        $mboxes = [];
+        $results = [];
+
+        if ($query) {
+            $q = $query[0];
+            if (($q['op'] ?? '') === Horde_ActiveSync_Request_Search::SEARCH_AND) {
+                if (count($query) !== 1) {
+                    //TODO: Instead report status 8 Horde_ActiveSync_Request_Search::STORE_STATUS_COMPLEX
+                    throw new Horde_ActiveSync_Exception('Multiple AND elements are not supported.');
+                }
+            }
+            $query = [ $q['value'] ];
+        }
+
         foreach ($query as $q) {
-            switch ($q['op']) {
-            case Horde_ActiveSync_Request_Search::SEARCH_AND:
-                return $this->_doQuery(array($q['value']), $range);
-            default:
-                foreach ($q as $key => $value) {
-                    switch ($key) {
-                    case 'FolderType':
-                        if ($value != Horde_ActiveSync::CLASS_EMAIL) {
-                            throw new Horde_ActiveSync_Exception('Only Email folders are supported.');
-                        }
-                        break;
-                    case 'serverid':
-                        $mboxes[] = new Horde_Imap_Client_Mailbox($value);
-                        break;
-                    case Horde_ActiveSync_Message_Mail::POOMMAIL_DATERECEIVED:
-                        if ($q['op'] == Horde_ActiveSync_Request_Search::SEARCH_GREATERTHAN) {
-                            $query_range = Horde_Imap_Client_Search_Query::DATE_SINCE;
-                        } elseif ($q['op'] == Horde_ActiveSync_Request_Search::SEARCH_LESSTHAN) {
-                            $query_range = Horde_Imap_Client_Search_Query::DATE_BEFORE;
-                        } else {
-                            $query_range = Horde_Imap_Client_Search_Query::DATE_ON;
-                        }
-                        $imap_query->dateSearch($value, $query_range);
-                        break;
-                    case Horde_ActiveSync_Request_Search::SEARCH_FREETEXT:
-                        $imap_query->text($value, false);
-                        break;
-                    case 'subquery':
-                        $imap_query->andSearch(array($this->_buildSubQuery($value)));
+            $op = $q['op'] ?? '';
+            foreach ($q as $key => $value) {
+                switch ($key) {
+                case 'FolderType':
+                    if ($value !== Horde_ActiveSync::CLASS_EMAIL) {
+                        throw new Horde_ActiveSync_Exception('Only Email folders are supported.');
                     }
+                    break;
+                case 'serverid':
+                    $mboxes[] = new Horde_Imap_Client_Mailbox($value);
+                    break;
+                case Horde_ActiveSync_Message_Mail::POOMMAIL_DATERECEIVED:
+                    if ($op == Horde_ActiveSync_Request_Search::SEARCH_GREATERTHAN) {
+                        $query_range = Horde_Imap_Client_Search_Query::DATE_SINCE;
+                    } elseif ($op == Horde_ActiveSync_Request_Search::SEARCH_LESSTHAN) {
+                        $query_range = Horde_Imap_Client_Search_Query::DATE_BEFORE;
+                    } else {
+                        $query_range = Horde_Imap_Client_Search_Query::DATE_ON;
+                    }
+                    $imap_query->dateSearch($value, $query_range);
+                    break;
+                case Horde_ActiveSync_Request_Search::SEARCH_FREETEXT:
+                    $imap_query->text($value, false);
+                    break;
+                case 'subquery':
+                    $imap_query->andSearch(array($this->_buildSubQuery($value)));
+                    break;
                 }
             }
         }
-        if (empty($mboxes)) {
+
+        if (!$mboxes) {
             foreach ($this->getMailboxes() as $mailbox) {
                 $mboxes[] = $mailbox['ob'];
             }
         }
+
         foreach ($mboxes as $mbox) {
             try {
                 $search_res = $this->_getImapOb()->search(
                     $mbox,
                     $imap_query,
-                    array(
-                        'results' => array(Horde_Imap_Client::SEARCH_RESULTS_MATCH, Horde_Imap_Client::SEARCH_RESULTS_SAVE, Horde_Imap_Client::SEARCH_RESULTS_COUNT),
-                        'sort' => array(Horde_Imap_Client::SORT_REVERSE, Horde_Imap_Client::SORT_ARRIVAL))
+                    [
+                        'results' => [ Horde_Imap_Client::SEARCH_RESULTS_MATCH, Horde_Imap_Client::SEARCH_RESULTS_SAVE, Horde_Imap_Client::SEARCH_RESULTS_COUNT ],
+                        'sort' => [ Horde_Imap_Client::SORT_REVERSE, Horde_Imap_Client::SORT_ARRIVAL ]
+                    ]
                 );
             } catch (Horde_Imap_Client_Exception $e) {
                 throw new Horde_ActiveSync_Exception($e);
@@ -968,12 +980,7 @@ class Horde_ActiveSync_Imap_Adapter
 
             $ids = $search_res['match']->ids;
             foreach ($ids as $id) {
-                $results[] = array('uniqueid' => $mbox->utf8 . ':' . $id, 'searchfolderid' => $mbox->utf8);
-            }
-            if (!empty($range)) {
-                preg_match('/(.*)\-(.*)/', $range, $matches);
-                $return_count = $matches[2] - $matches[1];
-                $results = array_slice($results, $matches[1], $return_count + 1, true);
+                $results[] = [ 'uniqueid' => $mbox->utf8 . ':' . $id, 'searchfolderid' => $mbox->utf8 ];
             }
         }
 
