@@ -85,9 +85,9 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
             $this->_buffer->add(chr($this->version));
             $this->_isWbxml = false;
             return;
-        } else {
-            $this->_isWbxml = true;
         }
+
+        $this->_isWbxml = true;
 
         $this->publicid = $this->_getMBUInt();
         if ($this->publicid == 0) {
@@ -123,7 +123,7 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
     {
         // Ensure the buffer was created
         $this->_getTempStream();
-        // Need to read the stream into memeory since php://input isn't
+        // Need to read the stream into memory since php://input isn't
         // always seekable (Bug: 13160);
         $this->_buffer->add($this->_stream->getString());
         $this->_buffer->rewind();
@@ -139,30 +139,21 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
     public function getElement()
     {
         $element = $this->getToken();
-        if (empty($element)) {
-            return false;
-        }
-        switch ($element[self::EN_TYPE]) {
-        case self::EN_TYPE_STARTTAG:
-            return $element;
-        case self::EN_TYPE_ENDTAG:
-            return $element;
-        case self::EN_TYPE_CONTENT:
+        if ($element !== false && $element[self::EN_TYPE] === self::EN_TYPE_CONTENT) {
             while (1) {
                 $next = $this->getToken();
-                if ($next == false) {
+                if ($next === false) {
                     return false;
-                } elseif ($next[self::EN_TYPE] == self::EN_CONTENT) {
-                    $element[self::EN_CONTENT] .= $next[self::EN_CONTENT];
-                } else {
+                }
+                if ($next[self::EN_TYPE] !== self::EN_CONTENT) {
                     $this->_ungetElement($next);
                     break;
                 }
+                $element[self::EN_CONTENT] .= $next[self::EN_CONTENT];
             }
-            return $element;
         }
 
-        return false;
+        return $element;
     }
 
     /**
@@ -220,14 +211,13 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
     public function getElementStartTag($tag)
     {
         $element = $this->getToken();
+        if ($element !== false) {
+            if ($element[self::EN_TYPE] === self::EN_TYPE_STARTTAG &&
+                $element[self::EN_TAG] === $tag) {
+                $this->_lastStartElement = $element;
+                return $element;
+            }
 
-        if (!empty($element[self::EN_TYPE]) &&
-            $element[self::EN_TYPE] == self::EN_TYPE_STARTTAG &&
-            $element[self::EN_TAG] == $tag) {
-
-            $this->_lastStartElement = $element;
-            return $element;
-        } else {
             $this->_lastStartElement = false;
             $this->_ungetElement($element);
         }
@@ -243,9 +233,11 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
     public function getElementEndTag()
     {
         $element = $this->getToken();
-        if ($element[self::EN_TYPE] == self::EN_TYPE_ENDTAG) {
-            return $element;
-        } else {
+        if ($element !== false) {
+            if ($element[self::EN_TYPE] == self::EN_TYPE_ENDTAG) {
+                return $element;
+            }
+
             $this->_logger->err('Unmatched end tag:');
             $this->_logger->err(print_r($element, true));
             $this->_ungetElement($element);
@@ -262,10 +254,12 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
     public function getElementContent()
     {
         $element = $this->getToken();
-        if ($element[self::EN_TYPE] == self::EN_TYPE_CONTENT) {
-            return $element[self::EN_CONTENT];
+        if ($element !== false) {
+            if ($element[self::EN_TYPE] == self::EN_TYPE_CONTENT) {
+                return $element[self::EN_CONTENT];
+            }
+            $this->_ungetElement($element);
         }
-        $this->_ungetElement($element);
 
         return false;
     }
@@ -273,7 +267,7 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
     /**
      * Get the next [start | content | end] tag.
      *
-     * @return array  The next, complete, token array.
+     * @return array|boolean  The next, complete, token array | false on failure.
      */
     public function getToken()
     {
@@ -286,7 +280,7 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
 
         $el = $this->_getToken();
 
-        if (!empty($el)) {
+        if ($el !== false) {
             $this->_logToken($el);
         }
 
@@ -332,12 +326,12 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
     /**
      * Get the next start tag, content or end tag
      *
-     * @return array  The element array.
+     * @return array|boolean  The element array or false on end of stream.
      */
    protected function _getToken() {
 
         // Get the data from the input stream
-        $element = array();
+        $element = [];
 
         while (1) {
             $byte = $this->_getByte();
@@ -436,6 +430,8 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
                 return $element;
             }
         }
+
+        return false;
     }
 
     /**
