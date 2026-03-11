@@ -574,13 +574,15 @@ class Horde_ActiveSync_Imap_Adapter
     /**
      * Perform a search from a search mailbox request.
      *
-     * @param array $query  The query array.
+     * @param array $query          The search query.
+     * @param array $options        The search options.
+     * @param bool  $deepTraversal  Not currently supported.
      *
      * @return array  An array of 'uniqueid', 'searchfolderid' hashes.
      */
-    public function queryMailbox($query)
+    public function queryMailbox(array $query, array $options, bool $deepTraversal): array|int
     {
-        return $this->_doQuery($query['query']);
+        return $this->_doQuery($query, $options, $deepTraversal);
     }
 
     /**
@@ -897,21 +899,21 @@ class Horde_ActiveSync_Imap_Adapter
     /**
      * Perform an IMAP search based on a SEARCH request.
      *
-     * @param array $query  The search query.
+     * @param array $query          The search query.
+     * @param array $options        The search options (currently not used).
+     * @param bool  $deepTraversal  Not currently supported.
      *
-     * @return array  The results array containing an array of hashes:
+     * @todo Implement $deepTraversal support.
+     * @todo Implement $options support.
+     *
+     * @return array  Returns array containing an array of hashes:
      *   'uniqueid' => [The unique identifier of the result]
      *   'searchfolderid' => [The mailbox name that this result comes from]
      *
      * @throws Horde_ActiveSync_Exception
      */
-    protected function _doQuery(array $query)
+    protected function _doQuery(array $query, array $options, bool $deepTraversal): array|int
     {
-        $imap_query = new Horde_Imap_Client_Search_Query();
-        $imap_query->charset('UTF-8', false);
-        $mboxes = [];
-        $results = [];
-
         if ($query) {
             $q = $query[0];
             if (($q['op'] ?? '') === Horde_ActiveSync_Request_Search::SEARCH_AND) {
@@ -923,8 +925,11 @@ class Horde_ActiveSync_Imap_Adapter
             $query = [ $q['value'] ];
         }
 
+        $imap_query = new Horde_Imap_Client_Search_Query();
+        $imap_query->charset('UTF-8', false);
+
+        $mboxes = [];
         foreach ($query as $q) {
-            $op = $q['op'] ?? '';
             foreach ($q as $key => $value) {
                 switch ($key) {
                 case 'FolderType':
@@ -936,6 +941,7 @@ class Horde_ActiveSync_Imap_Adapter
                     $mboxes[] = new Horde_Imap_Client_Mailbox($value);
                     break;
                 case Horde_ActiveSync_Message_Mail::POOMMAIL_DATERECEIVED:
+                    $op = $q['op'] ?? '';
                     if ($op == Horde_ActiveSync_Request_Search::SEARCH_GREATERTHAN) {
                         $query_range = Horde_Imap_Client_Search_Query::DATE_SINCE;
                     } elseif ($op == Horde_ActiveSync_Request_Search::SEARCH_LESSTHAN) {
@@ -961,6 +967,7 @@ class Horde_ActiveSync_Imap_Adapter
             }
         }
 
+        $results = [];
         foreach ($mboxes as $mbox) {
             try {
                 $search_res = $this->_getImapOb()->search(
@@ -1012,9 +1019,9 @@ class Horde_ActiveSync_Imap_Adapter
      *              DEFAULT: false (Do not fetch header text).
      *   - structure: (boolean) Fetch message structure.
      *            DEFAULT: true (Fetch message structure).
-     *   - flags: (boolean) Fetch messagge flags.
+     *   - flags: (boolean) Fetch message flags.
      *            DEFAULT: true (Fetch message flags).
-     *   - envelope: (boolen) Fetch the envelope data.
+     *   - envelope: (boolean) Fetch the envelope data.
      *               DEFAULT: false (Do not fetch envelope). @since 2.4.0
      *
      * @return Horde_Imap_Fetch_Results  The results.
