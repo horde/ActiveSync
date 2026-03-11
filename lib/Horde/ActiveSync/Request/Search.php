@@ -120,27 +120,25 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
             throw new Horde_ActiveSync_Exception_InvalidRequest('Missing required SEARCH_QUERY.');
         }
 
-        $search_query = [];
+        $options = [];
+        $maxResults = 100;
 
         switch (Horde_String::lower($search_name)) {
         case 'documentlibrary':
             $maxResults = 1000;
-            if (!($search_query['query'] = $this->_parseQuery())) {
-                $search_status = self::SEARCH_STATUS_ERROR;
-                $store_status = self::STORE_STATUS_PROTERR;
-            }
+            // fall through
         case 'mailbox':
-            $maxResults = 100;
-            if (!($search_query['query'] = $this->_parseQuery())) {
+            $query = $this->_parseQuery();
+            if (!$query) {
                 $search_status = self::SEARCH_STATUS_ERROR;
                 $store_status = self::STORE_STATUS_PROTERR;
             }
             break;
         case 'gal':
-            $maxResults = 100;
-            $search_query['query'] = $this->_decoder->getElementContent();
+            $query = $this->_decoder->getElementContent();
             break;
         default:
+            $query = null;
             $search_status = self::SEARCH_STATUS_ERROR;
             $store_status = self::STORE_STATUS_PROTERR;
         }
@@ -150,10 +148,12 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
         }
 
         $range = null;
+        $rebuildResults = false;
+        $deepTraversal = false;
 
         $mime = Horde_ActiveSync::MIME_SUPPORT_NONE;
+        $searchbodypreference = [];
         if ($this->_decoder->getElementStartTag(self::SEARCH_OPTIONS)) {
-            $searchbodypreference = [];
             while(1) {
                 if ($this->_decoder->getElementStartTag(self::SEARCH_RANGE)) {
                     //FIXME: The result of including more than one Range element in a Search command request
@@ -164,51 +164,51 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
                     }
                 }
                 if ($this->_decoder->getElementStartTag(self::SEARCH_DEEPTRAVERSAL)) {
-                    if (!($search_query['deeptraversal'] = $this->_decoder->getElementContent())) {
-                        $search_query['deeptraversal'] = true;
+                    if (!($deepTraversal = $this->_decoder->getElementContent())) {
+                        $deepTraversal = true;
                     } elseif (!$this->_decoder->getElementEndTag()) {
                         return false;
                     }
                 }
                 if ($this->_decoder->getElementStartTag(self::SEARCH_REBUILDRESULTS)) {
-                    if (!($search_query['rebuildresults'] = $this->_decoder->getElementContent())) {
-                        $search_query['rebuildresults'] = true;
+                    if (!($rebuildResults = $this->_decoder->getElementContent())) {
+                        $rebuildResults = true;
                     } elseif (!$this->_decoder->getElementEndTag()) {
                         return false;
                     }
                 }
                 if ($this->_decoder->getElementStartTag(self::SEARCH_USERNAME)) {
-                    if (!($search_query['username'] = $this->_decoder->getElementContent())) {
+                    if (!($options['username'] = $this->_decoder->getElementContent())) {
                         return false;
                     } elseif (!$this->_decoder->getElementEndTag()) {
                         return false;
                     }
                 }
                 if ($this->_decoder->getElementStartTag(self::SEARCH_PASSWORD)) {
-                    if (!($search_query['password'] = $this->_decoder->getElementContent()))
+                    if (!($options['password'] = $this->_decoder->getElementContent()))
                         return false;
                     else
                         if(!$this->_decoder->getElementEndTag())
                         return false;
                 }
                 if ($this->_decoder->getElementStartTag(self::SEARCH_SCHEMA)) {
-                    if (!($search_query['schema'] = $this->_decoder->getElementContent())) {
-                        $search_query['schema'] = true;
+                    if (!($options['schema'] = $this->_decoder->getElementContent())) {
+                        $options['schema'] = true;
                     } elseif (!$this->_decoder->getElementEndTag()) {
                         return false;
                     }
                 }
                 // 14.1 Only
                 if ($this->_decoder->getElementStartTag(self::SEARCH_PICTURE)) {
-                    $search_query[self::SEARCH_PICTURE] = true;
+                    $options[self::SEARCH_PICTURE] = true;
                     if ($this->_decoder->getElementStartTag(self::SEARCH_MAXSIZE)) {
-                        $search_query[self::SEARCH_MAXSIZE] = $this->_decoder->getElementContent();
+                        $options[self::SEARCH_MAXSIZE] = $this->_decoder->getElementContent();
                         if (!$this->_decoder->getElementEndTag()) {
                             return false;
                         }
                     }
                     if ($this->_decoder->getElementStartTag(self::SEARCH_MAXPICTURES)) {
-                        $search_query[self::SEARCH_MAXPICTURES] = $this->_decoder->getElementContent();
+                        $options[self::SEARCH_MAXPICTURES] = $this->_decoder->getElementContent();
                         if (!$this->_decoder->getElementEndTag()) {
                             return false;
                         }
@@ -231,7 +231,7 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
                         $this->_rightsManagement($rm);
                     }
                     if ($this->_decoder->getElementStartTag(Horde_ActiveSync::AIRSYNCBASE_BODYPARTPREFERENCE)) {
-                        $this->_bodyPartPrefs($search_query);
+                        $this->_bodyPartPrefs($options);
                     }
                 }
 
@@ -252,51 +252,56 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
         }
 
         if ($store_status === self::STORE_STATUS_SUCCESS) {
-            switch(Horde_String::lower($search_name)) {
-            case 'mailbox':
-                $search_query['rebuildresults'] = !empty($search_query['rebuildresults']);
-                $search_query['deeptraversal'] =  !empty($search_query['deeptraversal']);
-                break;
-            }
+            $rebuildResults = !empty($rebuildResults);
+            $deepTraversal =  !empty($deepTraversal);
 
             $start = 0;
             $limit = $maxResults;
-            if ($range !== null && preg_match('/^(\d+)-(\d+)$/', $range, $matches)) {
-                $start = (int)$matches[1];
-                $end = (int)$matches[2];
-                if ($end < $start) {
-                    $store_status = self::STORE_STATUS_PROTERR;
-                } else {
-                    $limit = $end - $start + 1;
-                    if ($limit  > $maxResults) {
-                        // If the Range element value specified in the request exceeds the default range value,
-                        // a Status element (section 2.2.3.177.13) value of 12 is returned to indicate that the
-                        // maximum range has been exceeded
-                        $store_status = STORE_STATUS_RANGEERR;
+            if ($range !== null) {
+                if (preg_match('/^(\d+)-(\d+)$/', $range, $matches)) {
+                    $start = (int)$matches[1];
+                    $end = (int)$matches[2];
+                    if ($end < $start) {
+                        $store_status = self::STORE_STATUS_PROTERR;
+                    } else {
+                        $limit = $end - $start + 1;
+                        if ($limit  > $maxResults) {
+                            // If the Range element value specified in the request exceeds the default range value,
+                            // a Status element (section 2.2.3.177.13) value of 12 is returned to indicate that the
+                            // maximum range has been exceeded
+                            $store_status = self::STORE_STATUS_RANGEERR;
+                        }
                     }
+                } else {
+                    $store_status = self::STORE_STATUS_PROTERR;
                 }
-            } else {
-                $store_status = self::STORE_STATUS_PROTERR;
             }
         }
 
         // In the Search command response, the Total element (section 2.2.3.184.3) indicates an estimate 
         // of the total number of entries that matched the Query element (section 2.2.3.142.2) value.
-        if ($store_status === self::STORE_STATUS_SUCCESS && $search_query['query']) {
+        if ($store_status === self::STORE_STATUS_SUCCESS && $query) {
+            // Prepare search parameters
+            $params = new Horde_ActiveSync_Search_Params(
+                type: $search_name,
+                query: $query,
+                options: $options,
+                start: $start,
+                limit: $limit,
+                rebuildResults: $rebuildResults,
+                deepTraversal: $deepTraversal
+            );
+
             // Get search results from backend
-            $rows = $this->_driver->getSearchResults($search_name, $search_query);
-            if ($rows === null) {
-                $total = 0;
+            $results = $this->_driver->getSearchResults($params);
+
+            /* not yet */
+            // $store_status = $results->status;
+            if ($results->rows === null) {
                 $store_status = self::STORE_STATUS_SERVERERR;
-            } else {
-                $total = count($rows);
-                if ($limit > 0) {
-                    $rows = array_slice($rows, $start, $limit);
-                }
             }
         } else {
-            $rows = null;
-            $total = 0;
+            $results = null;
         }
 
         /* Send output */
@@ -314,8 +319,8 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
         $this->_encoder->content($store_status);
         $this->_encoder->endTag();
 
-        if ($rows) {
-            foreach ($rows as $u) {
+        if ($results && $results->rows) {
+            foreach ($results->rows as $u) {
                 switch (Horde_String::lower($search_name)) {
                 case 'documentlibrary':
                     $this->_encoder->startTag(self::SEARCH_RESULT);
@@ -416,13 +421,13 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
                 }
             }
 
-            $search_range = $start . '-' . ($start + count($rows) - 1);
+            $search_range = $start . '-' . ($start + count($results->rows) - 1);
             $this->_encoder->startTag(self::SEARCH_RANGE);
             $this->_encoder->content($search_range);
             $this->_encoder->endTag();
 
             $this->_encoder->startTag(self::SEARCH_TOTAL);
-            $this->_encoder->content($total);
+            $this->_encoder->content($results->total);
             $this->_encoder->endTag();
         }
 

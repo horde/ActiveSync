@@ -94,22 +94,15 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
     }
 
     /**
-     * Returns array of items which contain contact information
+     * Returns search results for the given search parameters.
      *
-     * @param string $type   The search type; ['gal'|'mailbox']
-     * @param array $query   The search query. An array containing:
-     *  - query: (string) The search term.
-     *           DEFAULT: none, REQUIRED
-     *  - range: (string)   A range limiter.
-     *           DEFAULT: none (No range used).
+     * @param Horde_ActiveSync_Search_Params $params  The search parameters.
      *
-     * @return array  An array containing:
-     *  - rows:   An array of search results
-     *  - status: The search store status code.
+     * @return Horde_ActiveSync_Search_Results  The search results.
      */
-    public function getSearchResults($type, array $query)
+    public function getSearchResults(Horde_ActiveSync_Search_Params $params): Horde_ActiveSync_Search_Results
     {
-        return array();
+        return [];
     }
 
     /**
