@@ -215,7 +215,7 @@ class Horde_ActiveSync_Message_Base
      * @return mixed  The value of the requested property.
      * @todo: Return boolean false if not set. Not BC to change it.
      */
-    public function &__get($property)
+    public function __get($property)
     {
         return $this->_getAttribute($property, '');
     }

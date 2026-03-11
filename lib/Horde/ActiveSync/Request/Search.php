@@ -82,6 +82,7 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
     const STORE_STATUS_CONNECTIONERR = 7;
     const STORE_STATUS_COMPLEX       = 8;
     const STORE_STATUS_FOLDERSYNC    = 11;
+    const STORE_STATUS_RANGEERR      = 12;
 
     /**
      * @var Horde_ActiveSync_Collections
@@ -95,6 +96,8 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
      */
     protected function _handle()
     {
+        // See https://learn.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-ascmd/8211179b-14f3-44ab-9de6-b69ca2a48c4e
+
         $this->_logger->meta('Handling SEARCH command.');
         $search_status = self::SEARCH_STATUS_SUCCESS;
         $store_status = self::STORE_STATUS_SUCCESS;
@@ -117,29 +120,45 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
             throw new Horde_ActiveSync_Exception_InvalidRequest('Missing required SEARCH_QUERY.');
         }
 
-        $search_query = array();
+        $search_query = [];
+
         switch (Horde_String::lower($search_name)) {
         case 'documentlibrary':
-        case 'mailbox':
+            $maxResults = 1000;
             if (!($search_query['query'] = $this->_parseQuery())) {
                 $search_status = self::SEARCH_STATUS_ERROR;
-                $store_status = self::STORE_STATUS_FOLDERSYNC;
+                $store_status = self::STORE_STATUS_PROTERR;
+            }
+        case 'mailbox':
+            $maxResults = 100;
+            if (!($search_query['query'] = $this->_parseQuery())) {
+                $search_status = self::SEARCH_STATUS_ERROR;
+                $store_status = self::STORE_STATUS_PROTERR;
             }
             break;
         case 'gal':
+            $maxResults = 100;
             $search_query['query'] = $this->_decoder->getElementContent();
+            break;
+        default:
+            $search_status = self::SEARCH_STATUS_ERROR;
+            $store_status = self::STORE_STATUS_PROTERR;
         }
 
         if (!$this->_decoder->getElementEndTag()) {
             return false;
         }
 
+        $range = null;
+
         $mime = Horde_ActiveSync::MIME_SUPPORT_NONE;
         if ($this->_decoder->getElementStartTag(self::SEARCH_OPTIONS)) {
-            $searchbodypreference = array();
+            $searchbodypreference = [];
             while(1) {
                 if ($this->_decoder->getElementStartTag(self::SEARCH_RANGE)) {
-                    $search_query['range'] = $this->_decoder->getElementContent();
+                    //FIXME: The result of including more than one Range element in a Search command request
+                    //       is undefined. The server MAY return a protocol status error in response to such a command request.
+                    $range = $this->_decoder->getElementContent();
                     if (!$this->_decoder->getElementEndTag()) {
                         return false;
                     }
@@ -198,7 +217,7 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
 
                 if ($this->_decoder->getElementStartTag(Horde_ActiveSync::AIRSYNCBASE_BODYPREFERENCE)) {
                     $this->_bodyPrefs($searchbodypreference);
-                    $searchbodypreference = empty($searchbodypreference['bodyprefs']) ? array() : $searchbodypreference['bodyprefs'];
+                    $searchbodypreference = empty($searchbodypreference['bodyprefs']) ? [] : $searchbodypreference['bodyprefs'];
                 }
 
                 if ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_MIMESUPPORT)) {
@@ -232,25 +251,52 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
             return false;
         }
 
-        $search_query['range'] = empty($search_query['range']) ? '0-99' : $search_query['range'];
-        switch(Horde_String::lower($search_name)) {
-        case 'mailbox':
-            $search_query['rebuildresults'] = !empty($search_query['rebuildresults']);
-            $search_query['deeptraversal'] =  !empty($search_query['deeptraversal']);
-            break;
+        if ($store_status === self::STORE_STATUS_SUCCESS) {
+            switch(Horde_String::lower($search_name)) {
+            case 'mailbox':
+                $search_query['rebuildresults'] = !empty($search_query['rebuildresults']);
+                $search_query['deeptraversal'] =  !empty($search_query['deeptraversal']);
+                break;
+            }
+
+            $start = 0;
+            $limit = $maxResults;
+            if ($range !== null && preg_match('/^(\d+)-(\d+)$/', $range, $matches)) {
+                $start = (int)$matches[1];
+                $end = (int)$matches[2];
+                if ($end < $start) {
+                    $store_status = self::STORE_STATUS_PROTERR;
+                } else {
+                    $limit = $end - $start + 1;
+                    if ($limit  > $maxResults) {
+                        // If the Range element value specified in the request exceeds the default range value,
+                        // a Status element (section 2.2.3.177.13) value of 12 is returned to indicate that the
+                        // maximum range has been exceeded
+                        $store_status = STORE_STATUS_RANGEERR;
+                    }
+                }
+            } else {
+                $store_status = self::STORE_STATUS_PROTERR;
+            }
         }
 
-        // Get search results from backend
-        if ($search_query['query']) {
-            $search_result = $this->_driver->getSearchResults($search_name, $search_query);
-            // @TODO: Remove for H6. Total should be returned from the search call,
-            // if it's not, do the best we can an use the count of results from
-            // this page.
-            if (empty($search_result['total'])) {
-                $search_result['total'] = count($search_result['rows']);
+        // In the Search command response, the Total element (section 2.2.3.184.3) indicates an estimate 
+        // of the total number of entries that matched the Query element (section 2.2.3.142.2) value.
+        if ($store_status === self::STORE_STATUS_SUCCESS && $search_query['query']) {
+            // Get search results from backend
+            $rows = $this->_driver->getSearchResults($search_name, $search_query);
+            if ($rows === null) {
+                $total = 0;
+                $store_status = self::STORE_STATUS_SERVERERR;
+            } else {
+                $total = count($rows);
+                if ($limit > 0) {
+                    $rows = array_slice($rows, $start, $limit);
+                }
             }
         } else {
-            $search_result = array();
+            $rows = null;
+            $total = 0;
         }
 
         /* Send output */
@@ -268,10 +314,8 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
         $this->_encoder->content($store_status);
         $this->_encoder->endTag();
 
-        if (is_array($search_result['rows']) && !empty($search_result['rows'])) {
-            $count = 0;
-            foreach ($search_result['rows'] as $u) {
-                $count++;
+        if ($rows) {
+            foreach ($rows as $u) {
                 switch (Horde_String::lower($search_name)) {
                 case 'documentlibrary':
                     $this->_encoder->startTag(self::SEARCH_RESULT);
@@ -372,22 +416,13 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
                 }
             }
 
-            if (!empty($search_query['range'])) {
-                $range = explode('-', $search_query['range']);
-                // If total results are less than max range,
-                // we have all results and must modify the returned range.
-                if ($count < ($range[1] - $range[0] + 1)) {
-                    $search_range = $range[0] . '-' . ($count - 1);
-                } else {
-                    $search_range = $search_query['range'];
-                }
-            }
+            $search_range = $start . '-' . ($start + count($rows) - 1);
             $this->_encoder->startTag(self::SEARCH_RANGE);
             $this->_encoder->content($search_range);
             $this->_encoder->endTag();
 
             $this->_encoder->startTag(self::SEARCH_TOTAL);
-            $this->_encoder->content($search_result['total']);
+            $this->_encoder->content($total);
             $this->_encoder->endTag();
         }
 
