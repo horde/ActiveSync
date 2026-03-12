@@ -39,6 +39,16 @@
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
   notes: |+
+3.0.0-alpha8:
+  api: 3.0.0-alpha8
+  state:
+    release: alpha
+    api: alpha
+  date: 2026-03-12
+  license:
+    identifier: GPL-2.0-only
+    uri: https://spdx.org/licenses/GPL-2.0-only.html
+  notes: Release version 3.0.0-alpha8
 3.0.0-alpha6:
   api: 3.0.0-alpha6
   state:
