@@ -20,7 +20,7 @@
  * @property-read Horde_ActiveSync_Wbxml_Encoder $encoder The Wbxml encoder.
  * @property-read Horde_ActiveSync_Wbxml_Decoder $decoder The Wbxml decoder.
  * @property-read Horde_ActiveSync_State_Base $state      The state object.
- * @property-read Horde_Controller_Reqeust_Http $request  The HTTP request object.
+ * @property-read Horde_Controller_Request_Http $request  The HTTP request object.
  * @property-read Horde_ActiveSync_Driver_Base $driver    The backend driver object.
  * @property-read boolean|string $provisioning Provisioning support: True, False, or 'loose'
  * @property-read boolean $multipart Indicate this is a multipart request.
@@ -381,10 +381,38 @@ class Horde_ActiveSync
     protected $_certPath;
 
     /**
+     * The policy key.
+     *
+     * @var integer
+     */
+    protected $_policykey;
+
+    /**
      *
      * @var Horde_ActiveSync_Device
      */
     protected static $_device;
+
+    /**
+     * The HTTP request object.
+     *
+     * @var Horde_Controller_Request_Http
+     */
+    protected $_request;
+
+    /**
+     * The backend driver.
+     *
+     * @var Horde_ActiveSync_Driver_Base
+     */
+    protected $_driver;
+
+    /**
+     * Device state manager.
+     *
+     * @var Horde_ActiveSync_State_Base
+     */
+    protected $_state;
 
     /**
      * Wbxml encoder
