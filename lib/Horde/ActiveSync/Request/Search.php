@@ -135,7 +135,7 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
             }
             break;
         case 'gal':
-            $query = $this->_decoder->getElementContent();
+            $query = (array) $this->_decoder->getElementContent();
             break;
         default:
             $query = null;
