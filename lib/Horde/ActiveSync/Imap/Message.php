@@ -741,7 +741,15 @@ class Horde_ActiveSync_Imap_Message
      */
     public function getDate()
     {
-        return new Horde_Date((string)$this->envelope->date);
+        $date = $this->envelope->date;
+
+        // Newer IMAP envelope handling may provide a Unix timestamp as string.
+        // Horde_Date accepts int timestamps but not numeric timestamp strings.
+        if (is_string($date) && ctype_digit($date)) {
+            return new Horde_Date((int)$date);
+        }
+
+        return new Horde_Date((string)$date);
     }
 
     /**
