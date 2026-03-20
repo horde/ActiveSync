@@ -39,6 +39,16 @@
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
   notes: |+
+3.0.0-alpha10:
+  api: 3.0.0-alpha10
+  state:
+    release: alpha
+    api: alpha
+  date: 2026-03-20
+  license:
+    identifier: GPL-2.0-only
+    uri: https://spdx.org/licenses/GPL-2.0-only.html
+  notes: Improve date handling in getDate method
 3.0.0-alpha9:
   api: 3.0.0-alpha9
   state:

@@ -11,7 +11,7 @@
             "role": "lead"
         }
     ],
-    "time": "2026-03-15",
+    "time": "2026-03-20",
     "repositories": [],
     "require": {
         "horde/horde-installer-plugin": "dev-FRAMEWORK_6_0 || ^3 || ^2",

@@ -53,3 +53,9 @@ run-tests.log
 # Added by horde-components QC --fix-qc-issues
 # Local PHP configuration files
 **/*.local.php
+
+# Added by horde-components QC --fix-qc-issues
+# Composer lock file (libraries should not commit lock files)
+/composer.lock
+# PHPUnit Cache (other)
+/.phpunit.cache
