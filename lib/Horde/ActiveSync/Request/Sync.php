@@ -1250,14 +1250,15 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
 
         $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERS);
 
-        // Get new synckey if needed
+        // Generate new synckey for initial sync, state reset, or when synckey missing/invalid
         if ($this->_statusCode == self::STATUS_KEYMISM ||
             !empty($collection['importedchanges']) ||
             !empty($collection['getchanges']) ||
+            empty($collection['synckey']) ||
             $collection['synckey'] == '0') {
 
-            $collection['newsynckey'] = Horde_ActiveSync_State_Base::getNewSyncKey(($this->_statusCode == self::STATUS_KEYMISM) ? 0 : $collection['synckey']);
-            if ($collection['synckey'] != '0') {
+            $collection['newsynckey'] = Horde_ActiveSync_State_Base::getNewSyncKey(($this->_statusCode == self::STATUS_KEYMISM) ? 0 : ($collection['synckey'] ?? 0));
+            if (!empty($collection['synckey']) && $collection['synckey'] != '0') {
                 $this->_state->removeState(array('synckey' => $collection['synckey']));
             }
         }
