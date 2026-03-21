@@ -1242,9 +1242,23 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
      * Helper for handling sync errors
      *
      * @param array $collection
+     *
+     * @see MS-ASCMD 2.2.2.18 Sync command response structure
      */
     protected function _handleError(array $collection)
     {
+        // Log detailed error context for diagnostics
+        if (isset($this->_logger)) {
+            $this->_logger->err(sprintf(
+                'SYNC ERROR: status=%s, collection_id=%s, class=%s, synckey=%s, keys=[%s]',
+                $this->_statusCode ?? 'UNKNOWN',
+                $collection['id'] ?? 'MISSING',
+                $collection['class'] ?? 'MISSING',
+                $collection['synckey'] ?? 'MISSING',
+                implode(',', array_keys($collection))
+            ));
+        }
+
         $this->_encoder->startWBXML();
         $this->_encoder->startTag(Horde_ActiveSync::SYNC_SYNCHRONIZE);
 
