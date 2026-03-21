@@ -45,33 +45,34 @@ class Horde_ActiveSync_Folder_Collection extends Horde_ActiveSync_Folder_Base im
     }
 
     /**
-     * Serialize this object.
+     * Serialize this object using modern PHP serialization.
      *
-     * @return string  The serialized data.
+     * @return array  The data to serialize.
+     * @since 3.0.0-beta2
      */
-    public function serialize()
+    public function __serialize(): array
     {
-        return json_encode(array(
+        return array(
             's' => $this->_status,
             'f' => $this->_serverid,
             'c' => $this->_class,
             'lsd' => $this->_lastSinceDate,
             'sd' => $this->_softDelete,
             'i' => $this->haveInitialSync,
-            'v' => self::VERSION)
+            'v' => self::VERSION
         );
     }
 
     /**
-     * Reconstruct the object from serialized data.
+     * Reconstruct the object from serialized data using modern PHP serialization.
      *
-     * @param string $data  The serialized data.
+     * @param array $data  The serialized data.
      * @throws Horde_ActiveSync_Exception_StaleState
+     * @since 3.0.0-beta2
      */
-    public function unserialize($data)
+    public function __unserialize(array $data): void
     {
-       $data = @json_decode($data, true);
-        if (!is_array($data) || empty($data['v']) || $data['v'] != self::VERSION) {
+        if (empty($data['v']) || $data['v'] != self::VERSION) {
             throw new Horde_ActiveSync_Exception_StaleState('Cache version change');
         }
         $this->_status = $data['s'];
@@ -80,6 +81,37 @@ class Horde_ActiveSync_Folder_Collection extends Horde_ActiveSync_Folder_Base im
         $this->haveInitialSync = $data['i'];
         $this->_lastSinceDate = empty($data['lsd']) ? 0 : $data['lsd'];
         $this->_softDelete = empty($data['sd']) ? 0 : $data['sd'];
+    }
+
+    /**
+     * Serialize this object (legacy Serializable interface).
+     *
+     * Delegates to __serialize() and JSON-encodes for backward compatibility
+     * with old "C" format data storage.
+     *
+     * @return string  The serialized data.
+     */
+    public function serialize()
+    {
+        return json_encode($this->__serialize());
+    }
+
+    /**
+     * Reconstruct the object from serialized data (legacy Serializable interface).
+     *
+     * Supports both old "C" format (JSON-encoded) data and delegates to
+     * __unserialize() for processing.
+     *
+     * @param string $data  The serialized data.
+     * @throws Horde_ActiveSync_Exception_StaleState
+     */
+    public function unserialize($data)
+    {
+        $decoded = @json_decode($data, true);
+        if (!is_array($decoded)) {
+            throw new Horde_ActiveSync_Exception_StaleState('Invalid serialized data');
+        }
+        $this->__unserialize($decoded);
     }
 
 }
