@@ -1242,23 +1242,81 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
      * Helper for handling sync errors
      *
      * @param array $collection
+     *
+     * @see MS-ASCMD 2.2.2.18 Sync command response structure
+     * @see MS-ASCMD 2.2.3.29.4 Class element in EAS > 12.1 sent via OPTIONS
+     * @see Line 643-648 for similar CollectionId requirement handling
+     * @see Line 706-711 for class retrieval pattern
+     * @see Collections.php:1063-1065 for FolderGone exception pattern
      */
     protected function _handleError(array $collection)
     {
+        // Log detailed error context for diagnostics
+        if (isset($this->_logger)) {
+            $this->_logger->err(sprintf(
+                'SYNC ERROR: status=%s, collection_id=%s, class=%s, synckey=%s, keys=[%s]',
+                $this->_statusCode ?? 'UNKNOWN',
+                $collection['id'] ?? 'MISSING',
+                $collection['class'] ?? 'MISSING',
+                $collection['synckey'] ?? 'MISSING',
+                implode(',', array_keys($collection))
+            ));
+        }
+
         $this->_encoder->startWBXML();
         $this->_encoder->startTag(Horde_ActiveSync::SYNC_SYNCHRONIZE);
 
         $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERS);
 
-        // Get new synckey if needed
+        // Generate new synckey for initial sync, state reset, or when synckey missing/invalid
         if ($this->_statusCode == self::STATUS_KEYMISM ||
             !empty($collection['importedchanges']) ||
             !empty($collection['getchanges']) ||
+            empty($collection['synckey']) ||
             $collection['synckey'] == '0') {
 
-            $collection['newsynckey'] = Horde_ActiveSync_State_Base::getNewSyncKey(($this->_statusCode == self::STATUS_KEYMISM) ? 0 : $collection['synckey']);
-            if ($collection['synckey'] != '0') {
+            $collection['newsynckey'] = Horde_ActiveSync_State_Base::getNewSyncKey(($this->_statusCode == self::STATUS_KEYMISM) ? 0 : ($collection['synckey'] ?? 0));
+            if (!empty($collection['synckey']) && $collection['synckey'] != '0') {
                 $this->_state->removeState(array('synckey' => $collection['synckey']));
+            }
+        }
+
+        // Collection-specific error response requires CollectionId per MS-ASCMD; fallback to global error
+        if (empty($collection['id'])) {
+            if (isset($this->_logger)) {
+                $this->_logger->err('Cannot send SYNC error response: collection has no ID. This indicates a very early protocol error.');
+                $this->_logger->debug(sprintf(
+                    'Collection state at error: synckey=%s, class=%s, available_keys=[%s]',
+                    $collection['synckey'] ?? 'NONE',
+                    $collection['class'] ?? 'NONE',
+                    implode(',', array_keys($collection))
+                ));
+            }
+            $this->_statusCode = self::STATUS_PROTERROR;
+            $this->_handleGlobalSyncError();
+            return;
+        }
+
+        // Collection class may be missing in EAS > 12.1; retrieve from cache or signal folder resync
+        if (empty($collection['class'])) {
+            $collection['class'] = $this->_collections->getCollectionClass($collection['id']);
+            if (!$collection['class']) {
+                // Cannot determine class - collection may be deleted/invalid, signal FOLDERSYNC required
+                if (isset($this->_logger)) {
+                    $this->_logger->err(sprintf(
+                        'Cannot determine collection class for id=%s - collection may be deleted or cache invalid',
+                        $collection['id']
+                    ));
+                }
+                $this->_statusCode = self::STATUS_FOLDERSYNC_REQUIRED;
+                // Use fallback class value to prevent encoder crash while sending FOLDERSYNC_REQUIRED status
+                $collection['class'] = 'Email';
+            } elseif (isset($this->_logger)) {
+                $this->_logger->debug(sprintf(
+                    'Retrieved missing collection class from cache: %s for id=%s',
+                    $collection['class'],
+                    $collection['id']
+                ));
             }
         }
 
