@@ -1242,6 +1242,9 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
      * Helper for handling sync errors
      *
      * @param array $collection
+     *
+     * @see MS-ASCMD 2.2.2.18 Sync command response structure
+     * @see Line 643-648 for similar CollectionId requirement handling
      */
     protected function _handleError(array $collection)
     {
@@ -1260,6 +1263,22 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
             if ($collection['synckey'] != '0') {
                 $this->_state->removeState(array('synckey' => $collection['synckey']));
             }
+        }
+
+        // Collection-specific error response requires CollectionId per MS-ASCMD; fallback to global error
+        if (empty($collection['id'])) {
+            if (isset($this->_logger)) {
+                $this->_logger->err('Cannot send SYNC error response: collection has no ID. This indicates a very early protocol error.');
+                $this->_logger->debug(sprintf(
+                    'Collection state at error: synckey=%s, class=%s, available_keys=[%s]',
+                    $collection['synckey'] ?? 'NONE',
+                    $collection['class'] ?? 'NONE',
+                    implode(',', array_keys($collection))
+                ));
+            }
+            $this->_statusCode = self::STATUS_PROTERROR;
+            $this->_handleGlobalSyncError();
+            return;
         }
 
         $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDER);
