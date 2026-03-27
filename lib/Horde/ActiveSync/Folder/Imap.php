@@ -511,6 +511,14 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
             }
             // Upgrade version 1 data to current VERSION
             $decoded['v'] = self::VERSION;
+
+            // Version 1 had messages as indexed array, but version 2 needs
+            // associative array (uid => flags) for non-MODSEQ servers
+            if (is_array($decoded['m']) && !empty($decoded['m']) &&
+                empty($decoded['s'][self::HIGHESTMODSEQ])) {
+                // Convert indexed array to associative: [100, 101] -> [100 => [], 101 => []]
+                $decoded['m'] = array_fill_keys($decoded['m'], []);
+            }
         }
         $this->__unserialize($decoded);
     }
