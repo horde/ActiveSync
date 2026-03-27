@@ -158,5 +158,89 @@ class ImapFolderTest extends TestCase
 
     }
 
+    /**
+     * Test that version 1 cached data (old PHP serialize format) can be
+     * successfully upgraded to version 2 without throwing StaleState exception.
+     *
+     * This tests the critical version upgrade path added per amulet1's review.
+     */
+    public function testVersion1DataUpgrade()
+    {
+        // Simulate old version 1 data (PHP serialized format from pre-2013)
+        $version1Data = serialize([
+            's' => [
+                Horde_ActiveSync_Folder_Imap::UIDVALIDITY => 100,
+                Horde_ActiveSync_Folder_Imap::UIDNEXT => 105,
+                Horde_ActiveSync_Folder_Imap::MESSAGES => 10,
+            ],
+            'm' => [100, 101, 102, 103, 104],
+            'f' => 'INBOX',
+            'c' => Horde_ActiveSync::CLASS_EMAIL,
+            'lsd' => null,
+            'sd' => 0,
+            'hi' => true,
+            'v' => 1  // OLD VERSION
+        ]);
+
+        $folder = new Horde_ActiveSync_Folder_Imap('INBOX', Horde_ActiveSync::CLASS_EMAIL);
+
+        // Should NOT throw StaleState exception
+        $folder->unserialize($version1Data);
+
+        // Verify data was loaded correctly
+        $this->assertEquals('INBOX', $folder->serverid());
+        $this->assertEquals(105, $folder->uidnext());
+        $this->assertEquals([100, 101, 102, 103, 104], $folder->messages());
+    }
+
+    /**
+     * Test Collection folder with potentially missing version key.
+     */
+    public function testCollectionMissingVersion()
+    {
+        // Simulate data without version key (theoretical edge case)
+        $noVersionData = json_encode([
+            's' => 1,
+            'f' => 'Calendar',
+            'c' => Horde_ActiveSync::CLASS_CALENDAR,
+            'lsd' => null,
+            'sd' => 0,
+            'i' => true,
+            // 'v' is intentionally missing
+        ]);
+
+        $folder = new \Horde_ActiveSync_Folder_Collection(
+            'Calendar',
+            Horde_ActiveSync::CLASS_CALENDAR,
+            []
+        );
+
+        // Should NOT throw exception - version defaults to VERSION constant
+        $folder->unserialize($noVersionData);
+
+        $this->assertEquals('Calendar', $folder->serverid());
+    }
+
+    /**
+     * Test RI folder with potentially missing version key.
+     */
+    public function testRIMissingVersion()
+    {
+        // Simulate data without version key
+        $noVersionData = json_encode([
+            'd' => [],
+            'f' => 'RI',
+            'c' => Horde_ActiveSync::CLASS_CONTACTS,
+            // 'v' is intentionally missing
+        ]);
+
+        $folder = new \Horde_ActiveSync_Folder_RI();
+
+        // Should NOT throw exception - version defaults to VERSION constant
+        $folder->unserialize($noVersionData);
+
+        $this->assertEquals('RI', $folder->serverid());
+    }
+
 
 }
