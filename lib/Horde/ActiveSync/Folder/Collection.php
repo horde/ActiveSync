@@ -111,6 +111,10 @@ class Horde_ActiveSync_Folder_Collection extends Horde_ActiveSync_Folder_Base im
         if (!is_array($decoded)) {
             throw new Horde_ActiveSync_Exception_StaleState('Invalid serialized data');
         }
+        // Ensure version key exists for old data that might be missing it
+        if (!isset($decoded['v'])) {
+            $decoded['v'] = self::VERSION;
+        }
         $this->__unserialize($decoded);
     }
 

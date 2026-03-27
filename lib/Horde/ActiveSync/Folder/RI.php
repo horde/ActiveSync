@@ -4,7 +4,7 @@
  *
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
- * @copyright 2014-2020 Horde LLC (http://www.horde.org)
+ * @copyright 2014-2026 Horde LLC (http://www.horde.org)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */
@@ -14,7 +14,7 @@
  *
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
- * @copyright 2014-2020 Horde LLC (http://www.horde.org)
+ * @copyright 2014-2026 Horde LLC (http://www.horde.org)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */
@@ -166,6 +166,10 @@ class Horde_ActiveSync_Folder_RI extends Horde_ActiveSync_Folder_Base implements
         $decoded = @json_decode($data, true);
         if (!is_array($decoded)) {
             throw new Horde_ActiveSync_Exception_StaleState('Invalid serialized data');
+        }
+        // Ensure version key exists for old data that might be missing it
+        if (!isset($decoded['v'])) {
+            $decoded['v'] = self::VERSION;
         }
         $this->__unserialize($decoded);
     }
