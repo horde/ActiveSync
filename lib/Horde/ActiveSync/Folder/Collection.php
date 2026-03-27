@@ -4,7 +4,7 @@
  *
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
- * @copyright 2012-2020 Horde LLC (http://www.horde.org)
+ * @copyright 2012-2026 Horde LLC (http://www.horde.org)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */
@@ -14,7 +14,7 @@
  *
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
- * @copyright 2012-2020 Horde LLC (http://www.horde.org)
+ * @copyright 2012-2026 Horde LLC (http://www.horde.org)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */

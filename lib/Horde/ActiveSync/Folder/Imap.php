@@ -2,11 +2,9 @@
 /**
  * Horde_ActiveSync_Folder_Imap::
  *
- * PHP Version 5
- *
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
- * @copyright 2012-2020 Horde LLC (http://www.horde.org)
+ * @copyright 2012-2026 Horde LLC (http://www.horde.org)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */
@@ -16,7 +14,7 @@
  *
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
- * @copyright 2012-2020 Horde LLC (http://www.horde.org)
+ * @copyright 2012-2026 Horde LLC (http://www.horde.org)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */
@@ -511,6 +509,8 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
             if (!is_array($decoded) || empty($decoded['v']) || $decoded['v'] != 1) {
                 throw new Horde_ActiveSync_Exception_StaleState('Cache version change');
             }
+            // Upgrade version 1 data to current VERSION
+            $decoded['v'] = self::VERSION;
         }
         $this->__unserialize($decoded);
     }
