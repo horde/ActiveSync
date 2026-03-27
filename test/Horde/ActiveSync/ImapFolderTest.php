@@ -7,7 +7,7 @@
  * @package ActiveSync
  */
 namespace Horde\ActiveSync;
-use Horde_Test_Case as TestCase;
+use PHPUnit\Framework\TestCase;
 use \Horde_ActiveSync_Folder_Imap;
 use \Horde_ActiveSync;
 
@@ -234,7 +234,7 @@ class ImapFolderTest extends TestCase
             // 'v' is intentionally missing
         ]);
 
-        $folder = new \Horde_ActiveSync_Folder_RI();
+        $folder = new \Horde_ActiveSync_Folder_RI('RI', Horde_ActiveSync::CLASS_CONTACTS);
 
         // Should NOT throw exception - version defaults to VERSION constant
         $folder->unserialize($noVersionData);

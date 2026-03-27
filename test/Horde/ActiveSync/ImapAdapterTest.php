@@ -7,7 +7,8 @@
  * @package ActiveSync
  */
 namespace Horde\ActiveSync;
-use Horde_Test_Case as TestCase;
+use PHPUnit\Framework\TestCase;
+use Horde_Imap_Client_Socket;
 
 class ImapAdapterTest extends TestCase
 {
@@ -15,7 +16,9 @@ class ImapAdapterTest extends TestCase
     {
         $this->markTestIncomplete("Useless test without all the fixtures.");
         $factory = new Horde_ActiveSync_Factory_TestServer();
-        $imap_client = $this->getMockSkipConstructor('Horde_Imap_Client_Socket');
+        $imap_client = $this->getMockBuilder(Horde_Imap_Client_Socket::class)
+            ->disableOriginalConstructor()
+            ->getMock();
         $imap_client->expects($this->any())
             ->method('fetch')
             ->will($this->_getFixturesFor13711());
