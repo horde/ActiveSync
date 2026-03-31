@@ -1114,7 +1114,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
      * @return array  The current sync cache for the user/device combination.
      * @throws Horde_ActiveSync_Exception
      */
-    public function getSyncCache($devid, $user, array $fields = null)
+    public function getSyncCache($devid, $user, ?array $fields = null)
     {
         $sql = 'SELECT cache_data FROM ' . $this->_syncCacheTable
             . ' WHERE cache_devid = ? AND cache_user = ?';
