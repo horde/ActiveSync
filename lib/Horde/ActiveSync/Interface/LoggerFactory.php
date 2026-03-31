@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Interface_LoggerFactory::
  *
@@ -19,8 +20,7 @@
  * @package   ActiveSync
  */
 interface Horde_ActiveSync_Interface_LoggerFactory
- {
-
+{
     /**
      * Factory for a log object. Attempts to create a device specific file if
      * custom logging is requested.
@@ -29,5 +29,5 @@ interface Horde_ActiveSync_Interface_LoggerFactory
      *
      * @return Horde_Log_Logger  The logger object, correctly configured.
      */
-    public function create($properties = array());
- }
+    public function create($properties = []);
+}

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Unit tests Horde_ActiveSync_Message_Appointment objects.
  *
@@ -6,21 +7,25 @@
  * @category Horde
  * @package ActiveSync
  */
-namespace Horde\ActiveSync;
-use PHPUnit\Framework\TestCase;
-use \Horde_ActiveSync_Log_Logger;
-use \Horde_Log_Handler_Null;
-use \Horde_ActiveSync_Wbxml_Decoder;
-use \Horde_ActiveSync_Wbxml_Encoder;
-use \Horde_ActiveSync;
-use \Horde_ActiveSync_Message_Appointment;
-use \Horde_Date;
-use \Horde_ActiveSync_Device;
-use \Horde_Date_Recurrence;
 
+namespace Horde\ActiveSync;
+
+use Horde_Test_Case as TestCase;
+use Horde_ActiveSync_Log_Logger;
+use Horde_Log_Handler_Null;
+use Horde_ActiveSync_Wbxml_Decoder;
+use Horde_ActiveSync_Wbxml_Encoder;
+use Horde_ActiveSync;
+use Horde_ActiveSync_Message_Appointment;
+use Horde_Date;
+use Horde_ActiveSync_Device;
+use Horde_Date_Recurrence;
+
+/**
+ * @coversNothing
+ */
 class AppointmentTest extends TestCase
 {
-
     protected $_oldtz;
 
     public function setUp(): void
@@ -42,15 +47,16 @@ class AppointmentTest extends TestCase
         $this->markTestIncomplete('Needs updated fixture.');
         $logger = new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null());
 
-        $appt = new Horde_ActiveSync_Message_Appointment(array('logger' => $logger));
+        $appt = new Horde_ActiveSync_Message_Appointment(['logger' => $logger]);
         $appt->setSubject('Event Title');
         $appt->setBody('Event Description');
         $appt->setLocation('Philadelphia, PA');
         $start = new Horde_Date('2011-12-01T15:00:00');
-        $appt->setDatetime(array(
-            'start' => $start,
-            'end' => new Horde_Date('2011-12-01T16:00:00'),
-            'allday' => false)
+        $appt->setDatetime(
+            [
+                'start' => $start,
+                'end' => new Horde_Date('2011-12-01T16:00:00'),
+                'allday' => false]
         );
         $appt->setTimezone($start);
         $appt->setSensitivity(Horde_ActiveSync_Message_Appointment::SENSITIVITY_PERSONAL);
@@ -81,7 +87,7 @@ class AppointmentTest extends TestCase
         $decoder->setLogger($logger);
 
         $element = $decoder->getElementStartTag(Horde_ActiveSync::SYNC_DATA);
-        $appt = new Horde_ActiveSync_Message_Appointment(array('logger' => $logger));
+        $appt = new Horde_ActiveSync_Message_Appointment(['logger' => $logger]);
         $appt->decodeStream($decoder);
         fclose($stream);
         $decoder->getElementEndTag();
@@ -89,8 +95,8 @@ class AppointmentTest extends TestCase
         $this->assertEquals('Event Title', $appt->subject);
         $this->assertEquals('Event Description', $appt->body);
         $this->assertEquals('Philadelphia, PA', $appt->location);
-        $this->assertEquals(Horde_ActiveSync_Message_Appointment::SENSITIVITY_PERSONAL, (integer)$appt->sensitivity);
-        $this->assertEquals(Horde_ActiveSync_Message_Appointment::BUSYSTATUS_BUSY, (integer)$appt->busystatus);
+        $this->assertEquals(Horde_ActiveSync_Message_Appointment::SENSITIVITY_PERSONAL, (int) $appt->sensitivity);
+        $this->assertEquals(Horde_ActiveSync_Message_Appointment::BUSYSTATUS_BUSY, (int) $appt->busystatus);
 
         $start = clone($appt->starttime);
         // Ensure it's UTC
@@ -98,7 +104,7 @@ class AppointmentTest extends TestCase
 
         //...and correct.
         $start->setTimezone('America/New_York');
-        $this->assertEquals('2011-12-01 15:00:00', (string)$start);
+        $this->assertEquals('2011-12-01 15:00:00', (string) $start);
     }
 
     public function testEncodingRecurrence()
@@ -112,15 +118,16 @@ class AppointmentTest extends TestCase
         $r->setRecurInterval(2);
         $r->setRecurOnDay(Horde_Date::MASK_THURSDAY);
 
-        $appt = new Horde_ActiveSync_Message_Appointment(array('logger' => $logger));
+        $appt = new Horde_ActiveSync_Message_Appointment(['logger' => $logger]);
         $appt->setSubject('Event Title');
         $appt->setBody('Event Description');
         $appt->setLocation('Philadelphia, PA');
         $start = new Horde_Date('2011-12-01T15:00:00');
-        $appt->setDatetime(array(
-            'start' => $start,
-            'end' => new Horde_Date('2011-12-01T16:00:00'),
-            'allday' => false)
+        $appt->setDatetime(
+            [
+                'start' => $start,
+                'end' => new Horde_Date('2011-12-01T16:00:00'),
+                'allday' => false]
         );
         $appt->setTimezone($start);
         $appt->setSensitivity(Horde_ActiveSync_Message_Appointment::SENSITIVITY_PERSONAL);
@@ -151,7 +158,7 @@ class AppointmentTest extends TestCase
         $decoder = new Horde_ActiveSync_Wbxml_Decoder($stream);
 
         $element = $decoder->getElementStartTag(Horde_ActiveSync::SYNC_DATA);
-        $appt = new Horde_ActiveSync_Message_Appointment(array('logger' => $logger));
+        $appt = new Horde_ActiveSync_Message_Appointment(['logger' => $logger]);
         $appt->decodeStream($decoder);
         fclose($stream);
         $decoder->getElementEndTag();
@@ -161,19 +168,19 @@ class AppointmentTest extends TestCase
         $this->assertEquals('Event Title', $appt->subject);
         $this->assertEquals('Event Description', $appt->body);
         $this->assertEquals('Philadelphia, PA', $appt->location);
-        $this->assertEquals(Horde_ActiveSync_Message_Appointment::SENSITIVITY_PERSONAL, (integer)$appt->sensitivity);
-        $this->assertEquals(Horde_ActiveSync_Message_Appointment::BUSYSTATUS_BUSY, (integer)$appt->busystatus);
+        $this->assertEquals(Horde_ActiveSync_Message_Appointment::SENSITIVITY_PERSONAL, (int) $appt->sensitivity);
+        $this->assertEquals(Horde_ActiveSync_Message_Appointment::BUSYSTATUS_BUSY, (int) $appt->busystatus);
         $start = clone($appt->starttime);
         // Ensure it's UTC
         $this->assertEquals('UTC', $start->timezone);
         //...and correct.
         $start->setTimezone('America/New_York');
-        $this->assertEquals('2011-12-01 15:00:00', (string)$start);
+        $this->assertEquals('2011-12-01 15:00:00', (string) $start);
 
         // Recurrence properties
         $rrule = $appt->getRecurrence();
-        $this->assertEquals('2011-12-01 15:00:00', (string)$rrule->getRecurStart()->setTimezone('America/New_York'));
-        $this->assertEquals('', (string)$rrule->getRecurEnd());
+        $this->assertEquals('2011-12-01 15:00:00', (string) $rrule->getRecurStart()->setTimezone('America/New_York'));
+        $this->assertEquals('', (string) $rrule->getRecurEnd());
         $this->assertEquals(Horde_Date_Recurrence::RECUR_WEEKLY, $rrule->getRecurType());
         $this->assertEquals(2, $rrule->getRecurInterval());
         $this->assertEquals(Horde_Date::MASK_THURSDAY, $days = $rrule->getRecurOnDays());
@@ -196,15 +203,16 @@ class AppointmentTest extends TestCase
         $e->setExceptionStartTime($d);
         $e->deleted = true;
 
-        $appt = new Horde_ActiveSync_Message_Appointment(array('logger' => $logger));
+        $appt = new Horde_ActiveSync_Message_Appointment(['logger' => $logger]);
         $appt->setSubject('Event Title');
         $appt->setBody('Event Description');
         $appt->setLocation('Philadelphia, PA');
         $start = new Horde_Date('2011-12-01T15:00:00');
-        $appt->setDatetime(array(
-            'start' => $start,
-            'end' => new Horde_Date('2011-12-01T16:00:00'),
-            'allday' => false)
+        $appt->setDatetime(
+            [
+                'start' => $start,
+                'end' => new Horde_Date('2011-12-01T16:00:00'),
+                'allday' => false]
         );
         $appt->setTimezone($start);
         $appt->setSensitivity(Horde_ActiveSync_Message_Appointment::SENSITIVITY_PERSONAL);
@@ -236,7 +244,7 @@ class AppointmentTest extends TestCase
         $stream_out = fopen('php://memory', 'w+');
         $encoder = new Horde_ActiveSync_Wbxml_Encoder($stream_out);
         $message = new Horde_ActiveSync_Message_Appointment(
-            array('logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN)
+            ['logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN]
         );
         $message->setSubject('Test Event');
         $message->alldayevent = true;
@@ -255,7 +263,7 @@ class AppointmentTest extends TestCase
         // Make sure EAS versions work properly.
         rewind($stream_out);
         $message = new Horde_ActiveSync_Message_Appointment(
-            array('logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN)
+            ['logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN]
         );
         $decoder = new Horde_ActiveSync_Wbxml_Decoder($stream_out);
         $decoder->getElementStartTag(Horde_ActiveSync::SYNC_DATA);
@@ -263,12 +271,12 @@ class AppointmentTest extends TestCase
         $end = $message->endtime;
         $end->setTimezone('America/New_York');
         $start->setTimezone('America/New_York');
-        $this->assertEquals('1970-03-21 00:00:00', (string)$end);
-        $this->assertEquals('1970-03-20 00:00:00', (string)$start);
+        $this->assertEquals('1970-03-21 00:00:00', (string) $end);
+        $this->assertEquals('1970-03-20 00:00:00', (string) $start);
 
         rewind($stream_out);
         $message = new Horde_ActiveSync_Message_Appointment(
-            array('logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_SIXTEEN)
+            ['logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_SIXTEEN]
         );
         $decoder = new Horde_ActiveSync_Wbxml_Decoder($stream_out);
         $decoder->getElementStartTag(Horde_ActiveSync::SYNC_DATA);
@@ -276,8 +284,8 @@ class AppointmentTest extends TestCase
         $end = $message->endtime;
         $end->setTimezone('America/New_York');
         $start->setTimezone('America/New_York');
-        $this->assertEquals('1970-03-21 00:00:00', (string)$end);
-        $this->assertEquals('1970-03-20 00:00:00', (string)$start);
+        $this->assertEquals('1970-03-21 00:00:00', (string) $end);
+        $this->assertEquals('1970-03-20 00:00:00', (string) $start);
     }
 
     /**
@@ -291,90 +299,90 @@ class AppointmentTest extends TestCase
         // and set properties.
         // Single day 00:00 to 00:00
         $message = new Horde_ActiveSync_Message_Appointment(
-            array('logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN)
+            ['logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN]
         );
         $start = new Horde_Date('1970-03-20T00:00:00', 'America/New_York');
         $end = new Horde_Date('1970-03-21T00:00:00', 'America/New_York');
-        $message->setDatetime(array('start' => $start, 'end' => $end));
+        $message->setDatetime(['start' => $start, 'end' => $end]);
         $this->assertEquals(true, $message->alldayevent);
 
         // Multiday 00:00 to 23:59
         $message = new Horde_ActiveSync_Message_Appointment(
-            array('logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN)
+            ['logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN]
         );
         $start = new Horde_Date('1970-03-20T00:00:00', 'America/New_York');
         $end = new Horde_Date('1970-03-21T23:59:00', 'America/New_York');
-        $message->setDatetime(array('start' => $start, 'end' => $end));
+        $message->setDatetime(['start' => $start, 'end' => $end]);
         $this->assertEquals(true, $message->alldayevent);
         $end = $message->endtime;
         $end->setTimezone('America/New_York');
-        $this->assertEquals('1970-03-22 00:00:00', (string)$end);
+        $this->assertEquals('1970-03-22 00:00:00', (string) $end);
 
         // Single day with incorrect time part, no endtime given.
         $message = new Horde_ActiveSync_Message_Appointment(
-            array('logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN)
+            ['logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN]
         );
         $start = new Horde_Date('1970-03-20T04:00:00', 'America/New_York');
-        $message->setDatetime(array('start' => $start, 'allday' => true));
+        $message->setDatetime(['start' => $start, 'allday' => true]);
         $this->assertEquals(true, $message->alldayevent);
         $start = $message->starttime;
         $start->setTimezone('America/New_York');
-        $this->assertEquals('1970-03-20 00:00:00', (string)$start);
+        $this->assertEquals('1970-03-20 00:00:00', (string) $start);
         $end = $message->endtime;
         $end->setTimezone('America/New_York');
-        $this->assertEquals('1970-03-21 00:00:00', (string)$end);
+        $this->assertEquals('1970-03-21 00:00:00', (string) $end);
 
         // Single day, no endtime given.
         $message = new Horde_ActiveSync_Message_Appointment(
-            array('logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN)
+            ['logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN]
         );
         $start = new Horde_Date('1970-03-20T00:00:00', 'America/New_York');
-        $message->setDatetime(array('start' => $start, 'allday' => true));
+        $message->setDatetime(['start' => $start, 'allday' => true]);
         $this->assertEquals(true, $message->alldayevent);
         $end = $message->endtime;
         $end->setTimezone('America/New_York');
-        $this->assertEquals('1970-03-21 00:00:00', (string)$end);
+        $this->assertEquals('1970-03-21 00:00:00', (string) $end);
 
         // Make sure non-all day events don't inadvertently get converted to one
         $message = new Horde_ActiveSync_Message_Appointment(
-            array('logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN)
+            ['logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN]
         );
         $start = new Horde_Date('1970-03-20T05:00:00', 'America/New_York');
         $end = new Horde_Date('1970-03-21T00:00:00', 'America/New_York');
-        $message->setDatetime(array('start' => $start, 'end' => $end));
+        $message->setDatetime(['start' => $start, 'end' => $end]);
         $this->assertEquals(false, $message->alldayevent);
         $start = $message->starttime;
         $start->setTimezone('America/New_York');
-        $this->assertEquals('1970-03-20 05:00:00', (string)$start);
+        $this->assertEquals('1970-03-20 05:00:00', (string) $start);
 
         // Incorrect timeparts given, but allday flag is set.
         $message = new Horde_ActiveSync_Message_Appointment(
-            array('logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN)
+            ['logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN]
         );
         $start = new Horde_Date('1970-03-20T00:00:00', 'America/New_York');
         $end = new Horde_Date('1970-03-21T05:00:00', 'America/New_York');
-        $message->setDatetime(array('start' => $start, 'end' => $end, 'allday' => true));
+        $message->setDatetime(['start' => $start, 'end' => $end, 'allday' => true]);
         $this->assertEquals(true, $message->alldayevent);
         $start = $message->starttime;
         $start->setTimezone('America/New_York');
         $end = $message->endtime;
         $end->setTimezone('America/New_York');
-        $this->assertEquals('1970-03-20 00:00:00', (string)$start);
-        $this->assertEquals('1970-03-22 00:00:00', (string)$end);
+        $this->assertEquals('1970-03-20 00:00:00', (string) $start);
+        $this->assertEquals('1970-03-22 00:00:00', (string) $end);
 
         $message = new Horde_ActiveSync_Message_Appointment(
-            array('logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN)
+            ['logger' => $logger, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN]
         );
         $start = new Horde_Date('1970-03-20T08:00:00', 'America/New_York');
         $end = new Horde_Date('1970-03-21T05:00:00', 'America/New_York');
-        $message->setDatetime(array('start' => $start, 'end' => $end, 'allday' => true));
+        $message->setDatetime(['start' => $start, 'end' => $end, 'allday' => true]);
         $this->assertEquals(true, $message->alldayevent);
         $start = $message->starttime;
         $start->setTimezone('America/New_York');
         $end = $message->endtime;
         $end->setTimezone('America/New_York');
-        $this->assertEquals('1970-03-20 00:00:00', (string)$start);
-        $this->assertEquals('1970-03-22 00:00:00', (string)$end);
+        $this->assertEquals('1970-03-20 00:00:00', (string) $start);
+        $this->assertEquals('1970-03-22 00:00:00', (string) $end);
     }
 
     public function testDecodingSimpleExceptions()
@@ -386,7 +394,7 @@ class AppointmentTest extends TestCase
         $decoder = new Horde_ActiveSync_Wbxml_Decoder($stream);
 
         $element = $decoder->getElementStartTag(Horde_ActiveSync::SYNC_DATA);
-        $appt = new Horde_ActiveSync_Message_Appointment(array('logger' => $logger));
+        $appt = new Horde_ActiveSync_Message_Appointment(['logger' => $logger]);
         $appt->decodeStream($decoder);
         fclose($stream);
         $decoder->getElementEndTag();
@@ -396,19 +404,19 @@ class AppointmentTest extends TestCase
         $this->assertEquals('Event Title', $appt->subject);
         $this->assertEquals('Event Description', $appt->body);
         $this->assertEquals('Philadelphia, PA', $appt->location);
-        $this->assertEquals(Horde_ActiveSync_Message_Appointment::SENSITIVITY_PERSONAL, (integer)$appt->sensitivity);
-        $this->assertEquals(Horde_ActiveSync_Message_Appointment::BUSYSTATUS_BUSY, (integer)$appt->busystatus);
+        $this->assertEquals(Horde_ActiveSync_Message_Appointment::SENSITIVITY_PERSONAL, (int) $appt->sensitivity);
+        $this->assertEquals(Horde_ActiveSync_Message_Appointment::BUSYSTATUS_BUSY, (int) $appt->busystatus);
         $start = clone($appt->starttime);
         // Ensure it's UTC
         $this->assertEquals('UTC', $start->timezone);
         //...and correct.
         $start->setTimezone('America/New_York');
-        $this->assertEquals('2011-12-01 15:00:00', (string)$start);
+        $this->assertEquals('2011-12-01 15:00:00', (string) $start);
 
         // Recurrence properties
         $rrule = $appt->getRecurrence();
-        $this->assertEquals('2011-12-01 15:00:00', (string)$rrule->getRecurStart()->setTimezone('America/New_York'));
-        $this->assertEquals('', (string)$rrule->getRecurEnd());
+        $this->assertEquals('2011-12-01 15:00:00', (string) $rrule->getRecurStart()->setTimezone('America/New_York'));
+        $this->assertEquals('', (string) $rrule->getRecurEnd());
         $this->assertEquals(Horde_Date_Recurrence::RECUR_WEEKLY, $rrule->getRecurType());
         $this->assertEquals(2, $rrule->getRecurInterval());
         $this->assertEquals(Horde_Date::MASK_THURSDAY, $days = $rrule->getRecurOnDays());
@@ -418,13 +426,13 @@ class AppointmentTest extends TestCase
         // on 2011-12-29)
         $exceptions = $appt->getExceptions();
         $e = array_pop($exceptions);
-        $this->assertEquals(true, (boolean)$e->deleted);
+        $this->assertEquals(true, (bool) $e->deleted);
         $dt = $e->getExceptionStartTime();
         $rrule->addException($dt->format('Y'), $dt->format('m'), $dt->format('d'));
 
         // This would normally be 2011-12-29, but that's an exception.
         $date = $rrule->nextActiveRecurrence(new Horde_Date('2011-12-16'));
-        $this->assertEquals('2012-01-12 15:00:00', (string)$date);
+        $this->assertEquals('2012-01-12 15:00:00', (string) $date);
     }
 
     public function testRecurrenceDSTSwitch()
@@ -437,7 +445,7 @@ class AppointmentTest extends TestCase
         $decoder = new Horde_ActiveSync_Wbxml_Decoder($stream);
 
         $element = $decoder->getElementStartTag(Horde_ActiveSync::SYNC_DATA);
-        $appt = new Horde_ActiveSync_Message_Appointment(array('logger' => $logger));
+        $appt = new Horde_ActiveSync_Message_Appointment(['logger' => $logger]);
         $appt->decodeStream($decoder);
         fclose($stream);
         $decoder->getElementEndTag();
@@ -445,29 +453,29 @@ class AppointmentTest extends TestCase
 
         // Get the next recurrence, still during EDST
         $next = $rrule->nextActiveRecurrence(new Horde_Date('2011-10-15'));
-        $this->assertEquals('2011-10-15 15:00:00', (string)$next->setTimezone('America/New_York'));
+        $this->assertEquals('2011-10-15 15:00:00', (string) $next->setTimezone('America/New_York'));
 
         // Now get an occurence after the transition to EST.
         $next = $rrule->nextActiveRecurrence(new Horde_Date('2011-12-01'));
-        $this->assertEquals('2011-12-10 15:00:00', (string)$next->setTimezone('America/New_York'));
+        $this->assertEquals('2011-12-10 15:00:00', (string) $next->setTimezone('America/New_York'));
     }
 
     public function testMissingSupportedTag()
     {
         $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
-        $fixture = array(
+        $fixture = [
             'userAgent' => 'Apple-iPad3C6/1202.435',
-            'properties' => array(Horde_ActiveSync_Device::OS => 'iOS 8.1.1')
-        );
+            'properties' => [Horde_ActiveSync_Device::OS => 'iOS 8.1.1'],
+        ];
         $device = new Horde_ActiveSync_Device($state, $fixture);
-        $contact = new Horde_ActiveSync_Message_Appointment(array('device' => $device, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN));
-        $contact->setSupported(array());
+        $contact = new Horde_ActiveSync_Message_Appointment(['device' => $device, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN]);
+        $contact->setSupported([]);
         $this->assertEquals(false, $contact->isGhosted('subject'));
         $this->assertEquals(false, $contact->isGhosted('body'));
 
         $device = new Horde_ActiveSync_Device($state, $fixture);
-        $contact = new Horde_ActiveSync_Message_Appointment(array('device' => $device, 'protocolversion' => Horde_ActiveSync::VERSION_SIXTEEN));
-        $contact->setSupported(array());
+        $contact = new Horde_ActiveSync_Message_Appointment(['device' => $device, 'protocolversion' => Horde_ActiveSync::VERSION_SIXTEEN]);
+        $contact->setSupported([]);
         $this->assertEquals(true, $contact->isGhosted('subject'));
         $this->assertEquals(true, $contact->isGhosted('body'));
     }
@@ -475,19 +483,19 @@ class AppointmentTest extends TestCase
     public function testEmptySupportedTag()
     {
         $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
-        $fixture = array(
+        $fixture = [
             'userAgent' => 'Apple-iPad3C6/1202.435',
-            'properties' => array(Horde_ActiveSync_Device::OS => 'iOS 8.1.1')
-        );
+            'properties' => [Horde_ActiveSync_Device::OS => 'iOS 8.1.1'],
+        ];
         $device = new Horde_ActiveSync_Device($state, $fixture);
-        $contact = new Horde_ActiveSync_Message_Appointment(array('device' => $device, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN));
-        $contact->setSupported(array(Horde_ActiveSync::ALL_GHOSTED));
+        $contact = new Horde_ActiveSync_Message_Appointment(['device' => $device, 'protocolversion' => Horde_ActiveSync::VERSION_FOURTEEN]);
+        $contact->setSupported([Horde_ActiveSync::ALL_GHOSTED]);
         $this->assertEquals(true, $contact->isGhosted('subject'));
         $this->assertEquals(true, $contact->isGhosted('body'));
 
         $device = new Horde_ActiveSync_Device($state, $fixture);
-        $contact = new Horde_ActiveSync_Message_Appointment(array('device' => $device, 'protocolversion' => Horde_ActiveSync::VERSION_SIXTEEN));
-        $contact->setSupported(array(Horde_ActiveSync::ALL_GHOSTED));
+        $contact = new Horde_ActiveSync_Message_Appointment(['device' => $device, 'protocolversion' => Horde_ActiveSync::VERSION_SIXTEEN]);
+        $contact->setSupported([Horde_ActiveSync::ALL_GHOSTED]);
         $this->assertEquals(true, $contact->isGhosted('subject'));
         $this->assertEquals(true, $contact->isGhosted('body'));
     }

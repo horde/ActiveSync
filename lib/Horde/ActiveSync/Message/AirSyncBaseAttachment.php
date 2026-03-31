@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_AirSyncBaseAttachment::
  *
@@ -40,32 +41,32 @@
 class Horde_ActiveSync_Message_AirSyncBaseAttachment extends Horde_ActiveSync_Message_Base
 {
     /* Attachement types */
-    const ATT_TYPE_NORMAL   = 1;
-    const ATT_TYPE_EMBEDDED = 5;
-    const ATT_TYPE_OLE      = 6;
+    public const ATT_TYPE_NORMAL   = 1;
+    public const ATT_TYPE_EMBEDDED = 5;
+    public const ATT_TYPE_OLE      = 6;
 
     /**
      * Property mappings
      *
      * @var array
      */
-    protected $_mapping = array(
-        Horde_ActiveSync::AIRSYNCBASE_DISPLAYNAME       => array (self::KEY_ATTRIBUTE => 'displayname'),
-        Horde_ActiveSync::AIRSYNCBASE_FILEREFERENCE     => array (self::KEY_ATTRIBUTE => 'attname'),
-        Horde_ActiveSync::AIRSYNCBASE_METHOD            => array (self::KEY_ATTRIBUTE => 'attmethod'),
-        Horde_ActiveSync::AIRSYNCBASE_ESTIMATEDDATASIZE => array (self::KEY_ATTRIBUTE => 'attsize'),
-        Horde_ActiveSync::AIRSYNCBASE_CONTENTID         => array (self::KEY_ATTRIBUTE => 'contentid'),
-        Horde_ActiveSync::AIRSYNCBASE_CONTENTLOCATION   => array (self::KEY_ATTRIBUTE => 'contentlocation'),
-        Horde_ActiveSync::AIRSYNCBASE_ISINLINE          => array (self::KEY_ATTRIBUTE => 'isinline'),
-        Horde_ActiveSync::AIRSYNCBASE_DATA              => array (self::KEY_ATTRIBUTE => '_data'),
-    );
+    protected $_mapping = [
+        Horde_ActiveSync::AIRSYNCBASE_DISPLAYNAME       =>  [self::KEY_ATTRIBUTE => 'displayname'],
+        Horde_ActiveSync::AIRSYNCBASE_FILEREFERENCE     =>  [self::KEY_ATTRIBUTE => 'attname'],
+        Horde_ActiveSync::AIRSYNCBASE_METHOD            =>  [self::KEY_ATTRIBUTE => 'attmethod'],
+        Horde_ActiveSync::AIRSYNCBASE_ESTIMATEDDATASIZE =>  [self::KEY_ATTRIBUTE => 'attsize'],
+        Horde_ActiveSync::AIRSYNCBASE_CONTENTID         =>  [self::KEY_ATTRIBUTE => 'contentid'],
+        Horde_ActiveSync::AIRSYNCBASE_CONTENTLOCATION   =>  [self::KEY_ATTRIBUTE => 'contentlocation'],
+        Horde_ActiveSync::AIRSYNCBASE_ISINLINE          =>  [self::KEY_ATTRIBUTE => 'isinline'],
+        Horde_ActiveSync::AIRSYNCBASE_DATA              =>  [self::KEY_ATTRIBUTE => '_data'],
+    ];
 
     /**
      * Property mapping.
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'attmethod'       => false,
         'attsize'         => false,
         'displayname'     => false,
@@ -74,26 +75,26 @@ class Horde_ActiveSync_Message_AirSyncBaseAttachment extends Horde_ActiveSync_Me
         'contentid'       => false,
         'contentlocation' => false,
         'isinline'        => false,
-        '_data'           => false
-    );
+        '_data'           => false,
+    ];
 
     /**
      * Const'r
      *
      * @see Horde_ActiveSync_Message_Base::__construct()
      */
-    public function __construct(array $options = array())
+    public function __construct(array $options = [])
     {
         parent::__construct($options);
         if ($this->_version >= Horde_ActiveSync::VERSION_SIXTEEN) {
-            $this->_mapping += array(
-                Horde_ActiveSync::AIRSYNCBASE_CLIENTID=> array(self::KEY_ATTRIBUTE => 'clientid')
-            );
+            $this->_mapping += [
+                Horde_ActiveSync::AIRSYNCBASE_CLIENTID => [self::KEY_ATTRIBUTE => 'clientid'],
+            ];
 
-            $this->_properties += array(
+            $this->_properties += [
                 'clientid'                  => false,
                 'filereference'               => false,
-            );
+            ];
         }
     }
 

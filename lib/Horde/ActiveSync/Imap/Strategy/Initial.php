@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
@@ -16,8 +17,7 @@
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */
-class Horde_ActiveSync_Imap_Strategy_Initial
-extends Horde_ActiveSync_Imap_Strategy_Base
+class Horde_ActiveSync_Imap_Strategy_Initial extends Horde_ActiveSync_Imap_Strategy_Base
 {
     /**
      * Return a folder object containing all IMAP server change information.
@@ -41,11 +41,11 @@ extends Horde_ActiveSync_Imap_Strategy_Base
         $search_ret = $this->_imap_ob->search(
             $this->_mbox,
             $query,
-            array('results' => array(Horde_Imap_Client::SEARCH_RESULTS_MATCH))
+            ['results' => [Horde_Imap_Client::SEARCH_RESULTS_MATCH]]
         );
 
-        if ($this->_status[Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ] &&
-            !$this->_folder->haveInitialSync) {
+        if ($this->_status[Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ]
+            && !$this->_folder->haveInitialSync) {
 
             $this->_logger->meta('Priming IMAP folder object.');
             $this->_folder->primeFolder($search_ret['match']->ids);
@@ -54,7 +54,7 @@ extends Horde_ActiveSync_Imap_Strategy_Base
             $query = new Horde_Imap_Client_Fetch_Query();
             $query->flags();
             $cnt = ($search_ret['count'] / Horde_ActiveSync_Imap_Adapter::MAX_FETCH) + 1;
-            $flags = array();
+            $flags = [];
             for ($i = 0; $i <= $cnt; $i++) {
                 $ids = new Horde_Imap_Client_Ids(
                     array_slice(
@@ -66,12 +66,12 @@ extends Horde_ActiveSync_Imap_Strategy_Base
                 $fetch_ret = $this->_imap_ob->fetch(
                     $this->_mbox,
                     $query,
-                    array('ids' => $ids)
+                    ['ids' => $ids]
                 );
                 foreach ($fetch_ret as $uid => $data) {
-                    $flags[$uid] = array(
-                        'read' => (array_search(Horde_Imap_Client::FLAG_SEEN, $data->getFlags()) !== false) ? 1 : 0
-                    );
+                    $flags[$uid] = [
+                        'read' => (array_search(Horde_Imap_Client::FLAG_SEEN, $data->getFlags()) !== false) ? 1 : 0,
+                    ];
                     if (($options['protocolversion']) > Horde_ActiveSync::VERSION_TWOFIVE) {
                         $flags[$uid]['flagged'] = (array_search(Horde_Imap_Client::FLAG_FLAGGED, $data->getFlags()) !== false) ? 1 : 0;
                     }

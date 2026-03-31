@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2014-2017 Horde LLC (http://www.horde.org/)
+ * Copyright 2014-2026 Horde LLC (http://www.horde.org/)
  *
  * See the enclosed file LICENSE for license information. If you
  * did not receive this file, see http://www.horde.org/licenses/gpl.
@@ -12,6 +13,7 @@
  * @package   Horde_ActiveSync
  * @subpackage UnitTestss
  */
+
 namespace Horde\ActiveSync\Stub;
 
 /**
@@ -28,7 +30,6 @@ namespace Horde\ActiveSync\Stub;
  */
 class ImapFactory implements Horde_ActiveSync_Interface_ImapFactory
 {
-
     /**
      * Holds a mock Horde_Imap_Client_Socket object.
      * @var [type]
@@ -62,7 +63,7 @@ class ImapFactory implements Horde_ActiveSync_Interface_ImapFactory
      */
     public function getMailboxes($force = false)
     {
-        return array();
+        return [];
     }
 
     /**
@@ -74,7 +75,7 @@ class ImapFactory implements Horde_ActiveSync_Interface_ImapFactory
      */
     public function getSpecialMailboxes()
     {
-        return array();
+        return [];
     }
 
     /**
@@ -85,6 +86,6 @@ class ImapFactory implements Horde_ActiveSync_Interface_ImapFactory
      */
     public function getMsgFlags()
     {
-        return array();
+        return [];
     }
 }

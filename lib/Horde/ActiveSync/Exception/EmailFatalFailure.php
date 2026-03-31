@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Exception_EmailFatalFailure::
  *
@@ -19,6 +20,4 @@
  * @package   ActiveSync
  * @since 2.19.0
  */
-class Horde_ActiveSync_Exception_EmailFatalFailure extends Horde_ActiveSync_Exception
-{
-}
+class Horde_ActiveSync_Exception_EmailFatalFailure extends Horde_ActiveSync_Exception {}

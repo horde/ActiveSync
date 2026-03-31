@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
@@ -78,8 +79,8 @@ abstract class Horde_ActiveSync_Imap_Strategy_Base
         Horde_ActiveSync_Interface_ImapFactory $imap,
         array $status,
         Horde_ActiveSync_Folder_Base $folder,
-        $logger)
-    {
+        $logger
+    ) {
         $this->_imap = $imap;
         $this->_imap_ob = $imap->getImapOb();
         $this->_status = $status;
@@ -111,7 +112,7 @@ abstract class Horde_ActiveSync_Imap_Strategy_Base
             return $this->_imap->getMsgFlags();
         }
 
-        return array();
+        return [];
     }
 
 }

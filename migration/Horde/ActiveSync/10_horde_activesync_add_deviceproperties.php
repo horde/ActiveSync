@@ -1,4 +1,5 @@
 <?php
+
 class HordeActiveSyncAddDeviceProperties extends Horde_Db_Migration_Base
 {
     public function up()
@@ -6,7 +7,8 @@ class HordeActiveSyncAddDeviceProperties extends Horde_Db_Migration_Base
         $this->addColumn(
             'horde_activesync_device',
             'device_properties',
-            'text');
+            'text'
+        );
     }
 
     public function down()

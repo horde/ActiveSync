@@ -1,4 +1,5 @@
 <?php
+
 class HordeActiveSyncRemoveSyncCounters extends Horde_Db_Migration_Base
 {
     public function up()
@@ -11,7 +12,7 @@ class HordeActiveSyncRemoveSyncCounters extends Horde_Db_Migration_Base
             $data = unserialize($row['cache_data']);
             unset($data['synckeycounter']);
             $row['cache_data'] = serialize($data);
-            $this->_connection->update($insert_sql, array($row['cache_data'], $row['cache_devid'], $row['cache_user']));
+            $this->_connection->update($insert_sql, [$row['cache_data'], $row['cache_devid'], $row['cache_user']]);
         }
     }
 

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_Oof::
  *
@@ -27,37 +28,36 @@
  */
 class Horde_ActiveSync_Message_Oof extends Horde_ActiveSync_Message_Base
 {
-
-    public $messages = array();
+    public $messages = [];
 
     /**
      * Property mapping
      *
      * @var array
      */
-    protected $_mapping = array (
-        Horde_ActiveSync_Request_Settings::SETTINGS_OOFSTATE => array(self::KEY_ATTRIBUTE => 'state'),
-        Horde_ActiveSync_Request_Settings::SETTINGS_STARTTIME => array(self::KEY_ATTRIBUTE => 'starttime', self::KEY_TYPE => self::TYPE_DATE_DASHES),
-        Horde_ActiveSync_Request_Settings::SETTINGS_ENDTIME => array(self::KEY_ATTRIBUTE => 'endtime', self::KEY_TYPE => self::TYPE_DATE_DASHES),
-        Horde_ActiveSync_Request_Settings::SETTINGS_OOFMESSAGE => array(
+    protected $_mapping =  [
+        Horde_ActiveSync_Request_Settings::SETTINGS_OOFSTATE => [self::KEY_ATTRIBUTE => 'state'],
+        Horde_ActiveSync_Request_Settings::SETTINGS_STARTTIME => [self::KEY_ATTRIBUTE => 'starttime', self::KEY_TYPE => self::TYPE_DATE_DASHES],
+        Horde_ActiveSync_Request_Settings::SETTINGS_ENDTIME => [self::KEY_ATTRIBUTE => 'endtime', self::KEY_TYPE => self::TYPE_DATE_DASHES],
+        Horde_ActiveSync_Request_Settings::SETTINGS_OOFMESSAGE => [
             self::KEY_ATTRIBUTE => 'messages',
             self::KEY_TYPE => 'Horde_ActiveSync_Message_OofMessage',
             self::KEY_VALUES => Horde_ActiveSync_Request_Settings::SETTINGS_OOFMESSAGE,
-            self::KEY_PROPERTY => self::PROPERTY_NO_CONTAINER
-        ),
-        Horde_ActiveSync_Request_Settings::SETTINGS_BODYTYPE => array(self::KEY_ATTRIBUTE => 'bodytype'),
-    );
+            self::KEY_PROPERTY => self::PROPERTY_NO_CONTAINER,
+        ],
+        Horde_ActiveSync_Request_Settings::SETTINGS_BODYTYPE => [self::KEY_ATTRIBUTE => 'bodytype'],
+    ];
 
     /**
      * Property values.
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'state'   => false,
         'starttime'  => false,
         'endtime'    => false,
-        'bodytype'   => false
-    );
+        'bodytype'   => false,
+    ];
 
 }

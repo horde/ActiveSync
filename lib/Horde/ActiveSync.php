@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
@@ -31,291 +32,291 @@
 class Horde_ActiveSync
 {
     /* Conflict resolution */
-    const CONFLICT_OVERWRITE_SERVER             = 0;
-    const CONFLICT_OVERWRITE_PIM                = 1;
+    public const CONFLICT_OVERWRITE_SERVER             = 0;
+    public const CONFLICT_OVERWRITE_PIM                = 1;
 
     /* TRUNCATION Constants */
-    const TRUNCATION_ALL                        = 0;
-    const TRUNCATION_1                          = 1;
-    const TRUNCATION_2                          = 2;
-    const TRUNCATION_3                          = 3;
-    const TRUNCATION_4                          = 4;
-    const TRUNCATION_5                          = 5;
-    const TRUNCATION_6                          = 6;
-    const TRUNCATION_7                          = 7;
-    const TRUNCATION_8                          = 8;
-    const TRUNCATION_9                          = 9;
-    const TRUNCATION_NONE                       = 9; // @deprecated
+    public const TRUNCATION_ALL                        = 0;
+    public const TRUNCATION_1                          = 1;
+    public const TRUNCATION_2                          = 2;
+    public const TRUNCATION_3                          = 3;
+    public const TRUNCATION_4                          = 4;
+    public const TRUNCATION_5                          = 5;
+    public const TRUNCATION_6                          = 6;
+    public const TRUNCATION_7                          = 7;
+    public const TRUNCATION_8                          = 8;
+    public const TRUNCATION_9                          = 9;
+    public const TRUNCATION_NONE                       = 9; // @deprecated
 
     /* FOLDERHIERARCHY */
-    const FOLDERHIERARCHY_FOLDERS               = 'FolderHierarchy:Folders';
-    const FOLDERHIERARCHY_FOLDER                = 'FolderHierarchy:Folder';
-    const FOLDERHIERARCHY_DISPLAYNAME           = 'FolderHierarchy:DisplayName';
-    const FOLDERHIERARCHY_SERVERENTRYID         = 'FolderHierarchy:ServerEntryId';
-    const FOLDERHIERARCHY_PARENTID              = 'FolderHierarchy:ParentId';
-    const FOLDERHIERARCHY_TYPE                  = 'FolderHierarchy:Type';
-    const FOLDERHIERARCHY_RESPONSE              = 'FolderHierarchy:Response';
-    const FOLDERHIERARCHY_STATUS                = 'FolderHierarchy:Status';
-    const FOLDERHIERARCHY_CONTENTCLASS          = 'FolderHierarchy:ContentClass';
-    const FOLDERHIERARCHY_CHANGES               = 'FolderHierarchy:Changes';
-    const FOLDERHIERARCHY_SYNCKEY               = 'FolderHierarchy:SyncKey';
-    const FOLDERHIERARCHY_FOLDERSYNC            = 'FolderHierarchy:FolderSync';
-    const FOLDERHIERARCHY_COUNT                 = 'FolderHierarchy:Count';
-    const FOLDERHIERARCHY_VERSION               = 'FolderHierarchy:Version';
+    public const FOLDERHIERARCHY_FOLDERS               = 'FolderHierarchy:Folders';
+    public const FOLDERHIERARCHY_FOLDER                = 'FolderHierarchy:Folder';
+    public const FOLDERHIERARCHY_DISPLAYNAME           = 'FolderHierarchy:DisplayName';
+    public const FOLDERHIERARCHY_SERVERENTRYID         = 'FolderHierarchy:ServerEntryId';
+    public const FOLDERHIERARCHY_PARENTID              = 'FolderHierarchy:ParentId';
+    public const FOLDERHIERARCHY_TYPE                  = 'FolderHierarchy:Type';
+    public const FOLDERHIERARCHY_RESPONSE              = 'FolderHierarchy:Response';
+    public const FOLDERHIERARCHY_STATUS                = 'FolderHierarchy:Status';
+    public const FOLDERHIERARCHY_CONTENTCLASS          = 'FolderHierarchy:ContentClass';
+    public const FOLDERHIERARCHY_CHANGES               = 'FolderHierarchy:Changes';
+    public const FOLDERHIERARCHY_SYNCKEY               = 'FolderHierarchy:SyncKey';
+    public const FOLDERHIERARCHY_FOLDERSYNC            = 'FolderHierarchy:FolderSync';
+    public const FOLDERHIERARCHY_COUNT                 = 'FolderHierarchy:Count';
+    public const FOLDERHIERARCHY_VERSION               = 'FolderHierarchy:Version';
 
     /* SYNC */
-    const SYNC_SYNCHRONIZE                      = 'Synchronize';
-    const SYNC_REPLIES                          = 'Replies';
-    const SYNC_ADD                              = 'Add';
-    const SYNC_MODIFY                           = 'Modify';
-    const SYNC_REMOVE                           = 'Remove';
-    const SYNC_FETCH                            = 'Fetch';
-    const SYNC_SYNCKEY                          = 'SyncKey';
-    const SYNC_CLIENTENTRYID                    = 'ClientEntryId';
-    const SYNC_SERVERENTRYID                    = 'ServerEntryId';
-    const SYNC_STATUS                           = 'Status';
-    const SYNC_FOLDER                           = 'Folder';
-    const SYNC_FOLDERTYPE                       = 'FolderType';
-    const SYNC_VERSION                          = 'Version';
-    const SYNC_FOLDERID                         = 'FolderId';
-    const SYNC_GETCHANGES                       = 'GetChanges';
-    const SYNC_MOREAVAILABLE                    = 'MoreAvailable';
-    const SYNC_WINDOWSIZE                       = 'WindowSize';
-    const SYNC_COMMANDS                         = 'Commands';
-    const SYNC_OPTIONS                          = 'Options';
-    const SYNC_FILTERTYPE                       = 'FilterType';
-    const SYNC_TRUNCATION                       = 'Truncation';
-    const SYNC_RTFTRUNCATION                    = 'RtfTruncation';
-    const SYNC_CONFLICT                         = 'Conflict';
-    const SYNC_FOLDERS                          = 'Folders';
-    const SYNC_DATA                             = 'Data';
-    const SYNC_DELETESASMOVES                   = 'DeletesAsMoves';
-    const SYNC_NOTIFYGUID                       = 'NotifyGUID';
-    const SYNC_SUPPORTED                        = 'Supported';
-    const SYNC_SOFTDELETE                       = 'SoftDelete';
-    const SYNC_MIMESUPPORT                      = 'MIMESupport';
-    const SYNC_MIMETRUNCATION                   = 'MIMETruncation';
-    const SYNC_NEWMESSAGE                       = 'NewMessage';
-    const SYNC_PARTIAL                          = 'Partial';
-    const SYNC_WAIT                             = 'Wait';
-    const SYNC_LIMIT                            = 'Limit';
+    public const SYNC_SYNCHRONIZE                      = 'Synchronize';
+    public const SYNC_REPLIES                          = 'Replies';
+    public const SYNC_ADD                              = 'Add';
+    public const SYNC_MODIFY                           = 'Modify';
+    public const SYNC_REMOVE                           = 'Remove';
+    public const SYNC_FETCH                            = 'Fetch';
+    public const SYNC_SYNCKEY                          = 'SyncKey';
+    public const SYNC_CLIENTENTRYID                    = 'ClientEntryId';
+    public const SYNC_SERVERENTRYID                    = 'ServerEntryId';
+    public const SYNC_STATUS                           = 'Status';
+    public const SYNC_FOLDER                           = 'Folder';
+    public const SYNC_FOLDERTYPE                       = 'FolderType';
+    public const SYNC_VERSION                          = 'Version';
+    public const SYNC_FOLDERID                         = 'FolderId';
+    public const SYNC_GETCHANGES                       = 'GetChanges';
+    public const SYNC_MOREAVAILABLE                    = 'MoreAvailable';
+    public const SYNC_WINDOWSIZE                       = 'WindowSize';
+    public const SYNC_COMMANDS                         = 'Commands';
+    public const SYNC_OPTIONS                          = 'Options';
+    public const SYNC_FILTERTYPE                       = 'FilterType';
+    public const SYNC_TRUNCATION                       = 'Truncation';
+    public const SYNC_RTFTRUNCATION                    = 'RtfTruncation';
+    public const SYNC_CONFLICT                         = 'Conflict';
+    public const SYNC_FOLDERS                          = 'Folders';
+    public const SYNC_DATA                             = 'Data';
+    public const SYNC_DELETESASMOVES                   = 'DeletesAsMoves';
+    public const SYNC_NOTIFYGUID                       = 'NotifyGUID';
+    public const SYNC_SUPPORTED                        = 'Supported';
+    public const SYNC_SOFTDELETE                       = 'SoftDelete';
+    public const SYNC_MIMESUPPORT                      = 'MIMESupport';
+    public const SYNC_MIMETRUNCATION                   = 'MIMETruncation';
+    public const SYNC_NEWMESSAGE                       = 'NewMessage';
+    public const SYNC_PARTIAL                          = 'Partial';
+    public const SYNC_WAIT                             = 'Wait';
+    public const SYNC_LIMIT                            = 'Limit';
     // 14
-    const SYNC_HEARTBEATINTERVAL                = 'HeartbeatInterval';
-    const SYNC_CONVERSATIONMODE                 = 'ConversationMode';
-    const SYNC_MAXITEMS                         = 'MaxItems';
+    public const SYNC_HEARTBEATINTERVAL                = 'HeartbeatInterval';
+    public const SYNC_CONVERSATIONMODE                 = 'ConversationMode';
+    public const SYNC_MAXITEMS                         = 'MaxItems';
 
     /* Document library */
-    const SYNC_DOCUMENTLIBRARY_LINKID           = 'DocumentLibrary:LinkId';
-    const SYNC_DOCUMENTLIBRARY_DISPLAYNAME      = 'DocumentLibrary:DisplayName';
-    const SYNC_DOCUMENTLIBRARY_ISFOLDER         = 'DocumentLibrary:IsFolder';
-    const SYNC_DOCUMENTLIBRARY_CREATIONDATE     = 'DocumentLibrary:CreationDate';
-    const SYNC_DOCUMENTLIBRARY_LASTMODIFIEDDATE = 'DocumentLibrary:LastModifiedDate';
-    const SYNC_DOCUMENTLIBRARY_ISHIDDEN         = 'DocumentLibrary:IsHidden';
-    const SYNC_DOCUMENTLIBRARY_CONTENTLENGTH    = 'DocumentLibrary:ContentLength';
-    const SYNC_DOCUMENTLIBRARY_CONTENTTYPE      = 'DocumentLibrary:ContentType';
+    public const SYNC_DOCUMENTLIBRARY_LINKID           = 'DocumentLibrary:LinkId';
+    public const SYNC_DOCUMENTLIBRARY_DISPLAYNAME      = 'DocumentLibrary:DisplayName';
+    public const SYNC_DOCUMENTLIBRARY_ISFOLDER         = 'DocumentLibrary:IsFolder';
+    public const SYNC_DOCUMENTLIBRARY_CREATIONDATE     = 'DocumentLibrary:CreationDate';
+    public const SYNC_DOCUMENTLIBRARY_LASTMODIFIEDDATE = 'DocumentLibrary:LastModifiedDate';
+    public const SYNC_DOCUMENTLIBRARY_ISHIDDEN         = 'DocumentLibrary:IsHidden';
+    public const SYNC_DOCUMENTLIBRARY_CONTENTLENGTH    = 'DocumentLibrary:ContentLength';
+    public const SYNC_DOCUMENTLIBRARY_CONTENTTYPE      = 'DocumentLibrary:ContentType';
 
     /* AIRSYNCBASE */
-    const AIRSYNCBASE_BODYPREFERENCE            = 'AirSyncBase:BodyPreference';
-    const AIRSYNCBASE_TYPE                      = 'AirSyncBase:Type';
-    const AIRSYNCBASE_TRUNCATIONSIZE            = 'AirSyncBase:TruncationSize';
-    const AIRSYNCBASE_ALLORNONE                 = 'AirSyncBase:AllOrNone';
-    const AIRSYNCBASE_BODY                      = 'AirSyncBase:Body';
-    const AIRSYNCBASE_DATA                      = 'AirSyncBase:Data';
-    const AIRSYNCBASE_ESTIMATEDDATASIZE         = 'AirSyncBase:EstimatedDataSize';
-    const AIRSYNCBASE_TRUNCATED                 = 'AirSyncBase:Truncated';
-    const AIRSYNCBASE_ATTACHMENTS               = 'AirSyncBase:Attachments';
-    const AIRSYNCBASE_ATTACHMENT                = 'AirSyncBase:Attachment';
-    const AIRSYNCBASE_DISPLAYNAME               = 'AirSyncBase:DisplayName';
-    const AIRSYNCBASE_FILEREFERENCE             = 'AirSyncBase:FileReference';
-    const AIRSYNCBASE_METHOD                    = 'AirSyncBase:Method';
-    const AIRSYNCBASE_CONTENTID                 = 'AirSyncBase:ContentId';
-    const AIRSYNCBASE_CONTENTLOCATION           = 'AirSyncBase:ContentLocation';
-    const AIRSYNCBASE_ISINLINE                  = 'AirSyncBase:IsInline';
-    const AIRSYNCBASE_NATIVEBODYTYPE            = 'AirSyncBase:NativeBodyType';
-    const AIRSYNCBASE_CONTENTTYPE               = 'AirSyncBase:ContentType';
-    const AIRSYNCBASE_LOCATION                  = 'AirSyncBase:Location';
+    public const AIRSYNCBASE_BODYPREFERENCE            = 'AirSyncBase:BodyPreference';
+    public const AIRSYNCBASE_TYPE                      = 'AirSyncBase:Type';
+    public const AIRSYNCBASE_TRUNCATIONSIZE            = 'AirSyncBase:TruncationSize';
+    public const AIRSYNCBASE_ALLORNONE                 = 'AirSyncBase:AllOrNone';
+    public const AIRSYNCBASE_BODY                      = 'AirSyncBase:Body';
+    public const AIRSYNCBASE_DATA                      = 'AirSyncBase:Data';
+    public const AIRSYNCBASE_ESTIMATEDDATASIZE         = 'AirSyncBase:EstimatedDataSize';
+    public const AIRSYNCBASE_TRUNCATED                 = 'AirSyncBase:Truncated';
+    public const AIRSYNCBASE_ATTACHMENTS               = 'AirSyncBase:Attachments';
+    public const AIRSYNCBASE_ATTACHMENT                = 'AirSyncBase:Attachment';
+    public const AIRSYNCBASE_DISPLAYNAME               = 'AirSyncBase:DisplayName';
+    public const AIRSYNCBASE_FILEREFERENCE             = 'AirSyncBase:FileReference';
+    public const AIRSYNCBASE_METHOD                    = 'AirSyncBase:Method';
+    public const AIRSYNCBASE_CONTENTID                 = 'AirSyncBase:ContentId';
+    public const AIRSYNCBASE_CONTENTLOCATION           = 'AirSyncBase:ContentLocation';
+    public const AIRSYNCBASE_ISINLINE                  = 'AirSyncBase:IsInline';
+    public const AIRSYNCBASE_NATIVEBODYTYPE            = 'AirSyncBase:NativeBodyType';
+    public const AIRSYNCBASE_CONTENTTYPE               = 'AirSyncBase:ContentType';
+    public const AIRSYNCBASE_LOCATION                  = 'AirSyncBase:Location';
 
     // 14.0
-    const AIRSYNCBASE_PREVIEW                   = 'AirSyncBase:Preview';
+    public const AIRSYNCBASE_PREVIEW                   = 'AirSyncBase:Preview';
 
     // 14.1
-    const AIRSYNCBASE_BODYPARTPREFERENCE        = 'AirSyncBase:BodyPartPreference';
-    const AIRSYNCBASE_BODYPART                  = 'AirSyncBase:BodyPart';
-    const AIRSYNCBASE_STATUS                    = 'AirSyncBase:Status';
+    public const AIRSYNCBASE_BODYPARTPREFERENCE        = 'AirSyncBase:BodyPartPreference';
+    public const AIRSYNCBASE_BODYPART                  = 'AirSyncBase:BodyPart';
+    public const AIRSYNCBASE_STATUS                    = 'AirSyncBase:Status';
 
     // 16.0
-    const AIRSYNCBASE_ADD                       = 'AirSyncBase:Add';
-    const AIRSYNCBASE_DELETE                    = 'AirSyncBase:Delete';
-    const AIRSYNCBASE_CLIENTID                  = 'AirSyncBase:ClientId';
-    const AIRSYNCBASE_CONTENT                   = 'AirSyncBase:Content';
-    const AIRSYNCBASE_ANNOTATION                = 'AirSyncBase:Annotation';
-    const AIRSYNCBASE_STREET                    = 'AirSyncBase:Street';
-    const AIRSYNCBASE_CITY                      = 'AirSyncBase:City';
-    const AIRSYNCBASE_STATE                     = 'AirSyncBase:State';
-    const AIRSYNCBASE_COUNTRY                   = 'AirSyncBase:Country';
-    const AIRSYNCBASE_POSTALCODE                = 'AirSyncBase:PostalCode';
-    const AIRSYNCBASE_LATITUDE                  = 'AirSyncBase:Latitude';
-    const AIRSYNCBASE_LONGITUDE                 = 'AirSyncBase:Longitude';
-    const AIRSYNCBASE_ACCURACY                  = 'AirSyncBase:Accuracy';
-    const AIRSYNCBASE_ALTITUDE                  = 'AirSyncBase:Altitude';
-    const AIRSYNCBASE_ALTITUDEACCURACY          = 'AirSyncBase:AltitudeAccuracy';
-    const AIRSYNCBASE_LOCATIONURI               = 'AirSyncBase:LocationUri';
-    const AIRSYNCBASE_INSTANCEID                = 'AirSyncBase:InstanceId';
+    public const AIRSYNCBASE_ADD                       = 'AirSyncBase:Add';
+    public const AIRSYNCBASE_DELETE                    = 'AirSyncBase:Delete';
+    public const AIRSYNCBASE_CLIENTID                  = 'AirSyncBase:ClientId';
+    public const AIRSYNCBASE_CONTENT                   = 'AirSyncBase:Content';
+    public const AIRSYNCBASE_ANNOTATION                = 'AirSyncBase:Annotation';
+    public const AIRSYNCBASE_STREET                    = 'AirSyncBase:Street';
+    public const AIRSYNCBASE_CITY                      = 'AirSyncBase:City';
+    public const AIRSYNCBASE_STATE                     = 'AirSyncBase:State';
+    public const AIRSYNCBASE_COUNTRY                   = 'AirSyncBase:Country';
+    public const AIRSYNCBASE_POSTALCODE                = 'AirSyncBase:PostalCode';
+    public const AIRSYNCBASE_LATITUDE                  = 'AirSyncBase:Latitude';
+    public const AIRSYNCBASE_LONGITUDE                 = 'AirSyncBase:Longitude';
+    public const AIRSYNCBASE_ACCURACY                  = 'AirSyncBase:Accuracy';
+    public const AIRSYNCBASE_ALTITUDE                  = 'AirSyncBase:Altitude';
+    public const AIRSYNCBASE_ALTITUDEACCURACY          = 'AirSyncBase:AltitudeAccuracy';
+    public const AIRSYNCBASE_LOCATIONURI               = 'AirSyncBase:LocationUri';
+    public const AIRSYNCBASE_INSTANCEID                = 'AirSyncBase:InstanceId';
 
 
     /* Body type prefs */
-    const BODYPREF_TYPE_PLAIN                   = 1;
-    const BODYPREF_TYPE_HTML                    = 2;
-    const BODYPREF_TYPE_RTF                     = 3;
-    const BODYPREF_TYPE_MIME                    = 4;
+    public const BODYPREF_TYPE_PLAIN                   = 1;
+    public const BODYPREF_TYPE_HTML                    = 2;
+    public const BODYPREF_TYPE_RTF                     = 3;
+    public const BODYPREF_TYPE_MIME                    = 4;
 
     /* PROVISION */
-    const PROVISION_PROVISION                   =  'Provision:Provision';
-    const PROVISION_POLICIES                    =  'Provision:Policies';
-    const PROVISION_POLICY                      =  'Provision:Policy';
-    const PROVISION_POLICYTYPE                  =  'Provision:PolicyType';
-    const PROVISION_POLICYKEY                   =  'Provision:PolicyKey';
-    const PROVISION_DATA                        =  'Provision:Data';
-    const PROVISION_STATUS                      =  'Provision:Status';
-    const PROVISION_REMOTEWIPE                  =  'Provision:RemoteWipe';
-    const PROVISION_EASPROVISIONDOC             =  'Provision:EASProvisionDoc';
+    public const PROVISION_PROVISION                   =  'Provision:Provision';
+    public const PROVISION_POLICIES                    =  'Provision:Policies';
+    public const PROVISION_POLICY                      =  'Provision:Policy';
+    public const PROVISION_POLICYTYPE                  =  'Provision:PolicyType';
+    public const PROVISION_POLICYKEY                   =  'Provision:PolicyKey';
+    public const PROVISION_DATA                        =  'Provision:Data';
+    public const PROVISION_STATUS                      =  'Provision:Status';
+    public const PROVISION_REMOTEWIPE                  =  'Provision:RemoteWipe';
+    public const PROVISION_EASPROVISIONDOC             =  'Provision:EASProvisionDoc';
 
     /* Policy types */
-    const POLICYTYPE_XML                        = 'MS-WAP-Provisioning-XML';
-    const POLICYTYPE_WBXML                      = 'MS-EAS-Provisioning-WBXML';
+    public const POLICYTYPE_XML                        = 'MS-WAP-Provisioning-XML';
+    public const POLICYTYPE_WBXML                      = 'MS-EAS-Provisioning-WBXML';
 
     /* Flags */
     // @TODO: H6 Change this to CHANGE_TYPE_NEW
-    const FLAG_NEWMESSAGE                       = 'NewMessage';
+    public const FLAG_NEWMESSAGE                       = 'NewMessage';
 
     /* Folder types */
-    const FOLDER_TYPE_OTHER                     =  1;
-    const FOLDER_TYPE_INBOX                     =  2;
-    const FOLDER_TYPE_DRAFTS                    =  3;
-    const FOLDER_TYPE_WASTEBASKET               =  4;
-    const FOLDER_TYPE_SENTMAIL                  =  5;
-    const FOLDER_TYPE_OUTBOX                    =  6;
-    const FOLDER_TYPE_TASK                      =  7;
-    const FOLDER_TYPE_APPOINTMENT               =  8;
-    const FOLDER_TYPE_CONTACT                   =  9;
-    const FOLDER_TYPE_NOTE                      =  10;
-    const FOLDER_TYPE_JOURNAL                   =  11;
-    const FOLDER_TYPE_USER_MAIL                 =  12;
-    const FOLDER_TYPE_USER_APPOINTMENT          =  13;
-    const FOLDER_TYPE_USER_CONTACT              =  14;
-    const FOLDER_TYPE_USER_TASK                 =  15;
-    const FOLDER_TYPE_USER_JOURNAL              =  16;
-    const FOLDER_TYPE_USER_NOTE                 =  17;
-    const FOLDER_TYPE_UNKNOWN                   =  18;
-    const FOLDER_TYPE_RECIPIENT_CACHE           =  19;
+    public const FOLDER_TYPE_OTHER                     =  1;
+    public const FOLDER_TYPE_INBOX                     =  2;
+    public const FOLDER_TYPE_DRAFTS                    =  3;
+    public const FOLDER_TYPE_WASTEBASKET               =  4;
+    public const FOLDER_TYPE_SENTMAIL                  =  5;
+    public const FOLDER_TYPE_OUTBOX                    =  6;
+    public const FOLDER_TYPE_TASK                      =  7;
+    public const FOLDER_TYPE_APPOINTMENT               =  8;
+    public const FOLDER_TYPE_CONTACT                   =  9;
+    public const FOLDER_TYPE_NOTE                      =  10;
+    public const FOLDER_TYPE_JOURNAL                   =  11;
+    public const FOLDER_TYPE_USER_MAIL                 =  12;
+    public const FOLDER_TYPE_USER_APPOINTMENT          =  13;
+    public const FOLDER_TYPE_USER_CONTACT              =  14;
+    public const FOLDER_TYPE_USER_TASK                 =  15;
+    public const FOLDER_TYPE_USER_JOURNAL              =  16;
+    public const FOLDER_TYPE_USER_NOTE                 =  17;
+    public const FOLDER_TYPE_UNKNOWN                   =  18;
+    public const FOLDER_TYPE_RECIPIENT_CACHE           =  19;
     // @TODO, remove const definition in H6, not used anymore.
-    const FOLDER_TYPE_DUMMY                     =  999999;
+    public const FOLDER_TYPE_DUMMY                     =  999999;
 
     /* Origin of changes **/
-    const CHANGE_ORIGIN_PIM                     = 0;
-    const CHANGE_ORIGIN_SERVER                  = 1;
-    const CHANGE_ORIGIN_NA                      = 3;
+    public const CHANGE_ORIGIN_PIM                     = 0;
+    public const CHANGE_ORIGIN_SERVER                  = 1;
+    public const CHANGE_ORIGIN_NA                      = 3;
 
     /* Remote wipe **/
-    const RWSTATUS_NA                           = 0;
-    const RWSTATUS_OK                           = 1;
-    const RWSTATUS_PENDING                      = 2;
-    const RWSTATUS_WIPED                        = 3;
+    public const RWSTATUS_NA                           = 0;
+    public const RWSTATUS_OK                           = 1;
+    public const RWSTATUS_PENDING                      = 2;
+    public const RWSTATUS_WIPED                        = 3;
 
     /* GAL **/
-    const GAL_DISPLAYNAME                       = 'GAL:DisplayName';
-    const GAL_PHONE                             = 'GAL:Phone';
-    const GAL_OFFICE                            = 'GAL:Office';
-    const GAL_TITLE                             = 'GAL:Title';
-    const GAL_COMPANY                           = 'GAL:Company';
-    const GAL_ALIAS                             = 'GAL:Alias';
-    const GAL_FIRSTNAME                         = 'GAL:FirstName';
-    const GAL_LASTNAME                          = 'GAL:LastName';
-    const GAL_HOMEPHONE                         = 'GAL:HomePhone';
-    const GAL_MOBILEPHONE                       = 'GAL:MobilePhone';
-    const GAL_EMAILADDRESS                      = 'GAL:EmailAddress';
+    public const GAL_DISPLAYNAME                       = 'GAL:DisplayName';
+    public const GAL_PHONE                             = 'GAL:Phone';
+    public const GAL_OFFICE                            = 'GAL:Office';
+    public const GAL_TITLE                             = 'GAL:Title';
+    public const GAL_COMPANY                           = 'GAL:Company';
+    public const GAL_ALIAS                             = 'GAL:Alias';
+    public const GAL_FIRSTNAME                         = 'GAL:FirstName';
+    public const GAL_LASTNAME                          = 'GAL:LastName';
+    public const GAL_HOMEPHONE                         = 'GAL:HomePhone';
+    public const GAL_MOBILEPHONE                       = 'GAL:MobilePhone';
+    public const GAL_EMAILADDRESS                      = 'GAL:EmailAddress';
     // 14.1
-    const GAL_PICTURE                           = 'GAL:Picture';
-    const GAL_STATUS                            = 'GAL:Status';
-    const GAL_DATA                              = 'GAL:Data';
+    public const GAL_PICTURE                           = 'GAL:Picture';
+    public const GAL_STATUS                            = 'GAL:Status';
+    public const GAL_DATA                              = 'GAL:Data';
 
     /* Request Type */
-    const REQUEST_TYPE_SYNC                     = 'sync';
-    const REQUEST_TYPE_FOLDERSYNC               = 'foldersync';
+    public const REQUEST_TYPE_SYNC                     = 'sync';
+    public const REQUEST_TYPE_FOLDERSYNC               = 'foldersync';
 
     /* Change Type */
-    const CHANGE_TYPE_CHANGE                    = 'change';
-    const CHANGE_TYPE_DELETE                    = 'delete';
-    const CHANGE_TYPE_FLAGS                     = 'flags';
-    const CHANGE_TYPE_MOVE                      = 'move';
-    const CHANGE_TYPE_FOLDERSYNC                = 'foldersync';
-    const CHANGE_TYPE_SOFTDELETE                = 'softdelete';
+    public const CHANGE_TYPE_CHANGE                    = 'change';
+    public const CHANGE_TYPE_DELETE                    = 'delete';
+    public const CHANGE_TYPE_FLAGS                     = 'flags';
+    public const CHANGE_TYPE_MOVE                      = 'move';
+    public const CHANGE_TYPE_FOLDERSYNC                = 'foldersync';
+    public const CHANGE_TYPE_SOFTDELETE                = 'softdelete';
 
     // @since 2.36.0
-    const CHANGE_TYPE_DRAFT                     = 'draft';
+    public const CHANGE_TYPE_DRAFT                     = 'draft';
 
     /* Internal flags to indicate change is a change in reply/forward state */
-    const CHANGE_REPLY_STATE                    = '@--reply--@';
-    const CHANGE_REPLYALL_STATE                 = '@--replyall--@';
-    const CHANGE_FORWARD_STATE                  = '@--forward--@';
+    public const CHANGE_REPLY_STATE                    = '@--reply--@';
+    public const CHANGE_REPLYALL_STATE                 = '@--replyall--@';
+    public const CHANGE_FORWARD_STATE                  = '@--forward--@';
 
     /* RM */
-    const RM_SUPPORT                            = 'RightsManagement:RightsManagementSupport';
-    const RM_TEMPLATEID                         = 'RightsManagement:TemplateId';
+    public const RM_SUPPORT                            = 'RightsManagement:RightsManagementSupport';
+    public const RM_TEMPLATEID                         = 'RightsManagement:TemplateId';
 
     /* Collection Classes */
-    const CLASS_EMAIL                           = 'Email';
-    const CLASS_CONTACTS                        = 'Contacts';
-    const CLASS_CALENDAR                        = 'Calendar';
-    const CLASS_TASKS                           = 'Tasks';
-    const CLASS_NOTES                           = 'Notes';
-    const CLASS_SMS                             = 'SMS';
+    public const CLASS_EMAIL                           = 'Email';
+    public const CLASS_CONTACTS                        = 'Contacts';
+    public const CLASS_CALENDAR                        = 'Calendar';
+    public const CLASS_TASKS                           = 'Tasks';
+    public const CLASS_NOTES                           = 'Notes';
+    public const CLASS_SMS                             = 'SMS';
 
     /* Filtertype constants */
-    const FILTERTYPE_ALL                        = 0;
-    const FILTERTYPE_1DAY                       = 1;
-    const FILTERTYPE_3DAYS                      = 2;
-    const FILTERTYPE_1WEEK                      = 3;
-    const FILTERTYPE_2WEEKS                     = 4;
-    const FILTERTYPE_1MONTH                     = 5;
-    const FILTERTYPE_3MONTHS                    = 6;
-    const FILTERTYPE_6MONTHS                    = 7;
-    const FILTERTYPE_INCOMPLETETASKS            = 8;
+    public const FILTERTYPE_ALL                        = 0;
+    public const FILTERTYPE_1DAY                       = 1;
+    public const FILTERTYPE_3DAYS                      = 2;
+    public const FILTERTYPE_1WEEK                      = 3;
+    public const FILTERTYPE_2WEEKS                     = 4;
+    public const FILTERTYPE_1MONTH                     = 5;
+    public const FILTERTYPE_3MONTHS                    = 6;
+    public const FILTERTYPE_6MONTHS                    = 7;
+    public const FILTERTYPE_INCOMPLETETASKS            = 8;
 
     // @todo normalize to string values.
-    const PROVISIONING_FORCE                    = true;
-    const PROVISIONING_LOOSE                    = 'loose';
-    const PROVISIONING_NONE                     = false;
+    public const PROVISIONING_FORCE                    = true;
+    public const PROVISIONING_LOOSE                    = 'loose';
+    public const PROVISIONING_NONE                     = false;
 
-    const FOLDER_ROOT                           = 0;
+    public const FOLDER_ROOT                           = 0;
 
-    const VERSION_TWOFIVE                       = '2.5';
-    const VERSION_TWELVE                        = '12.0';
-    const VERSION_TWELVEONE                     = '12.1';
-    const VERSION_FOURTEEN                      = '14.0';
-    const VERSION_FOURTEENONE                   = '14.1';
-    const VERSION_SIXTEEN                       = '16.0';
+    public const VERSION_TWOFIVE                       = '2.5';
+    public const VERSION_TWELVE                        = '12.0';
+    public const VERSION_TWELVEONE                     = '12.1';
+    public const VERSION_FOURTEEN                      = '14.0';
+    public const VERSION_FOURTEENONE                   = '14.1';
+    public const VERSION_SIXTEEN                       = '16.0';
 
-    const MIME_SUPPORT_NONE                     = 0;
-    const MIME_SUPPORT_SMIME                    = 1;
-    const MIME_SUPPORT_ALL                      = 2;
+    public const MIME_SUPPORT_NONE                     = 0;
+    public const MIME_SUPPORT_SMIME                    = 1;
+    public const MIME_SUPPORT_ALL                      = 2;
 
-    const IMAP_FLAG_REPLY                       = 'reply';
-    const IMAP_FLAG_FORWARD                     = 'forward';
+    public const IMAP_FLAG_REPLY                       = 'reply';
+    public const IMAP_FLAG_FORWARD                     = 'forward';
 
     /* Result Type */
-    const RESOLVE_RESULT_GAL                    = 1;
-    const RESOLVE_RESULT_ADDRESSBOOK            = 2;
+    public const RESOLVE_RESULT_GAL                    = 1;
+    public const RESOLVE_RESULT_ADDRESSBOOK            = 2;
 
     /* Auth failure reasons */
-    const AUTH_REASON_USER_DENIED               = 'user';
-    const AUTH_REASON_DEVICE_DENIED             = 'device';
-    const AUTH_REASON_UNAVAILABLE               = 'unavailable';
+    public const AUTH_REASON_USER_DENIED               = 'user';
+    public const AUTH_REASON_DEVICE_DENIED             = 'device';
+    public const AUTH_REASON_UNAVAILABLE               = 'unavailable';
 
     /* Internal flag indicates all possible fields are ghosted */
-    const ALL_GHOSTED                           = 'allghosted';
+    public const ALL_GHOSTED                           = 'allghosted';
 
-    const LIBRARY_VERSION                       = '2.x.y-git';
+    public const LIBRARY_VERSION                       = '2.x.y-git';
 
     /**
      * Logger
@@ -371,7 +372,7 @@ class Horde_ActiveSync
      *
      * @var array
      */
-    protected $_get = array();
+    protected $_get = [];
 
     /**
      * Path to root certificate bundle
@@ -461,14 +462,14 @@ class Horde_ActiveSync
      *
      * @var array
      */
-    protected static $_supportedVersions = array(
+    protected static $_supportedVersions = [
         self::VERSION_TWOFIVE,
         self::VERSION_TWELVE,
         self::VERSION_TWELVEONE,
         self::VERSION_FOURTEEN,
         self::VERSION_FOURTEENONE,
-        self::VERSION_SIXTEEN
-    );
+        self::VERSION_SIXTEEN,
+    ];
 
     /**
      * Factory method for creating Horde_ActiveSync_Message objects.
@@ -486,10 +487,10 @@ class Horde_ActiveSync
             throw new InvalidArgumentException(sprintf('Class %s does not exist.', $class));
         }
 
-        return new $class(array(
+        return new $class([
             'logger' => self::$_logger,
             'protocolversion' => self::$_version,
-            'device' => self::$_device));
+            'device' => self::$_device]);
     }
 
     /**
@@ -508,8 +509,8 @@ class Horde_ActiveSync
         Horde_ActiveSync_Wbxml_Decoder $decoder,
         Horde_ActiveSync_Wbxml_Encoder $encoder,
         Horde_ActiveSync_State_Base $state,
-        Horde_Controller_Request_Http $request)
-    {
+        Horde_Controller_Request_Http $request
+    ) {
         // The http request
         $this->_request = $request;
 
@@ -653,25 +654,27 @@ class Horde_ActiveSync
     public function __get($property)
     {
         switch ($property) {
-        case 'encoder':
-        case 'decoder':
-        case 'state':
-        case 'request':
-        case 'driver':
-        case 'provisioning':
-        case 'multipart':
-        case 'certPath':
-            $property = '_' . $property;
-            return $this->$property;
-        case 'logger':
-            return self::$_logger;
-        case 'device':
-            return self::$_device;
-        default:
-            throw new InvalidArgumentException(sprintf(
-                'The property %s does not exist',
-                $property)
-            );
+            case 'encoder':
+            case 'decoder':
+            case 'state':
+            case 'request':
+            case 'driver':
+            case 'provisioning':
+            case 'multipart':
+            case 'certPath':
+                $property = '_' . $property;
+                return $this->$property;
+            case 'logger':
+                return self::$_logger;
+            case 'device':
+                return self::$_device;
+            default:
+                throw new InvalidArgumentException(
+                    sprintf(
+                        'The property %s does not exist',
+                        $property
+                    )
+                );
         }
     }
 
@@ -763,7 +766,7 @@ class Horde_ActiveSync
         // @TODO: Remove is_callable check for H6.
         // Callback to give the backend the option to limit EAS version based
         // on user/device/etc...
-        if (is_callable(array($this->_driver, 'versionCallback'))) {
+        if (is_callable([$this->_driver, 'versionCallback'])) {
             $this->_driver->versionCallback($this);
         }
 
@@ -786,11 +789,13 @@ class Horde_ActiveSync
             throw new Horde_Exception_AuthenticationFailure('', $this->_globalError);
         }
 
-        self::$_logger->info(sprintf(
-            '%s%s request received for user %s',
-            str_repeat('-', 10),
-            Horde_String::upper($cmd),
-            $this->_driver->getUser())
+        self::$_logger->info(
+            sprintf(
+                '%s%s request received for user %s',
+                str_repeat('-', 10),
+                Horde_String::upper($cmd),
+                $this->_driver->getUser()
+            )
         );
 
         // These are all handled in the same class.
@@ -837,8 +842,8 @@ class Horde_ActiveSync
 
         // Support Multipart response for ITEMOPERATIONS requests?
         $headers = $this->_request->getHeaders();
-        if ((!empty($headers['ms-asacceptmultipart']) && $headers['ms-asacceptmultipart'] == 'T') ||
-            !empty($get['AcceptMultiPart'])) {
+        if ((!empty($headers['ms-asacceptmultipart']) && $headers['ms-asacceptmultipart'] == 'T')
+            || !empty($get['AcceptMultiPart'])) {
             $this->_multipart = true;
             self::$_logger->info('Requesting multipart data.');
         }
@@ -855,7 +860,7 @@ class Horde_ActiveSync
         // Should we announce a new version is available to the client?
         if (!empty($this->_needMsRp)) {
             self::$_logger->info('Announcing X-MS-RP to client.');
-            header("X-MS-RP: ". $this->getSupportedVersions());
+            header("X-MS-RP: " . $this->getSupportedVersions());
         }
 
         // @TODO: Look at getting rid of having to set the version in the driver
@@ -866,9 +871,11 @@ class Horde_ActiveSync
             $request = new $class($this);
             $request->setLogger(self::$_logger);
             $result = $request->handle();
-            self::$_logger->info(sprintf(
-                'Maximum memory usage for ActiveSync request: %d bytes.',
-                memory_get_peak_usage(true))
+            self::$_logger->info(
+                sprintf(
+                    'Maximum memory usage for ActiveSync request: %d bytes.',
+                    memory_get_peak_usage(true)
+                )
             );
 
             return $result;
@@ -916,20 +923,21 @@ class Horde_ActiveSync
             // @TODO: Remove is_callable check for H6.
             //        Combine this with the modifyDevice callback? Allow $device
             //        to be modified here?
-            if (is_callable(array($this->_driver, 'createDeviceCallback'))) {
+            if (is_callable([$this->_driver, 'createDeviceCallback'])) {
                 $callback_ret = $this->_driver->createDeviceCallback(self::$_device);
                 if ($callback_ret !== true) {
                     $msg = sprintf(
                         'The device %s was disallowed for user %s per policy settings.',
                         self::$_device->id,
-                        self::$_device->user);
+                        self::$_device->user
+                    );
                     self::$_logger->err($msg);
                     // Always throw exception in place of status code since we
                     // won't have a version number before the device is created.
                     throw new Horde_Exception_AuthenticationFailure($msg, $callback_ret);
                 } else {
                     // Give the driver a chance to modify device properties.
-                    if (is_callable(array($this->_driver, 'modifyDeviceCallback'))) {
+                    if (is_callable([$this->_driver, 'modifyDeviceCallback'])) {
                         self::$_device = $this->_driver->modifyDeviceCallback(self::$_device);
                     }
                 }
@@ -949,13 +957,13 @@ class Horde_ActiveSync
             if (empty(self::$_device->version)) {
                 self::$_device->version = $version;
             }
-            if (self::$_device->version < $this->_maxVersion &&
-                self::$_device->needsVersionUpdate($this->getSupportedVersions())) {
+            if (self::$_device->version < $this->_maxVersion
+                && self::$_device->needsVersionUpdate($this->getSupportedVersions())) {
                 $this->_needMsRp = true;
             }
 
             // Give the driver a chance to modify device properties.
-            if (is_callable(array($this->_driver, 'modifyDeviceCallback'))) {
+            if (is_callable([$this->_driver, 'modifyDeviceCallback'])) {
                 self::$_device = $this->_driver->modifyDeviceCallback(self::$_device);
             }
         }
@@ -963,13 +971,14 @@ class Horde_ActiveSync
         // Save the device now that we know it is at least allowed to connect,
         // or it has connected successfully at least once in the past.
         self::$_device->save();
-        if (is_callable(array($this->_driver, 'deviceCallback'))) {
+        if (is_callable([$this->_driver, 'deviceCallback'])) {
             $callback_ret = $this->_driver->deviceCallback(self::$_device);
             if ($callback_ret !== true) {
                 $msg = sprintf(
                     'The device %s was disallowed for user %s per policy settings.',
                     self::$_device->id,
-                    self::$_device->user);
+                    self::$_device->user
+                );
                 self::$_logger->err($msg);
                 if ($version > self::VERSION_TWELVEONE) {
                     // Use a status code here, since the device has already
@@ -986,7 +995,8 @@ class Horde_ActiveSync
         if (self::$_device->blocked) {
             $msg = sprintf(
                 'The device %s was blocked.',
-                self::$_device->id);
+                self::$_device->id
+            );
             self::$_logger->err($msg);
             if ($version > self::VERSION_TWELVEONE) {
                 $this->_globalError = Horde_ActiveSync_Status::DEVICE_BLOCKED_FOR_USER;
@@ -1007,30 +1017,30 @@ class Horde_ActiveSync
      */
     public function activeSyncHeader()
     {
-        $headers = array(
+        $headers = [
             'Allow: OPTIONS,POST',
             sprintf('Server: Horde_ActiveSync Library v%s', self::LIBRARY_VERSION),
-            'Public: OPTIONS,POST'
-        );
+            'Public: OPTIONS,POST',
+        ];
 
         switch ($this->_maxVersion) {
-        case self::VERSION_TWOFIVE:
-            $headers[] = 'MS-Server-ActiveSync: 6.5.7638.1';
-            break;
-        case self::VERSION_TWELVE:
-            $headers[] = 'MS-Server-ActiveSync: 12.0';
-            break;
-        case self::VERSION_TWELVEONE:
-            $headers[] = 'MS-Server-ActiveSync: 12.1';
-            break;
-        case self::VERSION_FOURTEEN:
-            $headers[] = 'MS-Server-ActiveSync: 14.0';
-            break;
-        case self::VERSION_FOURTEENONE:
-            $headers[] = 'MS-Server-ActiveSync: 14.1';
-            break;
-        case self::VERSION_SIXTEEN:
-            $headers[] = 'MS-Server-ActiveSync: 16.0';
+            case self::VERSION_TWOFIVE:
+                $headers[] = 'MS-Server-ActiveSync: 6.5.7638.1';
+                break;
+            case self::VERSION_TWELVE:
+                $headers[] = 'MS-Server-ActiveSync: 12.0';
+                break;
+            case self::VERSION_TWELVEONE:
+                $headers[] = 'MS-Server-ActiveSync: 12.1';
+                break;
+            case self::VERSION_FOURTEEN:
+                $headers[] = 'MS-Server-ActiveSync: 14.0';
+                break;
+            case self::VERSION_FOURTEENONE:
+                $headers[] = 'MS-Server-ActiveSync: 14.1';
+                break;
+            case self::VERSION_SIXTEEN:
+                $headers[] = 'MS-Server-ActiveSync: 16.0';
         }
 
         foreach ($headers as $hdr) {
@@ -1086,15 +1096,15 @@ class Horde_ActiveSync
     public function getSupportedCommands()
     {
         switch ($this->_maxVersion) {
-        case self::VERSION_TWOFIVE:
-            return 'Sync,SendMail,SmartForward,SmartReply,GetAttachment,GetHierarchy,CreateCollection,DeleteCollection,MoveCollection,FolderSync,FolderCreate,FolderDelete,FolderUpdate,MoveItems,GetItemEstimate,MeetingResponse,ResolveRecipients,ValidateCert,Provision,Search,Ping';
+            case self::VERSION_TWOFIVE:
+                return 'Sync,SendMail,SmartForward,SmartReply,GetAttachment,GetHierarchy,CreateCollection,DeleteCollection,MoveCollection,FolderSync,FolderCreate,FolderDelete,FolderUpdate,MoveItems,GetItemEstimate,MeetingResponse,ResolveRecipients,ValidateCert,Provision,Search,Ping';
 
-        case self::VERSION_TWELVE:
-        case self::VERSION_TWELVEONE:
-        case self::VERSION_FOURTEEN:
-        case self::VERSION_FOURTEENONE:
-        case self::VERSION_SIXTEEN:
-            return 'Sync,SendMail,SmartForward,SmartReply,GetAttachment,GetHierarchy,CreateCollection,DeleteCollection,MoveCollection,FolderSync,FolderCreate,FolderDelete,FolderUpdate,MoveItems,GetItemEstimate,MeetingResponse,Search,Settings,Ping,ItemOperations,Provision,ResolveRecipients,ValidateCert';
+            case self::VERSION_TWELVE:
+            case self::VERSION_TWELVEONE:
+            case self::VERSION_FOURTEEN:
+            case self::VERSION_FOURTEENONE:
+            case self::VERSION_SIXTEEN:
+                return 'Sync,SendMail,SmartForward,SmartReply,GetAttachment,GetHierarchy,CreateCollection,DeleteCollection,MoveCollection,FolderSync,FolderCreate,FolderDelete,FolderUpdate,MoveItems,GetItemEstimate,MeetingResponse,Search,Settings,Ping,ItemOperations,Provision,ResolveRecipients,ValidateCert';
         }
     }
 
@@ -1156,7 +1166,7 @@ class Horde_ActiveSync
             return $this->_get;
         }
 
-        $results = array();
+        $results = [];
         $get = $this->_request->getGetVars();
 
         // Do we need to decode the request parameters?
@@ -1166,19 +1176,19 @@ class Horde_ActiveSync
                 $results = Horde_ActiveSync_Utils::decodeBase64($serverVars['QUERY_STRING']);
                 // Normalize values.
                 switch ($results['DeviceType']) {
-                case 'PPC':
-                    $results['DeviceType'] = 'PocketPC';
-                    break;
-                case 'SP':
-                    $results['DeviceType'] = 'SmartPhone';
-                    break;
-                case 'WP':
-                case 'WP8':
-                    $results['DeviceType'] = 'WindowsPhone';
-                    break;
-                case 'android':
-                case 'android40':
-                    $results['DeviceType'] = 'android';
+                    case 'PPC':
+                        $results['DeviceType'] = 'PocketPC';
+                        break;
+                    case 'SP':
+                        $results['DeviceType'] = 'SmartPhone';
+                        break;
+                    case 'WP':
+                    case 'WP8':
+                        $results['DeviceType'] = 'WindowsPhone';
+                        break;
+                    case 'android':
+                    case 'android40':
+                        $results['DeviceType'] = 'android';
                 }
                 $this->_get = $results;
             }
@@ -1226,9 +1236,13 @@ class Horde_ActiveSync
         $as_headers = implode("\r\n", $this->activeSyncHeader());
         $version_header = $this->versionHeader();
         $cmd_header = $this->commandsHeader();
-        self::$_logger->meta(sprintf(
-            "Returning OPTIONS response:\r\n%s\r\n%s\r\n%s",
-            $as_headers, $version_header, $cmd_header)
+        self::$_logger->meta(
+            sprintf(
+                "Returning OPTIONS response:\r\n%s\r\n%s\r\n%s",
+                $as_headers,
+                $version_header,
+                $cmd_header
+            )
         );
     }
 
@@ -1244,27 +1258,27 @@ class Horde_ActiveSync
      */
     public static function getMIMETruncSize($truncation)
     {
-        switch($truncation) {
-        case Horde_ActiveSync::TRUNCATION_ALL:
-            return 0;
-        case Horde_ActiveSync::TRUNCATION_1:
-            return 4096;
-        case Horde_ActiveSync::TRUNCATION_2:
-            return 5120;
-        case Horde_ActiveSync::TRUNCATION_3:
-            return 7168;
-        case Horde_ActiveSync::TRUNCATION_4:
-            return 10240;
-        case Horde_ActiveSync::TRUNCATION_5:
-            return 20480;
-        case Horde_ActiveSync::TRUNCATION_6:
-            return 51200;
-        case Horde_ActiveSync::TRUNCATION_7:
-            return 102400;
-        case Horde_ActiveSync::TRUNCATION_8:
-            return false;
-        default:
-            return 1024; // Default to 1Kb
+        switch ($truncation) {
+            case Horde_ActiveSync::TRUNCATION_ALL:
+                return 0;
+            case Horde_ActiveSync::TRUNCATION_1:
+                return 4096;
+            case Horde_ActiveSync::TRUNCATION_2:
+                return 5120;
+            case Horde_ActiveSync::TRUNCATION_3:
+                return 7168;
+            case Horde_ActiveSync::TRUNCATION_4:
+                return 10240;
+            case Horde_ActiveSync::TRUNCATION_5:
+                return 20480;
+            case Horde_ActiveSync::TRUNCATION_6:
+                return 51200;
+            case Horde_ActiveSync::TRUNCATION_7:
+                return 102400;
+            case Horde_ActiveSync::TRUNCATION_8:
+                return false;
+            default:
+                return 1024; // Default to 1Kb
         }
     }
 
@@ -1280,30 +1294,30 @@ class Horde_ActiveSync
      */
     public static function getTruncSize($truncation)
     {
-        switch($truncation) {
-        case Horde_ActiveSync::TRUNCATION_ALL:
-            return 0;
-        case Horde_ActiveSync::TRUNCATION_1:
-            return 512;
-        case Horde_ActiveSync::TRUNCATION_2:
-            return 1024;
-        case Horde_ActiveSync::TRUNCATION_3:
-            return 2048;
-        case Horde_ActiveSync::TRUNCATION_4:
-            return 5120;
-        case Horde_ActiveSync::TRUNCATION_5:
-            return 10240;
-        case Horde_ActiveSync::TRUNCATION_6:
-            return 20480;
-        case Horde_ActiveSync::TRUNCATION_7:
-            return 51200;
-        case Horde_ActiveSync::TRUNCATION_8:
-            return 102400;
-        case Horde_ActiveSync::TRUNCATION_9:
-        case Horde_ActiveSync::TRUNCATION_NONE: // @deprecated
-            return false;
-        default:
-            return 1024; // Default to 1Kb
+        switch ($truncation) {
+            case Horde_ActiveSync::TRUNCATION_ALL:
+                return 0;
+            case Horde_ActiveSync::TRUNCATION_1:
+                return 512;
+            case Horde_ActiveSync::TRUNCATION_2:
+                return 1024;
+            case Horde_ActiveSync::TRUNCATION_3:
+                return 2048;
+            case Horde_ActiveSync::TRUNCATION_4:
+                return 5120;
+            case Horde_ActiveSync::TRUNCATION_5:
+                return 10240;
+            case Horde_ActiveSync::TRUNCATION_6:
+                return 20480;
+            case Horde_ActiveSync::TRUNCATION_7:
+                return 51200;
+            case Horde_ActiveSync::TRUNCATION_8:
+                return 102400;
+            case Horde_ActiveSync::TRUNCATION_9:
+            case Horde_ActiveSync::TRUNCATION_NONE: // @deprecated
+                return false;
+            default:
+                return 1024; // Default to 1Kb
         }
     }
 

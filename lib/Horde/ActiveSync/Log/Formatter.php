@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ActiveSync log formatter
  *
@@ -27,11 +28,11 @@ class Horde_ActiveSync_Log_Formatter implements Horde_Log_Formatter
      */
     protected $_format = '[%pid%][%timestamp%] %levelName%: %indent%';
 
-    protected $_levelMap = array(
+    protected $_levelMap = [
         'CLIENT' => 'I',
         'SERVER' => 'O',
-        'META' => '>>>'
-    );
+        'META' => '>>>',
+    ];
 
     /**
      * Formats an event to be written by the handler.

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Wbxml::
  *
@@ -31,59 +32,59 @@
  */
 class Horde_ActiveSync_Wbxml
 {
-    const SWITCH_PAGE         = 0x00;
-    const END                 = 0x01;
-    const ENTITY              = 0x02;
-    const STR_I               = 0x03;
-    const LITERAL             = 0x04;
-    const EXT_I_0             = 0x40;
-    const EXT_I_1             = 0x41;
-    const EXT_I_2             = 0x42;
-    const PI                  = 0x43;
-    const LITERAL_C           = 0x44;
-    const EXT_T_0             = 0x80;
-    const EXT_T_1             = 0x81;
-    const EXT_T_2             = 0x82;
-    const STR_T               = 0x83;
-    const LITERAL_A           = 0x84;
-    const EXT_0               = 0xC0;
-    const EXT_1               = 0xC1;
-    const EXT_2               = 0xC2;
-    const OPAQUE              = 0xC3;
-    const LITERAL_AC          = 0xC4;
+    public const SWITCH_PAGE         = 0x00;
+    public const END                 = 0x01;
+    public const ENTITY              = 0x02;
+    public const STR_I               = 0x03;
+    public const LITERAL             = 0x04;
+    public const EXT_I_0             = 0x40;
+    public const EXT_I_1             = 0x41;
+    public const EXT_I_2             = 0x42;
+    public const PI                  = 0x43;
+    public const LITERAL_C           = 0x44;
+    public const EXT_T_0             = 0x80;
+    public const EXT_T_1             = 0x81;
+    public const EXT_T_2             = 0x82;
+    public const STR_T               = 0x83;
+    public const LITERAL_A           = 0x84;
+    public const EXT_0               = 0xC0;
+    public const EXT_1               = 0xC1;
+    public const EXT_2               = 0xC2;
+    public const OPAQUE              = 0xC3;
+    public const LITERAL_AC          = 0xC4;
 
-    const EN_TYPE             = 1;
-    const EN_TAG              = 2;
-    const EN_CONTENT          = 3;
-    const EN_FLAGS            = 4;
-    const EN_ATTRIBUTES       = 5;
+    public const EN_TYPE             = 1;
+    public const EN_TAG              = 2;
+    public const EN_CONTENT          = 3;
+    public const EN_FLAGS            = 4;
+    public const EN_ATTRIBUTES       = 5;
 
-    const EN_TYPE_STARTTAG    = 1;
-    const EN_TYPE_ENDTAG      = 2;
-    const EN_TYPE_CONTENT     = 3;
+    public const EN_TYPE_STARTTAG    = 1;
+    public const EN_TYPE_ENDTAG      = 2;
+    public const EN_TYPE_CONTENT     = 3;
 
-    const EN_FLAGS_CONTENT    = 1;
-    const EN_FLAGS_ATTRIBUTES = 2;
+    public const EN_FLAGS_CONTENT    = 1;
+    public const EN_FLAGS_ATTRIBUTES = 2;
 
     /* Valid WBXML Version header value */
-    const WBXML_VERSION       = 0x03;
+    public const WBXML_VERSION       = 0x03;
 
     /* Logging levels */
     // LOG_DETAILED = All data logged.
     // LOG_PROTOCOL = Protocol detail is logged, but if content length of
     // non-stream data exceeds LOG_MAXCONTENT bytes, only the size is logged.
-    const LOG_DETAILED         = 1;
-    const LOG_PROTOCOL         = 2;
-    const LOG_MAXCONTENT       = 50;
+    public const LOG_DETAILED         = 1;
+    public const LOG_PROTOCOL         = 2;
+    public const LOG_MAXCONTENT       = 50;
 
     /**
      * The code page definitions for the wbxml encoder/decoders
      *
      * @var array
      */
-    protected $_dtd = array(
-        'codes' => array (
-            0 => array (
+    protected $_dtd = [
+        'codes' =>  [
+            0 =>  [
                 0x05 => 'Synchronize',
                 0x06 => 'Replies',
                 0x07 => 'Add',
@@ -122,9 +123,9 @@ class Horde_ActiveSync_Wbxml
                 0x27 => 'ConversationMode',
                 0x28 => 'MaxItems',
                 0x29 => 'HeartbeatInterval',
-            ),
+            ],
             /* POOMCONTACTS */
-            1 => array (
+            1 =>  [
                 0x05 => 'Anniversary',
                 0x06 => 'AssistantName',
                 0x07 => 'AssistnamePhoneNumber',
@@ -184,9 +185,9 @@ class Horde_ActiveSync_Wbxml
                 // EAS 14.0
                 0x3d => 'Alias',
                 0x3e => 'WeightedRank',
-            ),
+            ],
             /* POOMMAIL */
-            2 => array (
+            2 =>  [
                 0x05 => 'Attachment',
                 0x06 => 'Attachments',
                 0x07 => 'AttName',
@@ -248,12 +249,12 @@ class Horde_ActiveSync_Wbxml
                 0x3e => 'CompleteTime',
                 // EAS 14.0
                 0x3f => 'DisallowNewTimeProposal',
-            ),
+            ],
 
             /* 3 == AirNotify == deprecated */
 
             /* POOMCAL */
-            4 => array (
+            4 =>  [
                 0x05 => 'Timezone',
                 0x06 => 'AllDayEvent',
                 0x07 => 'Attendees',
@@ -315,9 +316,9 @@ class Horde_ActiveSync_Wbxml
                 0x3b => 'OnlineMeetingExternalLink',
                 // EAS 16.0
                 0x3c => 'ClientUid',
-            ),
+            ],
             /* MOVE */
-            5 => array (
+            5 =>  [
                 0x05 => 'Moves',
                 0x06 => 'Move',
                 0x07 => 'SrcMsgId',
@@ -326,9 +327,9 @@ class Horde_ActiveSync_Wbxml
                 0x0a => 'Response',
                 0x0b => 'Status',
                 0x0c => 'DstMsgId',
-            ),
+            ],
             /* GETITEMESTIMATE */
-            6 => array (
+            6 =>  [
                 0x05 => 'GetItemEstimate',
                 0x06 => 'Version',    // 12.1
                 0x07 => 'Folders',
@@ -339,9 +340,9 @@ class Horde_ActiveSync_Wbxml
                 0x0c => 'Estimate',
                 0x0d => 'Response',
                 0x0e => 'Status',
-            ),
+            ],
             /* FOLDERHIERARCHY */
-            7 => array (
+            7 =>  [
                 0x05 => 'Folders',
                 0x06 => 'Folder',
                 0x07 => 'DisplayName',
@@ -362,9 +363,9 @@ class Horde_ActiveSync_Wbxml
                 0x16 => 'FolderSync',
                 0x17 => 'Count',
                 0x18 => 'Version',
-            ),
+            ],
             /* MEETINGRESPONSE */
-            8 => array (
+            8 =>  [
                 0x05 => 'CalendarId',
                 0x06 => 'FolderId',
                 0x07 => 'MeetingResponse',
@@ -378,9 +379,9 @@ class Horde_ActiveSync_Wbxml
                 0x0e => 'InstanceId',
                 // EAS 16.0
                 0x12 => 'SendResponse',
-            ),
+            ],
             /* POOMTASKS */
-            9 => array (
+            9 =>  [
                 0x05 => 'Body',
                 0x06 => 'BodySize',
                 0x07 => 'BodyTruncated',
@@ -418,9 +419,9 @@ class Horde_ActiveSync_Wbxml
                 0x25 => 'IsLeapMonth',
                 // EAS 14.1
                 0x26 => 'FirstDayOfWeek',
-            ),
+            ],
             /* RESOLVERECIPIENTS */
-            0xa => array (
+            0xa =>  [
                 0x05 => 'ResolveRecipients',
                 0x06 => 'Response',
                 0x07 => 'Status',
@@ -447,18 +448,18 @@ class Horde_ActiveSync_Wbxml
                 0x1b => 'MaxSize',
                 0x1c => 'Data',
                 0x1d => 'MaxPictures',
-            ),
+            ],
             /* VALIDATECERT */
-            0xb => array (
+            0xb =>  [
                 0x05 => 'ValidateCert',
                 0x06 => 'Certificates',
                 0x07 => 'Certificate',
                 0x08 => 'CertificateChain',
                 0x09 => 'CheckCRL',
                 0x0a => 'Status',
-            ),
+            ],
             /* POOMCONTACTS2*/
-            0xc => array (
+            0xc =>  [
                 0x05 => 'CustomerId',
                 0x06 => 'GovernmentId',
                 0x07 => 'IMAddress',
@@ -469,9 +470,9 @@ class Horde_ActiveSync_Wbxml
                 0x0c => 'AccountName',
                 0x0d => 'NickName',
                 0x0e => 'MMS',
-            ),
+            ],
             /* PING */
-            0xd => array (
+            0xd =>  [
                 0x05 => 'Ping',
                 0x06 => 'AutdState',
                 0x07 => 'Status',
@@ -481,9 +482,9 @@ class Horde_ActiveSync_Wbxml
                 0x0b => 'ServerEntryId',
                 0x0c => 'FolderType',
                 0x0d => 'MaxFolders',
-            ),
+            ],
             /* PROVISION */
-            0xe => array (
+            0xe =>  [
                 0x05 => 'Provision',
                 0x06 => 'Policies',
                 0x07 => 'Policy',
@@ -540,9 +541,9 @@ class Horde_ActiveSync_Wbxml
                 0x38 => 'ApplicationName',
                 0x39 => 'ApprovedApplicationList',
                 0x3A => 'Hash',
-            ),
+            ],
             /* SEARCH */
-            0xf => array(
+            0xf => [
                 0x05 => 'Search',
                 0x07 => 'Store',
                 0x08 => 'Name',
@@ -574,9 +575,9 @@ class Horde_ActiveSync_Wbxml
                 0x21 => 'Picture',
                 0x22 => 'MaxSize',
                 0x23 => 'MaxPictures',
-            ),
+            ],
             /* GAL (Global Address List) */
-            0x10 => array(
+            0x10 => [
                 0x05 => 'DisplayName',
                 0x06 => 'Phone',
                 0x07 => 'Office',
@@ -592,11 +593,11 @@ class Horde_ActiveSync_Wbxml
                 0x10 => 'Picture',
                 0x11 => 'Status',
                 0x12 => 'Data',
-            ),
+            ],
 
             // EAS 12.0
             /* AIRSYNCBASE */
-            0x11 => array(
+            0x11 => [
                 0x05 => 'BodyPreference',
                 0x06 => 'Type',
                 0x07 => 'TruncationSize',
@@ -640,10 +641,10 @@ class Horde_ActiveSync_Wbxml
                 0x2b => 'AltitudeAccuracy',
                 0x2c => 'LocationUri',
                 0x2d => 'InstanceId',
-            ),
+            ],
 
             /* SETTINGS */
-            0x12 => array(
+            0x12 => [
                 0x05 => 'Settings',
                 0x06 => 'Status',
                 0x07 => 'Get',
@@ -685,10 +686,10 @@ class Horde_ActiveSync_Wbxml
                 0x28 => 'UserDisplayName',
                 0x29 => 'SendDisabled',
                 0x2b => 'RightsManagementInformation',
-            ),
+            ],
 
             /* Document Library */
-            0x13 => array(
+            0x13 => [
                 0x05 => 'LinkId',
                 0x06 => 'DisplayName',
                 0x07 => 'IsFolder',
@@ -696,11 +697,11 @@ class Horde_ActiveSync_Wbxml
                 0x09 => 'LastModifiedDate',
                 0x0A => 'IsHidden',
                 0x0B => 'ContentLength',
-                0x0C => 'ContentType'
-            ),
+                0x0C => 'ContentType',
+            ],
 
             /* ITEMOPERATIONS */
-            0x14 => array(
+            0x14 => [
                 0x05 => 'ItemOperations',
                 0x06 => 'Fetch',
                 0x07 => 'Store',
@@ -725,10 +726,10 @@ class Horde_ActiveSync_Wbxml
                 0x18 => 'ConversationId',
                 0x19 => 'MoveAlways',
 
-            ),
+            ],
 
             /* COMPOSEMAIL (14.0) */
-            0x15 => array(
+            0x15 => [
                 0x05 => 'SendMail',
                 0x06 => 'SmartForward',
                 0x07 => 'SmartReply',
@@ -749,11 +750,11 @@ class Horde_ActiveSync_Wbxml
                 0x15 => 'Forwardees',
                 0x16 => 'Forwardee',
                 0x17 => 'ForwardeeName',
-                0x18 => 'ForwardeeEmail'
-            ),
+                0x18 => 'ForwardeeEmail',
+            ],
 
             /* POOMMAIL2 (14.0) */
-            0x16 => array(
+            0x16 => [
                 0x05 => 'UmCallerId',
                 0x06 => 'UmUserNotes',
                 0x07 => 'UmAttDuration',
@@ -773,22 +774,22 @@ class Horde_ActiveSync_Wbxml
                 // EAS 16.0
                 0x15 => 'IsDraft',
                 0x16 => 'Bcc',
-                0x17 => 'Send'
-            ),
+                0x17 => 'Send',
+            ],
 
             /* Notes (14.0) */
-            0x17 => array(
+            0x17 => [
                 0x05 => 'Subject',
                 0x06 => 'MessageClass',
                 0x07 => 'LastModifiedDate',
                 0x08 => 'Categories',
                 0x09 => 'Category',
-            ),
+            ],
 
             /* Rights Management (14.1) */
             // Included here to decode without errors.
             // Functionality not implemented.
-            0x18 => array(
+            0x18 => [
                 0x05 => 'RightsManagementSupport',
                 0x06 => 'RightsManagementTemplates',
                 0x07 => 'RightsManagementTemplate',
@@ -808,48 +809,48 @@ class Horde_ActiveSync_Wbxml
                 0x15 => 'TemplateName',
                 0x16 => 'TemplateDescription',
                 0x17 => 'ContentOwner',
-                0x18 => 'RemoveRightsManagementDistribution'
-            ),
+                0x18 => 'RemoveRightsManagementDistribution',
+            ],
 
             // Windows Live
-            0xFE => array(
+            0xFE => [
                 0x05 => 'Annotations',
                 0x06 => 'Annotation',
                 0x07 => 'Name',
-                0x08 => 'Value'
-            )
-        ),
+                0x08 => 'Value',
+            ],
+        ],
 
-        'namespaces' => array(
-              1    => 'POOMCONTACTS',
-              2    => 'POOMMAIL',
-              4    => 'POOMCAL',
-              5    => 'Move',
-              6    => 'GetItemEstimate',
-              7    => 'FolderHierarchy',
-              8    => 'MeetingResponse',
-              9    => 'POOMTASKS',
-              0xA  => 'ResolveRecipients',
-              0xB  => 'ValidateCert',
-              0xC  => 'POOMCONTACTS2',
-              0xD  => 'Ping',
-              0xE  => 'Provision',
-              0xF  => 'Search',
-              0x10 => 'GAL',
-              // EAS 12.0
-              0x11 => 'AirSyncBase',
-              0x12 => 'Settings',
-              0x13 => 'DocumentLibrary',
-              0x14 => 'ItemOperations',
-              // EAS 14
-              0x15 => 'ComposeMail',
-              0x16 => 'POOMMAIL2',
-              0x17 => 'Notes',
-              0x18 => 'RightsManagement',
-              // Hotmail/Outlook.com WBXML extension.
-              0xFE => 'WindowsLive'
-        )
-    );
+        'namespaces' => [
+            1    => 'POOMCONTACTS',
+            2    => 'POOMMAIL',
+            4    => 'POOMCAL',
+            5    => 'Move',
+            6    => 'GetItemEstimate',
+            7    => 'FolderHierarchy',
+            8    => 'MeetingResponse',
+            9    => 'POOMTASKS',
+            0xA  => 'ResolveRecipients',
+            0xB  => 'ValidateCert',
+            0xC  => 'POOMCONTACTS2',
+            0xD  => 'Ping',
+            0xE  => 'Provision',
+            0xF  => 'Search',
+            0x10 => 'GAL',
+            // EAS 12.0
+            0x11 => 'AirSyncBase',
+            0x12 => 'Settings',
+            0x13 => 'DocumentLibrary',
+            0x14 => 'ItemOperations',
+            // EAS 14
+            0x15 => 'ComposeMail',
+            0x16 => 'POOMMAIL2',
+            0x17 => 'Notes',
+            0x18 => 'RightsManagement',
+            // Hotmail/Outlook.com WBXML extension.
+            0xFE => 'WindowsLive',
+        ],
+    ];
 
     /**
      * Track the codepage for the currently output tag so we know when to
@@ -865,7 +866,7 @@ class Horde_ActiveSync_Wbxml
      *
      * @var array
      */
-    protected $_logStack = array();
+    protected $_logStack = [];
 
     /**
      * Logger
@@ -879,21 +880,21 @@ class Horde_ActiveSync_Wbxml
      *
      * @var Horde_Stream
      */
-     protected $_stream;
+    protected $_stream;
 
-     /**
-      * The current procid
-      *
-      * @var integer
-      */
-     protected $_procid;
+    /**
+     * The current procid
+     *
+     * @var integer
+     */
+    protected $_procid;
 
-     /**
-      * Logging level.
-      *
-      * @param integer
-      */
-     protected $_logLevel;
+    /**
+     * Logging level.
+     *
+     * @param integer
+     */
+    protected $_logLevel;
 
     /**
      *
@@ -901,7 +902,7 @@ class Horde_ActiveSync_Wbxml
      */
     public function __construct($stream, $log_level = self::LOG_PROTOCOL)
     {
-        $this->_stream = new Horde_Stream_Existing(array('stream' => $stream));
+        $this->_stream = new Horde_Stream_Existing(['stream' => $stream]);
         $this->_logger = new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null());
         $this->_procid = getmypid();
         $this->_logLevel = $log_level;

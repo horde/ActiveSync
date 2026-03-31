@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_Flag::
  *
@@ -55,41 +56,41 @@
  */
 class Horde_ActiveSync_Message_Flag extends Horde_ActiveSync_Message_Base
 {
-    const POOMMAIL_FLAGSTATUS   = 'POOMMAIL:FlagStatus';
-    const POOMMAIL_FLAGTYPE     = 'POOMMAIL:FlagType';
-    const POOMMAIL_COMPLETETIME = 'POOMMAIL:CompleteTime';
+    public const POOMMAIL_FLAGSTATUS   = 'POOMMAIL:FlagStatus';
+    public const POOMMAIL_FLAGTYPE     = 'POOMMAIL:FlagType';
+    public const POOMMAIL_COMPLETETIME = 'POOMMAIL:CompleteTime';
 
-    const FLAG_STATUS_CLEAR     = 0;
-    const FLAG_STATUS_COMPLETE  = 1;
-    const FLAG_STATUS_ACTIVE    = 2;
+    public const FLAG_STATUS_CLEAR     = 0;
+    public const FLAG_STATUS_COMPLETE  = 1;
+    public const FLAG_STATUS_ACTIVE    = 2;
 
     /**
      * Property mapping
      *
      * @var array
      */
-    protected $_mapping = array(
-        self::POOMMAIL_FLAGSTATUS                               => array(self::KEY_ATTRIBUTE => 'flagstatus'),
-        self::POOMMAIL_FLAGTYPE                                 => array(self::KEY_ATTRIBUTE => 'flagtype'),
-        Horde_ActiveSync_Message_Task::POOMTASKS_STARTDATE      => array(self::KEY_ATTRIBUTE => 'startdate', self::KEY_TYPE => self::TYPE_DATE_DASHES),
-        Horde_ActiveSync_Message_Task::POOMTASKS_UTCSTARTDATE   => array(self::KEY_ATTRIBUTE => 'utcstartdate', self::KEY_TYPE => self::TYPE_DATE_DASHES),
-        Horde_ActiveSync_Message_Task::POOMTASKS_DUEDATE        => array(self::KEY_ATTRIBUTE => 'duedate', self::KEY_TYPE => self::TYPE_DATE_DASHES),
-        Horde_ActiveSync_Message_Task::POOMTASKS_UTCDUEDATE     => array(self::KEY_ATTRIBUTE => 'utcduedate', self::KEY_TYPE => self::TYPE_DATE_DASHES),
-        Horde_ActiveSync_Message_Task::POOMTASKS_DATECOMPLETED  => array(self::KEY_ATTRIBUTE => 'datecompleted', self::KEY_TYPE => self::TYPE_DATE_DASHES),
-        Horde_ActiveSync_Message_Task::POOMTASKS_REMINDERSET    => array(self::KEY_ATTRIBUTE => 'reminderset'),
-        Horde_ActiveSync_Message_Task::POOMTASKS_REMINDERTIME   => array(self::KEY_ATTRIBUTE => 'remindertime', self::KEY_TYPE => self::TYPE_DATE_DASHES),
-        Horde_ActiveSync_Message_Task::POOMTASKS_SUBJECT        => array(self::KEY_ATTRIBUTE => 'subject'),
-        Horde_ActiveSync_Message_Task::POOMTASKS_ORDINALDATE    => array(self::KEY_ATTRIBUTE => 'ordinaldate', self::KEY_TYPE => self::TYPE_DATE_DASHES),
-        Horde_ActiveSync_Message_Task::POOMTASKS_SUBORDINALDATE => array(self::KEY_ATTRIBUTE => 'subordinaldate'),
-        self::POOMMAIL_COMPLETETIME                             => array(self::KEY_ATTRIBUTE => 'completetime'),
-    );
+    protected $_mapping = [
+        self::POOMMAIL_FLAGSTATUS                               => [self::KEY_ATTRIBUTE => 'flagstatus'],
+        self::POOMMAIL_FLAGTYPE                                 => [self::KEY_ATTRIBUTE => 'flagtype'],
+        Horde_ActiveSync_Message_Task::POOMTASKS_STARTDATE      => [self::KEY_ATTRIBUTE => 'startdate', self::KEY_TYPE => self::TYPE_DATE_DASHES],
+        Horde_ActiveSync_Message_Task::POOMTASKS_UTCSTARTDATE   => [self::KEY_ATTRIBUTE => 'utcstartdate', self::KEY_TYPE => self::TYPE_DATE_DASHES],
+        Horde_ActiveSync_Message_Task::POOMTASKS_DUEDATE        => [self::KEY_ATTRIBUTE => 'duedate', self::KEY_TYPE => self::TYPE_DATE_DASHES],
+        Horde_ActiveSync_Message_Task::POOMTASKS_UTCDUEDATE     => [self::KEY_ATTRIBUTE => 'utcduedate', self::KEY_TYPE => self::TYPE_DATE_DASHES],
+        Horde_ActiveSync_Message_Task::POOMTASKS_DATECOMPLETED  => [self::KEY_ATTRIBUTE => 'datecompleted', self::KEY_TYPE => self::TYPE_DATE_DASHES],
+        Horde_ActiveSync_Message_Task::POOMTASKS_REMINDERSET    => [self::KEY_ATTRIBUTE => 'reminderset'],
+        Horde_ActiveSync_Message_Task::POOMTASKS_REMINDERTIME   => [self::KEY_ATTRIBUTE => 'remindertime', self::KEY_TYPE => self::TYPE_DATE_DASHES],
+        Horde_ActiveSync_Message_Task::POOMTASKS_SUBJECT        => [self::KEY_ATTRIBUTE => 'subject'],
+        Horde_ActiveSync_Message_Task::POOMTASKS_ORDINALDATE    => [self::KEY_ATTRIBUTE => 'ordinaldate', self::KEY_TYPE => self::TYPE_DATE_DASHES],
+        Horde_ActiveSync_Message_Task::POOMTASKS_SUBORDINALDATE => [self::KEY_ATTRIBUTE => 'subordinaldate'],
+        self::POOMMAIL_COMPLETETIME                             => [self::KEY_ATTRIBUTE => 'completetime'],
+    ];
 
     /**
      * Property values.
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'flagstatus'     => false,
         'flagtype'       => false,
         'startdate'      => false,
@@ -103,7 +104,7 @@ class Horde_ActiveSync_Message_Flag extends Horde_ActiveSync_Message_Base
         'ordinaldate'    => false,
         'subordinaldate' => false,
         'completetime'   => false,
-    );
+    ];
 
     /**
      * Return the message class.

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Search_Results
  *
@@ -29,6 +30,5 @@ class Horde_ActiveSync_Search_Results
         public int    $total,
         public ?array $rows,
         public int    $status,
-    ) {
-    }
+    ) {}
 }

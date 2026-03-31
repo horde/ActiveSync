@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Folder_Base::
  *
@@ -25,7 +26,7 @@ abstract class Horde_ActiveSync_Folder_Base
      *
      * @var array
      */
-    protected $_status = array();
+    protected $_status = [];
 
     /**
      * The backend server id for this folder.
@@ -70,8 +71,10 @@ abstract class Horde_ActiveSync_Folder_Base
      * @param array $status     Internal folder state.
      */
     public function __construct(
-        $serverid, $class, array $status = array())
-    {
+        $serverid,
+        $class,
+        array $status = []
+    ) {
         $this->_serverid = $serverid;
         $this->_status = $status;
         $this->_class = $class;
@@ -139,7 +142,7 @@ abstract class Horde_ActiveSync_Folder_Base
      */
     public function getSoftDeleteTimes()
     {
-        return array($this->_lastSinceDate, $this->_softDelete);
+        return [$this->_lastSinceDate, $this->_softDelete];
     }
 
     /**

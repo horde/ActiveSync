@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Collections::
  *
@@ -21,18 +22,18 @@
  */
 class Horde_ActiveSync_Collections implements IteratorAggregate
 {
-    const COLLECTION_ERR_FOLDERSYNC_REQUIRED = -1;
-    const COLLECTION_ERR_SERVER              = -2;
-    const COLLECTION_ERR_STALE               = -3;
-    const COLLECTION_ERR_SYNC_REQUIRED       = -4;
-    const COLLECTION_ERR_AUTHENTICATION      = -6;
+    public const COLLECTION_ERR_FOLDERSYNC_REQUIRED = -1;
+    public const COLLECTION_ERR_SERVER              = -2;
+    public const COLLECTION_ERR_STALE               = -3;
+    public const COLLECTION_ERR_SYNC_REQUIRED       = -4;
+    public const COLLECTION_ERR_AUTHENTICATION      = -6;
 
     /**
      * The collection data
      *
      * @var array
      */
-    protected $_collections = array();
+    protected $_collections = [];
 
     /**
      * Cache a temporary syncCache.
@@ -103,7 +104,7 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
      *
      * @var array
      */
-    protected $_changedCollections = array();
+    protected $_changedCollections = [];
 
     /**
      * The ActiveSync server object.
@@ -141,8 +142,8 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
      */
     public function __construct(
         Horde_ActiveSync_SyncCache $cache,
-        Horde_ActiveSync $as)
-    {
+        Horde_ActiveSync $as
+    ) {
 
         $this->_cache = $cache;
         $this->_as = $as;
@@ -172,9 +173,11 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                 }
             }
             $this->_collections[$collection['id']] = $collection;
-            $this->_logger->meta(sprintf(
-                'COLLECTIONS: Loaded %s from the cache.',
-                $collection['serverid'])
+            $this->_logger->meta(
+                sprintf(
+                    'COLLECTIONS: Loaded %s from the cache.',
+                    $collection['serverid']
+                )
             );
         }
     }
@@ -185,12 +188,12 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
     public function __call($method, $parameters)
     {
         switch ($method) {
-        case 'hasPingChangeFlag':
-        case 'addConfirmedKey':
-        case 'updateCollection':
-        case 'collectionExists':
-        case 'updateWindowSize':
-            return call_user_func_array(array($this->_cache, $method), $parameters);
+            case 'hasPingChangeFlag':
+            case 'addConfirmedKey':
+            case 'updateCollection':
+            case 'collectionExists':
+            case 'updateWindowSize':
+                return call_user_func_array([$this->_cache, $method], $parameters);
         }
 
         throw new BadMethodCallException('Unknown method: ' . $method);
@@ -202,17 +205,17 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
     public function __get($property)
     {
         switch ($property) {
-        case 'hbinterval':
-        case 'wait':
-        case 'confirmed_synckeys':
-        case 'lasthbsyncstarted':
-        case 'lastsyncendnormal':
-            return $this->_cache->$property;
-        case 'importedChanges':
-        case 'shortSyncRequest':
-        case 'hangingSync':
-            $p = '_' . $property;
-            return $this->$p;
+            case 'hbinterval':
+            case 'wait':
+            case 'confirmed_synckeys':
+            case 'lasthbsyncstarted':
+            case 'lastsyncendnormal':
+                return $this->_cache->$property;
+            case 'importedChanges':
+            case 'shortSyncRequest':
+            case 'hangingSync':
+                $p = '_' . $property;
+                return $this->$p;
         }
 
         throw new InvalidArgumentException('Unknown property: ' . $property);
@@ -224,21 +227,21 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
     public function __set($property, $value)
     {
         switch ($property) {
-        case 'importedChanges':
-        case 'shortSyncRequest':
-        case 'hangingSync':
-            $p = '_' . $property;
-            $this->$p = $value;
-            return;
-        case 'lasthbsyncstarted':
-        case 'lastsyncendnormal':
-        case 'hbinterval':
-        case 'wait':
-            $this->_cache->$property = $value;
-            return;
+            case 'importedChanges':
+            case 'shortSyncRequest':
+            case 'hangingSync':
+                $p = '_' . $property;
+                $this->$p = $value;
+                return;
+            case 'lasthbsyncstarted':
+            case 'lastsyncendnormal':
+            case 'hbinterval':
+            case 'wait':
+                $this->_cache->$property = $value;
+                return;
 
-        case 'confirmed_synckeys':
-            throw new InvalidArgumentException($property . ' is READONLY.');
+            case 'confirmed_synckeys':
+                throw new InvalidArgumentException($property . ' is READONLY.');
         }
 
         throw new InvalidArgumentException('Unknown property: ' . $property);
@@ -251,13 +254,13 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
      */
     public function getNewCollection()
     {
-        return array(
-            'clientids' => array(),
-            'fetchids' => array(),
+        return [
+            'clientids' => [],
+            'fetchids' => [],
             'windowsize' => 100,
             'soft' => false,
-            'conflict' => Horde_ActiveSync::CONFLICT_OVERWRITE_PIM
-        );
+            'conflict' => Horde_ActiveSync::CONFLICT_OVERWRITE_PIM,
+        ];
     }
 
     /**
@@ -269,16 +272,18 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
     public function ensureOptions()
     {
         foreach ($this->_collections as &$collection) {
-            $this->_logger->meta(sprintf(
-                'COLLECTIONS: Loading default OPTIONS for %s collection.',
-                $collection['id'])
+            $this->_logger->meta(
+                sprintf(
+                    'COLLECTIONS: Loading default OPTIONS for %s collection.',
+                    $collection['id']
+                )
             );
 
             if (!isset($collection['mimesupport'])) {
                 $collection['mimesupport'] = Horde_ActiveSync::MIME_SUPPORT_NONE;
             }
             if (!isset($collection['bodyprefs'])) {
-                $collection['bodyprefs'] = array();
+                $collection['bodyprefs'] = [];
             }
         }
     }
@@ -304,7 +309,8 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                 : 0;
 
             if ($collection['synckey'] === 0) {
-                $this->_logger->err('COLLECTIONS: Attempting to add a collection
+                $this->_logger->err(
+                    'COLLECTIONS: Attempting to add a collection
                     to the sync cache while requiring a synckey, but no
                     synckey could be found. Most likely a client error in
                     requesting a collection during PING before it has issued a
@@ -315,10 +321,12 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                 );
             }
 
-            $this->_logger->meta(sprintf(
-                'COLLECTIONS: Obtained synckey for collection %s from cache: %s',
-                $collection['id'],
-                $collection['synckey'])
+            $this->_logger->meta(
+                sprintf(
+                    'COLLECTIONS: Obtained synckey for collection %s from cache: %s',
+                    $collection['id'],
+                    $collection['synckey']
+                )
             );
         }
 
@@ -335,10 +343,12 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
         }
 
         $this->_collections[$collection['id']] = $collection;
-        $this->_logger->meta(sprintf(
-            'COLLECTIONS: Collection added to collection handler: collection: %s, synckey: %s.',
-            $collection['serverid'],
-            !empty($collection['synckey']) ? $collection['synckey'] : 'NONE')
+        $this->_logger->meta(
+            sprintf(
+                'COLLECTIONS: Collection added to collection handler: collection: %s, synckey: %s.',
+                $collection['serverid'],
+                !empty($collection['synckey']) ? $collection['synckey'] : 'NONE'
+            )
         );
     }
 
@@ -484,9 +494,11 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
         $collections = $this->_cache->getCollections();
         foreach (array_keys($this->_collections) as $id) {
             if (!empty($collections[$id])) {
-                $this->_logger->meta(sprintf(
-                    'COLLECTIONS: Refreshing %s from the cache.',
-                    $id)
+                $this->_logger->meta(
+                    sprintf(
+                        'COLLECTIONS: Refreshing %s from the cache.',
+                        $id
+                    )
                 );
                 $this->_collections[$id] = $collections[$id];
             }
@@ -514,9 +526,12 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
         // Next look in the SyncCache.
         if (isset($this->_cache->folders[$id]['class'])) {
             $class = $this->_cache->folders[$id]['class'];
-            $this->_logger->meta(sprintf(
-                'COLLECTIONS: Obtaining collection class of %s for collection id %s',
-                $class, $id)
+            $this->_logger->meta(
+                sprintf(
+                    'COLLECTIONS: Obtaining collection class of %s for collection id %s',
+                    $class,
+                    $id
+                )
             );
             return $class;
         }
@@ -538,9 +553,12 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
         // Next look in the SyncCache.
         if (isset($this->_cache->folders[$id]['type'])) {
             $type = $this->_cache->folders[$id]['type'];
-            $this->_logger->meta(sprintf(
-                'COLLECTIONS: Obtaining collection type of %s for collection id %s',
-                $type, $id)
+            $this->_logger->meta(
+                sprintf(
+                    'COLLECTIONS: Obtaining collection type of %s for collection id %s',
+                    $type,
+                    $id
+                )
             );
             return $type;
         }
@@ -564,9 +582,12 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
             $found = false;
             foreach ($this->_cache->getCollections() as $value) {
                 if (isset($value['synckey'])) {
-                    $this->_logger->meta(sprintf(
-                        'COLLECTIONS: Found syncable collection: %s : %s.',
-                        $value['serverid'], $value['synckey'])
+                    $this->_logger->meta(
+                        sprintf(
+                            'COLLECTIONS: Found syncable collection: %s : %s.',
+                            $value['serverid'],
+                            $value['synckey']
+                        )
                     );
                     $this->_collections[$value['id']] = $value;
                     $found = true;
@@ -658,9 +679,10 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
     public function initHierarchySync($synckey)
     {
         $this->_as->state->loadState(
-            array(),
+            [],
             $synckey,
-            Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC);
+            Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC
+        );
 
         // Refresh the cache since it might have changed like e.g., if synckey
         // was empty.
@@ -676,8 +698,9 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
      * @param boolean $update  Update the state objects? @since 2.4.0
      */
     public function updateFolderinHierarchy(
-        Horde_ActiveSync_Message_Folder $folder, $update = false)
-    {
+        Horde_ActiveSync_Message_Folder $folder,
+        $update = false
+    ) {
         $this->_cache->updateFolder($folder);
         $cols = $this->_cache->getCollections(false);
         $cols[$folder->serverid]['serverid'] = $folder->_serverid;
@@ -695,10 +718,10 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
     public function deleteFolderFromHierarchy($uid)
     {
         $this->_cache->deleteFolder($uid);
-        $this->_as->state->removeState(array(
+        $this->_as->state->removeState([
             'id' => $uid,
             'devId' => $this->_as->device->id,
-            'user' => $this->_as->device->user));
+            'user' => $this->_as->device->user]);
     }
 
     /**
@@ -718,25 +741,27 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
      * @param Horde_ActiveSync_Connector_Exporter_FolderSync $exporter  The exporter.
      * @param array $seenFolders                             An array of folders.
      */
-    public function validateHierarchyChanges(Horde_ActiveSync_Connector_Exporter_FolderSync $exporter, array $seenFolders = array())
+    public function validateHierarchyChanges(Horde_ActiveSync_Connector_Exporter_FolderSync $exporter, array $seenFolders = [])
     {
-        if ($this->_as->device->version < Horde_ActiveSync::VERSION_TWELVEONE ||
-            count($exporter->changed)) {
+        if ($this->_as->device->version < Horde_ActiveSync::VERSION_TWELVEONE
+            || count($exporter->changed)) {
             return;
         }
 
         // Remove unnecessary changes.
         foreach ($exporter->changed as $key => $folder) {
-            if (isset($folder->serverid) &&
-                $syncFolder = $this->_cache->getFolder($folder->serverid) &&
-                in_array($folder->serverid, $seenFolders) &&
-                $syncFolder['parentid'] == $folder->parentid &&
-                $syncFolder['displayname'] == $folder->displayname &&
-                $syncFolder['type'] == $folder->type) {
+            if (isset($folder->serverid)
+                && $syncFolder = $this->_cache->getFolder($folder->serverid)
+                && in_array($folder->serverid, $seenFolders)
+                && $syncFolder['parentid'] == $folder->parentid
+                && $syncFolder['displayname'] == $folder->displayname
+                && $syncFolder['type'] == $folder->type) {
 
-                $this->_logger->meta(sprintf(
-                    'COLLECTIONS: Ignoring %s from changes because it contains no changes from device.',
-                    $folder->serverid)
+                $this->_logger->meta(
+                    sprintf(
+                        'COLLECTIONS: Ignoring %s from changes because it contains no changes from device.',
+                        $folder->serverid
+                    )
                 );
                 unset($exporter->changed[$key]);
                 $exporter->count--;
@@ -746,9 +771,11 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
         // Remove unnecessary deletions.
         foreach ($exporter->deleted as $key => $folder) {
             if (($sid = array_search($folder, $seenFolders)) === false) {
-                $this->_logger->meta(sprintf(
-                    'COLLECTIONS: Ignoring %s from deleted list because the device does not know it',
-                    $folder)
+                $this->_logger->meta(
+                    sprintf(
+                        'COLLECTIONS: Ignoring %s from deleted list because the device does not know it',
+                        $folder
+                    )
                 );
                 unset($exporter->deleted[$key]);
                 $exporter->count--;
@@ -771,7 +798,7 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
      */
     public function initFullSync()
     {
-        $this->_cache->confirmed_synckeys = array();
+        $this->_cache->confirmed_synckeys = [];
         $this->_cache->clearCollectionKeys();
     }
 
@@ -789,9 +816,11 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
             // Remove keys from confirmed synckeys array and count them
             if (isset($value['synckey'])) {
                 if (isset($this->_cache->confirmed_synckeys[$value['synckey']])) {
-                    $this->_logger->meta(sprintf(
-                        'COLLECTIONS: Removed %s from confirmed_synckeys',
-                        $value['synckey'])
+                    $this->_logger->meta(
+                        sprintf(
+                            'COLLECTIONS: Removed %s from confirmed_synckeys',
+                            $value['synckey']
+                        )
                     );
                     $this->_cache->removeConfirmedKey($value['synckey']);
                 }
@@ -894,9 +923,11 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
         foreach ($this->_collections as $value) {
             if (isset($value['synckey'])) {
                 if (isset($this->_cache->confirmed_synckeys[$value['synckey']])) {
-                    $this->_logger->meta(sprintf(
-                        'COLLECTIONS: Removed %s from confirmed_synckeys',
-                        $value['synckey'])
+                    $this->_logger->meta(
+                        sprintf(
+                            'COLLECTIONS: Removed %s from confirmed_synckeys',
+                            $value['synckey']
+                        )
                     );
                     $this->_cache->removeConfirmedKey($value['synckey']);
                 }
@@ -922,9 +953,11 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
     {
         $csk = $this->_cache->confirmed_synckeys;
         if ($csk) {
-            $this->_logger->meta(sprintf(
-                'COLLECTIONS: Confirmed Synckeys contains %s',
-                serialize($csk))
+            $this->_logger->meta(
+                sprintf(
+                    'COLLECTIONS: Confirmed Synckeys contains %s',
+                    serialize($csk)
+                )
             );
             return false;
         }
@@ -939,8 +972,8 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
      */
     public function canSendEmptyResponse()
     {
-        return !$this->_importedChanges &&
-            ($this->_hangingSync && ($this->_cache->wait !== false || $this->_cache->hbinterval !== false));
+        return !$this->_importedChanges
+            && ($this->_hangingSync && ($this->_cache->wait !== false || $this->_cache->hbinterval !== false));
     }
 
     /**
@@ -952,9 +985,9 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
      */
     protected function _haveNoChangesInPartialSync()
     {
-        return $this->_synckeyCount > 0 &&
-            $this->_unchangedCount == $this->_synckeyCount &&
-            $this->_cache->wait == false && $this->_cache->hbinterval == false;
+        return $this->_synckeyCount > 0
+            && $this->_unchangedCount == $this->_synckeyCount
+            && $this->_cache->wait == false && $this->_cache->hbinterval == false;
     }
 
     /**
@@ -999,12 +1032,15 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
     public function checkFilterType($id, $filter)
     {
         $cc = $this->_cache->getCollections();
-        if (!empty($cc[$id]['filtertype']) &&
-            !is_null($filter) &&
-            $cc[$id]['filtertype'] != $filter) {
-            $this->_logger->meta(sprintf(
-                'COLLECTIONS: Filtertype change from: %d to %d',
-                $cc[$id]['filtertype'], $filter)
+        if (!empty($cc[$id]['filtertype'])
+            && !is_null($filter)
+            && $cc[$id]['filtertype'] != $filter) {
+            $this->_logger->meta(
+                sprintf(
+                    'COLLECTIONS: Filtertype change from: %d to %d',
+                    $cc[$id]['filtertype'],
+                    $filter
+                )
             );
             $this->_cache->updateFiltertype($id, $filter);
             return false;
@@ -1077,23 +1113,28 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
 
 
         if ($requireSyncKey && empty($collection['synckey'])) {
-            throw new Horde_ActiveSync_Exception_InvalidRequest(sprintf(
-                'Empty synckey for %s.',
-                $collection['id'])
+            throw new Horde_ActiveSync_Exception_InvalidRequest(
+                sprintf(
+                    'Empty synckey for %s.',
+                    $collection['id']
+                )
             );
         }
 
         // Initialize the state
-        $this->_logger->info(sprintf(
-            'COLLECTIONS: Initializing state for collection: %s, synckey: %s',
-            $collection['serverid'],
-            $collection['synckey'])
+        $this->_logger->info(
+            sprintf(
+                'COLLECTIONS: Initializing state for collection: %s, synckey: %s',
+                $collection['serverid'],
+                $collection['synckey']
+            )
         );
         $this->_as->state->loadState(
             $collection,
             $collection['synckey'],
             Horde_ActiveSync::REQUEST_TYPE_SYNC,
-            $collection['id']);
+            $collection['id']
+        );
     }
 
     /**
@@ -1109,15 +1150,17 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
      *                         collections, false if no changes detected
      *                         or a status code if failed.
      */
-    public function pollForChanges($heartbeat, $interval, array $options = array())
+    public function pollForChanges($heartbeat, $interval, array $options = [])
     {
         $dataavailable = false;
         $started = time();
         $until = $started + $heartbeat;
 
-        $this->_logger->info(sprintf(
-            'COLLECTIONS: Waiting for changes for %s seconds',
-            $heartbeat)
+        $this->_logger->info(
+            sprintf(
+                'COLLECTIONS: Waiting for changes for %s seconds',
+                $heartbeat
+            )
         );
 
         // If pinging, make sure we have pingable collections. Note we can't
@@ -1159,8 +1202,8 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
             // Check for WIPE request once every 5 iterations to balance between
             // performance and speed of catching a remote wipe request.
             if ($rw_check_countdown-- == 0) {
-                 $rw_check_countdown = 5;
-                 if ($this->_as->provisioning != Horde_ActiveSync::PROVISIONING_NONE) {
+                $rw_check_countdown = 5;
+                if ($this->_as->provisioning != Horde_ActiveSync::PROVISIONING_NONE) {
                     $rwstatus = $this->_as->state->getDeviceRWStatus($this->_as->device->id, true);
                     if ($rwstatus == Horde_ActiveSync::RWSTATUS_PENDING || $rwstatus == Horde_ActiveSync::RWSTATUS_WIPED) {
                         return self::COLLECTION_ERR_FOLDERSYNC_REQUIRED;
@@ -1175,9 +1218,11 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                 try {
                     $this->initCollectionState($collection, true);
                 } catch (Horde_ActiveSync_Exception_StateGone $e) {
-                    $this->_logger->notice(sprintf(
-                        'COLLECTIONS: State not found for %s. Continuing by rquesting a SYNC.',
-                        $id)
+                    $this->_logger->notice(
+                        sprintf(
+                            'COLLECTIONS: State not found for %s. Continuing by rquesting a SYNC.',
+                            $id
+                        )
                     );
                     $dataavailable = true;
                     $this->setGetChangesFlag($id);
@@ -1186,10 +1231,12 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                     // Thrown when state is unable to be initialized because the
                     // collection has not yet been synched, but was requested to
                     // be pinged.
-                    $this->_logger->err(sprintf(
-                        'COLLECTIONS: Unable to initialize state for %s. Ignoring during pollForChanges: %s.',
-                        $id,
-                        $e->getMessage())
+                    $this->_logger->err(
+                        sprintf(
+                            'COLLECTIONS: Unable to initialize state for %s. Ignoring during pollForChanges: %s.',
+                            $id,
+                            $e->getMessage()
+                        )
                     );
                     continue;
                 } catch (Horde_ActiveSync_Exception_FolderGone $e) {
@@ -1198,10 +1245,11 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                 } catch (Horde_ActiveSync_Exception $e) {
                     $this->_logger->err('COLLECTIONS: Error loading state: ' . $e->getMessage());
                     $this->_as->state->loadState(
-                        array(),
+                        [],
                         null,
                         Horde_ActiveSync::REQUEST_TYPE_SYNC,
-                        $id);
+                        $id
+                    );
                     $this->setGetChangesFlag($id);
                     $dataavailable = true;
                     continue;
@@ -1227,21 +1275,26 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                         }
                     }
                 } catch (Horde_ActiveSync_Exception_StaleState $e) {
-                    $this->_logger->notice(sprintf(
-                        'COLLECTIONS: SYNC terminating and force-clearing device state: %s',
-                        $e->getMessage())
+                    $this->_logger->notice(
+                        sprintf(
+                            'COLLECTIONS: SYNC terminating and force-clearing device state: %s',
+                            $e->getMessage()
+                        )
                     );
                     $this->_as->state->loadState(
-                        array(),
+                        [],
                         null,
                         Horde_ActiveSync::REQUEST_TYPE_SYNC,
-                        $id);
+                        $id
+                    );
                     $this->setGetChangesFlag($id);
                     $dataavailable = true;
                 } catch (Horde_ActiveSync_Exception_FolderGone $e) {
-                    $this->_logger->notice(sprintf(
-                        'COLLECTIONS: SYNC terminating: %s',
-                        $e->getMessage())
+                    $this->_logger->notice(
+                        sprintf(
+                            'COLLECTIONS: SYNC terminating: %s',
+                            $e->getMessage()
+                        )
                     );
                     // If we are missing a folder, we should clear the PING
                     // cache also, to be sure it picks up any hierarchy changes
@@ -1254,9 +1307,11 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                     $this->_logger->err('COLLECTIONS: Authentication lost during PING!!');
                     return self::COLLECTION_ERR_AUTHENTICATION;
                 } catch (Horde_ActiveSync_Exception $e) {
-                    $this->_logger->err(sprintf(
-                        'COLLECTIONS: Sync object cannot be configured, throttling: %s',
-                        $e->getMessage())
+                    $this->_logger->err(
+                        sprintf(
+                            'COLLECTIONS: Sync object cannot be configured, throttling: %s',
+                            $e->getMessage()
+                        )
                     );
                     $this->_sleep(30);
                     continue;
@@ -1283,10 +1338,12 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
             return self::COLLECTION_ERR_STALE;
         }
 
-        $this->_logger->meta(sprintf(
-            'COLLECTIONS: Looping Sync complete: DataAvailable: %s, DataImported: %s',
-            $dataavailable,
-            $this->importedChanges)
+        $this->_logger->meta(
+            sprintf(
+                'COLLECTIONS: Looping Sync complete: DataAvailable: %s, DataImported: %s',
+                $dataavailable,
+                $this->importedChanges
+            )
         );
 
         return $dataavailable;
@@ -1304,11 +1361,12 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
         $this->_logger->info(sprintf(
             '%sCOLLECTIONS: Sleeping for %s seconds.',
             str_repeat('-', 10),
-            $interval));
+            $interval
+        ));
 
         // Close any backend connections.
         $this->_cache->state->disconnect();
-        sleep ($interval);
+        sleep($interval);
         $this->_cache->state->connect();
     }
 
@@ -1336,17 +1394,21 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
         $collections = $this->_cache->getCollections(false);
         foreach ($collections as $id => $collection) {
             if (!empty($this->_collections[$id]['synckey'])) {
-                $this->_logger->meta(sprintf(
-                    'COLLECTIONS: Setting collection %s (%s) PINGABLE.',
-                    $collection['serverid'],
-                    $id)
+                $this->_logger->meta(
+                    sprintf(
+                        'COLLECTIONS: Setting collection %s (%s) PINGABLE.',
+                        $collection['serverid'],
+                        $id
+                    )
                 );
                 $this->_cache->setPingableCollection($id);
             } else {
-                $this->_logger->meta(sprintf(
-                    'COLLECTIONS: UNSETTING collection %s (%s) PINGABLE flag.',
-                    $collection['serverid'],
-                    $id)
+                $this->_logger->meta(
+                    sprintf(
+                        'COLLECTIONS: UNSETTING collection %s (%s) PINGABLE flag.',
+                        $collection['serverid'],
+                        $id
+                    )
                 );
                 $this->_cache->removePingableCollection($id);
             }
@@ -1362,10 +1424,12 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
     {
         $collections = $this->_cache->getCollections(false);
         foreach ($collections as $id => $collection) {
-            $this->_logger->meta(sprintf(
-                'COLLECTIONS: UNSETTING collection %s (%s) PINGABLE flag.',
-                $collection['serverid'],
-                $id)
+            $this->_logger->meta(
+                sprintf(
+                    'COLLECTIONS: UNSETTING collection %s (%s) PINGABLE flag.',
+                    $collection['serverid'],
+                    $id
+                )
             );
             $this->_cache->removePingableCollection($id);
         }
@@ -1384,10 +1448,10 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
      *
      * @return array  The changes array.
      */
-    public function getCollectionChanges($ping = false, array $ensure = array())
+    public function getCollectionChanges($ping = false, array $ensure = [])
     {
         if (empty($this->_changes)) {
-            $this->_changes = $this->_as->state->getChanges(array('ping' => $ping));
+            $this->_changes = $this->_as->state->getChanges(['ping' => $ping]);
         }
 
         return $this->_changes;

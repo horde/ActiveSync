@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_DeviceInformation::
  *
@@ -31,30 +32,29 @@
  */
 class Horde_ActiveSync_Message_DeviceInformation extends Horde_ActiveSync_Message_Base
 {
-
     /**
      * Property mapping
      *
      * @var array
      */
-    protected $_mapping = array (
-        Horde_ActiveSync_Request_Settings::SETTINGS_MODEL             => array(self::KEY_ATTRIBUTE => 'model'),
-        Horde_ActiveSync_Request_Settings::SETTINGS_IMEI              => array(self::KEY_ATTRIBUTE => 'imei'),
-        Horde_ActiveSync_Request_Settings::SETTINGS_FRIENDLYNAME      => array(self::KEY_ATTRIBUTE => 'friendlyname'),
-        Horde_ActiveSync_Request_Settings::SETTINGS_OS                => array(self::KEY_ATTRIBUTE => 'os'),
-        Horde_ActiveSync_Request_Settings::SETTINGS_OSLANGUAGE        => array(self::KEY_ATTRIBUTE => 'oslanguage'),
-        Horde_ActiveSync_Request_Settings::SETTINGS_PHONENUMBER       => array(self::KEY_ATTRIBUTE => 'phonenumber'),
-        Horde_ActiveSync_Request_Settings::SETTINGS_USERAGENT         => array(self::KEY_ATTRIBUTE => 'useragent'),
-        Horde_ActiveSync_Request_Settings::SETTINGS_MOBILEOPERATOR    => array(self::KEY_ATTRIBUTE => 'mobileoperator'),
-        Horde_ActiveSync_Request_Settings::SETTINGS_ENABLEOUTBOUNDSMS => array(self::KEY_ATTRIBUTE => 'enableoutboundsms')
-    );
+    protected $_mapping =  [
+        Horde_ActiveSync_Request_Settings::SETTINGS_MODEL             => [self::KEY_ATTRIBUTE => 'model'],
+        Horde_ActiveSync_Request_Settings::SETTINGS_IMEI              => [self::KEY_ATTRIBUTE => 'imei'],
+        Horde_ActiveSync_Request_Settings::SETTINGS_FRIENDLYNAME      => [self::KEY_ATTRIBUTE => 'friendlyname'],
+        Horde_ActiveSync_Request_Settings::SETTINGS_OS                => [self::KEY_ATTRIBUTE => 'os'],
+        Horde_ActiveSync_Request_Settings::SETTINGS_OSLANGUAGE        => [self::KEY_ATTRIBUTE => 'oslanguage'],
+        Horde_ActiveSync_Request_Settings::SETTINGS_PHONENUMBER       => [self::KEY_ATTRIBUTE => 'phonenumber'],
+        Horde_ActiveSync_Request_Settings::SETTINGS_USERAGENT         => [self::KEY_ATTRIBUTE => 'useragent'],
+        Horde_ActiveSync_Request_Settings::SETTINGS_MOBILEOPERATOR    => [self::KEY_ATTRIBUTE => 'mobileoperator'],
+        Horde_ActiveSync_Request_Settings::SETTINGS_ENABLEOUTBOUNDSMS => [self::KEY_ATTRIBUTE => 'enableoutboundsms'],
+    ];
 
     /**
      * Property values.
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'model'             => false,
         'imei'              => false,
         'friendlyname'      => false,
@@ -63,7 +63,7 @@ class Horde_ActiveSync_Message_DeviceInformation extends Horde_ActiveSync_Messag
         'phonenumber'       => false,
         'useragent'         => false,
         'mobileoperator'    => false,
-        'enableoutboundsms' => false
-    );
+        'enableoutboundsms' => false,
+    ];
 
 }

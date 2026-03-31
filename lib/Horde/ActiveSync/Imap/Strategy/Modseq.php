@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
@@ -39,8 +40,8 @@ class Horde_ActiveSync_Imap_Strategy_Modseq extends Horde_ActiveSync_Imap_Strate
         Horde_ActiveSync_Interface_ImapFactory $imap,
         array $status,
         Horde_ActiveSync_Folder_Base $folder,
-        $logger)
-    {
+        $logger
+    ) {
         // If IMAP server reports invalid MODSEQ, this can lead to the client
         // no longer ever able to detect changes therefore never receiving new
         // email even if the value is restored at some point in the future.
@@ -67,7 +68,7 @@ class Horde_ActiveSync_Imap_Strategy_Modseq extends Horde_ActiveSync_Imap_Strate
     public function getChanges(array $options)
     {
         $this->_logger->meta('CONDSTORE and CHANGES');
-        $flags = array();
+        $flags = [];
         $current_modseq = $this->_status[Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ];
         $query = new Horde_Imap_Client_Search_Query();
 
@@ -86,21 +87,23 @@ class Horde_ActiveSync_Imap_Strategy_Modseq extends Horde_ActiveSync_Imap_Strate
         $search_ret = $this->_imap_ob->search(
             $this->_mbox,
             $query,
-            array('results' => array(Horde_Imap_Client::SEARCH_RESULTS_MATCH))
+            ['results' => [Horde_Imap_Client::SEARCH_RESULTS_MATCH]]
         );
 
         $search_uids = $search_ret['count']
             ? $search_ret['match']->ids
-            : array();
+            : [];
 
         // Catch changes to FILTERTYPE.
         if (!empty($options['refreshfilter'])) {
             $this->_logger->meta('Checking for additional messages within the new FilterType parameters.');
             $search_ret = $this->_searchQuery($options, false);
             if ($search_ret['count']) {
-                $this->_logger->meta(sprintf(
-                    'Found %d messages that are now outside FilterType.',
-                    $search_ret['count'])
+                $this->_logger->meta(
+                    sprintf(
+                        'Found %d messages that are now outside FilterType.',
+                        $search_ret['count']
+                    )
                 );
                 $search_uids = array_merge($search_uids, $search_ret['match']->ids);
             }
@@ -113,27 +116,33 @@ class Horde_ActiveSync_Imap_Strategy_Modseq extends Horde_ActiveSync_Imap_Strate
             $query->modseq();
         }
         $query->flags();
-        $changes = array();
-        $categories = array();
+        $changes = [];
+        $categories = [];
         for ($i = 0; $i <= $cnt; $i++) {
             $ids = new Horde_Imap_Client_Ids(
                 array_slice(
                     $search_uids,
-                    $i * Horde_ActiveSync_Imap_Adapter::MAX_FETCH, Horde_ActiveSync_Imap_Adapter::MAX_FETCH
+                    $i * Horde_ActiveSync_Imap_Adapter::MAX_FETCH,
+                    Horde_ActiveSync_Imap_Adapter::MAX_FETCH
                 )
             );
             try {
                 $fetch_ret = $this->_imap_ob->fetch(
                     $this->_mbox,
                     $query,
-                    array('ids' => $ids)
+                    ['ids' => $ids]
                 );
             } catch (Horde_Imap_Client_Exception $e) {
                 $this->_logger->err($e->getMessage());
                 throw new Horde_ActiveSync_Exception($e);
             }
             $this->_buildModSeqChanges(
-                $changes, $flags, $categories, $fetch_ret, $options, $current_modseq
+                $changes,
+                $flags,
+                $categories,
+                $fetch_ret,
+                $options,
+                $current_modseq
             );
         }
 
@@ -150,29 +159,37 @@ class Horde_ActiveSync_Imap_Strategy_Modseq extends Horde_ActiveSync_Imap_Strate
             $deleted = $this->_imap_ob->vanished(
                 $this->_mbox,
                 $this->_folder->modseq(),
-                array('ids' => new Horde_Imap_Client_Ids($this->_folder->messages())));
+                ['ids' => new Horde_Imap_Client_Ids($this->_folder->messages())]
+            );
         } catch (Horde_Imap_Client_Excetion $e) {
             $this->_logger->err($e->getMessage());
             throw new Horde_ActiveSync_Exception($e);
         }
         $this->_folder->setRemoved($deleted->ids);
-        $this->_logger->meta(sprintf(
-            'Found %d deleted messages.',
-            $deleted->count())
+        $this->_logger->meta(
+            sprintf(
+                'Found %d deleted messages.',
+                $deleted->count()
+            )
         );
 
         // Check for SOFTDELETE messages.
-        if (!empty($options['sincedate']) &&
-            (!empty($options['softdelete']) || !empty($options['refreshfilter']))) {
-            $this->_logger->meta(sprintf(
-                'Polling for SOFTDELETE in %s before %d',
-                $this->_folder->serverid(), $options['sincedate'])
+        if (!empty($options['sincedate'])
+            && (!empty($options['softdelete']) || !empty($options['refreshfilter']))) {
+            $this->_logger->meta(
+                sprintf(
+                    'Polling for SOFTDELETE in %s before %d',
+                    $this->_folder->serverid(),
+                    $options['sincedate']
+                )
             );
             $search_ret = $this->_searchQuery($options, true);
             if ($search_ret['count']) {
-                $this->_logger->meta(sprintf(
-                    'Found %d messages to SOFTDELETE.',
-                    count($search_ret['match']->ids))
+                $this->_logger->meta(
+                    sprintf(
+                        'Found %d messages to SOFTDELETE.',
+                        count($search_ret['match']->ids)
+                    )
                 );
                 $this->_folder->setSoftDeleted($search_ret['match']->ids);
             }
@@ -205,7 +222,8 @@ class Horde_ActiveSync_Imap_Strategy_Modseq extends Horde_ActiveSync_Imap_Strate
             return $this->_imap_ob->search(
                 $this->_mbox,
                 $query,
-                array('results' => array(Horde_Imap_Client::SEARCH_RESULTS_MATCH)));
+                ['results' => [Horde_Imap_Client::SEARCH_RESULTS_MATCH]]
+            );
         } catch (Horde_Imap_Client_Exception $e) {
             $this->_logger->err($e->getMessage());
             throw new Horde_ActiveSync_Exception($e);
@@ -224,8 +242,13 @@ class Horde_ActiveSync_Imap_Strategy_Modseq extends Horde_ActiveSync_Imap_Strate
      * @param integer $modseq                             Current MODSEQ.
      */
     protected function _buildModSeqChanges(
-        &$changes, &$flags, &$categories, $fetch_ret, $options, $modseq)
-    {
+        &$changes,
+        &$flags,
+        &$categories,
+        $fetch_ret,
+        $options,
+        $modseq
+    ) {
         // Get custom flags to use as categories.
         $msgFlags = $this->_getMsgFlags();
 
@@ -238,14 +261,14 @@ class Horde_ActiveSync_Imap_Strategy_Modseq extends Horde_ActiveSync_Imap_Strate
             $data = $fetch_ret[$uid];
             if ($data->getModSeq() <= $modseq) {
                 $changes[] = $uid;
-                $flags[$uid] = array(
-                    'read' => (array_search(Horde_Imap_Client::FLAG_SEEN, $data->getFlags()) !== false) ? 1 : 0
-                );
+                $flags[$uid] = [
+                    'read' => (array_search(Horde_Imap_Client::FLAG_SEEN, $data->getFlags()) !== false) ? 1 : 0,
+                ];
                 if (($options['protocolversion']) > Horde_ActiveSync::VERSION_TWOFIVE) {
                     $flags[$uid]['flagged'] = (array_search(Horde_Imap_Client::FLAG_FLAGGED, $data->getFlags()) !== false) ? 1 : 0;
                 }
                 if ($options['protocolversion'] > Horde_ActiveSync::VERSION_TWELVEONE) {
-                    $categories[$uid] = array();
+                    $categories[$uid] = [];
                     foreach ($data->getFlags() as $flag) {
                         if (!empty($msgFlags[Horde_String::lower($flag)])) {
                             $categories[$uid][] = $msgFlags[Horde_String::lower($flag)];

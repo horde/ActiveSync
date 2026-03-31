@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_ResolveRecipientsPicture::
  *
@@ -29,19 +30,19 @@ class Horde_ActiveSync_Message_ResolveRecipientsPicture extends Horde_ActiveSync
      *
      * @var array
      */
-    protected $_mapping = array(
-        Horde_ActiveSync_Request_ResolveRecipients::TAG_STATUS => array(self::KEY_ATTRIBUTE => 'status'),
-        Horde_ActiveSync_Request_ResolveRecipients::TAG_DATA   => array(self::KEY_ATTRIBUTE => 'data', self::KEY_TYPE => 'opaque')
-    );
+    protected $_mapping = [
+        Horde_ActiveSync_Request_ResolveRecipients::TAG_STATUS => [self::KEY_ATTRIBUTE => 'status'],
+        Horde_ActiveSync_Request_ResolveRecipients::TAG_DATA   => [self::KEY_ATTRIBUTE => 'data', self::KEY_TYPE => 'opaque'],
+    ];
 
     /**
      * Property values.
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'status' => false,
-        'data'   => false
-    );
+        'data'   => false,
+    ];
 
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_Recurrence::
  *
@@ -40,57 +41,57 @@
 class Horde_ActiveSync_Message_Recurrence extends Horde_ActiveSync_Message_Base
 {
     /* MS AS Recurrence types */
-    const TYPE_DAILY       = 0;
-    const TYPE_WEEKLY      = 1;
-    const TYPE_MONTHLY     = 2;
-    const TYPE_MONTHLY_NTH = 3;
-    const TYPE_YEARLY      = 5;
-    const TYPE_YEARLYNTH   = 6;
+    public const TYPE_DAILY       = 0;
+    public const TYPE_WEEKLY      = 1;
+    public const TYPE_MONTHLY     = 2;
+    public const TYPE_MONTHLY_NTH = 3;
+    public const TYPE_YEARLY      = 5;
+    public const TYPE_YEARLYNTH   = 6;
 
-    const CALENDAR_TYPE_DEFAULT                  = 0;
-    const CALENDAR_TYPE_GREGORIAN                = 1;
-    const CALENDAR_TYPE_GREGORIAN_US             = 2;
-    const CALENDAR_TYPE_JAPANESE                 = 3;
-    const CALENDAR_TYPE_TAIWAN                   = 4;
-    const CALENDAR_TYPE_KOREAN                   = 5;
-    const CALENDAR_TYPE_HIJRI                    = 6;
-    const CALENDAR_TYPE_THAI                     = 7;
-    const CALENDAR_TYPE_HEBREW                   = 8;
-    const CALENDAR_TYPE_GREGORIAN_FRENCH         = 9;
-    const CALENDAR_TYPE_GREGORIAN_ARABIC         = 10;
-    const CALENDAR_TYPE_GREGORIAN_TRANSLITERATED = 11;
+    public const CALENDAR_TYPE_DEFAULT                  = 0;
+    public const CALENDAR_TYPE_GREGORIAN                = 1;
+    public const CALENDAR_TYPE_GREGORIAN_US             = 2;
+    public const CALENDAR_TYPE_JAPANESE                 = 3;
+    public const CALENDAR_TYPE_TAIWAN                   = 4;
+    public const CALENDAR_TYPE_KOREAN                   = 5;
+    public const CALENDAR_TYPE_HIJRI                    = 6;
+    public const CALENDAR_TYPE_THAI                     = 7;
+    public const CALENDAR_TYPE_HEBREW                   = 8;
+    public const CALENDAR_TYPE_GREGORIAN_FRENCH         = 9;
+    public const CALENDAR_TYPE_GREGORIAN_ARABIC         = 10;
+    public const CALENDAR_TYPE_GREGORIAN_TRANSLITERATED = 11;
 
     /* FDOW mapping for EAS 14.1 */
-    const FIRSTDAY_SUNDAY            = 0;
-    const FIRSTDAY_MONDAY            = 1;
-    const FIRSTDAY_TUESDAY           = 2;
-    const FIRSTDAY_WEDNESDAY         = 3;
-    const FIRSTDAY_THURSDAY          = 4;
-    const FIRSTDAY_FRIDAY            = 5;
-    const FIRSTDAY_SATURDAY          = 6;
+    public const FIRSTDAY_SUNDAY            = 0;
+    public const FIRSTDAY_MONDAY            = 1;
+    public const FIRSTDAY_TUESDAY           = 2;
+    public const FIRSTDAY_WEDNESDAY         = 3;
+    public const FIRSTDAY_THURSDAY          = 4;
+    public const FIRSTDAY_FRIDAY            = 5;
+    public const FIRSTDAY_SATURDAY          = 6;
 
     /**
      * Property mapping.
      *
      * @var array
      */
-    protected $_mapping = array (
-        Horde_ActiveSync_Message_Appointment::POOMCAL_TYPE        => array (self::KEY_ATTRIBUTE => 'type'),
-        Horde_ActiveSync_Message_Appointment::POOMCAL_UNTIL       => array (self::KEY_ATTRIBUTE => 'until', self::KEY_TYPE => self::TYPE_DATE),
-        Horde_ActiveSync_Message_Appointment::POOMCAL_OCCURRENCES => array (self::KEY_ATTRIBUTE => 'occurrences'),
-        Horde_ActiveSync_Message_Appointment::POOMCAL_INTERVAL    => array (self::KEY_ATTRIBUTE => 'interval'),
-        Horde_ActiveSync_Message_Appointment::POOMCAL_DAYOFWEEK   => array (self::KEY_ATTRIBUTE => 'dayofweek'),
-        Horde_ActiveSync_Message_Appointment::POOMCAL_DAYOFMONTH  => array (self::KEY_ATTRIBUTE => 'dayofmonth'),
-        Horde_ActiveSync_Message_Appointment::POOMCAL_WEEKOFMONTH => array (self::KEY_ATTRIBUTE => 'weekofmonth'),
-        Horde_ActiveSync_Message_Appointment::POOMCAL_MONTHOFYEAR => array (self::KEY_ATTRIBUTE => 'monthofyear')
-    );
+    protected $_mapping =  [
+        Horde_ActiveSync_Message_Appointment::POOMCAL_TYPE        =>  [self::KEY_ATTRIBUTE => 'type'],
+        Horde_ActiveSync_Message_Appointment::POOMCAL_UNTIL       =>  [self::KEY_ATTRIBUTE => 'until', self::KEY_TYPE => self::TYPE_DATE],
+        Horde_ActiveSync_Message_Appointment::POOMCAL_OCCURRENCES =>  [self::KEY_ATTRIBUTE => 'occurrences'],
+        Horde_ActiveSync_Message_Appointment::POOMCAL_INTERVAL    =>  [self::KEY_ATTRIBUTE => 'interval'],
+        Horde_ActiveSync_Message_Appointment::POOMCAL_DAYOFWEEK   =>  [self::KEY_ATTRIBUTE => 'dayofweek'],
+        Horde_ActiveSync_Message_Appointment::POOMCAL_DAYOFMONTH  =>  [self::KEY_ATTRIBUTE => 'dayofmonth'],
+        Horde_ActiveSync_Message_Appointment::POOMCAL_WEEKOFMONTH =>  [self::KEY_ATTRIBUTE => 'weekofmonth'],
+        Horde_ActiveSync_Message_Appointment::POOMCAL_MONTHOFYEAR =>  [self::KEY_ATTRIBUTE => 'monthofyear'],
+    ];
 
     /**
      * Property values.
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'type'        => false,
         'until'       => false,
         'occurrences' => false,
@@ -99,33 +100,33 @@ class Horde_ActiveSync_Message_Recurrence extends Horde_ActiveSync_Message_Base
         'dayofmonth'  => false,
         'weekofmonth' => false,
         'monthofyear' => false,
-    );
+    ];
 
     /**
      * Const'r
      *
      * @see Horde_ActiveSync_Message_Base::__construct()
      */
-    public function __construct(array $options = array())
+    public function __construct(array $options = [])
     {
         parent::__construct($options);
 
         if ($this->_version >= Horde_ActiveSync::VERSION_FOURTEEN) {
-            $this->_mapping += array(
-                Horde_ActiveSync_Message_Appointment::POOMCAL_CALENDARTYPE => array(self::KEY_ATTRIBUTE => 'calendartype'),
-                Horde_ActiveSync_Message_Appointment::POOMCAL_ISLEAPMONTH => array(self::KEY_ATTRIBUTE => 'isleapmonth'));
+            $this->_mapping += [
+                Horde_ActiveSync_Message_Appointment::POOMCAL_CALENDARTYPE => [self::KEY_ATTRIBUTE => 'calendartype'],
+                Horde_ActiveSync_Message_Appointment::POOMCAL_ISLEAPMONTH => [self::KEY_ATTRIBUTE => 'isleapmonth']];
 
-            $this->_properties += array(
+            $this->_properties += [
                 'calendartype' => false,
-                'isleapmonth' => false);
+                'isleapmonth' => false];
         }
         if ($this->_version >= Horde_ActiveSync::VERSION_FOURTEENONE) {
-            $this->_mapping += array(
-                Horde_ActiveSync_Message_Appointment::POOMCAL_FIRSTDAYOFWEEK => array(self::KEY_ATTRIBUTE => 'firstdayofweek')
-            );
-            $this->_properties += array(
-                'firstdayofweek' => false
-            );
+            $this->_mapping += [
+                Horde_ActiveSync_Message_Appointment::POOMCAL_FIRSTDAYOFWEEK => [self::KEY_ATTRIBUTE => 'firstdayofweek'],
+            ];
+            $this->_properties += [
+                'firstdayofweek' => false,
+            ];
         }
     }
 

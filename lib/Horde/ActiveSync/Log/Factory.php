@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ActiveSync log factory.
  *
@@ -57,47 +58,49 @@ class Horde_ActiveSync_Log_Factory implements Horde_ActiveSync_Interface_LoggerF
      *
      * @return Horde_Log_Logger  The logger object, correctly configured.
      */
-    public function create($properties = array())
+    public function create($properties = [])
     {
         $stream = $logger = false;
         $formatter = new Horde_ActiveSync_Log_Formatter();
 
         if (empty($this->_params['path'])) {
-             new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null());
+            new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null());
         }
 
         switch ($this->_params['type']) {
-        case 'onefile':
-            if (!empty($properties['DeviceId'])) {
-                $device_id = Horde_String::upper($properties['DeviceId']);
-                $stream = @fopen($this->_params['path'], 'a');
-            }
-            break;
-        case 'perdevice':
-            if (!empty($properties['DeviceId'])) {
-                $stream = @fopen(
-                    $this->_params['path'] . '/' . Horde_String::upper($properties['DeviceId']) . '.txt',
-                    'a'
-                );
-            }
-            break;
-        case 'perrequest':
-            if (!empty($properties['DeviceId'])) {
-                $dir = sprintf('%s/%s',
-                    $this->_params['path'],
-                    Horde_String::upper($properties['DeviceId'])
-                );
-                if (!is_dir($dir)) {
-                    mkdir($dir, 0755, true);
+            case 'onefile':
+                if (!empty($properties['DeviceId'])) {
+                    $device_id = Horde_String::upper($properties['DeviceId']);
+                    $stream = @fopen($this->_params['path'], 'a');
                 }
-                $path = sprintf('%s/%s-%s-%s.txt',
-                    $dir,
-                    time(),
-                    getmypid(),
-                    (!empty($properties['Cmd']) ? $properties['Cmd'] : 'UnknownCmd')
-                );
-                $stream = fopen($path, 'a');
-            }
+                break;
+            case 'perdevice':
+                if (!empty($properties['DeviceId'])) {
+                    $stream = @fopen(
+                        $this->_params['path'] . '/' . Horde_String::upper($properties['DeviceId']) . '.txt',
+                        'a'
+                    );
+                }
+                break;
+            case 'perrequest':
+                if (!empty($properties['DeviceId'])) {
+                    $dir = sprintf(
+                        '%s/%s',
+                        $this->_params['path'],
+                        Horde_String::upper($properties['DeviceId'])
+                    );
+                    if (!is_dir($dir)) {
+                        mkdir($dir, 0o755, true);
+                    }
+                    $path = sprintf(
+                        '%s/%s-%s-%s.txt',
+                        $dir,
+                        time(),
+                        getmypid(),
+                        (!empty($properties['Cmd']) ? $properties['Cmd'] : 'UnknownCmd')
+                    );
+                    $stream = fopen($path, 'a');
+                }
         }
 
         if ($stream) {

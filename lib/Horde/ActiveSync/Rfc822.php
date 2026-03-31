@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Rfc822::
  *
@@ -8,15 +9,15 @@
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */
- /**
-  * Horde_ActiveSync_Rfc822:: class provides functionality related to dealing
-  * with raw RFC822 message strings within an ActiveSync context.
-  *
-  * @license   http://www.horde.org/licenses/gpl GPLv2
-  * @copyright 2010-2020 Horde LLC (http://www.horde.org)
-  * @author    Michael J Rubinsky <mrubinsk@horde.org>
-  * @package   ActiveSync
-  */
+/**
+ * Horde_ActiveSync_Rfc822:: class provides functionality related to dealing
+ * with raw RFC822 message strings within an ActiveSync context.
+ *
+ * @license   http://www.horde.org/licenses/gpl GPLv2
+ * @copyright 2010-2020 Horde LLC (http://www.horde.org)
+ * @author    Michael J Rubinsky <mrubinsk@horde.org>
+ * @package   ActiveSync
+ */
 class Horde_ActiveSync_Rfc822
 {
     /**
@@ -66,10 +67,10 @@ class Horde_ActiveSync_Rfc822
     public function __construct($rfc822, $auto_add_headers = true)
     {
         if (is_resource($rfc822)) {
-            $stream = new Horde_Stream_Existing(array('stream' => $rfc822));
+            $stream = new Horde_Stream_Existing(['stream' => $rfc822]);
             $stream->rewind();
         } else {
-            $stream = new Horde_Stream_Temp(array('max_memory' => self::$memoryLimit));
+            $stream = new Horde_Stream_Temp(['max_memory' => self::$memoryLimit]);
             $stream->add($rfc822, true);
         }
         $this->_parseStream($stream);
@@ -86,7 +87,7 @@ class Horde_ActiveSync_Rfc822
     protected function _parseStream(Horde_Stream $stream)
     {
         $this->_stream = $stream;
-        list($this->_hdr_pos, $this->_eol) = $this->_findHeader();
+        [$this->_hdr_pos, $this->_eol] = $this->_findHeader();
     }
 
     /**
@@ -98,7 +99,7 @@ class Horde_ActiveSync_Rfc822
     {
         // Position to after the headers.
         fseek($this->_stream->stream, $this->_hdr_pos + $this->_eol);
-        $new_stream = new Horde_Stream_Temp(array('max_memory' => self::$memoryLimit));
+        $new_stream = new Horde_Stream_Temp(['max_memory' => self::$memoryLimit]);
         $new_stream->add($this->_stream, true);
         return $new_stream;
     }
@@ -112,11 +113,12 @@ class Horde_ActiveSync_Rfc822
      */
     public function replaceMime(Horde_Mime_Part $part)
     {
-        $mime_stream = $part->toString(array(
-            'stream' => true,
-            'headers' => false)
+        $mime_stream = $part->toString(
+            [
+                'stream' => true,
+                'headers' => false]
         );
-        $mime_stream = new Horde_Stream_Existing(array('stream' => $mime_stream));
+        $mime_stream = new Horde_Stream_Existing(['stream' => $mime_stream]);
 
         // Since we are still using the headers sent from the device, we can
         // simply zero out the position members etc...
@@ -134,7 +136,7 @@ class Horde_ActiveSync_Rfc822
     public function getString()
     {
         if (!empty($this->_header_text)) {
-            return Horde_Stream_Wrapper_Combine::getStream(array($this->_header_text, $this->getMessage()->stream));
+            return Horde_Stream_Wrapper_Combine::getStream([$this->_header_text, $this->getMessage()->stream]);
         } else {
             $this->_stream->rewind();
             return $this->_stream->stream;
@@ -182,7 +184,7 @@ class Horde_ActiveSync_Rfc822
             $updated = true;
         }
         if ($updated) {
-            $this->_header_text = $headers->toString(array('charset' => 'UTF-8'));
+            $this->_header_text = $headers->toString(['charset' => 'UTF-8']);
         }
     }
 
@@ -228,10 +230,10 @@ class Horde_ActiveSync_Rfc822
         // separate the headers.
         // See: https://ninefolders.plan.io/track/10606/1dcfed
         switch ($this->_stream->getEOL()) {
-        case "\n":
-            return array($this->_stream->search("\n\n"), 2);
-        case "\r\n":
-            return array($this->_stream->search("\r\n\r\n"), 4);
+            case "\n":
+                return [$this->_stream->search("\n\n"), 2];
+            case "\r\n":
+                return [$this->_stream->search("\r\n\r\n"), 4];
         }
     }
 

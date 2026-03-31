@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Request_Settings::
  *
@@ -32,59 +33,59 @@
 class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
 {
     /** Wbxml constants **/
-    const SETTINGS_SETTINGS                 = 'Settings:Settings';
-    const SETTINGS_STATUS                   = 'Settings:Status';
-    const SETTINGS_GET                      = 'Settings:Get';
-    const SETTINGS_SET                      = 'Settings:Set';
-    const SETTINGS_OOF                      = 'Settings:Oof';
-    const SETTINGS_OOFSTATE                 = 'Settings:OofState';
-    const SETTINGS_STARTTIME                = 'Settings:StartTime';
-    const SETTINGS_ENDTIME                  = 'Settings:EndTime';
-    const SETTINGS_OOFMESSAGE               = 'Settings:OofMessage';
-    const SETTINGS_APPLIESTOINTERNAL        = 'Settings:AppliesToInternal';
-    const SETTINGS_APPLIESTOEXTERNALKNOWN   = 'Settings:AppliesToExternalKnown';
-    const SETTINGS_APPLIESTOEXTERNALUNKNOWN = 'Settings:AppliesToExternalUnknown';
-    const SETTINGS_ENABLED                  = 'Settings:Enabled';
-    const SETTINGS_REPLYMESSAGE             = 'Settings:ReplyMessage';
-    const SETTINGS_BODYTYPE                 = 'Settings:BodyType';
-    const SETTINGS_DEVICEPASSWORD           = 'Settings:DevicePassword';
-    const SETTINGS_PASSWORD                 = 'Settings:Password';
-    const SETTINGS_DEVICEINFORMATION        = 'Settings:DeviceInformation';
-    const SETTINGS_MODEL                    = 'Settings:Model';
-    const SETTINGS_IMEI                     = 'Settings:IMEI';
-    const SETTINGS_FRIENDLYNAME             = 'Settings:FriendlyName';
-    const SETTINGS_OS                       = 'Settings:OS';
-    const SETTINGS_OSLANGUAGE               = 'Settings:OSLanguage';
-    const SETTINGS_PHONENUMBER              = 'Settings:PhoneNumber';
-    const SETTINGS_USERINFORMATION          = 'Settings:UserInformation';
-    const SETTINGS_EMAILADDRESSES           = 'Settings:EmailAddresses';
-    const SETTINGS_SMTPADDRESS              = 'Settings:SmtpAddress';
-    const SETTINGS_USERAGENT                = 'Settings:UserAgent';
+    public const SETTINGS_SETTINGS                 = 'Settings:Settings';
+    public const SETTINGS_STATUS                   = 'Settings:Status';
+    public const SETTINGS_GET                      = 'Settings:Get';
+    public const SETTINGS_SET                      = 'Settings:Set';
+    public const SETTINGS_OOF                      = 'Settings:Oof';
+    public const SETTINGS_OOFSTATE                 = 'Settings:OofState';
+    public const SETTINGS_STARTTIME                = 'Settings:StartTime';
+    public const SETTINGS_ENDTIME                  = 'Settings:EndTime';
+    public const SETTINGS_OOFMESSAGE               = 'Settings:OofMessage';
+    public const SETTINGS_APPLIESTOINTERNAL        = 'Settings:AppliesToInternal';
+    public const SETTINGS_APPLIESTOEXTERNALKNOWN   = 'Settings:AppliesToExternalKnown';
+    public const SETTINGS_APPLIESTOEXTERNALUNKNOWN = 'Settings:AppliesToExternalUnknown';
+    public const SETTINGS_ENABLED                  = 'Settings:Enabled';
+    public const SETTINGS_REPLYMESSAGE             = 'Settings:ReplyMessage';
+    public const SETTINGS_BODYTYPE                 = 'Settings:BodyType';
+    public const SETTINGS_DEVICEPASSWORD           = 'Settings:DevicePassword';
+    public const SETTINGS_PASSWORD                 = 'Settings:Password';
+    public const SETTINGS_DEVICEINFORMATION        = 'Settings:DeviceInformation';
+    public const SETTINGS_MODEL                    = 'Settings:Model';
+    public const SETTINGS_IMEI                     = 'Settings:IMEI';
+    public const SETTINGS_FRIENDLYNAME             = 'Settings:FriendlyName';
+    public const SETTINGS_OS                       = 'Settings:OS';
+    public const SETTINGS_OSLANGUAGE               = 'Settings:OSLanguage';
+    public const SETTINGS_PHONENUMBER              = 'Settings:PhoneNumber';
+    public const SETTINGS_USERINFORMATION          = 'Settings:UserInformation';
+    public const SETTINGS_EMAILADDRESSES           = 'Settings:EmailAddresses';
+    public const SETTINGS_SMTPADDRESS              = 'Settings:SmtpAddress';
+    public const SETTINGS_USERAGENT                = 'Settings:UserAgent';
 
     /** EAS 14.0 **/
-    const SETTINGS_ENABLEOUTBOUNDSMS        = 'Settings:EnableOutboundSMS';
-    const SETTINGS_MOBILEOPERATOR           = 'Settings:MobileOperator';
+    public const SETTINGS_ENABLEOUTBOUNDSMS        = 'Settings:EnableOutboundSMS';
+    public const SETTINGS_MOBILEOPERATOR           = 'Settings:MobileOperator';
 
     /** EAS 14.1 **/
-    const SETTINGS_PRIMARYSMTPADDRESS       = 'Settings:PrimarySmtpAddress';
-    const SETTINGS_ACCOUNTS                 = 'Settings:Accounts';
-    const SETTINGS_ACCOUNT                  = 'Settings:Account';
-    const SETTINGS_ACCOUNTID                = 'Settings:AccountId';
-    const SETTINGS_USERDISPLAYNAME          = 'Settings:UserDisplayName';
-    const SETTINGS_RIGHTSMANAGEMENTINFO     = 'Settings:RightsManagementInformation';
-    const SETTINGS_ACCOUNTNAME              = 'Settings:AccountName';
+    public const SETTINGS_PRIMARYSMTPADDRESS       = 'Settings:PrimarySmtpAddress';
+    public const SETTINGS_ACCOUNTS                 = 'Settings:Accounts';
+    public const SETTINGS_ACCOUNT                  = 'Settings:Account';
+    public const SETTINGS_ACCOUNTID                = 'Settings:AccountId';
+    public const SETTINGS_USERDISPLAYNAME          = 'Settings:UserDisplayName';
+    public const SETTINGS_RIGHTSMANAGEMENTINFO     = 'Settings:RightsManagementInformation';
+    public const SETTINGS_ACCOUNTNAME              = 'Settings:AccountName';
 
 
     /** Status codes **/
-    const STATUS_SUCCESS                    = 1;
-    const STATUS_ERROR                      = 2;
-    const STATUS_UNAVAILABLE                = 4;
+    public const STATUS_SUCCESS                    = 1;
+    public const STATUS_ERROR                      = 2;
+    public const STATUS_UNAVAILABLE                = 4;
 
     /** Out of office constants **/
-    const OOF_STATE_TIMEBASED               = 2;
+    public const OOF_STATE_TIMEBASED               = 2;
     // @todo - this is called OOF_STATE_GLOBAL in the docs
-    const OOF_STATE_ENABLED                 = 1;
-    const OOF_STATE_DISABLED                = 0;
+    public const OOF_STATE_ENABLED                 = 1;
+    public const OOF_STATE_DISABLED                = 0;
 
 
     /**
@@ -100,98 +101,98 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
 
         $version = $this->_device->version;
 
-        $request = array();
-        while (($reqtype = ($this->_decoder->getElementStartTag(self::SETTINGS_OOF) ? self::SETTINGS_OOF :
-               ($this->_decoder->getElementStartTag(self::SETTINGS_DEVICEINFORMATION) ? self::SETTINGS_DEVICEINFORMATION :
-               ($this->_decoder->getElementStartTag(self::SETTINGS_USERINFORMATION) ? self::SETTINGS_USERINFORMATION :
-               ($this->_decoder->getElementStartTag(self::SETTINGS_DEVICEPASSWORD) ? self::SETTINGS_DEVICEPASSWORD :
-               ($this->_decoder->getElementStartTag(self::SETTINGS_RIGHTSMANAGEMENTINFO) ? self::SETTINGS_RIGHTSMANAGEMENTINFO :
-               -1)))))) != -1) {
+        $request = [];
+        while (($reqtype = ($this->_decoder->getElementStartTag(self::SETTINGS_OOF) ? self::SETTINGS_OOF
+               : ($this->_decoder->getElementStartTag(self::SETTINGS_DEVICEINFORMATION) ? self::SETTINGS_DEVICEINFORMATION
+               : ($this->_decoder->getElementStartTag(self::SETTINGS_USERINFORMATION) ? self::SETTINGS_USERINFORMATION
+               : ($this->_decoder->getElementStartTag(self::SETTINGS_DEVICEPASSWORD) ? self::SETTINGS_DEVICEPASSWORD
+               : ($this->_decoder->getElementStartTag(self::SETTINGS_RIGHTSMANAGEMENTINFO) ? self::SETTINGS_RIGHTSMANAGEMENTINFO
+               : -1)))))) != -1) {
 
-            while (($querytype = ($this->_decoder->getElementStartTag(self::SETTINGS_GET) ? self::SETTINGS_GET :
-                   ($this->_decoder->getElementStartTag(self::SETTINGS_SET) ? self::SETTINGS_SET :
-                   -1))) != -1) {
+            while (($querytype = ($this->_decoder->getElementStartTag(self::SETTINGS_GET) ? self::SETTINGS_GET
+                   : ($this->_decoder->getElementStartTag(self::SETTINGS_SET) ? self::SETTINGS_SET
+                   : -1))) != -1) {
 
                 switch ($querytype) {
-                case self::SETTINGS_GET:
-                    switch ($reqtype) {
-                    case self::SETTINGS_OOF:
-                        $oof = Horde_ActiveSync::messageFactory('Oof');
-                        $oof->decodeStream($this->_decoder);
-                        $request['get']['oof']['bodytype'] = $oof->bodytype;
-                        $this->_decoder->getElementEndTag(); // SETTINGS_GET
-                        break;
-                    case self::SETTINGS_USERINFORMATION:
-                        // These are empty <GET /> tags.
-                        $request['get']['userinformation'] = array();
-                        $this->_decoder->getElementContent();
-                        break;
-                    case self::SETTINGS_RIGHTSMANAGEMENTINFO:
-                        // These are empty <GET /> tags.
-                        $request['get']['rightsmanagementinfo'] = true;
-                        $this->_decoder->getElementContent();
-                        break;
-                    }
-                    break;
-
-                case self::SETTINGS_SET:
-                    switch ($reqtype) {
-                    case self::SETTINGS_OOF:
-                        $oof = Horde_ActiveSync::messageFactory('Oof');
-                        $oof->decodeStream($this->_decoder);
-
-                        $request['set']['oof']['oofstate'] = $oof->state;
-                        $request['set']['oof']['starttime'] = $oof->starttime;
-                        $request['set']['oof']['endtime'] = $oof->endtime;
-                        $request['set']['oof']['oofmsgs'] = array();
-                        foreach ($oof->messages as $msg) {
-                            $message = array();
-                            $message['appliesto'] = !empty($msg->internal)
-                                ? Horde_ActiveSync_Request_Settings::SETTINGS_APPLIESTOINTERNAL
-                                : (!empty($msg->externalknown)
-                                    ? Horde_ActiveSync_Request_Settings::SETTINGS_APPLIESTOEXTERNALKNOWN
-                                    : Horde_ActiveSync_Request_Settings::SETTINGS_APPLIESTOEXTERNALUNKNOWN);
-                            $message['enabled'] = $msg->enabled;
-                            $message['replymessage'] = $msg->reply;
-                            $message['bodytype'] = $msg->bodytype;
-                            $request['set']['oof']['oofmsgs'][] = $message;
+                    case self::SETTINGS_GET:
+                        switch ($reqtype) {
+                            case self::SETTINGS_OOF:
+                                $oof = Horde_ActiveSync::messageFactory('Oof');
+                                $oof->decodeStream($this->_decoder);
+                                $request['get']['oof']['bodytype'] = $oof->bodytype;
+                                $this->_decoder->getElementEndTag(); // SETTINGS_GET
+                                break;
+                            case self::SETTINGS_USERINFORMATION:
+                                // These are empty <GET /> tags.
+                                $request['get']['userinformation'] = [];
+                                $this->_decoder->getElementContent();
+                                break;
+                            case self::SETTINGS_RIGHTSMANAGEMENTINFO:
+                                // These are empty <GET /> tags.
+                                $request['get']['rightsmanagementinfo'] = true;
+                                $this->_decoder->getElementContent();
+                                break;
                         }
                         break;
-                    case self::SETTINGS_DEVICEINFORMATION :
-                        // @TODO Clean the return values up when we can break bc.
-                        $device_properties = $this->_device->properties;
-                        $settings = Horde_ActiveSync::messageFactory('DeviceInformation');
-                        $settings->decodeStream($this->_decoder);
-                        $device_properties[self::SETTINGS_MODEL] = $settings->model;
-                        $device_properties[self::SETTINGS_IMEI] = $settings->imei;
-                        $device_properties[self::SETTINGS_FRIENDLYNAME] = $settings->friendlyname;
-                        $device_properties[self::SETTINGS_OS] = $settings->os;
-                        $device_properties[self::SETTINGS_OSLANGUAGE] = $settings->oslanguage;
-                        $device_properties[self::SETTINGS_PHONENUMBER] = $settings->phonenumber;
-                        $device_properties[self::SETTINGS_USERAGENT] = $settings->useragent;
-                        $device_properties[self::SETTINGS_MOBILEOPERATOR] = $settings->mobileoperator;
-                        $device_properties[self::SETTINGS_ENABLEOUTBOUNDSMS] = $settings->enableoutboundsms;
 
-                        try {
-                            $device_properties['version'] = $version;
-                            $this->_device->setDeviceProperties($device_properties);
-                            $this->_device->save();
-                        } catch (Horde_ActiveSync_Exception $e) {
-                            $this->_logger->err($e->getMessage());
-                            unset($device_properties);
-                        }
-                        break;
-                    case self::SETTINGS_DEVICEPASSWORD :
-                        $this->_decoder->getElementStartTag(self::SETTINGS_PASSWORD);
-                        if (($password = $this->_decoder->getElementContent()) !== false) {
-                            $this->_decoder->getElementEndTag(); // end $field
-                        }
-                        $request['set']['devicepassword'] = $password;
-                        break;
-                    }
+                    case self::SETTINGS_SET:
+                        switch ($reqtype) {
+                            case self::SETTINGS_OOF:
+                                $oof = Horde_ActiveSync::messageFactory('Oof');
+                                $oof->decodeStream($this->_decoder);
 
-                    $this->_decoder->getElementEndTag(); // SETTINGS_SET
-                    break;
+                                $request['set']['oof']['oofstate'] = $oof->state;
+                                $request['set']['oof']['starttime'] = $oof->starttime;
+                                $request['set']['oof']['endtime'] = $oof->endtime;
+                                $request['set']['oof']['oofmsgs'] = [];
+                                foreach ($oof->messages as $msg) {
+                                    $message = [];
+                                    $message['appliesto'] = !empty($msg->internal)
+                                        ? Horde_ActiveSync_Request_Settings::SETTINGS_APPLIESTOINTERNAL
+                                        : (!empty($msg->externalknown)
+                                            ? Horde_ActiveSync_Request_Settings::SETTINGS_APPLIESTOEXTERNALKNOWN
+                                            : Horde_ActiveSync_Request_Settings::SETTINGS_APPLIESTOEXTERNALUNKNOWN);
+                                    $message['enabled'] = $msg->enabled;
+                                    $message['replymessage'] = $msg->reply;
+                                    $message['bodytype'] = $msg->bodytype;
+                                    $request['set']['oof']['oofmsgs'][] = $message;
+                                }
+                                break;
+                            case self::SETTINGS_DEVICEINFORMATION:
+                                // @TODO Clean the return values up when we can break bc.
+                                $device_properties = $this->_device->properties;
+                                $settings = Horde_ActiveSync::messageFactory('DeviceInformation');
+                                $settings->decodeStream($this->_decoder);
+                                $device_properties[self::SETTINGS_MODEL] = $settings->model;
+                                $device_properties[self::SETTINGS_IMEI] = $settings->imei;
+                                $device_properties[self::SETTINGS_FRIENDLYNAME] = $settings->friendlyname;
+                                $device_properties[self::SETTINGS_OS] = $settings->os;
+                                $device_properties[self::SETTINGS_OSLANGUAGE] = $settings->oslanguage;
+                                $device_properties[self::SETTINGS_PHONENUMBER] = $settings->phonenumber;
+                                $device_properties[self::SETTINGS_USERAGENT] = $settings->useragent;
+                                $device_properties[self::SETTINGS_MOBILEOPERATOR] = $settings->mobileoperator;
+                                $device_properties[self::SETTINGS_ENABLEOUTBOUNDSMS] = $settings->enableoutboundsms;
+
+                                try {
+                                    $device_properties['version'] = $version;
+                                    $this->_device->setDeviceProperties($device_properties);
+                                    $this->_device->save();
+                                } catch (Horde_ActiveSync_Exception $e) {
+                                    $this->_logger->err($e->getMessage());
+                                    unset($device_properties);
+                                }
+                                break;
+                            case self::SETTINGS_DEVICEPASSWORD:
+                                $this->_decoder->getElementStartTag(self::SETTINGS_PASSWORD);
+                                if (($password = $this->_decoder->getElementContent()) !== false) {
+                                    $this->_decoder->getElementEndTag(); // end $field
+                                }
+                                $request['set']['devicepassword'] = $password;
+                                break;
+                        }
+
+                        $this->_decoder->getElementEndTag(); // SETTINGS_SET
+                        break;
                 }
             }
             // SETTINGS_OOF || SETTINGS_DEVICEPW || SETTINGS_DEVICEINFORMATION || SETTINGS_USERINFORMATION
@@ -245,9 +246,9 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
             $encoder->endTag(); // end self::SETTINGS_STATUS
             $encoder->endTag(); // end self::SETTINGS_DEVICEPASSWORD
         }
-        if ($version >= Horde_ActiveSync::VERSION_TWELVE &&
-            isset($request['get']['userinformation']) &&
-            isset($result['get']['userinformation'])) {
+        if ($version >= Horde_ActiveSync::VERSION_TWELVE
+            && isset($request['get']['userinformation'])
+            && isset($result['get']['userinformation'])) {
             $encoder->startTag(self::SETTINGS_USERINFORMATION);
             $encoder->startTag(self::SETTINGS_STATUS);
             $encoder->content($result['get']['userinformation']['status']);
@@ -281,7 +282,7 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
                             $encoder->startTag(self::SETTINGS_PRIMARYSMTPADDRESS);
                             $encoder->content($account['emailaddresses'][0]);
                             $encoder->endTag(); // end self::SETTINGS_PRIMARYSMTPADDRESS
-                            foreach($account['emailaddresses'] as $value) {
+                            foreach ($account['emailaddresses'] as $value) {
                                 $encoder->startTag(self::SETTINGS_SMTPADDRESS);
                                 $encoder->content($value);
                                 $encoder->endTag(); // end self::SETTINGS_SMTPADDRESS
@@ -295,7 +296,7 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
             } else { // EAS 12.0, 12.1, 14.0
                 $encoder->startTag(self::SETTINGS_EMAILADDRESSES);
                 if (!empty($result['get']['userinformation']['emailaddresses'])) {
-                    foreach($result['get']['userinformation']['emailaddresses'] as $value) {
+                    foreach ($result['get']['userinformation']['emailaddresses'] as $value) {
                         $encoder->startTag(self::SETTINGS_SMTPADDRESS);
                         $encoder->content($value);
                         $encoder->endTag(); // end self::SETTINGS_SMTPADDRESS

@@ -1,4 +1,5 @@
 <?php
+
 class HordeActiveSyncFixBlobLength extends Horde_Db_Migration_Base
 {
     public function up()
@@ -6,7 +7,5 @@ class HordeActiveSyncFixBlobLength extends Horde_Db_Migration_Base
         $this->changeColumn('horde_activesync_state', 'sync_data', 'binary');
     }
 
-    public function down()
-    {
-    }
+    public function down() {}
 }

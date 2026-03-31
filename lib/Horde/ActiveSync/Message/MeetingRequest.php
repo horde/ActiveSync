@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Portions of this class were ported from the Z-Push project:
  *   File      :   wbxml.php
@@ -50,30 +51,30 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
      *
      * @var array
      */
-    protected $_mapping = array (
-        Horde_ActiveSync_Message_Mail::POOMMAIL_ALLDAYEVENT => array(self::KEY_ATTRIBUTE => 'alldayevent'),
-        Horde_ActiveSync_Message_Mail::POOMMAIL_STARTTIME => array(self::KEY_ATTRIBUTE => 'starttime', self::KEY_TYPE => self::TYPE_DATE_DASHES),
-        Horde_ActiveSync_Message_Mail::POOMMAIL_DTSTAMP => array(self::KEY_ATTRIBUTE => 'dtstamp', self::KEY_TYPE => self::TYPE_DATE_DASHES),
-        Horde_ActiveSync_Message_Mail::POOMMAIL_ENDTIME => array(self::KEY_ATTRIBUTE => 'endtime', self::KEY_TYPE => self::TYPE_DATE_DASHES),
-        Horde_ActiveSync_Message_Mail::POOMMAIL_INSTANCETYPE => array(self::KEY_ATTRIBUTE => 'instancetype'),
-        Horde_ActiveSync_Message_Mail::POOMMAIL_LOCATION => array(self::KEY_ATTRIBUTE => 'location'),
-        Horde_ActiveSync_Message_Mail::POOMMAIL_ORGANIZER => array(self::KEY_ATTRIBUTE => 'organizer'),
-        Horde_ActiveSync_Message_Mail::POOMMAIL_RECURRENCEID => array(self::KEY_ATTRIBUTE => 'recurrenceid', self::KEY_TYPE => self::TYPE_DATE_DASHES),
-        Horde_ActiveSync_Message_Mail::POOMMAIL_REMINDER => array(self::KEY_ATTRIBUTE => 'reminder'),
-        Horde_ActiveSync_Message_Mail::POOMMAIL_RESPONSEREQUESTED => array(self::KEY_ATTRIBUTE => 'responserequested'),
-        Horde_ActiveSync_Message_Mail::POOMMAIL_RECURRENCES => array(self::KEY_ATTRIBUTE => 'recurrences', self::KEY_TYPE => 'Horde_ActiveSync_Message_MeetingRequestRecurrence', self::KEY_VALUES => Horde_ActiveSync_Message_Mail::POOMMAIL_RECURRENCE),
-        Horde_ActiveSync_Message_Mail::POOMMAIL_SENSITIVITY => array(self::KEY_ATTRIBUTE => 'sensitivity'),
-        Horde_ActiveSync_Message_Mail::POOMMAIL_BUSYSTATUS => array(self::KEY_ATTRIBUTE => 'busystatus'),
-        Horde_ActiveSync_Message_Mail::POOMMAIL_TIMEZONE => array(self::KEY_ATTRIBUTE => 'timezone'),
-        Horde_ActiveSync_Message_Mail::POOMMAIL_GLOBALOBJID => array(self::KEY_ATTRIBUTE => 'globalobjid'),
-    );
+    protected $_mapping =  [
+        Horde_ActiveSync_Message_Mail::POOMMAIL_ALLDAYEVENT => [self::KEY_ATTRIBUTE => 'alldayevent'],
+        Horde_ActiveSync_Message_Mail::POOMMAIL_STARTTIME => [self::KEY_ATTRIBUTE => 'starttime', self::KEY_TYPE => self::TYPE_DATE_DASHES],
+        Horde_ActiveSync_Message_Mail::POOMMAIL_DTSTAMP => [self::KEY_ATTRIBUTE => 'dtstamp', self::KEY_TYPE => self::TYPE_DATE_DASHES],
+        Horde_ActiveSync_Message_Mail::POOMMAIL_ENDTIME => [self::KEY_ATTRIBUTE => 'endtime', self::KEY_TYPE => self::TYPE_DATE_DASHES],
+        Horde_ActiveSync_Message_Mail::POOMMAIL_INSTANCETYPE => [self::KEY_ATTRIBUTE => 'instancetype'],
+        Horde_ActiveSync_Message_Mail::POOMMAIL_LOCATION => [self::KEY_ATTRIBUTE => 'location'],
+        Horde_ActiveSync_Message_Mail::POOMMAIL_ORGANIZER => [self::KEY_ATTRIBUTE => 'organizer'],
+        Horde_ActiveSync_Message_Mail::POOMMAIL_RECURRENCEID => [self::KEY_ATTRIBUTE => 'recurrenceid', self::KEY_TYPE => self::TYPE_DATE_DASHES],
+        Horde_ActiveSync_Message_Mail::POOMMAIL_REMINDER => [self::KEY_ATTRIBUTE => 'reminder'],
+        Horde_ActiveSync_Message_Mail::POOMMAIL_RESPONSEREQUESTED => [self::KEY_ATTRIBUTE => 'responserequested'],
+        Horde_ActiveSync_Message_Mail::POOMMAIL_RECURRENCES => [self::KEY_ATTRIBUTE => 'recurrences', self::KEY_TYPE => 'Horde_ActiveSync_Message_MeetingRequestRecurrence', self::KEY_VALUES => Horde_ActiveSync_Message_Mail::POOMMAIL_RECURRENCE],
+        Horde_ActiveSync_Message_Mail::POOMMAIL_SENSITIVITY => [self::KEY_ATTRIBUTE => 'sensitivity'],
+        Horde_ActiveSync_Message_Mail::POOMMAIL_BUSYSTATUS => [self::KEY_ATTRIBUTE => 'busystatus'],
+        Horde_ActiveSync_Message_Mail::POOMMAIL_TIMEZONE => [self::KEY_ATTRIBUTE => 'timezone'],
+        Horde_ActiveSync_Message_Mail::POOMMAIL_GLOBALOBJID => [self::KEY_ATTRIBUTE => 'globalobjid'],
+    ];
 
     /**
      * Property values.
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'alldayevent' => '0',
         'starttime' => false,
         'dtstamp' => false,
@@ -84,12 +85,12 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
         'recurrenceid' => false,
         'reminder' => false,
         'responserequested' => false,
-        'recurrences' => array(),
+        'recurrences' => [],
         'sensitivity' => false,
         'busystatus' => false,
         'timezone' => false,
-        'globalobjid' => false
-    );
+        'globalobjid' => false,
+    ];
 
     /**
      * Copy of the vEvent object.
@@ -103,16 +104,16 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
      *
      * @see Horde_ActiveSync_Message_Base::__construct()
      */
-    public function __construct(array $options = array())
+    public function __construct(array $options = [])
     {
         parent::__construct($options);
         if ($this->_version > Horde_ActiveSync::VERSION_FOURTEEN) {
-            $this->_mapping += array(
-                Horde_ActiveSync_Message_Mail::POOMMAIL2_MEETINGMESSAGETYPE  => array(self::KEY_ATTRIBUTE => 'meetingmessagetype')
-            );
-            $this->_properties += array(
-                'meetingmessagetype' => false
-            );
+            $this->_mapping += [
+                Horde_ActiveSync_Message_Mail::POOMMAIL2_MEETINGMESSAGETYPE  => [self::KEY_ATTRIBUTE => 'meetingmessagetype'],
+            ];
+            $this->_properties += [
+                'meetingmessagetype' => false,
+            ];
         }
     }
 
@@ -132,17 +133,17 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
         }
         foreach ($vCal->getComponents() as $component) {
             switch ($component->getType()) {
-            case 'vEvent':
-                $this->_vEvent = $component;
-                $this->_parsevEvent($component, $method);
-                break;
+                case 'vEvent':
+                    $this->_vEvent = $component;
+                    $this->_parsevEvent($component, $method);
+                    break;
 
-            case 'vTimeZone':
-            // Not sure what to do with Timezone yet/how to get it into
-            // a TZ structure etc... For now, defaults to default timezone (as the
-            // specs say it should for iCal without tz specified).
-            default:
-                break;
+                case 'vTimeZone':
+                    // Not sure what to do with Timezone yet/how to get it into
+                    // a TZ structure etc... For now, defaults to default timezone (as the
+                    // specs say it should for iCal without tz specified).
+                default:
+                    break;
             }
         }
 
@@ -156,8 +157,9 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
             $this->timezone = $tz->getSyncTZFromOffsets(
                 $tz->getOffsetsFromDate(new Horde_Date($this->_vEvent->getAttribute('DTSTART')))
             );
-        } catch (Horde_Icalendar_Exception $e) {}
-        $this->alldayevent = (int)$this->_isAllDay();
+        } catch (Horde_Icalendar_Exception $e) {
+        }
+        $this->alldayevent = (int) $this->_isAllDay();
     }
 
     /**
@@ -188,7 +190,8 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
         try {
             $organizer = parse_url($vevent->getAttribute('ORGANIZER'));
             $this->organizer = $organizer['path'];
-        } catch (Horde_Icalendar_Exception $e) {}
+        } catch (Horde_Icalendar_Exception $e) {
+        }
 
         try {
             $this->globalobjid = Horde_Mapi::createGoid($vevent->getAttributeDefault('UID', 'nouid'));
@@ -199,12 +202,14 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
 
         try {
             $this->dtstamp = new Horde_Date($vevent->getAttribute('DTSTAMP'));
-        } catch (Horde_Exception $e) {}
+        } catch (Horde_Exception $e) {
+        }
 
         try {
             $this->endtime = new Horde_Date($vevent->getAttribute('DTEND'));
             $this->location = Horde_String::truncate($vevent->getAttribute('LOCATION'), 255);
-        } catch (Horde_Icalendar_Exception $e) {}
+        } catch (Horde_Icalendar_Exception $e) {
+        }
 
         try {
             $class = $vevent->getAttribute('CLASS');
@@ -215,7 +220,8 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
                         : ($class == 'PERSONAL' ? Horde_ActiveSync_Message_Appointment::SENSITIVITY_PERSONAL
                             : Horde_ActiveSync_Message_Appointment::SENSITIVITY_NORMAL));
             }
-        } catch (Horde_Icalendar_Exception $e) {}
+        } catch (Horde_Icalendar_Exception $e) {
+        }
 
         try {
             $status = $vevent->getAttribute('STATUS');
@@ -225,7 +231,8 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
                     : ($status == 'CONFIRMED' ? Horde_ActiveSync_Message_Appointment::BUSYSTATUS_BUSY
                         : Horde_ActiveSync_Message_Appointment::BUSYSTATUS_FREE);
             }
-        } catch (Horde_Icalendar_Exception $e) {}
+        } catch (Horde_Icalendar_Exception $e) {
+        }
 
         // vCalendar 1.0 alarms
         try {
@@ -233,7 +240,8 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
             if (!is_array($alarm) && intval($alarm)) {
                 $this->reminder = intval($this->starttime->timestamp() - $alarm);
             }
-        } catch (Horde_Icalendar_Exception $e) {}
+        } catch (Horde_Icalendar_Exception $e) {
+        }
 
         // vCalendar 2.0 alarms
         foreach ($vevent->getComponents() as $alarm) {
@@ -246,10 +254,10 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
             } catch (Horde_Icalendar_Exception $e) {
                 continue;
             }
-            if (isset($triggerParams['VALUE']) &&
-                $triggerParams['VALUE'] == 'DATE-TIME') {
-                if (isset($triggerParams['RELATED']) &&
-                    $triggerParams['RELATED'] == 'END') {
+            if (isset($triggerParams['VALUE'])
+                && $triggerParams['VALUE'] == 'DATE-TIME') {
+                if (isset($triggerParams['RELATED'])
+                    && $triggerParams['RELATED'] == 'END') {
                     $this->reminder = intval($this->endtime->timestamp() - $trigger);
                 } else {
                     $this->reminder = intval($this->starttime->timestamp() - $trigger);
@@ -268,12 +276,12 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
      */
     protected function _isAllDay()
     {
-        return ($this->starttime->hour == 0 && $this->starttime->min == 0 && $this->starttime->sec == 0 &&
-             (($this->endtime->hour == 23 && $this->endtime->min == 59) ||
-              ($this->endtime->hour == 0 && $this->endtime->min == 0 && $this->endtime->sec == 0 &&
-               ($this->endtime->mday > $this->starttime->mday ||
-                $this->endtime->month > $this->starttime->month ||
-                $this->endtime->year > $this->starttime->year))));
+        return ($this->starttime->hour == 0 && $this->starttime->min == 0 && $this->starttime->sec == 0
+             && (($this->endtime->hour == 23 && $this->endtime->min == 59)
+              || ($this->endtime->hour == 0 && $this->endtime->min == 0 && $this->endtime->sec == 0
+               && ($this->endtime->mday > $this->starttime->mday
+                || $this->endtime->month > $this->starttime->month
+                || $this->endtime->year > $this->starttime->year))));
     }
 
 }

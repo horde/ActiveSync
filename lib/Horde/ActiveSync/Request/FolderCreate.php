@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Request_FolderCreate::
  *
@@ -29,15 +30,15 @@
  */
 class Horde_ActiveSync_Request_FolderCreate extends Horde_ActiveSync_Request_Base
 {
-    const FOLDERCREATE  = 'FolderHierarchy:FolderCreate';
-    const FOLDERDELETE  = 'FolderHierarchy:FolderDelete';
-    const FOLDERUPDATE  = 'FolderHierarchy:FolderUpdate';
+    public const FOLDERCREATE  = 'FolderHierarchy:FolderCreate';
+    public const FOLDERDELETE  = 'FolderHierarchy:FolderDelete';
+    public const FOLDERUPDATE  = 'FolderHierarchy:FolderUpdate';
 
-    const STATUS_SUCCESS = 1;
-    const STATUS_DELETION_NOT_SUPPORTED = 3;
-    const STATUS_FOLDER_DOES_NOT_EXIST = 4;
-    const STATUS_ERROR   = 6;
-    const STATUS_KEYMISM = 9;
+    public const STATUS_SUCCESS = 1;
+    public const STATUS_DELETION_NOT_SUPPORTED = 3;
+    public const STATUS_FOLDER_DOES_NOT_EXIST = 4;
+    public const STATUS_ERROR   = 6;
+    public const STATUS_KEYMISM = 9;
 
     /**
      * Handle request.
@@ -150,7 +151,7 @@ class Horde_ActiveSync_Request_FolderCreate extends Horde_ActiveSync_Request_Bas
                 }
             } else {
                 try {
-                   $importer->importFolderDeletion($server_uid);
+                    $importer->importFolderDeletion($server_uid);
                 } catch (Horde_ActiveSync_Exception_DeletionNotSupported $e) {
                     $status = self::STATUS_DELETION_NOT_SUPPORTED;
                 } catch (Horde_ActiveSync_Exception_FolderGone $e) {

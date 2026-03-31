@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_AirSyncBaseFileAttachment::
  *
@@ -40,24 +41,24 @@ class Horde_ActiveSync_Message_AirSyncBaseFileAttachment extends Horde_ActiveSyn
      *
      * @var array
      */
-    protected $_mapping = array(
-        Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_DATA => array(self::KEY_ATTRIBUTE => 'data'),
-        Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_RANGE => array(self::KEY_ATTRIBUTE => 'range'),
-        Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_TOTAL => array(self::KEY_ATTRIBUTE => 'total'),
-        Horde_ActiveSync::AIRSYNCBASE_CONTENTTYPE => array(self::KEY_ATTRIBUTE => 'contenttype'),
-    );
+    protected $_mapping = [
+        Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_DATA => [self::KEY_ATTRIBUTE => 'data'],
+        Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_RANGE => [self::KEY_ATTRIBUTE => 'range'],
+        Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_TOTAL => [self::KEY_ATTRIBUTE => 'total'],
+        Horde_ActiveSync::AIRSYNCBASE_CONTENTTYPE => [self::KEY_ATTRIBUTE => 'contenttype'],
+    ];
 
     /**
      * Property values
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'range' => false,
         'total' => false,
         'contenttype' => false,
         'data' => false,
-    );
+    ];
 
     /**
      * Return the message type.
@@ -87,14 +88,14 @@ class Horde_ActiveSync_Message_AirSyncBaseFileAttachment extends Horde_ActiveSyn
             // PHP when using base64-encode as STREAM_FILTER_READ. feof() is
             // apparently not safe to use when using STREAM_FILTER_READ.
             if (is_resource($data)) {
-                 $temp = fopen('php://temp/', 'r+');
-                 $filter = stream_filter_prepend($temp, 'convert.base64-encode', STREAM_FILTER_WRITE);
-                 rewind($data);
-                 while (!feof($data)) {
-                     fwrite($temp, fread($data, 8192));
-                 }
-                 stream_filter_remove($filter);
-                 rewind($temp);
+                $temp = fopen('php://temp/', 'r+');
+                $filter = stream_filter_prepend($temp, 'convert.base64-encode', STREAM_FILTER_WRITE);
+                rewind($data);
+                while (!feof($data)) {
+                    fwrite($temp, fread($data, 8192));
+                }
+                stream_filter_remove($filter);
+                rewind($temp);
                 return $temp;
             } else {
                 return base64_encode($data);

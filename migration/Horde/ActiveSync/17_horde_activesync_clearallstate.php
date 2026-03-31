@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Migration that clears all collection state when moving between version 1 and 2
  */

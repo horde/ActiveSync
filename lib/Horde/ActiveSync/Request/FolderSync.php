@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Request_FolderSync::
  *
@@ -31,16 +32,16 @@
  */
 class Horde_ActiveSync_Request_FolderSync extends Horde_ActiveSync_Request_Base
 {
-    const ADD     = 'FolderHierarchy:Add';
-    const REMOVE  = 'FolderHierarchy:Remove';
-    const UPDATE  = 'FolderHierarchy:Update';
+    public const ADD     = 'FolderHierarchy:Add';
+    public const REMOVE  = 'FolderHierarchy:Remove';
+    public const UPDATE  = 'FolderHierarchy:Update';
 
     /* SYNC Status response codes */
-    const STATUS_SUCCESS     = 1;
-    const STATUS_SERVERERROR = 6;
-    const STATUS_TIMEOUT     = 8;
-    const STATUS_KEYMISM     = 9;
-    const STATUS_PROTOERR    = 10;
+    public const STATUS_SUCCESS     = 1;
+    public const STATUS_SERVERERROR = 6;
+    public const STATUS_TIMEOUT     = 8;
+    public const STATUS_KEYMISM     = 9;
+    public const STATUS_PROTOERR    = 10;
 
     /**
      * Handle the request.
@@ -134,28 +135,30 @@ class Horde_ActiveSync_Request_FolderSync extends Horde_ActiveSync_Request_Base
                 }
 
                 switch ($element[Horde_ActiveSync_Wbxml::EN_TAG]) {
-                case SYNC_ADD:
-                case SYNC_MODIFY:
-                    $new_server = $importer->importFolderChange(
-                        $folder->serverid, $folder->displayname);
-                    $serverid = $new_server->serverid;
-                    if (!in_array($serverid, $seenfolders)) {
-                        $seenfolders[] = $serverid;
-                        $collections->updateFolderInHierarchy($folder);
-                    } else {
-                        $collections->updateFolderInHierarchy($folder, true);
-                    }
-                    $changes = true;
-                    break;
-                case SYNC_REMOVE:
-                    $importer->importFolderDeletion($folder->serverid);
-                    if (($sid = array_search($folder->serverid, $seenfolders)) !== false) {
-                        unset($seenfolders[$sid]);
-                        $seenfolders = array_values($seenfolders);
-                    }
-                    $collections->deleteFolderFromHierarchy($folder->serverid);
-                    $changes = true;
-                    break;
+                    case SYNC_ADD:
+                    case SYNC_MODIFY:
+                        $new_server = $importer->importFolderChange(
+                            $folder->serverid,
+                            $folder->displayname
+                        );
+                        $serverid = $new_server->serverid;
+                        if (!in_array($serverid, $seenfolders)) {
+                            $seenfolders[] = $serverid;
+                            $collections->updateFolderInHierarchy($folder);
+                        } else {
+                            $collections->updateFolderInHierarchy($folder, true);
+                        }
+                        $changes = true;
+                        break;
+                    case SYNC_REMOVE:
+                        $importer->importFolderDeletion($folder->serverid);
+                        if (($sid = array_search($folder->serverid, $seenfolders)) !== false) {
+                            unset($seenfolders[$sid]);
+                            $seenfolders = array_values($seenfolders);
+                        }
+                        $collections->deleteFolderFromHierarchy($folder->serverid);
+                        $changes = true;
+                        break;
                 }
             }
 
@@ -178,7 +181,7 @@ class Horde_ActiveSync_Request_FolderSync extends Horde_ActiveSync_Request_Base
         $exporter->setChanges($collections->getHierarchyChanges());
 
         // Perform the actual sync operation
-        while($exporter->sendNextChange());
+        while ($exporter->sendNextChange());
 
         // Output our WBXML reply now
         $this->_encoder->StartWBXML();

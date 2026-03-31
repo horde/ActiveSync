@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Copyright 2015-2017 Horde LLC (http://www.horde.org/)
+ * Copyright 2015-2026 Horde LLC (http://www.horde.org/)
  *
  * See the enclosed file LICENSE for license information. If you
  * did not receive this file, see http://www.horde.org/licenses/gpl.
@@ -25,8 +26,7 @@
  * @package   ActiveSync
  * @since     2.29.0
  */
-class Horde_ActiveSync_Mime_Iterator
-implements Countable, Iterator
+class Horde_ActiveSync_Mime_Iterator implements Countable, Iterator
 {
     /**
      * Flag to ignore parts that EAS considers attachments.
@@ -78,32 +78,32 @@ implements Countable, Iterator
         $id = $part->getMimeId();
         $mime_type = $part->getType();
         switch ($mime_type) {
-        case 'text/plain':
-            if (!($this->_part->findBody('plain') == $id)) {
-                return true;
-            }
-            return false;
-        case 'text/html':
-            if (!($this->_part->findBody('html') == $id)) {
-                return true;
-            }
-            return false;
-        case 'application/pkcs7-signature':
-        case 'application/x-pkcs7-signature':
-            return false;
+            case 'text/plain':
+                if (!($this->_part->findBody('plain') == $id)) {
+                    return true;
+                }
+                return false;
+            case 'text/html':
+                if (!($this->_part->findBody('html') == $id)) {
+                    return true;
+                }
+                return false;
+            case 'application/pkcs7-signature':
+            case 'application/x-pkcs7-signature':
+                return false;
         }
 
-        list($ptype,) = explode('/', $mime_type, 2);
+        [$ptype, ] = explode('/', $mime_type, 2);
 
         switch ($ptype) {
-        case 'message':
-            return in_array($mime_type, array('message/rfc822', 'message/disposition-notification'));
+            case 'message':
+                return in_array($mime_type, ['message/rfc822', 'message/disposition-notification']);
 
-        case 'multipart':
-            return false;
+            case 'multipart':
+                return false;
 
-        default:
-            return true;
+            default:
+                return true;
         }
     }
 
@@ -118,7 +118,7 @@ implements Countable, Iterator
      */
     protected function _allowRecursion($part)
     {
-        return !in_array($part->getType(), array('message/rfc822'));
+        return !in_array($part->getType(), ['message/rfc822']);
     }
 
     /* RecursiveIterator methods. */
@@ -151,14 +151,14 @@ implements Countable, Iterator
 
         $out = $this->_state->current->getPartByIndex($this->_state->index++);
         if ($out) {
-            if (($this->_ignoreAttachments && $this->_isAttachment($out)) ||
-                !$this->_allowRecursion($this->_state->current)) {
+            if (($this->_ignoreAttachments && $this->_isAttachment($out))
+                || !$this->_allowRecursion($this->_state->current)) {
                 return $this->next();
             }
-            $this->_state->recurse[] = array(
+            $this->_state->recurse[] = [
                 $this->_state->current,
-                $this->_state->index
-            );
+                $this->_state->index,
+            ];
 
             $this->_state->current = $out;
             $this->_state->index = 0;
@@ -175,10 +175,10 @@ implements Countable, Iterator
      */
     public function rewind()
     {
-        $this->_state = new stdClass;
+        $this->_state = new stdClass();
         $this->_state->current = $this->_part;
         $this->_state->index = 0;
-        $this->_state->recurse = array();
+        $this->_state->recurse = [];
     }
 
     /**

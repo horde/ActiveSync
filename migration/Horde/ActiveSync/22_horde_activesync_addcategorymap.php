@@ -1,4 +1,5 @@
 <?php
+
 class HordeActiveSyncAddcategorymap extends Horde_Db_Migration_Base
 {
     public function up()
@@ -6,7 +7,8 @@ class HordeActiveSyncAddcategorymap extends Horde_Db_Migration_Base
         $this->addColumn(
             'horde_activesync_mailmap',
             'sync_category',
-            'string');
+            'string'
+        );
     }
 
     public function down()

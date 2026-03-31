@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Wbxml_Encoder::
  *
@@ -39,7 +40,7 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
      *
      * @var array
      */
-    private $_stack = array();
+    private $_stack = [];
 
     /**
      * Flag to indicate if we are outputing multipart binary data during e.g.,
@@ -54,7 +55,7 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
      *
      * @var array
      */
-    protected $_parts = array();
+    protected $_parts = [];
 
     /**
      * Private stream when handling multipart output
@@ -71,18 +72,18 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
      *
      * @return Horde_ActiveSync_Wbxml_Encoder
      */
-    function __construct($output, $log_level = self::LOG_PROTOCOL)
+    public function __construct($output, $log_level = self::LOG_PROTOCOL)
     {
         parent::__construct($output, $log_level);
 
         /* reverse-map the DTD */
-        $dtd = array();
+        $dtd = [];
         foreach ($this->_dtd['namespaces'] as $nsid => $nsname) {
             $dtd['namespaces'][$nsname] = $nsid;
         }
 
         foreach ($this->_dtd['codes'] as $cp => $value) {
-            $dtd['codes'][$cp] = array();
+            $dtd['codes'][$cp] = [];
             foreach ($this->_dtd['codes'][$cp] as $tagid => $tagname) {
                 $dtd['codes'][$cp][$tagname] = $tagid;
             }
@@ -129,7 +130,7 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
      */
     public function startTag($tag, $attributes = false, $output_empty = false)
     {
-        $stackelem = array();
+        $stackelem = [];
         if (!$output_empty) {
             $stackelem['tag'] = $tag;
             $stackelem['attributes'] = $attributes;
@@ -178,7 +179,7 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
                 $this->_tempStream->add($header);
                 $this->_stream->rewind();
                 $this->_tempStream->add($this->_stream);
-                foreach($this->_parts as $bp) {
+                foreach ($this->_parts as $bp) {
                     if (is_resource($bp)) {
                         rewind($bp);
                         $this->_tempStream->add($bp);
@@ -253,7 +254,8 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
             if (!$this->_stack[$i]['sent']) {
                 $this->_startTag(
                     $this->_stack[$i]['tag'],
-                    $this->_stack[$i]['attributes']);
+                    $this->_stack[$i]['attributes']
+                );
                 $this->_stack[$i]['sent'] = true;
             }
         }
@@ -271,7 +273,7 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
         $this->_logStartTag($tag, $attributes, $output_empty);
         $mapping = $this->_getMapping($tag);
         if (!$mapping) {
-           return false;
+            return false;
         }
 
         /* Make sure we don't need to switch code pages */
@@ -301,8 +303,8 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
     private function _content($content, $opaque = false)
     {
         if (!is_resource($content)) {
-            if ($this->_logLevel == self::LOG_PROTOCOL &&
-                ($l = Horde_String::length($content)) > self::LOG_MAXCONTENT) {
+            if ($this->_logLevel == self::LOG_PROTOCOL
+                && ($l = Horde_String::length($content)) > self::LOG_MAXCONTENT) {
                 $this->_logContent(sprintf('[%d bytes of content]', $l));
             } else {
                 $this->_logContent($content);
@@ -336,7 +338,8 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
      * Output the endtag
      *
      */
-    private function _endTag() {
+    private function _endTag()
+    {
         $this->_logEndTag();
         $this->_outByte(self::END);
     }
@@ -416,7 +419,7 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
      */
     private function _getMapping($tag)
     {
-        $mapping = array();
+        $mapping = [];
         $split = $this->_splitTag($tag);
         if (isset($split['ns'])) {
             $cp = $this->_dtd['namespaces'][$split['ns']];
@@ -445,12 +448,12 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
         $pos = strpos($fulltag, chr(58)); // chr(58) == ':'
         if ($pos) {
             $ns = substr($fulltag, 0, $pos);
-            $tag = substr($fulltag, $pos+1);
+            $tag = substr($fulltag, $pos + 1);
         } else {
             $tag = $fulltag;
         }
 
-        $ret = array();
+        $ret = [];
         if ($ns) {
             $ret['ns'] = $ns;
         }

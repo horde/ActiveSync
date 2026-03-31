@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Driver_Base::
  *
@@ -27,27 +28,27 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      *  We use the @ modifiers to avoid issues in the (fringe) case of
      *  having email folders named like contacts etc...
      */
-    const APPOINTMENTS_FOLDER_UID = '@Calendar@';
-    const CONTACTS_FOLDER_UID     = '@Contacts@';
-    const TASKS_FOLDER_UID        = '@Tasks@';
-    const NOTES_FOLDER_UID        = '@Notes@';
-    const SPECIAL_SENT   = 'sent';
-    const SPECIAL_SPAM   = 'spam';
-    const SPECIAL_TRASH  = 'trash';
-    const SPECIAL_DRAFTS = 'drafts';
-    const SPECIAL_INBOX  = 'inbox';
+    public const APPOINTMENTS_FOLDER_UID = '@Calendar@';
+    public const CONTACTS_FOLDER_UID     = '@Contacts@';
+    public const TASKS_FOLDER_UID        = '@Tasks@';
+    public const NOTES_FOLDER_UID        = '@Notes@';
+    public const SPECIAL_SENT   = 'sent';
+    public const SPECIAL_SPAM   = 'spam';
+    public const SPECIAL_TRASH  = 'trash';
+    public const SPECIAL_DRAFTS = 'drafts';
+    public const SPECIAL_INBOX  = 'inbox';
 
     protected $_auth;
     protected $_connector;
     protected $_imap;
-    protected $_displayMap = array(
+    protected $_displayMap = [
         self::APPOINTMENTS_FOLDER_UID => 'Calendar',
         self::CONTACTS_FOLDER_UID     => 'Contacts',
         self::TASKS_FOLDER_UID        => 'Tasks',
         self::NOTES_FOLDER_UID        => 'Notes',
-    );
+    ];
 
-    public function __construct($params = array())
+    public function __construct($params = [])
     {
         parent::__construct($params);
         $this->_connector = $params['connector'];
@@ -61,7 +62,7 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      * @param string $id  The server's folder id.
      * @param string $parent  The folder's parent, if needed.
      */
-    public function deleteFolder($id, $parent = Horde_ActiveSync::FOLDER_ROOT) {  }
+    public function deleteFolder($id, $parent = Horde_ActiveSync::FOLDER_ROOT) {}
 
     /**
      * Change a folder on the server.
@@ -118,7 +119,7 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      */
     public function statFolder($id, $parent = 0, $mod = null)
     {
-        $folder = array();
+        $folder = [];
         $folder['id'] = $id;
         $folder['mod'] = empty($mod) ? $id : $mod;
         $folder['parent'] = $parent;
@@ -137,61 +138,65 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
     public function getFolder($id)
     {
         switch ($id) {
-        case self::APPOINTMENTS_FOLDER_UID:
-            $folder = $this->_buildNonMailFolder(
-                $id,
-                0,
-                Horde_ActiveSync::FOLDER_TYPE_APPOINTMENT,
-                $this->_displayMap[self::APPOINTMENTS_FOLDER_UID]);
-            break;
-        case self::CONTACTS_FOLDER_UID:
-            $folder = $this->_buildNonMailFolder(
-               $id,
-               0,
-               Horde_ActiveSync::FOLDER_TYPE_CONTACT,
-               $this->_displayMap[self::CONTACTS_FOLDER_UID]);
-            break;
-        case self::TASKS_FOLDER_UID:
-            $folder = $this->_buildNonMailFolder(
-                $id,
-                0,
-                Horde_ActiveSync::FOLDER_TYPE_TASK,
-                $this->_displayMap[self::TASKS_FOLDER_UID]);
-            break;
-        case self::NOTES_FOLDER_UID:
-            $folder = $this->_buildNonMailFolder(
-                $id,
-                0,
-                Horde_ActiveSync::FOLDER_TYPE_NOTE,
-                $this->_displayMap[self::NOTES_FOLDER_UID]);
+            case self::APPOINTMENTS_FOLDER_UID:
+                $folder = $this->_buildNonMailFolder(
+                    $id,
+                    0,
+                    Horde_ActiveSync::FOLDER_TYPE_APPOINTMENT,
+                    $this->_displayMap[self::APPOINTMENTS_FOLDER_UID]
+                );
                 break;
-        default:
-            // Must be a mail folder
-            $folders = $this->_getMailFolders();
-            foreach ($folders as $folder) {
-                if ($folder->_serverid == $id) {
-                    return $folder;
+            case self::CONTACTS_FOLDER_UID:
+                $folder = $this->_buildNonMailFolder(
+                    $id,
+                    0,
+                    Horde_ActiveSync::FOLDER_TYPE_CONTACT,
+                    $this->_displayMap[self::CONTACTS_FOLDER_UID]
+                );
+                break;
+            case self::TASKS_FOLDER_UID:
+                $folder = $this->_buildNonMailFolder(
+                    $id,
+                    0,
+                    Horde_ActiveSync::FOLDER_TYPE_TASK,
+                    $this->_displayMap[self::TASKS_FOLDER_UID]
+                );
+                break;
+            case self::NOTES_FOLDER_UID:
+                $folder = $this->_buildNonMailFolder(
+                    $id,
+                    0,
+                    Horde_ActiveSync::FOLDER_TYPE_NOTE,
+                    $this->_displayMap[self::NOTES_FOLDER_UID]
+                );
+                break;
+            default:
+                // Must be a mail folder
+                $folders = $this->_getMailFolders();
+                foreach ($folders as $folder) {
+                    if ($folder->_serverid == $id) {
+                        return $folder;
+                    }
                 }
-            }
-            throw new Horde_ActiveSync_Exception('Folder ' . $id . ' unknown');
+                throw new Horde_ActiveSync_Exception('Folder ' . $id . ' unknown');
         }
 
         return $folder;
     }
 
-   /**
-     * Return the list of mail server folders.
-     *
-     * @return array  An array of Horde_ActiveSync_Message_Folder objects.
-     */
+    /**
+      * Return the list of mail server folders.
+      *
+      * @return array  An array of Horde_ActiveSync_Message_Folder objects.
+      */
     protected function _getMailFolders()
     {
         if (empty($this->_imap)) {
-            $this->_mailFolders = array($this->_buildDummyFolder(self::SPECIAL_INBOX));
+            $this->_mailFolders = [$this->_buildDummyFolder(self::SPECIAL_INBOX)];
             $this->_mailFolders[] = $this->_buildDummyFolder(self::SPECIAL_TRASH);
             $this->_mailFolders[] = $this->_buildDummyFolder(self::SPECIAL_SENT);
         } else {
-            $folders = array();
+            $folders = [];
             $imap_folders = $this->_imap->getMailboxes();
 
             // Build the folder tree, making sure the lower levels are
@@ -219,10 +224,10 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
     protected function _getFolderUidForBackendId($sid, $type = null, $old_id = null)
     {
         switch ($sid) {
-        case 'INBOX':
-            return '519422f1-4c5c-4547-946a-1701c0a8015f';
-        default:
-            return $sid;
+            case 'INBOX':
+                return '519422f1-4c5c-4547-946a-1701c0a8015f';
+            default:
+                return $sid;
         }
     }
 
@@ -256,9 +261,11 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
         try {
             $specialFolders = $this->_imap->getSpecialMailboxes();
         } catch (Horde_ActiveSync_Exception $e) {
-            $this->_logger->err(sprintf(
-                'Problem retrieving special folders: %s',
-                $e->getMessage())
+            $this->_logger->err(
+                sprintf(
+                    'Problem retrieving special folders: %s',
+                    $e->getMessage()
+                )
             );
             throw $e;
         }
@@ -266,30 +273,30 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
         // Check for known, supported special folders.
         foreach ($specialFolders as $key => $value) {
             if (!is_array($value)) {
-                $value = array($value);
+                $value = [$value];
             }
             foreach ($value as $mailbox) {
                 if (!is_null($mailbox)) {
                     switch ($key) {
-                    case self::SPECIAL_SENT:
-                        if ($sid == $mailbox->value) {
-                            $folder->type = Horde_ActiveSync::FOLDER_TYPE_SENTMAIL;
-                            return $folder;
-                        }
-                        break;
-                    case self::SPECIAL_TRASH:
-                        if ($sid == $mailbox->value) {
-                            $folder->type = Horde_ActiveSync::FOLDER_TYPE_WASTEBASKET;
-                            return $folder;
-                        }
-                        break;
+                        case self::SPECIAL_SENT:
+                            if ($sid == $mailbox->value) {
+                                $folder->type = Horde_ActiveSync::FOLDER_TYPE_SENTMAIL;
+                                return $folder;
+                            }
+                            break;
+                        case self::SPECIAL_TRASH:
+                            if ($sid == $mailbox->value) {
+                                $folder->type = Horde_ActiveSync::FOLDER_TYPE_WASTEBASKET;
+                                return $folder;
+                            }
+                            break;
 
-                    case self::SPECIAL_DRAFTS:
-                        if ($sid == $mailbox->value) {
-                            $folder->type = Horde_ActiveSync::FOLDER_TYPE_DRAFTS;
-                            return $folder;
-                        }
-                        break;
+                        case self::SPECIAL_DRAFTS:
+                            if ($sid == $mailbox->value) {
+                                $folder->type = Horde_ActiveSync::FOLDER_TYPE_DRAFTS;
+                                return $folder;
+                            }
+                            break;
                     }
                 }
             }
@@ -330,7 +337,7 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
     public function getFolderList()
     {
         $folderlist = $this->getFolders();
-        $folders = array();
+        $folders = [];
         foreach ($folderlist as $f) {
             $folders[] = $this->statFolder($f->serverid, $f->parentid, $f->displayname, $f->_serverid);
         }
@@ -349,9 +356,9 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
             try {
                 $supported = $this->_connector->listApis();
             } catch (Exception $e) {
-                return array();
+                return [];
             }
-            $folders = array();
+            $folders = [];
             if (array_search('calendar', $supported) !== false) {
                 $folders[] = $this->getFolder(self::APPOINTMENTS_FOLDER_UID);
             }
@@ -372,7 +379,7 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
                 try {
                     $folders = array_merge($folders, $this->_getMailFolders());
                 } catch (Horde_ActiveSync_Exception $e) {
-                    return array();
+                    return [];
                 }
             }
             $this->_folders = $folders;
@@ -402,51 +409,51 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
     public function getServerChanges($folderId, $from_ts, $to_ts, $cutoffdate, $ping)
     {
 
-        $changes = array(
-            'add' => array(),
-            'delete' => array(),
-            'modify' => array()
-        );
+        $changes = [
+            'add' => [],
+            'delete' => [],
+            'modify' => [],
+        ];
         if ($from_ts == 0 && !$ignoreFirstSync) {
-            $startstamp = (int)$cutoffdate;
+            $startstamp = (int) $cutoffdate;
             $endstamp = time() + 32140800; //60 * 60 * 24 * 31 * 12 == one year
             $changes['add'] = $this->_connector->listUids($startstamp, $endstamp);
         } else {
             $changes = $this->_connector->getChanges($folderId, $from_ts, $to_ts);
         }
 
-        $results = array();
+        $results = [];
         foreach ($changes['add'] as $add) {
-            $results[] = array(
+            $results[] = [
                 'id' => $add,
                 'type' => Horde_ActiveSync::CHANGE_TYPE_CHANGE,
-                'flags' => Horde_ActiveSync::FLAG_NEWMESSAGE);
+                'flags' => Horde_ActiveSync::FLAG_NEWMESSAGE];
         }
 
         // For CLASS_EMAIL, all changes are a change in flags.
         if ($folder->collectionClass() == Horde_ActiveSync::CLASS_EMAIL) {
             $flags = $folder->flags();
             foreach ($changes['modify'] as $uid) {
-                $results[] = array(
+                $results[] = [
                     'id' => $uid,
                     'type' => Horde_ActiveSync::CHANGE_TYPE_FLAGS,
-                    'flags' => $flags[$uid]
-                );
+                    'flags' => $flags[$uid],
+                ];
             }
         } else {
             foreach ($changes['modify'] as $change) {
-                $results[] = array(
+                $results[] = [
                     'id' => $change,
-                    'type' => Horde_ActiveSync::CHANGE_TYPE_CHANGE
-                );
+                    'type' => Horde_ActiveSync::CHANGE_TYPE_CHANGE,
+                ];
             }
         }
 
         // Server Deletions
         foreach ($changes['delete'] as $deleted) {
-            $results[] = array(
+            $results[] = [
                 'id' => $deleted,
-                'type' => Horde_ActiveSync::CHANGE_TYPE_DELETE);
+                'type' => Horde_ActiveSync::CHANGE_TYPE_DELETE];
         }
 
         return $results;
@@ -463,7 +470,7 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
     public function statMessage($folderId, $id)
     {
         $mod = $this->_connector->getActionTimestamp($id, 'modify');
-        $message = array();
+        $message = [];
         $message['id'] = $id;
         $message['mod'] = $mod;
         $message['flags'] = 1;
@@ -488,7 +495,7 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      */
     public function getMessage($folderid, $id, array $collection)
     {
-        return $this->_connector->export($id, array());
+        return $this->_connector->export($id, []);
     }
 
     /**
@@ -528,7 +535,7 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      *
      * @return array|boolean    A stat array if successful, otherwise false.
      */
-    public function changeMessage($folderid, $id, Horde_ActiveSync_Message_Base $message, $device) {  }
+    public function changeMessage($folderid, $id, Horde_ActiveSync_Message_Base $message, $device) {}
 
     /**
      * Set the read (\seen) flag on the specified message.
@@ -538,7 +545,7 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      * @param integer $flag     The value to set the flag to.
      * @deprecated Will be removed in 3.0, use changeMessage() instead.
      */
-    public function setReadFlag($folderid, $uid, $flag) {  }
+    public function setReadFlag($folderid, $uid, $flag) {}
 
     /**
      * Sends the email represented by the rfc822 string received by the client.
@@ -554,8 +561,12 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      * @return boolean
      */
     public function sendMail(
-        $rfc822, $forward = null, $reply = null, $parent = null, $save = true)
-    {
+        $rfc822,
+        $forward = null,
+        $reply = null,
+        $parent = null,
+        $save = true
+    ) {
         return true;
     }
 
@@ -573,7 +584,7 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      * array('content-type' => {the content-type of the attachement},
      *       'data'         => {the raw attachment data})
      */
-    public function getAttachment($name, array $options = array()) {  }
+    public function getAttachment($name, array $options = []) {}
 
     /**
      * Return the specified attachement data for an ITEMOPERATIONS request.
@@ -582,7 +593,7 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      *
      * @return
      */
-    public function itemOperationsGetAttachmentData($filereference) {  }
+    public function itemOperationsGetAttachmentData($filereference) {}
 
     /**
      * Returnmail object represented by the specified longid. Used to fetch
@@ -594,7 +605,7 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      *
      * @return Horde_ActiveSync_Message_Base  The message requested.
      */
-    public function itemOperationsFetchMailbox($longid, array $bodyprefs, $mimesupport) {  }
+    public function itemOperationsFetchMailbox($longid, array $bodyprefs, $mimesupport) {}
 
     /**
      * Return a documentlibrary item.
@@ -606,7 +617,7 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      *
      * @return array An array containing the data and metadata:
      */
-    public function itemOperationsGetDocumentLibraryLink($linkid, $cred) {  }
+    public function itemOperationsGetDocumentLibraryLink($linkid, $cred) {}
 
     /**
      * Build a stat structure for an email message.
@@ -618,10 +629,10 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      */
     public function statMailMessage($folderid, $id)
     {
-        return array(
+        return [
             'id' => $id,
             'mod' => 0,
-            'flags' => false);
+            'flags' => false];
     }
 
     /**
@@ -647,7 +658,7 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      *                               set to false otherwise. @since 3.0
      * @return array  An array of provisionable properties and values.
      */
-    public function getCurrentPolicy() {  }
+    public function getCurrentPolicy() {}
 
     /**
      * Return settings from the backend for a SETTINGS request.
@@ -657,7 +668,7 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      *
      * @return array  The requested settings.
      */
-    public function getSettings(array $settings, $device) {  }
+    public function getSettings(array $settings, $device) {}
 
     /**
      * Set backend settings from a SETTINGS request.
@@ -669,14 +680,14 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      *   array('oof' => Horde_ActiveSync_Request_Settings::STATUS_SUCCESS,
      *         'deviceinformation' => Horde_ActiveSync_Request_Settings::STATUS_SUCCESS) {  }
      */
-    public function setSettings(array $settings, $device) {  }
+    public function setSettings(array $settings, $device) {}
 
     /**
      * Return properties for an AUTODISCOVER request.
      *
      * @return array  An array of properties.
      */
-    public function autoDiscover() {  }
+    public function autoDiscover() {}
 
     /**
      * Attempt to guess a username based on the email address passed from
@@ -686,7 +697,7 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      *
      * @return string  The username to use to authenticate to Horde with.
      */
-    public function getUsernameFromEmail($email) {  }
+    public function getUsernameFromEmail($email) {}
 
     /**
      * Handle ResolveRecipient requests
@@ -718,14 +729,14 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      *   - availability: (string)  A EAS style FB string.
      *   - picture: (Horde_ActiveSync_Message_ResolveRecipientsPicture)
      */
-    public function resolveRecipient($type, $search, array $options = array()) {  }
+    public function resolveRecipient($type, $search, array $options = []) {}
 
     /**
      * Returns the provisioning support for the current request.
      *
      * @return mixed  The value of the provisiong support flag.
      */
-    public function getProvisioning() {  }
+    public function getProvisioning() {}
 
     /**
      * Hanlde meeting responses.
@@ -741,7 +752,7 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      * @return string  The UID of any created calendar entries, otherwise false.
      * @throws Horde_ActiveSync_Exception, Horde_Exception_NotFound
      */
-    public function meetingResponse(array $response) {  }
+    public function meetingResponse(array $response) {}
 
     /**
      * Request freebusy information from the server
@@ -752,16 +763,16 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      * @return mixed boolean|array  The FB information, if available. Otherwise
      *                              false.
      */
-    public function getFreebusy($user, array $options = array()) { }
+    public function getFreebusy($user, array $options = []) {}
 
     public function getHeartbeatConfig()
     {
-        return array(
+        return [
             'heartbeatmin' => 60,
             'heartbeatmax' => 2700,
             'heartbeatdefault' => 480,
             'deviceping' => true,
-            'waitinterval' => 10);
+            'waitinterval' => 10];
     }
 
 }

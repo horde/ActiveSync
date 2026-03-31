@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_Document:: Defines an object representing a single
  * DOCUMENTLIBRARY object, as returned in an ITEMOPERATIONS response.
@@ -26,23 +27,23 @@ class Horde_ActiveSync_Message_Document extends Horde_ActiveSync_Message_AirSync
      *
      * @var array
      */
-    protected $_mapping = array(
-        Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_RANGE   => array(self::KEY_ATTRIBUTE => 'range'),
-        Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_TOTAL   => array(self::KEY_ATTRIBUTE => 'total'),
-        Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_DATA    => array(self::KEY_ATTRIBUTE => 'data'),
-        Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_VERSION => array(self::KEY_ATTRIBUTE => 'version', self::KEY_TYPE => self::TYPE_DATE),
-    );
+    protected $_mapping = [
+        Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_RANGE   => [self::KEY_ATTRIBUTE => 'range'],
+        Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_TOTAL   => [self::KEY_ATTRIBUTE => 'total'],
+        Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_DATA    => [self::KEY_ATTRIBUTE => 'data'],
+        Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_VERSION => [self::KEY_ATTRIBUTE => 'version', self::KEY_TYPE => self::TYPE_DATE],
+    ];
 
     /**
      * Property values
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'range'   => false,
         'total'   => false,
         'data'    => false,
-        'version' => false
-    );
+        'version' => false,
+    ];
 
 }

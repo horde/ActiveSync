@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Credentials
  *
@@ -36,7 +37,7 @@ class Horde_ActiveSync_Credentials
      *
      * @var array
      */
-    protected $_credentials = array();
+    protected $_credentials = [];
 
     /**
      * Const'r
@@ -58,21 +59,21 @@ class Horde_ActiveSync_Credentials
     public function __get($property)
     {
         switch ($property) {
-        case 'username':
-            return !empty($this->_credentials[0]) ? $this->_credentials[0] : false;
-        case 'password':
-            return !empty($this->_credentials[1]) ? $this->_credentials[1] : false;
+            case 'username':
+                return !empty($this->_credentials[0]) ? $this->_credentials[0] : false;
+            case 'password':
+                return !empty($this->_credentials[1]) ? $this->_credentials[1] : false;
         }
     }
 
     public function __set($property, $value)
     {
         switch ($property) {
-        case 'username':
-            $this->_credentials[0] = $value;
-            break;
-        default:
-            throw new InvalidArgumentException(sprintf('%s is not a valid property.', $property));
+            case 'username':
+                $this->_credentials[0] = $value;
+                break;
+            default:
+                throw new InvalidArgumentException(sprintf('%s is not a valid property.', $property));
         }
     }
 
@@ -89,9 +90,9 @@ class Horde_ActiveSync_Credentials
             // Standard case, PHP was passed the needed authentication info.
             $user = $serverVars['PHP_AUTH_USER'];
             $pass = $serverVars['PHP_AUTH_PW'];
-        } elseif (!empty($serverVars['HTTP_AUTHORIZATION']) ||
-                  !empty($serverVars['REDIRECT_HTTP_AUTHORIZATION']) ||
-                  !empty($serverVars['Authorization'])) {
+        } elseif (!empty($serverVars['HTTP_AUTHORIZATION'])
+                  || !empty($serverVars['REDIRECT_HTTP_AUTHORIZATION'])
+                  || !empty($serverVars['Authorization'])) {
             $authorization = !empty($serverVars['HTTP_AUTHORIZATION'])
                 ? $serverVars['HTTP_AUTHORIZATION']
                 : (!empty($serverVars['REDIRECT_HTTP_AUTHORIZATION'])
@@ -99,7 +100,7 @@ class Horde_ActiveSync_Credentials
                      : $serverVars['Authorization']);
             $hash = base64_decode(str_replace('Basic ', '', $authorization));
             if (strpos($hash, ':') !== false) {
-                list($user, $pass) = explode(':', $hash, 2);
+                [$user, $pass] = explode(':', $hash, 2);
             }
         } else {
             // Might be using X509 certs, so won't have the Auth headers or a
@@ -110,7 +111,7 @@ class Horde_ActiveSync_Credentials
             }
         }
 
-        return array($user, $pass);
+        return [$user, $pass];
     }
 
 }

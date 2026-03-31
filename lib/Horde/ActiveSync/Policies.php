@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Policies::
  *
@@ -21,55 +22,55 @@
 class Horde_ActiveSync_Policies
 {
     /* Policy configuration keys */
-    const POLICY_PIN                            = 'DevicePasswordEnabled';
-    const POLICY_AEFVALUE                       = 'MaxInactivityTimeDeviceLock';
-    const POLICY_CODEFREQ                       = 'codewordfrequency';
-    const POLICY_MINLENGTH                      = 'MinDevicePasswordLength';
-    const POLICY_COMPLEXITY                     = 'AlphanumericDevicePasswordRequired';
+    public const POLICY_PIN                            = 'DevicePasswordEnabled';
+    public const POLICY_AEFVALUE                       = 'MaxInactivityTimeDeviceLock';
+    public const POLICY_CODEFREQ                       = 'codewordfrequency';
+    public const POLICY_MINLENGTH                      = 'MinDevicePasswordLength';
+    public const POLICY_COMPLEXITY                     = 'AlphanumericDevicePasswordRequired';
     // 12.0
     //const POLICY_PWDRECOVERY                    = 'passwordrecovery';
     //const POLICY_PWDEXPIRATION                  = 'passwordexpiration';
     //const POLICY_PWDHISTORY                     = 'passwordhistory';
-    const POLICY_ENCRYPTION                     = 'DeviceEncryptionEnabled';
-    const POLICY_ATC                            = 'AttachmentsEnabled';
-    const POLICY_MAXATCSIZE                     = 'MaxAttachmentSize';
-    const POLICY_MAXFAILEDATTEMPTS              = 'MaxDevicePasswordFailedAttempts';
+    public const POLICY_ENCRYPTION                     = 'DeviceEncryptionEnabled';
+    public const POLICY_ATC                            = 'AttachmentsEnabled';
+    public const POLICY_MAXATCSIZE                     = 'MaxAttachmentSize';
+    public const POLICY_MAXFAILEDATTEMPTS              = 'MaxDevicePasswordFailedAttempts';
     // 12.1
-    const POLICY_ALLOW_SDCARD                   = 'AllowStorageCard';
-    const POLICY_ALLOW_CAMERA                   = 'AllowCamera';
-    const POLICY_ALLOW_SMS                      = 'AllowTextMessaging';
-    const POLICY_ALLOW_WIFI                     = 'AllowWiFi';
-    const POLICY_ALLOW_BLUETOOTH                = 'AllowBluetooth';
-    const POLICY_ALLOW_POPIMAP                  = 'AllowPOPIMAPEmail';
-    const POLICY_ALLOW_BROWSER                  = 'AllowBrowser';
-    const POLICY_REQUIRE_SMIME_SIGNED           = 'RequireSignedSMIMEMessages';
-    const POLICY_REQUIRE_SMIME_ENCRYPTED        = 'RequireEncryptedSMIMEMessages';
-    const POLICY_DEVICE_ENCRYPTION              = 'RequireDeviceEncryption';
-    const POLICY_ALLOW_HTML                     = 'AllowHTMLEmail';
-    const POLICY_MAX_EMAIL_AGE                  = 'MaxEmailAgeFilter';
+    public const POLICY_ALLOW_SDCARD                   = 'AllowStorageCard';
+    public const POLICY_ALLOW_CAMERA                   = 'AllowCamera';
+    public const POLICY_ALLOW_SMS                      = 'AllowTextMessaging';
+    public const POLICY_ALLOW_WIFI                     = 'AllowWiFi';
+    public const POLICY_ALLOW_BLUETOOTH                = 'AllowBluetooth';
+    public const POLICY_ALLOW_POPIMAP                  = 'AllowPOPIMAPEmail';
+    public const POLICY_ALLOW_BROWSER                  = 'AllowBrowser';
+    public const POLICY_REQUIRE_SMIME_SIGNED           = 'RequireSignedSMIMEMessages';
+    public const POLICY_REQUIRE_SMIME_ENCRYPTED        = 'RequireEncryptedSMIMEMessages';
+    public const POLICY_DEVICE_ENCRYPTION              = 'RequireDeviceEncryption';
+    public const POLICY_ALLOW_HTML                     = 'AllowHTMLEmail';
+    public const POLICY_MAX_EMAIL_AGE                  = 'MaxEmailAgeFilter';
     //const POLICY_MAX_EMAIL_TRUNCATION           = 'maxemailtruncation';
     //const POLICY_MAX_HTMLEMAIL_TRUNCATION       = 'maxhtmlemailtruncation';
-    const POLICY_ROAMING_NOPUSH                 = 'RequireManualSyncWhenRoaming';
+    public const POLICY_ROAMING_NOPUSH                 = 'RequireManualSyncWhenRoaming';
 
     /**
      * Default policy values used in both 12.0 and 12.1
      *
      * @var array
      */
-    protected $_defaults = array(
+    protected $_defaults = [
         self::POLICY_PIN               => false,
         self::POLICY_AEFVALUE          => '0',
         self::POLICY_MAXFAILEDATTEMPTS => '5',
         self::POLICY_CODEFREQ          => '0',
         self::POLICY_MINLENGTH         => '5',
-    );
+    ];
 
     /**
      * Deafaults for 12.0 policies.
      *
      * @var array
      */
-    protected $_defaults_twelve = array(
+    protected $_defaults_twelve = [
         self::POLICY_ATC               => '1',
         self::POLICY_ENCRYPTION        => '0',
         self::POLICY_MAXATCSIZE        => '5000000',
@@ -77,14 +78,14 @@ class Horde_ActiveSync_Policies
         //self::POLICY_PWDRECOVERY       => '0',
         //self::POLICY_PWDEXPIRATION     => '0',
         //self::POLICY_PWDHISTORY        => '0',
-    );
+    ];
 
     /**
      * Defaults used only in 12.1
      *
      * @var array
      */
-    protected $_defaults_twelveone = array(
+    protected $_defaults_twelveone = [
         // 1 == Allow/Yes, 0 == Disallow/No.
         self::POLICY_ALLOW_SDCARD            => '1',
         self::POLICY_ALLOW_CAMERA            => '1',
@@ -99,7 +100,7 @@ class Horde_ActiveSync_Policies
         self::POLICY_ALLOW_HTML              => '1',
         self::POLICY_MAX_EMAIL_AGE           => '0',
         self::POLICY_ROAMING_NOPUSH          => '0',
-    );
+    ];
 
     /**
      * Explicitly set policies.
@@ -127,7 +128,7 @@ class Horde_ActiveSync_Policies
      *
      * @var array
      */
-    protected $_policies = array();
+    protected $_policies = [];
 
     /**
      * Const'r
@@ -137,10 +138,10 @@ class Horde_ActiveSync_Policies
      * @param array $policies                          The policy array.
      */
     public function __construct(
-        Horde_ActiveSync_Wbxml_Encoder $encoder = null,
+        ?Horde_ActiveSync_Wbxml_Encoder $encoder = null,
         $version = Horde_ActiveSync::VERSION_TWELVEONE,
-        array $policies = array())
-    {
+        array $policies = []
+    ) {
         $this->_encoder = $encoder;
         if ($version >= Horde_ActiveSync::VERSION_TWELVE) {
             $this->_defaults = array_merge($this->_defaults, $this->_defaults_twelve);
@@ -177,8 +178,8 @@ class Horde_ActiveSync_Policies
         // Validate the version against the required policies.
         if ($this->_version < Horde_ActiveSync::VERSION_TWELVEONE) {
             foreach ($policies as $key => $value) {
-                if (!empty($this->_defaults_twelveone[$key]) &&
-                    $this->_defaults_twelveone[$key] != $value) {
+                if (!empty($this->_defaults_twelveone[$key])
+                    && $this->_defaults_twelveone[$key] != $value) {
 
                     return false;
                 }
@@ -207,10 +208,10 @@ class Horde_ActiveSync_Policies
             . '</characteristic>';
         if ($policies[self::POLICY_PIN]) {
             $xml .= '<characteristic type="Registry">'
-            .   '<characteristic type="HKLM\Comm\Security\Policy\LASSD\AE\{50C13377-C66D-400C-889E-C316FC4AB374}">'
-            .   '<parm name="AEFrequencyType" value="' . (!empty($policies[self::POLICY_AEFVALUE]) ? 1 : 0) . '"/>'
-            .   (!empty($policies[self::POLICY_AEFVALUE]) ? '<parm name="AEFrequencyValue" value="' . $policies[self::POLICY_AEFVALUE] . '"/>' : '')
-            .   '</characteristic>';
+            . '<characteristic type="HKLM\Comm\Security\Policy\LASSD\AE\{50C13377-C66D-400C-889E-C316FC4AB374}">'
+            . '<parm name="AEFrequencyType" value="' . (!empty($policies[self::POLICY_AEFVALUE]) ? 1 : 0) . '"/>'
+            . (!empty($policies[self::POLICY_AEFVALUE]) ? '<parm name="AEFrequencyValue" value="' . $policies[self::POLICY_AEFVALUE] . '"/>' : '')
+            . '</characteristic>';
 
             if (!empty($policies[self::POLICY_MAXFAILEDATTEMPTS])) {
                 $xml .= '<characteristic type="HKLM\Comm\Security\Policy\LASSD"><parm name="DeviceWipeThreshold" value="' . $policies[self::POLICY_MAXFAILEDATTEMPTS] . '"/></characteristic>';
@@ -287,10 +288,10 @@ class Horde_ActiveSync_Policies
         if ($nodefault && $value == $this->_defaults[$policy]) {
             return;
         }
-	if ($value === false) {
+        if ($value === false) {
             $value = 0;
         } elseif ($value === true) {
-           $value = 1;
+            $value = 1;
         }
         $this->_encoder->startTag('Provision:' . $policy);
         $this->_encoder->content($value);

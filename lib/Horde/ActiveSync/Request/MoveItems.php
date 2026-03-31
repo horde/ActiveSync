@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Request_MoveItems::
  *
@@ -32,26 +33,26 @@
 class Horde_ActiveSync_Request_MoveItems extends Horde_ActiveSync_Request_Base
 {
     /* Wbxml constants */
-    const MOVES    = 'Move:Moves';
-    const MOVE     = 'Move:Move';
-    const SRCMSGID = 'Move:SrcMsgId';
-    const SRCFLDID = 'Move:SrcFldId';
-    const DSTFLDID = 'Move:DstFldId';
-    const RESPONSE = 'Move:Response';
-    const STATUS   = 'Move:Status';
-    const DSTMSGID = 'Move:DstMsgId';
+    public const MOVES    = 'Move:Moves';
+    public const MOVE     = 'Move:Move';
+    public const SRCMSGID = 'Move:SrcMsgId';
+    public const SRCFLDID = 'Move:SrcFldId';
+    public const DSTFLDID = 'Move:DstFldId';
+    public const RESPONSE = 'Move:Response';
+    public const STATUS   = 'Move:Status';
+    public const DSTMSGID = 'Move:DstMsgId';
 
     /* keys */
-    const SRCMSGKEY = 'srcmsgid';
-    const SRCFLDKEY = 'srcfldid';
-    const DSTFLDKEY = 'dstfldid';
+    public const SRCMSGKEY = 'srcmsgid';
+    public const SRCFLDKEY = 'srcfldid';
+    public const DSTFLDKEY = 'dstfldid';
 
     /* Status */
-    const STATUS_INVALID_SRC  = 1;
-    const STATUS_INVALID_DST  = 2;
-    const STATUS_SUCCESS      = 3;
-    const STATUS_SAME_FOLDERS = 4;
-    const STATUS_SERVER_ERR   = 5;
+    public const STATUS_INVALID_SRC  = 1;
+    public const STATUS_INVALID_DST  = 2;
+    public const STATUS_SUCCESS      = 3;
+    public const STATUS_SAME_FOLDERS = 4;
+    public const STATUS_SERVER_ERR   = 5;
 
     /**
      * Handle request
@@ -65,13 +66,14 @@ class Horde_ActiveSync_Request_MoveItems extends Horde_ActiveSync_Request_Base
             throw new Horde_ActiveSync_Exception('Protocol Error');
         }
 
-        $moves = array();
+        $moves = [];
         while ($this->_decoder->getElementStartTag(self::MOVE)) {
-            $move = array();
+            $move = [];
             if ($this->_decoder->getElementStartTag(self::SRCMSGID)) {
                 $move[self::SRCMSGKEY] = $this->_decoder->getElementContent();
-                if(!$this->_decoder->getElementEndTag())
+                if (!$this->_decoder->getElementEndTag()) {
                     break;
+                }
             }
             if ($this->_decoder->getElementStartTag(self::SRCFLDID)) {
                 $move[self::SRCFLDKEY] = $this->_decoder->getElementContent();
@@ -116,8 +118,9 @@ class Horde_ActiveSync_Request_MoveItems extends Horde_ActiveSync_Request_Base
                 $importer->init($this->_state, $move[self::SRCFLDKEY]);
                 try {
                     $move_res = $importer->importMessageMove(
-                        array($move[self::SRCMSGKEY]),
-                        $move[self::DSTFLDKEY]);
+                        [$move[self::SRCMSGKEY]],
+                        $move[self::DSTFLDKEY]
+                    );
                     if (empty($move_res['results'][$move[self::SRCMSGKEY]])) {
                         // Hm. Specs say to send INVALID_SRC if the msg is
                         // already moved, or no longer present, but that seems

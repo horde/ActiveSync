@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Unit tests for the horde backend
  *
@@ -6,13 +7,18 @@
  * @category Horde
  * @package ActiveSync
  */
-namespace Horde\ActiveSync;
-use PHPUnit\Framework\TestCase;
-use \Horde_ActiveSync_Message_Contact;
-use \Horde_ActiveSync_Device;
-use \Horde_ActiveSync;
-use \Horde_ActiveSync_SyncCache;
 
+namespace Horde\ActiveSync;
+
+use Horde_Test_Case as TestCase;
+use Horde_ActiveSync_Message_Contact;
+use Horde_ActiveSync_Device;
+use Horde_ActiveSync;
+use Horde_ActiveSync_SyncCache;
+
+/**
+ * @coversNothing
+ */
 class ContactTest extends TestCase
 {
     /**
@@ -42,49 +48,49 @@ class ContactTest extends TestCase
     public function testPictureGhosted()
     {
         $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
-        $fixture = array(
+        $fixture = [
             'deviceType' => 'iPod',
-            'userAgent' => 'Apple-iPod2C1/803.148'
-        );
+            'userAgent' => 'Apple-iPod2C1/803.148',
+        ];
         $device = new Horde_ActiveSync_Device($state, $fixture);
-        $contact = new Horde_ActiveSync_Message_Contact(array('device' => $device));
-        $contact->setSupported(array());
+        $contact = new Horde_ActiveSync_Message_Contact(['device' => $device]);
+        $contact->setSupported([]);
         $this->assertEquals(true, $contact->isGhosted('picture'));
 
-        $fixture = array(
+        $fixture = [
             'deviceType' => 'iPad',
             'userAgent' => 'Apple-iPad3C6/1202.435',
-            'properties' => array(Horde_ActiveSync_Device::OS => 'iOS 8.1.1')
-        );
+            'properties' => [Horde_ActiveSync_Device::OS => 'iOS 8.1.1'],
+        ];
         $device = new Horde_ActiveSync_Device($state, $fixture);
-        $contact = new Horde_ActiveSync_Message_Contact(array('device' => $device));
-        $contact->setSupported(array());
+        $contact = new Horde_ActiveSync_Message_Contact(['device' => $device]);
+        $contact->setSupported([]);
         $this->assertEquals(false, $contact->isGhosted('picture'));
     }
 
     public function testMissingSupportedTag()
     {
         $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
-        $fixture = array(
+        $fixture = [
             'userAgent' => 'Apple-iPad3C6/1202.435',
-            'properties' => array(Horde_ActiveSync_Device::OS => 'iOS 8.1.1')
-        );
+            'properties' => [Horde_ActiveSync_Device::OS => 'iOS 8.1.1'],
+        ];
         $device = new Horde_ActiveSync_Device($state, $fixture);
-        $contact = new Horde_ActiveSync_Message_Contact(array('device' => $device));
-        $contact->setSupported(array());
+        $contact = new Horde_ActiveSync_Message_Contact(['device' => $device]);
+        $contact->setSupported([]);
         $this->assertEquals(false, $contact->isGhosted('fileas'));
     }
 
     public function testEmptySupportedTag()
     {
         $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
-        $fixture = array(
+        $fixture = [
             'userAgent' => 'Apple-iPad3C6/1202.435',
-            'properties' => array(Horde_ActiveSync_Device::OS => 'iOS 8.1.1')
-        );
+            'properties' => [Horde_ActiveSync_Device::OS => 'iOS 8.1.1'],
+        ];
         $device = new Horde_ActiveSync_Device($state, $fixture);
-        $contact = new Horde_ActiveSync_Message_Contact(array('device' => $device));
-        $contact->setSupported(array(Horde_ActiveSync::ALL_GHOSTED));
+        $contact = new Horde_ActiveSync_Message_Contact(['device' => $device]);
+        $contact->setSupported([Horde_ActiveSync::ALL_GHOSTED]);
         $this->assertEquals(true, $contact->isGhosted('fileas'));
     }
 

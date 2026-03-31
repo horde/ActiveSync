@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Unit tests for Horde_ActiveSync_Utils::
  *
@@ -6,10 +7,15 @@
  * @category Horde
  * @package ActiveSync
  */
-namespace Horde\ActiveSync;
-use PHPUnit\Framework\TestCase;
-use \Horde_ActiveSync_Utils;
 
+namespace Horde\ActiveSync;
+
+use Horde_Test_Case as TestCase;
+use Horde_ActiveSync_Utils;
+
+/**
+ * @coversNothing
+ */
 class UtilsTest extends TestCase
 {
     public function testBase64Uri()
@@ -17,7 +23,7 @@ class UtilsTest extends TestCase
         /* Settings Request for versions >= 12.1 */
         $url = 'oBEJBBBOaW5lMkVDN0VDMEJCNTREBAGJpmIHQW5kcm9pZAcBAA==';
         $results = Horde_ActiveSync_Utils::decodeBase64($url);
-        $fixture = array(
+        $fixture = [
             'ProtVer' => '16.0',
             'Cmd' => 'Settings',
             'Locale' => 1033,
@@ -25,8 +31,8 @@ class UtilsTest extends TestCase
             'PolicyKey' => 1655081217,
             'DeviceType' => 'Android',
             'SaveInSent' => false,
-            'AcceptMultiPart' => false
-        );
+            'AcceptMultiPart' => false,
+        ];
         $this->assertEquals($fixture, $results);
 
         /* Smart Forward */
@@ -35,7 +41,7 @@ class UtilsTest extends TestCase
         $results['PolicyKey'] = sprintf('%u', $results['PolicyKey']);
 
         // This is binary data, test it separately.
-        $fixture = array(
+        $fixture = [
             'ProtVer' => '12.1',
             'Cmd' => 'SmartForward',
             'Locale' => 1033,
@@ -45,36 +51,36 @@ class UtilsTest extends TestCase
             'ItemId' => '119281',
             'CollectionId' => 'INBOX',
             'AcceptMultiPart' => false,
-            'SaveInSent' => true
-        );
+            'SaveInSent' => true,
+        ];
         $this->assertEquals($fixture, $results);
     }
 
     public function testBodyTypePref()
     {
         $this->markTestIncomplete('Needs refactoring.');
-        $fixture = array(
-            'bodyprefs' => array(Horde_ActiveSync::BODYPREF_TYPE_HTML => true, Horde_ActiveSync::BODYPREF_TYPE_MIME => true)
-        );
+        $fixture = [
+            'bodyprefs' => [Horde_ActiveSync::BODYPREF_TYPE_HTML => true, Horde_ActiveSync::BODYPREF_TYPE_MIME => true],
+        ];
 
         $this->assertEquals(Horde_ActiveSync::BODYPREF_TYPE_HTML, Horde_ActiveSync_Utils_Mime::getBodyTypePref($fixture));
         $this->assertEquals(Horde_ActiveSync::BODYPREF_TYPE_MIME, Horde_ActiveSync_Utils_Mime::getBodyTypePref($fixture, false));
 
-        $fixture = array(
-            'bodyprefs' => array(Horde_ActiveSync::BODYPREF_TYPE_HTML => true)
-        );
+        $fixture = [
+            'bodyprefs' => [Horde_ActiveSync::BODYPREF_TYPE_HTML => true],
+        ];
         $this->assertEquals(Horde_ActiveSync::BODYPREF_TYPE_HTML, Horde_ActiveSync_Utils_Mime::getBodyTypePref($fixture));
         $this->assertEquals(Horde_ActiveSync::BODYPREF_TYPE_HTML, Horde_ActiveSync_Utils_Mime::getBodyTypePref($fixture, false));
 
-        $fixture = array(
-            'bodyprefs' => array(Horde_ActiveSync::BODYPREF_TYPE_HTML => true)
-        );
+        $fixture = [
+            'bodyprefs' => [Horde_ActiveSync::BODYPREF_TYPE_HTML => true],
+        ];
         $this->assertEquals(Horde_ActiveSync::BODYPREF_TYPE_HTML, Horde_ActiveSync_Utils_Mime::getBodyTypePref($fixture));
         $this->assertEquals(Horde_ActiveSync::BODYPREF_TYPE_HTML, Horde_ActiveSync_Utils_Mime::getBodyTypePref($fixture, false));
 
-        $fixture = array(
-            'bodyprefs' => array(Horde_ActiveSync::BODYPREF_TYPE_MIME => true)
-        );
+        $fixture = [
+            'bodyprefs' => [Horde_ActiveSync::BODYPREF_TYPE_MIME => true],
+        ];
         $this->assertEquals(Horde_ActiveSync::BODYPREF_TYPE_MIME, Horde_ActiveSync_Utils_Mime::getBodyTypePref($fixture));
         $this->assertEquals(Horde_ActiveSync::BODYPREF_TYPE_MIME, Horde_ActiveSync_Utils_Mime::getBodyTypePref($fixture, false));
     }

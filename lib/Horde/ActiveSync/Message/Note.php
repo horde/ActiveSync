@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_Note::
  *
@@ -25,39 +26,38 @@
  */
 class Horde_ActiveSync_Message_Note extends Horde_ActiveSync_Message_Base
 {
+    public const SUBJECT          = 'Notes:Subject';
+    public const MESSAGECLASS     = 'Notes:MessageClass';
+    public const LASTMODIFIEDDATE = 'Notes:LastModifiedDate';
+    public const CATEGORIES       = 'Notes:Categories';
+    public const CATEGORY         = 'Notes:Category';
 
-    const SUBJECT          = 'Notes:Subject';
-    const MESSAGECLASS     = 'Notes:MessageClass';
-    const LASTMODIFIEDDATE = 'Notes:LastModifiedDate';
-    const CATEGORIES       = 'Notes:Categories';
-    const CATEGORY         = 'Notes:Category';
-
-    public $categories = array();
+    public $categories = [];
 
     /**
      * Property mapping
      *
      * @var array
      */
-    protected $_mapping = array (
-        Horde_ActiveSync::AIRSYNCBASE_BODY      => array(self::KEY_ATTRIBUTE => 'body', self::KEY_TYPE => 'Horde_ActiveSync_Message_AirSyncBaseBody'),
-        self::CATEGORIES                        => array(self::KEY_ATTRIBUTE => 'categories', self::KEY_VALUES => self::CATEGORY),
-        self::LASTMODIFIEDDATE                  => array(self::KEY_ATTRIBUTE => 'lastmodified', self::KEY_TYPE => self::TYPE_DATE),
-        self::MESSAGECLASS                      => array(self::KEY_ATTRIBUTE => 'messageclass'),
-        self::SUBJECT                           => array(self::KEY_ATTRIBUTE => 'subject')
-    );
+    protected $_mapping =  [
+        Horde_ActiveSync::AIRSYNCBASE_BODY      => [self::KEY_ATTRIBUTE => 'body', self::KEY_TYPE => 'Horde_ActiveSync_Message_AirSyncBaseBody'],
+        self::CATEGORIES                        => [self::KEY_ATTRIBUTE => 'categories', self::KEY_VALUES => self::CATEGORY],
+        self::LASTMODIFIEDDATE                  => [self::KEY_ATTRIBUTE => 'lastmodified', self::KEY_TYPE => self::TYPE_DATE],
+        self::MESSAGECLASS                      => [self::KEY_ATTRIBUTE => 'messageclass'],
+        self::SUBJECT                           => [self::KEY_ATTRIBUTE => 'subject'],
+    ];
 
     /**
      * Property values.
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'body'         => false,
         'lastmodified' => false,
         'messageclass' => false,
-        'subject'      => false
-    );
+        'subject'      => false,
+    ];
 
     /**
      * Return this object's folder class

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
@@ -16,8 +17,7 @@
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */
-class Horde_ActiveSync_Imap_Strategy_Plain
-extends Horde_ActiveSync_Imap_Strategy_Base
+class Horde_ActiveSync_Imap_Strategy_Plain extends Horde_ActiveSync_Imap_Strategy_Base
 {
     /**
      * Return a folder object containing all IMAP server change information.
@@ -29,9 +29,12 @@ extends Horde_ActiveSync_Imap_Strategy_Base
      */
     public function getChanges(array $options)
     {
-        $this->_logger->meta(sprintf(
-            'NO CONDSTORE or per mailbox MODSEQ. minuid: %s, total_messages: %s',
-            $this->_folder->minuid(), $this->_status['messages'])
+        $this->_logger->meta(
+            sprintf(
+                'NO CONDSTORE or per mailbox MODSEQ. minuid: %s, total_messages: %s',
+                $this->_folder->minuid(),
+                $this->_status['messages']
+            )
         );
 
         $query = new Horde_Imap_Client_Search_Query();
@@ -46,7 +49,7 @@ extends Horde_ActiveSync_Imap_Strategy_Base
             $search_ret = $this->_imap_ob->search(
                 $this->_mbox,
                 $query,
-                array('results' => array(Horde_Imap_Client::SEARCH_RESULTS_MATCH))
+                ['results' => [Horde_Imap_Client::SEARCH_RESULTS_MATCH]]
             );
         } catch (Horde_Imap_Client_Exception $e) {
             $this->_logger->err($e->getMessage());
@@ -56,7 +59,7 @@ extends Horde_ActiveSync_Imap_Strategy_Base
         $cnt = ($search_ret['count'] / Horde_ActiveSync_Imap_Adapter::MAX_FETCH) + 1;
         $query = new Horde_Imap_Client_Fetch_Query();
         $query->flags();
-        $flags = array();
+        $flags = [];
         for ($i = 0; $i <= $cnt; $i++) {
             $ids = new Horde_Imap_Client_Ids(
                 array_slice(
@@ -69,19 +72,19 @@ extends Horde_ActiveSync_Imap_Strategy_Base
                 $fetch_ret = $this->_imap_ob->fetch(
                     $this->_mbox,
                     $query,
-                    array('ids' => $ids)
+                    ['ids' => $ids]
                 );
             } catch (Horde_Imap_Client_Exception $e) {
                 $this->_logger->err($e->getMessage());
                 throw new Horde_ActiveSync_Exception($e);
             }
             foreach ($fetch_ret as $uid => $data) {
-                $flags[$uid] = array(
-                    'read' => (array_search(Horde_Imap_Client::FLAG_SEEN, $data->getFlags()) !== false) ? 1 : 0
-                );
+                $flags[$uid] = [
+                    'read' => (array_search(Horde_Imap_Client::FLAG_SEEN, $data->getFlags()) !== false) ? 1 : 0,
+                ];
                 if (($options['protocolversion']) > Horde_ActiveSync::VERSION_TWOFIVE) {
-                    $flags[$uid]['flagged'] =
-                    (array_search(Horde_Imap_Client::FLAG_FLAGGED, $data->getFlags()) !== false) ? 1 : 0;
+                    $flags[$uid]['flagged']
+                    = (array_search(Horde_Imap_Client::FLAG_FLAGGED, $data->getFlags()) !== false) ? 1 : 0;
                 }
             }
         }
@@ -92,7 +95,7 @@ extends Horde_ActiveSync_Imap_Strategy_Base
             $this->_imap_ob->vanished(
                 $this->_mbox,
                 null,
-                array('ids' => new Horde_Imap_Client_Ids($this->_folder->messages()))
+                ['ids' => new Horde_Imap_Client_Ids($this->_folder->messages())]
             )->ids
         );
 

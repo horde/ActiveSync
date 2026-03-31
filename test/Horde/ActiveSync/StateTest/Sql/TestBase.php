@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @author Michael J Rubinsky <mrubinsk@horde.org>
  * @license http://www.horde.org/licenses/gpl GPLv2
@@ -6,9 +7,10 @@
  * @package Horde_ActiveSync
  * @subpackage UnitTests
  */
+
 namespace Horde\ActiveSync\StateTest\Sql;
+
 use Horde\ActiveSync\StateTest\TestBase as ExtTestBase;
-use PHPUnit\Framework\Attributes\Depends;
 
 class TestBase extends ExtTestBase
 {
@@ -21,128 +23,170 @@ class TestBase extends ExtTestBase
         $this->_testGetDeviceInfo();
     }
 
-    #[Depends('testGetDeviceInfo')]
+    /**
+     * @depends testGetDeviceInfo
+     */
     public function testCacheInitialState()
     {
         $this->_testCacheInitialState();
     }
 
-    #[Depends('testCacheInitialState')]
+    /**
+     * @depends testCacheInitialState
+     */
     public function testCacheFolders()
     {
         $this->_testCacheFolders();
     }
 
-    #[Depends('testCacheFolders')]
+    /**
+     * @depends testCacheFolders
+     */
     public function testCacheDataRestrictFields()
     {
         $this->_testCacheDataRestrictFields();
     }
 
-    #[Depends('testCacheFolders')]
+    /**
+     * @depends testCacheFolders
+     */
     public function testCacheFoldersPersistence()
     {
         $this->_testCacheFoldersPersistence();
     }
 
-    #[Depends('testCacheFolders')]
+    /**
+     * @depends testCacheFolders
+     */
     public function testCacheUniqueness()
     {
         $this->_testCacheUniqueness();
     }
 
-    #[Depends('testCacheFolders')]
+    /**
+     * @depends testCacheFolders
+     */
     public function testCacheCollections()
     {
         $this->_testCacheCollections();
     }
 
-    #[Depends('testCacheCollections')]
+    /**
+     * @depends testCacheCollections
+     */
     public function testLoadCollectionsFromCache()
     {
         return $this->_testLoadCollectionsFromCache();
     }
 
-    #[Depends('testCacheCollections')]
+    /**
+     * @depends testCacheCollections
+     */
     public function testGettingImapId()
     {
         $this->_testGettingImapId();
     }
 
-    #[Depends('testCacheCollections')]
+    /**
+     * @depends testCacheCollections
+     */
     public function testCacheRefreshCollections()
     {
         $this->_testCacheRefreshCollections();
     }
 
-    #[Depends('testCacheCollections')]
+    /**
+     * @depends testCacheCollections
+     */
     public function testCollectionsFromCache()
     {
         $this->_testCollectionsFromCache();
     }
 
-    #[Depends('testCacheFolders')]
+    /**
+     * @depends testCacheFolders
+     */
     public function testGetStateWithNoState()
     {
         $this->_testGetStateWithNoState();
         $this->markTestIncomplete();
     }
 
-    #[Depends('testCollectionsFromCache')]
+    /**
+     * @depends testCollectionsFromCache
+     */
     public function testCollectionHandler()
     {
         $this->_testCollectionHandler();
     }
 
-    #[Depends('testCollectionHandler')]
+    /**
+     * @depends testCollectionHandler
+     */
     public function testPartialSyncWithChangedCollections()
     {
         $this->_testPartialSyncWithChangedCollections();
     }
 
-    #[Depends('testCollectionHandler')]
+    /**
+     * @depends testCollectionHandler
+     */
     public function testPartialSyncWithUnchangedCollections()
     {
         $this->_testPartialSyncWithUnchangedCollections();
     }
 
-    #[Depends('testCollectionHandler')]
+    /**
+     * @depends testCollectionHandler
+     */
     public function testMissingCollections()
     {
         $this->_testMissingCollections();
     }
 
-    #[Depends('testCollectionHandler')]
+    /**
+     * @depends testCollectionHandler
+     */
     public function testChangingFilterType()
     {
         $this->_testChangingFilterType();
     }
 
-    #[Depends('testCollectionHandler')]
+    /**
+     * @depends testCollectionHandler
+     */
     public function testEmptyResponse()
     {
         $this->_testEmptyResponse();
     }
 
-    #[Depends('testGetDeviceInfo')]
+    /**
+     * @depends testGetDeviceInfo
+     */
     public function testHierarchy()
     {
         $this->_testHierarchy();
     }
 
-    #[Depends('testGetDeviceInfo')]
+    /**
+     * @depends testGetDeviceInfo
+     */
     public function testListDevices()
     {
         $this->_testListDevices();
     }
 
-    #[Depends('testListDevices')]
+    /**
+     * @depends testListDevices
+     */
     public function testPolicyKeys()
     {
         $this->_testPolicyKeys();
     }
 
-    #[Depends('testCollectionHandler')]
+    /**
+     * @depends testCollectionHandler
+     */
     public function testPartialSyncWithOnlyChangedHbInterval()
     {
         $this->_testPartialSyncWithOnlyChangedHbInterval();
@@ -158,13 +202,14 @@ class TestBase extends ExtTestBase
                 . '/Horde_ActiveSync/migration';
             error_reporting(E_ALL | E_STRICT);
         }
-        self::$logger = \Horde\ActiveSync\Test\Helpers\LogHelper::createMockLogger();
+        self::$logger = new Horde_Test_Log();
         if (self::$db) {
             self::$migrator = new Horde_Db_Migration_Migrator(
                 self::$db,
-                self::$logger,
-                array('migrationsPath' => $dir,
-                      'schemaTableName' => 'horde_activesync_schema_info'));
+                self::$logger->getLogger(),
+                ['migrationsPath' => $dir,
+                    'schemaTableName' => 'horde_activesync_schema_info']
+            );
             self::$migrator->up();
         }
     }
@@ -187,7 +232,7 @@ class TestBase extends ExtTestBase
             $this->markTestSkipped(self::$reason);
             return;
         }
-        self::$state = new Horde_ActiveSync_State_Sql(array('db' => self::$db));
+        self::$state = new Horde_ActiveSync_State_Sql(['db' => self::$db]);
         $backend = $this->getMockBuilder('Horde_ActiveSync_Driver_Base')->disableOriginalConstructor()->getMock();
         $backend->expects($this->any())->method('getUser')->will($this->returnValue('mike'));
         self::$state->setBackend($backend);

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Mime::
  *
@@ -61,8 +62,8 @@ class Horde_ActiveSync_Mime
     public function __get($property)
     {
         switch ($property) {
-        case 'base':
-            return $this->_base;
+            case 'base':
+                return $this->_base;
         }
         return $this->_base->property;
     }
@@ -77,8 +78,8 @@ class Horde_ActiveSync_Mime
      */
     public function __call($method, array $params)
     {
-        if (is_callable(array($this->_base, $method))) {
-            return call_user_func_array(array($this->_base, $method), $params);
+        if (is_callable([$this->_base, $method])) {
+            return call_user_func_array([$this->_base, $method], $params);
         }
 
         throw new InvalidArgumentException();
@@ -121,36 +122,36 @@ class Horde_ActiveSync_Mime
     public function isAttachment($id, $mime_type)
     {
         switch ($mime_type) {
-        case 'text/plain':
-            if (!($this->_base->findBody('plain') == $id)) {
-                return true;
-            }
-            return false;
-        case 'text/html':
-            if (!($this->_base->findBody('html') == $id)) {
-                return true;
-            }
-            return false;
-        case 'application/pkcs7-signature':
-        case 'application/x-pkcs7-signature':
-            return false;
+            case 'text/plain':
+                if (!($this->_base->findBody('plain') == $id)) {
+                    return true;
+                }
+                return false;
+            case 'text/html':
+                if (!($this->_base->findBody('html') == $id)) {
+                    return true;
+                }
+                return false;
+            case 'application/pkcs7-signature':
+            case 'application/x-pkcs7-signature':
+                return false;
         }
 
         if ($this->_base->getPart($id)->getDisposition() == 'attachment') {
             return true;
         }
 
-        list($ptype,) = explode('/', $mime_type, 2);
+        [$ptype, ] = explode('/', $mime_type, 2);
 
         switch ($ptype) {
-        case 'message':
-            return in_array($mime_type, array('message/rfc822', 'message/disposition-notification'));
+            case 'message':
+                return in_array($mime_type, ['message/rfc822', 'message/disposition-notification']);
 
-        case 'multipart':
-            return false;
+            case 'multipart':
+                return false;
 
-        default:
-            return true;
+            default:
+                return true;
         }
     }
 
@@ -181,7 +182,7 @@ class Horde_ActiveSync_Mime
      *
      * @return boolean  True if message is S/MIME signed, otherwise false.
      */
-    public function isSigned(Horde_Mime_Part $mime = null)
+    public function isSigned(?Horde_Mime_Part $mime = null)
     {
         if (empty($mime)) {
             $mime = $this->_base;
@@ -213,14 +214,14 @@ class Horde_ActiveSync_Mime
      * @todo For 3.0, combine into one method with self::isSigned() and return
      *       a bitmask result.
      */
-    public function isEncrypted(Horde_Mime_Part $mime = null)
+    public function isEncrypted(?Horde_Mime_Part $mime = null)
     {
         if (empty($mime)) {
             $mime = $this->_base;
         }
 
-        if ($mime->getType() == 'application/pkcs7-mime' ||
-            $mime->getType() == 'application/x-pkcs7-mime') {
+        if ($mime->getType() == 'application/pkcs7-mime'
+            || $mime->getType() == 'application/x-pkcs7-mime') {
             return true;
         }
 
@@ -250,10 +251,10 @@ class Horde_ActiveSync_Mime
         $iterator = new Horde_ActiveSync_Mime_Iterator($this->_base, true);
         foreach ($iterator as $val) {
             $id = $val->getMimeId();
-            if (($val->getPrimaryType() == 'text') &&
-                ((intval($id) === 1) || !$this->getMimeId()) &&
-                (is_null($subtype) || ($val->getSubType() == $subtype)) &&
-                !$this->isAttachment($id, $val->getType())) {
+            if (($val->getPrimaryType() == 'text')
+                && ((intval($id) === 1) || !$this->getMimeId())
+                && (is_null($subtype) || ($val->getSubType() == $subtype))
+                && !$this->isAttachment($id, $val->getType())) {
                 return $id;
             }
         }

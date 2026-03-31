@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Connector_Exporter_Sync::
  *
@@ -21,13 +22,12 @@
  */
 class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connector_Exporter_Base
 {
-
     /**
      * Local cache of object ids we have already dealt with.
      *
      * @var array
      */
-    protected $_seenObjects = array();
+    protected $_seenObjects = [];
 
     /**
      * Currently syncing collection.
@@ -72,13 +72,14 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
     {
         // Just ignore any messages that are not from this collection and
         // prevent sending the same object twice in one request.
-        if ($message->getClass() != $this->_currentCollection['class'] ||
-            in_array($id, $this->_seenObjects)) {
+        if ($message->getClass() != $this->_currentCollection['class']
+            || in_array($id, $this->_seenObjects)) {
             $this->_logger->notice(sprintf(
                 'IGNORING message %s since it looks like it was already sent or does not belong to this collection. Class: %s, CurrentClass: %s',
                 $id,
                 $message->getClass(),
-                $this->_currentCollection['class']));
+                $this->_currentCollection['class']
+            ));
             return;
         }
 
@@ -88,7 +89,8 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
                 'IGNORING message %s since it looks like it does not contain any data. Class: %s, CurrentClass: %s',
                 $id,
                 $message->getClass(),
-                $this->_currentCollection['class']));
+                $this->_currentCollection['class']
+            ));
             return;
         }
 
@@ -140,9 +142,7 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
      *
      * @param Horde_ActiveSync_Message_Base $message  The message
      */
-    public function messageMove($message)
-    {
-    }
+    public function messageMove($message) {}
 
     /**
      * Send the SYNC_ADD response for any items added from the client.
@@ -207,16 +207,16 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
 
         foreach ($collection['modifiedids'] as $serverid) {
             switch ($collection['class']) {
-            case Horde_ActiveSync::CLASS_CALENDAR:
-                if (empty($collection['atchash'][$serverid])) {
-                    continue 2;
-                }
-                break;
-            case Horde_ActiveSync::CLASS_EMAIL:
-                if (empty($collection['conversations'])) {
-                    continue 2;
-                }
-                break;
+                case Horde_ActiveSync::CLASS_CALENDAR:
+                    if (empty($collection['atchash'][$serverid])) {
+                        continue 2;
+                    }
+                    break;
+                case Horde_ActiveSync::CLASS_EMAIL:
+                    if (empty($collection['conversations'])) {
+                        continue 2;
+                    }
+                    break;
             }
             // Start SYNC_MODIFY
             $this->_encoder->startTag(Horde_ActiveSync::SYNC_MODIFY);
@@ -304,9 +304,11 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
                 $this->_encoder->endTag();
                 $this->_encoder->endTag();
             } catch (Horde_Exception_NotFound $e) {
-                $this->_logger->err(sprintf(
-                    'Unable to fetch %s',
-                    $fetch_id)
+                $this->_logger->err(
+                    sprintf(
+                        'Unable to fetch %s',
+                        $fetch_id
+                    )
                 );
                 $this->_encoder->startTag(Horde_ActiveSync::SYNC_FETCH);
                 $this->_encoder->startTag(Horde_ActiveSync::SYNC_SERVERENTRYID);
@@ -385,9 +387,9 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
     protected function _sendEas16MessageResponse($serverid, $collection)
     {
         // @todo. Use a Exporter_Sync_Response_[Mail|Message|] object.
-        if ($this->_as->device->version >= Horde_ActiveSync::VERSION_SIXTEEN &&
-            $collection['class'] == Horde_ActiveSync::CLASS_CALENDAR &&
-            !empty($collection['atchash'][$serverid])) {
+        if ($this->_as->device->version >= Horde_ActiveSync::VERSION_SIXTEEN
+            && $collection['class'] == Horde_ActiveSync::CLASS_CALENDAR
+            && !empty($collection['atchash'][$serverid])) {
 
             $this->_encoder->startTag(Horde_ActiveSync::SYNC_SERVERENTRYID);
             $this->_encoder->content($serverid);
@@ -404,9 +406,9 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
             $this->_encoder->startTag(Horde_ActiveSync::SYNC_DATA);
             $msg->encodeStream($this->_encoder);
             $this->_encoder->endTag();
-        } elseif ($this->_as->device->version >= Horde_ActiveSync::VERSION_SIXTEEN &&
-                  $collection['class'] == Horde_ActiveSync::CLASS_EMAIL &&
-                  !empty($collection['conversations'][$serverid])) {
+        } elseif ($this->_as->device->version >= Horde_ActiveSync::VERSION_SIXTEEN
+                  && $collection['class'] == Horde_ActiveSync::CLASS_EMAIL
+                  && !empty($collection['conversations'][$serverid])) {
             $msg = $this->_as->messageFactory('Mail');
             $msg->conversationid = $collection['conversations'][$serverid][0];
             $msg->conversationindex = $collection['conversations'][$serverid][1];
@@ -435,11 +437,11 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
         if (!is_array($change)) {
             // This is an initial sync, so we know it's a CHANGE_TYPE_CHANGE
             // and a new message with no flag changes etc...
-            $change = array(
+            $change = [
                 'id' => $change,
                 'type' => Horde_ActiveSync::CHANGE_TYPE_CHANGE,
-                'flags' => Horde_ActiveSync::FLAG_NEWMESSAGE
-            );
+                'flags' => Horde_ActiveSync::FLAG_NEWMESSAGE,
+            ];
         }
 
         return $change;
@@ -473,89 +475,95 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
         // Actually export the change by calling the appropriate
         // method to output the correct wbxml for this change.
         if (empty($change['ignore'])) {
-            switch($change['type']) {
-            case Horde_ActiveSync::CHANGE_TYPE_CHANGE:
-            case Horde_ActiveSync::CHANGE_TYPE_DRAFT:
-                try {
-                    $message = $this->_as->driver->getMessage(
-                        $this->_currentCollection['serverid'],
-                        $change['id'],
-                        $this->_currentCollection);
-                    $message->flags = (isset($change['flags'])) ? $change['flags'] : false;
-                    $this->messageChange($change['id'], $message);
-                } catch (Horde_Exception_NotFound $e) {
-                    $this->_logger->notice(sprintf(
-                        'Message gone or error reading message from server: %s',
-                        $e->getMessage()));
-                    $this->_as->state->updateState($change['type'], $change);
-                    $this->_step++;
-                    return $e;
-                } catch (Horde_ActiveSync_Exception_TemporaryFailure $e) {
-                    $this->_logger->err(sprintf(
-                        'Backend server reported an error: %s.',
-                        $e->getMessage())
-                    );
-                    throw $e;
-                } catch (Horde_ActiveSync_Exception $e) {
-                    $this->_logger->err(sprintf(
-                        'Unknown backend error skipping message: %s',
-                        $e->getMessage())
-                    );
-                    $this->_as->state->updateState($change['type'], $change);
-                    $this->_step++;
-                    return $e;
-                }
-                break;
-
-            case Horde_ActiveSync::CHANGE_TYPE_DELETE:
-                $this->messageDeletion($change['id']);
-                break;
-
-            case Horde_ActiveSync::CHANGE_TYPE_SOFTDELETE:
-                $this->messageDeletion($change['id'], true);
-                break;
-
-            case Horde_ActiveSync::CHANGE_TYPE_FLAGS:
-                // Read flag.
-                $message = Horde_ActiveSync::messageFactory('Mail');
-                $message->flags = Horde_ActiveSync::CHANGE_TYPE_CHANGE;
-                $message->read = isset($change['flags']['read']) ? $change['flags']['read'] : false;
-
-                // "Flagged" flag.
-                if (isset($change['flags']['flagged']) && $this->_as->device->version >= Horde_ActiveSync::VERSION_TWELVE) {
-                    $flag = Horde_ActiveSync::messageFactory('Flag');
-                    $flag->flagstatus = $change['flags']['flagged'] == 1
-                        ? Horde_ActiveSync_Message_Flag::FLAG_STATUS_ACTIVE
-                        : Horde_ActiveSync_Message_Flag::FLAG_STATUS_CLEAR;
-                    $message->flag = $flag;
-                }
-
-                // Categories
-                if (!empty($change['categories']) && $this->_as->device->version > Horde_ActiveSync::VERSION_TWELVEONE) {
-                    $message->categories = $change['categories'];
-                }
-
-                // Verbs
-                if ($this->_as->device->version >= Horde_ActiveSync::VERSION_FOURTEEN) {
-                    if (isset($change['flags'][Horde_ActiveSync::CHANGE_REPLY_STATE])) {
-                        $message->lastverbexecuted = Horde_ActiveSync_Message_Mail::VERB_REPLY_SENDER;
-                        $message->lastverbexecutiontime = new Horde_Date($change['flags'][Horde_ActiveSync::CHANGE_REPLY_STATE]);
-                    } elseif (isset($change['flags'][Horde_ActiveSync::CHANGE_REPLYALL_STATE])) {
-                        $message->lastverbexecuted = Horde_ActiveSync_Message_Mail::VERB_REPLY_ALL;
-                        $message->lastverbexecutiontime = new Horde_Date($change['flags'][Horde_ActiveSync::CHANGE_REPLYALL_STATE]);
-                    } elseif (isset($change['flags'][Horde_ActiveSync::CHANGE_FORWARD_STATE])) {
-                        $message->lastverbexecuted = Horde_ActiveSync_Message_Mail::VERB_FORWARD;
-                        $message->lastverbexecutiontime = new Horde_Date($change['flags'][Horde_ActiveSync::CHANGE_FORWARD_STATE]);
+            switch ($change['type']) {
+                case Horde_ActiveSync::CHANGE_TYPE_CHANGE:
+                case Horde_ActiveSync::CHANGE_TYPE_DRAFT:
+                    try {
+                        $message = $this->_as->driver->getMessage(
+                            $this->_currentCollection['serverid'],
+                            $change['id'],
+                            $this->_currentCollection
+                        );
+                        $message->flags = (isset($change['flags'])) ? $change['flags'] : false;
+                        $this->messageChange($change['id'], $message);
+                    } catch (Horde_Exception_NotFound $e) {
+                        $this->_logger->notice(sprintf(
+                            'Message gone or error reading message from server: %s',
+                            $e->getMessage()
+                        ));
+                        $this->_as->state->updateState($change['type'], $change);
+                        $this->_step++;
+                        return $e;
+                    } catch (Horde_ActiveSync_Exception_TemporaryFailure $e) {
+                        $this->_logger->err(
+                            sprintf(
+                                'Backend server reported an error: %s.',
+                                $e->getMessage()
+                            )
+                        );
+                        throw $e;
+                    } catch (Horde_ActiveSync_Exception $e) {
+                        $this->_logger->err(
+                            sprintf(
+                                'Unknown backend error skipping message: %s',
+                                $e->getMessage()
+                            )
+                        );
+                        $this->_as->state->updateState($change['type'], $change);
+                        $this->_step++;
+                        return $e;
                     }
-                }
+                    break;
 
-                // Export it.
-                $this->messageChange($change['id'], $message);
-                break;
+                case Horde_ActiveSync::CHANGE_TYPE_DELETE:
+                    $this->messageDeletion($change['id']);
+                    break;
 
-            case Horde_ActiveSync::CHANGE_TYPE_MOVE:
-                $this->messageMove($change['id'], $change['parent']);
-                break;
+                case Horde_ActiveSync::CHANGE_TYPE_SOFTDELETE:
+                    $this->messageDeletion($change['id'], true);
+                    break;
+
+                case Horde_ActiveSync::CHANGE_TYPE_FLAGS:
+                    // Read flag.
+                    $message = Horde_ActiveSync::messageFactory('Mail');
+                    $message->flags = Horde_ActiveSync::CHANGE_TYPE_CHANGE;
+                    $message->read = $change['flags']['read'] ?? false;
+
+                    // "Flagged" flag.
+                    if (isset($change['flags']['flagged']) && $this->_as->device->version >= Horde_ActiveSync::VERSION_TWELVE) {
+                        $flag = Horde_ActiveSync::messageFactory('Flag');
+                        $flag->flagstatus = $change['flags']['flagged'] == 1
+                            ? Horde_ActiveSync_Message_Flag::FLAG_STATUS_ACTIVE
+                            : Horde_ActiveSync_Message_Flag::FLAG_STATUS_CLEAR;
+                        $message->flag = $flag;
+                    }
+
+                    // Categories
+                    if (!empty($change['categories']) && $this->_as->device->version > Horde_ActiveSync::VERSION_TWELVEONE) {
+                        $message->categories = $change['categories'];
+                    }
+
+                    // Verbs
+                    if ($this->_as->device->version >= Horde_ActiveSync::VERSION_FOURTEEN) {
+                        if (isset($change['flags'][Horde_ActiveSync::CHANGE_REPLY_STATE])) {
+                            $message->lastverbexecuted = Horde_ActiveSync_Message_Mail::VERB_REPLY_SENDER;
+                            $message->lastverbexecutiontime = new Horde_Date($change['flags'][Horde_ActiveSync::CHANGE_REPLY_STATE]);
+                        } elseif (isset($change['flags'][Horde_ActiveSync::CHANGE_REPLYALL_STATE])) {
+                            $message->lastverbexecuted = Horde_ActiveSync_Message_Mail::VERB_REPLY_ALL;
+                            $message->lastverbexecutiontime = new Horde_Date($change['flags'][Horde_ActiveSync::CHANGE_REPLYALL_STATE]);
+                        } elseif (isset($change['flags'][Horde_ActiveSync::CHANGE_FORWARD_STATE])) {
+                            $message->lastverbexecuted = Horde_ActiveSync_Message_Mail::VERB_FORWARD;
+                            $message->lastverbexecutiontime = new Horde_Date($change['flags'][Horde_ActiveSync::CHANGE_FORWARD_STATE]);
+                        }
+                    }
+
+                    // Export it.
+                    $this->messageChange($change['id'], $message);
+                    break;
+
+                case Horde_ActiveSync::CHANGE_TYPE_MOVE:
+                    $this->messageMove($change['id'], $change['parent']);
+                    break;
             }
         }
 

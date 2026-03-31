@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Connector_Exporter_FolderSync::
  *
@@ -20,7 +21,6 @@
  */
 class Horde_ActiveSync_Connector_Exporter_FolderSync extends Horde_ActiveSync_Connector_Exporter_Base
 {
-
     /**
      * Array of folder objects that have changed.
      * Used when exporting folder structure changes since they are not streamed
@@ -28,20 +28,20 @@ class Horde_ActiveSync_Connector_Exporter_FolderSync extends Horde_ActiveSync_Co
      *
      * @var array
      */
-    public $changed = array();
+    public $changed = [];
 
     /**
      * Array of folder ids that have been deleted on the server.
      *
      * @var array
      */
-    public $deleted = array();
+    public $deleted = [];
 
-     /**
-     * Tracks the total number of folder changes
-     *
-     * @var integer
-     */
+    /**
+    * Tracks the total number of folder changes
+    *
+    * @var integer
+    */
     public $count = 0;
 
     /**
@@ -56,7 +56,7 @@ class Horde_ActiveSync_Connector_Exporter_FolderSync extends Horde_ActiveSync_Co
         return $this->_sendNextFolderSyncChange();
     }
 
-        /**
+    /**
      * Sends the next folder change to the client.
      *
      * @return @see self::sendNextChange()
@@ -65,38 +65,44 @@ class Horde_ActiveSync_Connector_Exporter_FolderSync extends Horde_ActiveSync_Co
     {
         if ($this->_step < count($this->_changes)) {
             $change = $this->_changes[$this->_step];
-            switch($change['type']) {
-            case Horde_ActiveSync::CHANGE_TYPE_CHANGE:
-                // Folder add/change.
-                if ($folder = $this->_as->driver->getFolder($change['serverid'])) {
-                    // @TODO BC HACK. Need to ensure we have a _serverid here.
-                    // REMOVE IN H6.
-                    if (empty($folder->_serverid)) {
-                        $folder->_serverid = $folder->serverid;
+            switch ($change['type']) {
+                case Horde_ActiveSync::CHANGE_TYPE_CHANGE:
+                    // Folder add/change.
+                    if ($folder = $this->_as->driver->getFolder($change['serverid'])) {
+                        // @TODO BC HACK. Need to ensure we have a _serverid here.
+                        // REMOVE IN H6.
+                        if (empty($folder->_serverid)) {
+                            $folder->_serverid = $folder->serverid;
+                        }
+                        $stat = $this->_as->driver->statFolder(
+                            $change['id'],
+                            $folder->parentid,
+                            $folder->displayname,
+                            $folder->_serverid,
+                            $folder->type
+                        );
+                        $this->folderChange($folder);
+                    } else {
+                        $this->_logger->err(sprintf(
+                            'Error stating %s: ignoring.',
+                            $change['id']
+                        ));
+                        $stat = ['id' => $change['id'], 'mod' => $change['id'], 0];
                     }
-                    $stat = $this->_as->driver->statFolder(
-                        $change['id'],
-                        $folder->parentid,
-                        $folder->displayname,
-                        $folder->_serverid,
-                        $folder->type);
-                    $this->folderChange($folder);
-                } else {
-                    $this->_logger->err(sprintf(
-                        'Error stating %s: ignoring.',
-                        $change['id']));
-                    $stat = array('id' => $change['id'], 'mod' => $change['id'], 0);
-                }
-                // Update the state.
-                $this->_as->state->updateState(
-                    Horde_ActiveSync::CHANGE_TYPE_FOLDERSYNC, $stat);
-                break;
+                    // Update the state.
+                    $this->_as->state->updateState(
+                        Horde_ActiveSync::CHANGE_TYPE_FOLDERSYNC,
+                        $stat
+                    );
+                    break;
 
-            case Horde_ActiveSync::CHANGE_TYPE_DELETE:
-                $this->folderDeletion($change['id']);
-                $this->_as->state->updateState(
-                    Horde_ActiveSync::CHANGE_TYPE_DELETE, $change);
-                break;
+                case Horde_ActiveSync::CHANGE_TYPE_DELETE:
+                    $this->folderDeletion($change['id']);
+                    $this->_as->state->updateState(
+                        Horde_ActiveSync::CHANGE_TYPE_DELETE,
+                        $change
+                    );
+                    break;
             }
             $this->_step++;
             return true;

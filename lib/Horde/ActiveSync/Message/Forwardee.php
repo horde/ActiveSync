@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_Forwardee::
  *
@@ -26,19 +27,19 @@ class Horde_ActiveSync_Message_Forwardee extends Horde_ActiveSync_Message_Base
      *
      * @var array
      */
-    protected $_mapping = array(
-        Horde_ActiveSync_Message_SendMail::FORWARDEENAME  => array(self::KEY_ATTRIBUTE => 'name'),
-        Horde_ActiveSync_Message_SendMail::FORWARDEEEMAIL => array(self::KEY_ATTRIBUTE => 'email')
-    );
+    protected $_mapping = [
+        Horde_ActiveSync_Message_SendMail::FORWARDEENAME  => [self::KEY_ATTRIBUTE => 'name'],
+        Horde_ActiveSync_Message_SendMail::FORWARDEEEMAIL => [self::KEY_ATTRIBUTE => 'email'],
+    ];
 
     /**
      * Property values.
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'name' => false,
-        'email'   => false
-    );
+        'email'   => false,
+    ];
 
 }

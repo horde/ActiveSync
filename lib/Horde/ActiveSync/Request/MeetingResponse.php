@@ -1,4 +1,5 @@
 <?php
+
 /**
  *
  * @license   http://www.horde.org/licenses/gpl GPLv2
@@ -30,32 +31,32 @@
  */
 class Horde_ActiveSync_Request_MeetingResponse extends Horde_ActiveSync_Request_Base
 {
-    const MEETINGRESPONSE_CALENDARID      = 'MeetingResponse:CalendarId';
-    const MEETINGRESPONSE_FOLDERID        = 'MeetingResponse:FolderId';
-    const MEETINGRESPONSE_MEETINGRESPONSE = 'MeetingResponse:MeetingResponse';
-    const MEETINGRESPONSE_REQUESTID       = 'MeetingResponse:RequestId';
-    const MEETINGRESPONSE_REQUEST         = 'MeetingResponse:Request';
-    const MEETINGRESPONSE_RESULT          = 'MeetingResponse:Result';
-    const MEETINGRESPONSE_STATUS          = 'MeetingResponse:Status';
-    const MEETINGRESPONSE_USERRESPONSE    = 'MeetingResponse:UserResponse';
-    const MEETINGRESPONSE_VERSION         = 'MeetingResponse:Version';
+    public const MEETINGRESPONSE_CALENDARID      = 'MeetingResponse:CalendarId';
+    public const MEETINGRESPONSE_FOLDERID        = 'MeetingResponse:FolderId';
+    public const MEETINGRESPONSE_MEETINGRESPONSE = 'MeetingResponse:MeetingResponse';
+    public const MEETINGRESPONSE_REQUESTID       = 'MeetingResponse:RequestId';
+    public const MEETINGRESPONSE_REQUEST         = 'MeetingResponse:Request';
+    public const MEETINGRESPONSE_RESULT          = 'MeetingResponse:Result';
+    public const MEETINGRESPONSE_STATUS          = 'MeetingResponse:Status';
+    public const MEETINGRESPONSE_USERRESPONSE    = 'MeetingResponse:UserResponse';
+    public const MEETINGRESPONSE_VERSION         = 'MeetingResponse:Version';
 
     // 14.1
-    const MEETINGRESPONSE_INSTANCEID      = 'MeetingResponse:InstanceId';
+    public const MEETINGRESPONSE_INSTANCEID      = 'MeetingResponse:InstanceId';
 
     // 16.0 @todo
-    const MEETINGRESPONSE_SENDRESPONSE    = 'MeetingResponse:SendResponse';
+    public const MEETINGRESPONSE_SENDRESPONSE    = 'MeetingResponse:SendResponse';
 
     // Response constants
-    const RESPONSE_ACCEPTED               = 1;
-    const RESPONSE_TENTATIVE              = 2;
-    const RESPONSE_DECLINED               = 3;
+    public const RESPONSE_ACCEPTED               = 1;
+    public const RESPONSE_TENTATIVE              = 2;
+    public const RESPONSE_DECLINED               = 3;
 
     // Status constants
-    const STATUS_SUCCESS                  = 1;
-    const STATUS_INVALID_REQUEST          = 2;
-    const STATUS_STATE_ERROR              = 3;
-    const STATUS_SERVER_ERROR             = 4;
+    public const STATUS_SUCCESS                  = 1;
+    public const STATUS_INVALID_REQUEST          = 2;
+    public const STATUS_STATE_ERROR              = 3;
+    public const STATUS_SERVER_ERROR             = 4;
 
     /**
      * Handle request
@@ -64,73 +65,73 @@ class Horde_ActiveSync_Request_MeetingResponse extends Horde_ActiveSync_Request_
      */
     protected function _handle()
     {
-        $requests = array();
+        $requests = [];
         if (!$this->_decoder->getElementStartTag(self::MEETINGRESPONSE_MEETINGRESPONSE)) {
             throw new Horde_ActiveSync_Exception('Protocol Error');
         }
         while ($this->_decoder->getElementStartTag(self::MEETINGRESPONSE_REQUEST)) {
-            $req = array();
-            while (($tag = ($this->_decoder->getElementStartTag(self::MEETINGRESPONSE_USERRESPONSE) ? self::MEETINGRESPONSE_USERRESPONSE :
-                   ($this->_decoder->getElementStartTag(self::MEETINGRESPONSE_FOLDERID) ? self::MEETINGRESPONSE_FOLDERID :
-                   ($this->_decoder->getElementStartTag(self::MEETINGRESPONSE_REQUESTID) ? self::MEETINGRESPONSE_REQUESTID :
-                   ($this->_decoder->getElementStartTag(Horde_ActiveSync_Request_Search::SEARCH_LONGID) ? Horde_ActiveSync_Request_Search::SEARCH_LONGID :
-                   ($this->_decoder->getElementStartTag(self::MEETINGRESPONSE_INSTANCEID) ? self::MEETINGRESPONSE_INSTANCEID :
-                   ($this->_decoder->getElementStartTag(self::MEETINGRESPONSE_SENDRESPONSE) ? self::MEETINGRESPONSE_SENDRESPONSE : -1))))))) != -1) {
+            $req = [];
+            while (($tag = ($this->_decoder->getElementStartTag(self::MEETINGRESPONSE_USERRESPONSE) ? self::MEETINGRESPONSE_USERRESPONSE
+                   : ($this->_decoder->getElementStartTag(self::MEETINGRESPONSE_FOLDERID) ? self::MEETINGRESPONSE_FOLDERID
+                   : ($this->_decoder->getElementStartTag(self::MEETINGRESPONSE_REQUESTID) ? self::MEETINGRESPONSE_REQUESTID
+                   : ($this->_decoder->getElementStartTag(Horde_ActiveSync_Request_Search::SEARCH_LONGID) ? Horde_ActiveSync_Request_Search::SEARCH_LONGID
+                   : ($this->_decoder->getElementStartTag(self::MEETINGRESPONSE_INSTANCEID) ? self::MEETINGRESPONSE_INSTANCEID
+                   : ($this->_decoder->getElementStartTag(self::MEETINGRESPONSE_SENDRESPONSE) ? self::MEETINGRESPONSE_SENDRESPONSE : -1))))))) != -1) {
 
                 switch ($tag) {
-                case self::MEETINGRESPONSE_USERRESPONSE:
-                    $req['response'] = $this->_decoder->getElementContent();
-                    if (!$this->_decoder->getElementEndTag()) {
-                        throw new Horde_ActiveSync_Exception('Protocol Error');
-                    }
-                    break;
-                case self::MEETINGRESPONSE_FOLDERID:
-                    $req['folderid'] = $this->_activeSync->getCollectionsObject()
-                        ->getBackendIdForFolderUid($this->_decoder->getElementContent());
-                    if (!$this->_decoder->getElementEndTag()) {
-                        throw new Horde_ActiveSync_Exception('Protocol Error');
-                    }
-                    break;
-                case self::MEETINGRESPONSE_REQUESTID:
-                    $req['requestid'] = $this->_decoder->getElementContent();
-                    if (!$this->_decoder->getElementEndTag()) {
-                        throw new Horde_ActiveSync_Exception('Protocol Error');
-                    }
-                    break;
-                case self::MEETINGRESPONSE_INSTANCEID:
-                    // Original UTC time of appointment instance to be modified
-                    // sent in EAS 16 to indicate which instance we are
-                    // responding to.
-                    $req['instanceid'] = $this->_decoder->getElementContent();
-                    if (!$this->_decoder->getElementEndTag()) {
-                        throw new Horde_ActiveSync_Exception('Protocol Error');
-                    }
-                    break;
-                case Horde_ActiveSync_Request_Search::SEARCH_LONGID:
-                    // Used in EAS 16 when responding from a search result.
-                    $req['longid'] = $this->_decoder->getElementContent();
-                    if (!$this->_decoder->getElementEndTag()) {
-                        throw new Horde_ActiveSync_Exception('Protocol Error');
-                    }
-                    break;
-                case self::MEETINGRESPONSE_SENDRESPONSE:
-                    // Used in EAS 16 as either a flag to indicate the server
-                    // should send the iTip response email, and/or to contain
-                    // the body of such an email.
-                    if ($this->_decoder->isEmptyElement($this->_decoder->getLastStartElement())) {
-                        $req['sendresponse'] = true;
-                    } else {
-                        // elementContent is an AirSyncBaseBody object.
-                        $this->_decoder->getElementStartTag(Horde_ActiveSync::AIRSYNCBASE_BODY);
-                        $body = Horde_ActiveSync::messageFactory('AirSyncBaseBody');
-                        $body->decodeStream($this->_decoder);
-                        $req['sendresponse'] = $body;
-                        $this->_decoder->getElementEndTag(); // AirSyncbaseBody
+                    case self::MEETINGRESPONSE_USERRESPONSE:
+                        $req['response'] = $this->_decoder->getElementContent();
                         if (!$this->_decoder->getElementEndTag()) {
                             throw new Horde_ActiveSync_Exception('Protocol Error');
                         }
-                    }
-                    break;
+                        break;
+                    case self::MEETINGRESPONSE_FOLDERID:
+                        $req['folderid'] = $this->_activeSync->getCollectionsObject()
+                            ->getBackendIdForFolderUid($this->_decoder->getElementContent());
+                        if (!$this->_decoder->getElementEndTag()) {
+                            throw new Horde_ActiveSync_Exception('Protocol Error');
+                        }
+                        break;
+                    case self::MEETINGRESPONSE_REQUESTID:
+                        $req['requestid'] = $this->_decoder->getElementContent();
+                        if (!$this->_decoder->getElementEndTag()) {
+                            throw new Horde_ActiveSync_Exception('Protocol Error');
+                        }
+                        break;
+                    case self::MEETINGRESPONSE_INSTANCEID:
+                        // Original UTC time of appointment instance to be modified
+                        // sent in EAS 16 to indicate which instance we are
+                        // responding to.
+                        $req['instanceid'] = $this->_decoder->getElementContent();
+                        if (!$this->_decoder->getElementEndTag()) {
+                            throw new Horde_ActiveSync_Exception('Protocol Error');
+                        }
+                        break;
+                    case Horde_ActiveSync_Request_Search::SEARCH_LONGID:
+                        // Used in EAS 16 when responding from a search result.
+                        $req['longid'] = $this->_decoder->getElementContent();
+                        if (!$this->_decoder->getElementEndTag()) {
+                            throw new Horde_ActiveSync_Exception('Protocol Error');
+                        }
+                        break;
+                    case self::MEETINGRESPONSE_SENDRESPONSE:
+                        // Used in EAS 16 as either a flag to indicate the server
+                        // should send the iTip response email, and/or to contain
+                        // the body of such an email.
+                        if ($this->_decoder->isEmptyElement($this->_decoder->getLastStartElement())) {
+                            $req['sendresponse'] = true;
+                        } else {
+                            // elementContent is an AirSyncBaseBody object.
+                            $this->_decoder->getElementStartTag(Horde_ActiveSync::AIRSYNCBASE_BODY);
+                            $body = Horde_ActiveSync::messageFactory('AirSyncBaseBody');
+                            $body->decodeStream($this->_decoder);
+                            $req['sendresponse'] = $body;
+                            $this->_decoder->getElementEndTag(); // AirSyncbaseBody
+                            if (!$this->_decoder->getElementEndTag()) {
+                                throw new Horde_ActiveSync_Exception('Protocol Error');
+                            }
+                        }
+                        break;
                 }
             }
 

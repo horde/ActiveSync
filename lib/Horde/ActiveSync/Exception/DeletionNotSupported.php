@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Exception_DeletionNotSupported::
  *
@@ -18,6 +19,4 @@
  * @package   ActiveSync
  * @since     2.39.0
  */
-class Horde_ActiveSync_Exception_DeletionNotSupported extends Horde_ActiveSync_Exception
-{
-}
+class Horde_ActiveSync_Exception_DeletionNotSupported extends Horde_ActiveSync_Exception {}

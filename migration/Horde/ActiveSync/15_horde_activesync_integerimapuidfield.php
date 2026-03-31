@@ -1,4 +1,5 @@
 <?php
+
 class HordeActiveSyncIntegerimapuidfield extends Horde_Db_Migration_Base
 {
     public function up()
@@ -7,7 +8,8 @@ class HordeActiveSyncIntegerimapuidfield extends Horde_Db_Migration_Base
             'horde_activesync_mailmap',
             'message_uid',
             'integer',
-            array('null' => false, 'default' => 0));
+            ['null' => false, 'default' => 0]
+        );
     }
 
     public function down()
@@ -16,7 +18,7 @@ class HordeActiveSyncIntegerimapuidfield extends Horde_Db_Migration_Base
             'horde_activesync_mailmap',
             'message_uid',
             'string',
-            array('limit' => 255, 'null' => false)
+            ['limit' => 255, 'null' => false]
         );
     }
 

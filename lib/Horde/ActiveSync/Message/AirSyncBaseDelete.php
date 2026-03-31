@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_AirSyncBaseDelete::
  *
@@ -19,24 +20,23 @@
  */
 class Horde_ActiveSync_Message_AirSyncBaseDelete extends Horde_ActiveSync_Message_Base
 {
-
     /**
      * Property mappings
      *
      * @var array
      */
-    protected $_mapping = array(
-        Horde_ActiveSync::AIRSYNCBASE_FILEREFERENCE => array(self::KEY_ATTRIBUTE => 'filereference')
-    );
+    protected $_mapping = [
+        Horde_ActiveSync::AIRSYNCBASE_FILEREFERENCE => [self::KEY_ATTRIBUTE => 'filereference'],
+    ];
 
     /**
      * Property mapping.
      *
      * @var array
      */
-    protected $_properties = array(
-        'filereference' => false
-    );
+    protected $_properties = [
+        'filereference' => false,
+    ];
 
     /**
      * Return the type of message.

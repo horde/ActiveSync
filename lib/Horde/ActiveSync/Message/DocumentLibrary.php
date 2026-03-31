@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_DocumentLibrary:: Defines an object representing
  * a DOCUMENTLIBRARY search result.
@@ -21,29 +22,28 @@
  */
 class Horde_ActiveSync_Message_DocumentLibrary extends Horde_ActiveSync_Message_Base
 {
-
     /**
      * Property mapping
      *
      * @var array
      */
-    protected $_mapping = array(
-        Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_LINKID           => array(self::KEY_ATTRIBUTE => 'linkid'),
-        Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_DISPLAYNAME      => array(self::KEY_ATTRIBUTE => 'displayname'),
-        Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_ISFOLDER         => array(self::KEY_ATTRIBUTE => 'isfolder'),
-        Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_CREATIONDATE     => array(self::KEY_ATTRIBUTE => 'creationdate', self::KEY_TYPE => self::TYPE_DATE_DASHES),
-        Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_LASTMODIFIEDDATE => array(self::KEY_ATTRIBUTE => 'lastmodifieddate', self::KEY_TYPE => self::TYPE_DATE_DASHES),
-        Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_ISHIDDEN         => array(self::KEY_ATTRIBUTE => 'ishidden'),
-        Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_CONTENTLENGTH    => array(self::KEY_ATTRIBUTE => 'contentlength'),
-        Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_CONTENTTYPE      => array(self::KEY_ATTRIBUTE => 'contenttype')
-    );
+    protected $_mapping = [
+        Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_LINKID           => [self::KEY_ATTRIBUTE => 'linkid'],
+        Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_DISPLAYNAME      => [self::KEY_ATTRIBUTE => 'displayname'],
+        Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_ISFOLDER         => [self::KEY_ATTRIBUTE => 'isfolder'],
+        Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_CREATIONDATE     => [self::KEY_ATTRIBUTE => 'creationdate', self::KEY_TYPE => self::TYPE_DATE_DASHES],
+        Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_LASTMODIFIEDDATE => [self::KEY_ATTRIBUTE => 'lastmodifieddate', self::KEY_TYPE => self::TYPE_DATE_DASHES],
+        Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_ISHIDDEN         => [self::KEY_ATTRIBUTE => 'ishidden'],
+        Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_CONTENTLENGTH    => [self::KEY_ATTRIBUTE => 'contentlength'],
+        Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_CONTENTTYPE      => [self::KEY_ATTRIBUTE => 'contenttype'],
+    ];
 
     /**
      * Property values
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'linkid'           => false,
         'displayname'      => false,
         'isfolder'         => false,
@@ -51,7 +51,7 @@ class Horde_ActiveSync_Message_DocumentLibrary extends Horde_ActiveSync_Message_
         'lastmodifieddate' => false,
         'ishidden'         => false,
         'contentlength'    => false,
-        'contenttype'      => 'application/octet-stream'
-    );
+        'contenttype'      => 'application/octet-stream',
+    ];
 
 }

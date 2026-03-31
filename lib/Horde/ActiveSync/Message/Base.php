@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_Base::
  *
@@ -32,19 +33,19 @@
 class Horde_ActiveSync_Message_Base
 {
     /* Attribute Keys */
-    const KEY_ATTRIBUTE         = 1;
-    const KEY_VALUES            = 2;
-    const KEY_TYPE              = 3;
-    const KEY_PROPERTY          = 4;
+    public const KEY_ATTRIBUTE         = 1;
+    public const KEY_VALUES            = 2;
+    public const KEY_TYPE              = 3;
+    public const KEY_PROPERTY          = 4;
 
     /* Types */
-    const TYPE_DATE             = 1;
-    const TYPE_HEX              = 2;
-    const TYPE_DATE_DASHES      = 3;
-    const TYPE_MAPI_STREAM      = 4;
-    const TYPE_MAPI_GOID        = 5;
-    const TYPE_DATE_LOCAL       = 6;
-    const PROPERTY_NO_CONTAINER = 7;
+    public const TYPE_DATE             = 1;
+    public const TYPE_HEX              = 2;
+    public const TYPE_DATE_DASHES      = 3;
+    public const TYPE_MAPI_STREAM      = 4;
+    public const TYPE_MAPI_GOID        = 5;
+    public const TYPE_DATE_LOCAL       = 6;
+    public const PROPERTY_NO_CONTAINER = 7;
 
     /**
      * Holds the mapping for object properties
@@ -58,7 +59,7 @@ class Horde_ActiveSync_Message_Base
      *
      * @var array
      */
-    protected $_properties = array();
+    protected $_properties = [];
 
     /**
      * Message flags
@@ -88,14 +89,14 @@ class Horde_ActiveSync_Message_Base
      *
      * @var array
      */
-    protected $_supported = array();
+    protected $_supported = [];
 
     /**
      * Existence cache, used for working with ghosted properties.
      *
      * @var array
      */
-    protected $_exists = array();
+    protected $_exists = [];
 
     /**
      * The version of EAS we are to support.
@@ -117,7 +118,7 @@ class Horde_ActiveSync_Message_Base
      *
      * @var array
      */
-    protected $_streamFilters = array();
+    protected $_streamFilters = [];
 
     /**
      * Const'r
@@ -131,7 +132,7 @@ class Horde_ActiveSync_Message_Base
      *
      * @return Horde_ActiveSync_Message_Base
      */
-    public function __construct(array $options = array())
+    public function __construct(array $options = [])
     {
         if (!empty($options['logger'])) {
             $this->_logger = Horde_ActiveSync::_wrapLogger($options['logger']);
@@ -183,7 +184,8 @@ class Horde_ActiveSync_Message_Base
      * @return mixed  The value of the requested property.
      * @todo: to be used instead of accessor method
      */
-    public function getProperty($property) {
+    public function getProperty($property)
+    {
         return $this->_getAttribute($property, false);
     }
 
@@ -301,7 +303,7 @@ class Horde_ActiveSync_Message_Base
      */
     public function setSupported(array $fields)
     {
-        $this->_supported = array();
+        $this->_supported = [];
         if (current($fields) == Horde_ActiveSync::ALL_GHOSTED) {
             $this->_supported = $fields;
             return;
@@ -341,13 +343,13 @@ class Horde_ActiveSync_Message_Base
         if (empty($this->_supported)) {
             return false;
         }
-        if (current($this->_supported) == Horde_ActiveSync::ALL_GHOSTED &&
-            empty($this->_exists[$property])) {
+        if (current($this->_supported) == Horde_ActiveSync::ALL_GHOSTED
+            && empty($this->_exists[$property])) {
             return true;
         }
 
-        return array_search($property, $this->_supported) === false &&
-               empty($this->_exists[$property]);
+        return array_search($property, $this->_supported) === false
+               && empty($this->_exists[$property]);
     }
 
     /**
@@ -381,7 +383,7 @@ class Horde_ActiveSync_Message_Base
             if (!($entity[Horde_ActiveSync_Wbxml::EN_FLAGS] & Horde_ActiveSync_Wbxml::EN_FLAGS_CONTENT)) {
                 $map = $this->_mapping[$entity[Horde_ActiveSync_Wbxml::EN_TAG]];
                 if (isset($map[self::KEY_VALUES])) {
-                    $this->{$map[self::KEY_ATTRIBUTE]} = array();
+                    $this->{$map[self::KEY_ATTRIBUTE]} = [];
                 } elseif (!isset($map[self::KEY_TYPE]) || $map[self::KEY_TYPE] == self::TYPE_DATE || $map[self::KEY_TYPE] == self::TYPE_DATE_DASHES) {
                     $this->{$map[self::KEY_ATTRIBUTE]} = '';
                 }
@@ -393,10 +395,12 @@ class Horde_ActiveSync_Message_Base
             // content types or empty tags. Otherwise fatal out, as it's a
             // protocol error.
             if (!isset($this->_mapping[$entity[Horde_ActiveSync_Wbxml::EN_TAG]])) {
-                $this->_logger->err(sprintf(
-                    'Tag %s unexpected in type XML type %s. Attempting to ignore unknown tag.',
-                     $entity[Horde_ActiveSync_Wbxml::EN_TAG],
-                     get_class($this))
+                $this->_logger->err(
+                    sprintf(
+                        'Tag %s unexpected in type XML type %s. Attempting to ignore unknown tag.',
+                        $entity[Horde_ActiveSync_Wbxml::EN_TAG],
+                        get_class($this)
+                    )
                 );
 
                 // Empty?
@@ -411,7 +415,7 @@ class Horde_ActiveSync_Message_Base
                 $entity = $decoder->getToken();
                 if ($entity[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_CONTENT) {
                     $unknownContent = $decoder->getElementContent();
-                    while($unknownContent !== false) {
+                    while ($unknownContent !== false) {
                         $this->_logger->err('Content of unknown tag: %s', $unknownContent);
                         $unknownContent = $decoder->getElementContent();
                     }
@@ -442,8 +446,8 @@ class Horde_ActiveSync_Message_Base
                         if ($token[Horde_ActiveSync_Wbxml_Decoder::EN_TYPE] == Horde_ActiveSync_Wbxml_Decoder::EN_TYPE_ENDTAG) {
                             break;
                         }
-                    } elseif (!(isset($map[self::KEY_PROPERTY]) && $map[self::KEY_PROPERTY] == self::PROPERTY_NO_CONTAINER) &&
-                              !$decoder->getElementStartTag($map[self::KEY_VALUES])) {
+                    } elseif (!(isset($map[self::KEY_PROPERTY]) && $map[self::KEY_PROPERTY] == self::PROPERTY_NO_CONTAINER)
+                              && !$decoder->getElementStartTag($map[self::KEY_VALUES])) {
                         break;
                     }
 
@@ -454,9 +458,10 @@ class Horde_ActiveSync_Message_Base
                         $token = $decoder->getToken();
                         if (($idx = array_search($token[Horde_ActiveSync_Wbxml_Decoder::EN_TAG], $map[self::KEY_VALUES])) !== false) {
                             $class = $map[self::KEY_TYPE][$idx];
-                            $decoded = new $class(array(
-                                'protocolversion' => $this->_version,
-                                'logger' => $this->_logger)
+                            $decoded = new $class(
+                                [
+                                    'protocolversion' => $this->_version,
+                                    'logger' => $this->_logger]
                             );
                             $decoded->commandType = $this->commandType;
                             $decoded->decodeStream($decoder);
@@ -465,9 +470,10 @@ class Horde_ActiveSync_Message_Base
                         }
                     } elseif (isset($map[self::KEY_TYPE])) {
                         $class = $map[self::KEY_TYPE];
-                        $decoded = new $class(array(
-                            'protocolversion' => $this->_version,
-                            'logger' => $this->_logger)
+                        $decoded = new $class(
+                            [
+                                'protocolversion' => $this->_version,
+                                'logger' => $this->_logger]
                         );
                         $decoded->commandType = $this->commandType;
                         $decoded->decodeStream($decoder);
@@ -477,7 +483,7 @@ class Horde_ActiveSync_Message_Base
 
                     // Assign the parsed value to the mapped attribute.
                     if (!isset($this->{$map[self::KEY_ATTRIBUTE]})) {
-                        $this->{$map[self::KEY_ATTRIBUTE]} = array($decoded);
+                        $this->{$map[self::KEY_ATTRIBUTE]} = [$decoded];
                     } else {
                         $this->{$map[self::KEY_ATTRIBUTE]}[] = $decoded;
                     }
@@ -505,23 +511,24 @@ class Horde_ActiveSync_Message_Base
                 }
 
                 // Do not get container end tag for an array without a container
-                if (!(isset($map[self::KEY_PROPERTY]) && $map[self::KEY_PROPERTY] == self::PROPERTY_NO_CONTAINER) &&
-                    !$decoder->getElementEndTag()) {
+                if (!(isset($map[self::KEY_PROPERTY]) && $map[self::KEY_PROPERTY] == self::PROPERTY_NO_CONTAINER)
+                    && !$decoder->getElementEndTag()) {
                     return false;
                 }
             } else {
                 // Handle a simple attribute value
                 if (isset($map[self::KEY_TYPE])) {
-                    if (in_array($map[self::KEY_TYPE], array(self::TYPE_DATE, self::TYPE_DATE_DASHES, self::TYPE_DATE_LOCAL))) {
+                    if (in_array($map[self::KEY_TYPE], [self::TYPE_DATE, self::TYPE_DATE_DASHES, self::TYPE_DATE_LOCAL])) {
                         $decoded = $this->_parseDate($decoder->getElementContent());
                     } elseif ($map[self::KEY_TYPE] == self::TYPE_HEX) {
                         $decoded = self::_hex2bin($decoder->getElementContent());
                     } else {
                         // Complex type, decode recursively
                         $class = $map[self::KEY_TYPE];
-                        $subdecoder = new $class(array(
-                            'protocolversion' => $this->_version,
-                            'logger' => $this->_logger)
+                        $subdecoder = new $class(
+                            [
+                                'protocolversion' => $this->_version,
+                                'logger' => $this->_logger]
                         );
                         $subdecoder->commandType = $this->commandType;
                         $subdecoder->decodeStream($decoder);
@@ -532,16 +539,20 @@ class Horde_ActiveSync_Message_Base
                     $decoded = $decoder->getElementContent();
                     if ($decoded === false) {
                         $decoded = '';
-                        $this->_logger->notice(sprintf(
-                            'Unable to get expected content for %s: Setting to an empty string.',
-                            $entity[Horde_ActiveSync_Wbxml::EN_TAG])
+                        $this->_logger->notice(
+                            sprintf(
+                                'Unable to get expected content for %s: Setting to an empty string.',
+                                $entity[Horde_ActiveSync_Wbxml::EN_TAG]
+                            )
                         );
                     }
                 }
                 if (!$decoder->getElementEndTag()) {
-                    $this->_logger->err(sprintf(
-                        'Unable to get end tag for %s.',
-                        $entity[Horde_ActiveSync_Wbxml::EN_TAG])
+                    $this->_logger->err(
+                        sprintf(
+                            'Unable to get end tag for %s.',
+                            $entity[Horde_ActiveSync_Wbxml::EN_TAG]
+                        )
                     );
                     throw new Horde_ActiveSync_Exception('Missing expected wbxml end tag');
                 }
@@ -550,9 +561,11 @@ class Horde_ActiveSync_Message_Base
         }
 
         if (!$this->_validateDecodedValues()) {
-            throw new Horde_ActiveSync_Exception(sprintf(
-                'Invalid values detected in %s.',
-                get_class($this))
+            throw new Horde_ActiveSync_Exception(
+                sprintf(
+                    'Invalid values detected in %s.',
+                    get_class($this)
+                )
             );
         }
     }
@@ -567,13 +580,17 @@ class Horde_ActiveSync_Message_Base
     public function encodeStream(Horde_ActiveSync_Wbxml_Encoder &$encoder)
     {
         if (!$this->_preEncodeValidation()) {
-            $this->_logger->err(sprintf(
-                'Pre-encoding validation failed for %s item',
-                get_class($this))
+            $this->_logger->err(
+                sprintf(
+                    'Pre-encoding validation failed for %s item',
+                    get_class($this)
+                )
             );
-            throw new Horde_ActiveSync_Exception(sprintf(
-                'Pre-encoding validation failed for %s item',
-                get_class($this))
+            throw new Horde_ActiveSync_Exception(
+                sprintf(
+                    'Pre-encoding validation failed for %s item',
+                    get_class($this)
+                )
             );
         }
 
@@ -583,19 +600,19 @@ class Horde_ActiveSync_Message_Base
             }
 
             // Variable is available
-            if (is_object($this->{$map[self::KEY_ATTRIBUTE]}) &&
-                !($this->{$map[self::KEY_ATTRIBUTE]} instanceof Horde_Date)) {
+            if (is_object($this->{$map[self::KEY_ATTRIBUTE]})
+                && !($this->{$map[self::KEY_ATTRIBUTE]} instanceof Horde_Date)) {
                 // Objects can do their own encoding
                 $encoder->startTag($tag);
                 $this->{$map[self::KEY_ATTRIBUTE]}->encodeStream($encoder);
                 $encoder->endTag();
-            } elseif (isset($map[self::KEY_VALUES]) &&
-                      is_array($this->{$map[self::KEY_ATTRIBUTE]})) {
+            } elseif (isset($map[self::KEY_VALUES])
+                      && is_array($this->{$map[self::KEY_ATTRIBUTE]})) {
                 // Array of objects. Note that some array values must be
                 // sent as an empty tag if they contain no elements.
                 if (count($this->{$map[self::KEY_ATTRIBUTE]})) {
-                    if (!isset($map[self::KEY_PROPERTY]) ||
-                        $map[self::KEY_PROPERTY] != self::PROPERTY_NO_CONTAINER) {
+                    if (!isset($map[self::KEY_PROPERTY])
+                        || $map[self::KEY_PROPERTY] != self::PROPERTY_NO_CONTAINER) {
                         $encoder->startTag($tag);
                     }
                     foreach ($this->{$map[self::KEY_ATTRIBUTE]} as $element) {
@@ -613,7 +630,7 @@ class Horde_ActiveSync_Message_Base
                             $encoder->endTag();
                         } else {
                             // Do not ever output empty items here
-                            if(strlen($element) > 0) {
+                            if (strlen($element) > 0) {
                                 $encoder->startTag($map[self::KEY_VALUES]);
                                 $encoder->content($element);
                                 $encoder->endTag();
@@ -628,23 +645,25 @@ class Horde_ActiveSync_Message_Base
                 }
             } else {
                 // Simple type
-                if (!is_resource($this->{$map[self::KEY_ATTRIBUTE]}) &&
-                    strlen($this->{$map[self::KEY_ATTRIBUTE]}) == 0) {
-                      // Do not output empty items except for the following:
-                      if ($this->_checkSendEmpty($tag)) {
-                          $encoder->startTag($tag, $this->{$map[self::KEY_ATTRIBUTE]}, true);
-                      }
-                      continue;
-                } elseif ($encoder->multipart &&
-                          in_array($tag, array(
-                            Horde_ActiveSync::SYNC_DATA,
-                            Horde_ActiveSync::AIRSYNCBASE_DATA,
-                            Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_DATA)
+                if (!is_resource($this->{$map[self::KEY_ATTRIBUTE]})
+                    && strlen($this->{$map[self::KEY_ATTRIBUTE]}) == 0) {
+                    // Do not output empty items except for the following:
+                    if ($this->_checkSendEmpty($tag)) {
+                        $encoder->startTag($tag, $this->{$map[self::KEY_ATTRIBUTE]}, true);
+                    }
+                    continue;
+                } elseif ($encoder->multipart
+                          && in_array(
+                              $tag,
+                              [
+                                  Horde_ActiveSync::SYNC_DATA,
+                                  Horde_ActiveSync::AIRSYNCBASE_DATA,
+                                  Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_DATA]
                           )) {
                     $this->_logger->meta('HANDLING MULTIPART OUTPUT');
                     $encoder->addPart($this->{$map[self::KEY_ATTRIBUTE]});
                     $encoder->startTag(Horde_ActiveSync_Request_ItemOperations::ITEMOPERATIONS_PART);
-                    $encoder->content((string)(count($encoder->getParts()) - 1));
+                    $encoder->content((string) (count($encoder->getParts()) - 1));
                     $encoder->endTag();
                     continue;
                 }
@@ -652,8 +671,8 @@ class Horde_ActiveSync_Message_Base
                 $encoder->startTag($tag);
                 if (isset($map[self::KEY_TYPE]) && $map[self::KEY_TYPE] == 'opaque') {
                     $encoder->content($this->{$map[self::KEY_ATTRIBUTE]}, true);
-                } elseif (isset($map[self::KEY_TYPE]) &&
-                    (in_array($map[self::KEY_TYPE], array(self::TYPE_DATE, self::TYPE_DATE_DASHES, self::TYPE_DATE_LOCAL)))) {
+                } elseif (isset($map[self::KEY_TYPE])
+                    && (in_array($map[self::KEY_TYPE], [self::TYPE_DATE, self::TYPE_DATE_DASHES, self::TYPE_DATE_LOCAL]))) {
                     if (!empty($this->{$map[self::KEY_ATTRIBUTE]})) { // don't output 1-1-1970
                         $encoder->content($this->_formatDate($this->{$map[self::KEY_ATTRIBUTE]}, $map[self::KEY_TYPE]));
                     }
@@ -663,7 +682,8 @@ class Horde_ActiveSync_Message_Base
                     $encoder->content($this->{$map[self::KEY_ATTRIBUTE]});
                 } else {
                     $encoder->content(
-                        $this->_checkEncoding($this->{$map[self::KEY_ATTRIBUTE]}, $tag));
+                        $this->_checkEncoding($this->{$map[self::KEY_ATTRIBUTE]}, $tag)
+                    );
                 }
                 $encoder->endTag();
             }
@@ -757,14 +777,14 @@ class Horde_ActiveSync_Message_Base
     protected function _formatDate(Horde_Date $dt, $type)
     {
         switch ($type) {
-        case self::TYPE_DATE:
-            return $dt->setTimezone('UTC')->format('Ymd\THis\Z');
-        case self::TYPE_DATE_DASHES:
-            return $dt->setTimezone('UTC')->format('Y-m-d\TH:i:s\.000\Z');
-        case self::TYPE_DATE_LOCAL:
-            return $dt->format('Y-m-d\TH:i:s\.000\Z');
-        default:
-            throw new InvalidArgumentException('Unidentified DATE_TYPE');
+            case self::TYPE_DATE:
+                return $dt->setTimezone('UTC')->format('Ymd\THis\Z');
+            case self::TYPE_DATE_DASHES:
+                return $dt->setTimezone('UTC')->format('Y-m-d\TH:i:s\.000\Z');
+            case self::TYPE_DATE_LOCAL:
+                return $dt->format('Y-m-d\TH:i:s\.000\Z');
+            default:
+                throw new InvalidArgumentException('Unidentified DATE_TYPE');
         }
     }
 

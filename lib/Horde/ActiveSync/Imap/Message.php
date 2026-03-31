@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
@@ -27,7 +28,7 @@
  */
 class Horde_ActiveSync_Imap_Message
 {
-    const OPTIONS_DECODE_TNEF = "decode_tnef";
+    public const OPTIONS_DECODE_TNEF = "decode_tnef";
 
     /**
      * Message data.
@@ -102,13 +103,13 @@ class Horde_ActiveSync_Imap_Message
         Horde_Imap_Client_Base $imap,
         Horde_Imap_Client_Mailbox $mbox,
         Horde_Imap_Client_Data_Fetch $data,
-        array $options = array())
-    {
+        array $options = []
+    ) {
         $this->_imap = $imap;
         $this->_mbox = $mbox;
         $this->_data = $data;
         $this->_options = array_merge(
-            array(self::OPTIONS_DECODE_TNEF => true),
+            [self::OPTIONS_DECODE_TNEF => true],
             $options
         );
 
@@ -131,20 +132,20 @@ class Horde_ActiveSync_Imap_Message
     public function &__get($property)
     {
         switch ($property) {
-        case 'envelope':
-            $e = $this->_data->getEnvelope();
-            return $e;
-        case 'flags':
-            $f = $this->_data->getFlags();
-            return $f;
-        case 'uid':
-            $u = $this->_data->getUid();
-            return $u;
-        case 'basePart':
-            if (empty($this->_basePart)) {
-                $this->_basePart = new Horde_ActiveSync_Mime($this->_data->getStructure());
-            }
-            return $this->_basePart;
+            case 'envelope':
+                $e = $this->_data->getEnvelope();
+                return $e;
+            case 'flags':
+                $f = $this->_data->getFlags();
+                return $f;
+            case 'uid':
+                $u = $this->_data->getUid();
+                return $u;
+            case 'basePart':
+                if (empty($this->_basePart)) {
+                    $this->_basePart = new Horde_ActiveSync_Mime($this->_data->getStructure());
+                }
+                return $this->_basePart;
         }
 
         throw new InvalidArgumentException(sprintf('The property %s of Horde_ActiveSync_Imap_Message does not exist', $property));
@@ -168,7 +169,7 @@ class Horde_ActiveSync_Imap_Message
      */
     public function getForwardHeaders()
     {
-        $tmp = array();
+        $tmp = [];
         $h = $this->getHeaders();
 
         if (($ob = $h->getValue('date'))) {
@@ -195,7 +196,7 @@ class Horde_ActiveSync_Imap_Message
             $tmp[Horde_ActiveSync_Translation::t('Cc')] = $ob;
         }
 
-        $max = max(array_map(array('Horde_String', 'length'), array_keys($tmp))) + 2;
+        $max = max(array_map(['Horde_String', 'length'], array_keys($tmp))) + 2;
         $text = '';
 
         foreach ($tmp as $key => $val) {
@@ -217,7 +218,7 @@ class Horde_ActiveSync_Imap_Message
     {
         // First see if we already have it.
         if ($stream) {
-            $full = new Horde_Stream_Existing(array('stream' => $this->_data->getFullMsg($stream)));
+            $full = new Horde_Stream_Existing(['stream' => $this->_data->getFullMsg($stream)]);
             $length = $full->length();
             if (!$length) {
                 $full->close();
@@ -228,12 +229,12 @@ class Horde_ActiveSync_Imap_Message
         }
         if (!$length) {
             $query = new Horde_Imap_Client_Fetch_Query();
-            $query->fullText(array('peek' => true));
+            $query->fullText(['peek' => true]);
             try {
                 $fetch_ret = $this->_imap->fetch(
                     $this->_mbox,
                     $query,
-                    array('ids' => new Horde_Imap_Client_Ids(array($this->uid)))
+                    ['ids' => new Horde_Imap_Client_Ids([$this->uid])]
                 );
             } catch (Horde_Imap_Client_Exception $e) {
                 throw new Horde_ActiveSync_Exception($e);
@@ -274,7 +275,7 @@ class Horde_ActiveSync_Imap_Message
      * @throws Horde_ActiveSync_Exception, Horde_Exception_NotFound
      * @deprecated - no longer used and will be removed in Horde 6.
      */
-    public function getMessageBodyData(array $options = array())
+    public function getMessageBodyData(array $options = [])
     {
         return $this->getMessageBodyDataObject($options)->toArray();
     }
@@ -297,15 +298,15 @@ class Horde_ActiveSync_Imap_Message
      *
      * @throws Horde_ActiveSync_Exception, Horde_Exception_NotFound
      */
-    public function getMessageBodyDataObject(array $options = array())
+    public function getMessageBodyDataObject(array $options = [])
     {
         if (empty($this->_mbd)) {
-           $this->_mbd = new Horde_ActiveSync_Imap_MessageBodyData(
-                array(
+            $this->_mbd = new Horde_ActiveSync_Imap_MessageBodyData(
+                [
                     'imap' => $this->_imap,
                     'mbox' => $this->_mbox,
                     'uid' => $this->uid,
-                    'mime' => $this->basePart),
+                    'mime' => $this->basePart],
                 $options
             );
         }
@@ -323,13 +324,13 @@ class Horde_ActiveSync_Imap_Message
      */
     public function getAttachments($version)
     {
-        $ret = array();
+        $ret = [];
         $iterator = new Horde_ActiveSync_Mime_Iterator($this->_basePart->base);
         foreach ($iterator as $part) {
             $type = $part->getType();
             $id = $part->getMimeId();
             if ($this->isAttachment($id, $type)) {
-                $mime_part = $this->getMimePart($id, array('nocontents' => true));
+                $mime_part = $this->getMimePart($id, ['nocontents' => true]);
                 $ret[] = $this->_buildEasAttachmentFromMime($id, $mime_part, $version);
                 $mime_part = null;
             }
@@ -361,7 +362,7 @@ class Horde_ActiveSync_Imap_Message
         $atc->attsize = intval($mime_part->getBytes(true));
         $atc->attname = $this->_mbox . ':' . $this->uid . ':' . $id;
         $atc->displayname = $this->getPartName($mime_part, true);
-        $atc->attmethod = in_array($mime_part->getType(), array('message/disposition-notification'))
+        $atc->attmethod = in_array($mime_part->getType(), ['message/disposition-notification'])
             ? Horde_ActiveSync_Message_AirSyncBaseAttachment::ATT_TYPE_EMBEDDED
             : Horde_ActiveSync_Message_AirSyncBaseAttachment::ATT_TYPE_NORMAL;
 
@@ -413,7 +414,7 @@ class Horde_ActiveSync_Imap_Message
             $tmp_part->setContents($data['stream']);
 
             $type = $data['type'] . '/' . $data['subtype'];
-            if (in_array($type, array('application/octet-stream', 'application/base64'))) {
+            if (in_array($type, ['application/octet-stream', 'application/base64'])) {
                 $type = Horde_Mime_Magic::filenameToMIME($data['name']);
             }
             $tmp_part->setType($type);
@@ -432,7 +433,7 @@ class Horde_ActiveSync_Imap_Message
      */
     public function getAttachmentsMimeParts()
     {
-        $mime_parts = array();
+        $mime_parts = [];
         $map = $this->basePart->contentTypeMap();
         foreach ($map as $id => $type) {
             if ($this->isAttachment($id, $type)) {
@@ -459,8 +460,8 @@ class Horde_ActiveSync_Imap_Message
         }
         $map = $this->basePart->contentTypeMap();
         foreach ($map as $id => $type) {
-            if ($type == 'application/ms-tnef' &&
-                !empty($this->_options[self::OPTIONS_DECODE_TNEF])) {
+            if ($type == 'application/ms-tnef'
+                && !empty($this->_options[self::OPTIONS_DECODE_TNEF])) {
 
                 $mpart = $this->getMimePart($id);
                 $tnef_part = $this->_decodeTnefData($mpart);
@@ -486,29 +487,29 @@ class Horde_ActiveSync_Imap_Message
      *
      * @return Horde_Mime_Part  The raw MIME part asked for.
      */
-    public function getMimePart($id, array $options = array())
+    public function getMimePart($id, array $options = [])
     {
         $part = $this->basePart->getPart($id);
-        if ($part &&
-            (strcasecmp($part->getCharset(), 'ISO-8859-1') === 0)) {
+        if ($part
+            && (strcasecmp($part->getCharset(), 'ISO-8859-1') === 0)) {
             $part->setCharset('windows-1252');
         }
 
-        if (!empty($id) &&
-            !is_null($part) &&
-            substr($id, -2) != '.0' &&
-            empty($options['nocontents']) &&
-            !$part->getContents(array('stream' => true))) {
+        if (!empty($id)
+            && !is_null($part)
+            && substr($id, -2) != '.0'
+            && empty($options['nocontents'])
+            && !$part->getContents(['stream' => true])) {
 
             try {
                 $body = $this->getBodyPart(
                     $id,
-                    array(
+                    [
                         'decode' => true,
                         'length' => empty($options['length']) ? null : $options['length'],
-                        'stream' => true)
+                        'stream' => true]
                 );
-                $part->setContents($body, array('encoding' => $this->_lastBodyPartDecode, 'usestream' => true));
+                $part->setContents($body, ['encoding' => $this->_lastBodyPartDecode, 'usestream' => true]);
             } catch (Horde_ActiveSync_Exception $e) {
             }
         }
@@ -535,44 +536,45 @@ class Horde_ActiveSync_Imap_Message
         }
 
         switch ($ptype = $part->getPrimaryType()) {
-        case 'multipart':
-            if (($part->getSubType() == 'related') &&
-                ($view_id = $part->getMetaData('viewable_part')) &&
-                ($viewable = $this->getMimePart($view_id, array('nocontents' => true)))) {
-                return $this->getPartName($viewable, $use_descrip);
-            }
-            /* Fall-through. */
+            case 'multipart':
+                if (($part->getSubType() == 'related')
+                    && ($view_id = $part->getMetaData('viewable_part'))
+                    && ($viewable = $this->getMimePart($view_id, ['nocontents' => true]))) {
+                    return $this->getPartName($viewable, $use_descrip);
+                }
+                /* Fall-through. */
 
-        case 'application':
-        case 'model':
-            $ptype = $part->getSubType();
-            break;
+                // no break
+            case 'application':
+            case 'model':
+                $ptype = $part->getSubType();
+                break;
         }
 
         switch ($ptype) {
-        case 'audio':
-            return Horde_ActiveSync_Translation::t('Audio part');
+            case 'audio':
+                return Horde_ActiveSync_Translation::t('Audio part');
 
-        case 'image':
-            return Horde_ActiveSync_Translation::t('Image part');
+            case 'image':
+                return Horde_ActiveSync_Translation::t('Image part');
 
-        case 'message':
-        case Horde_Mime_Part::UNKNOWN:
-            return Horde_ActiveSync_Translation::t('Message part');
+            case 'message':
+            case Horde_Mime_Part::UNKNOWN:
+                return Horde_ActiveSync_Translation::t('Message part');
 
-        case 'multipart':
-            return Horde_ActiveSync_Translation::t('Multipart part');
+            case 'multipart':
+                return Horde_ActiveSync_Translation::t('Multipart part');
 
-        case 'text':
-            return Horde_ActiveSync_Translation::t('Text part');
+            case 'text':
+                return Horde_ActiveSync_Translation::t('Text part');
 
-        case 'video':
-            return Horde_ActiveSync_Translation::t('Video part');
+            case 'video':
+                return Horde_ActiveSync_Translation::t('Video part');
 
-        default:
-            // Attempt to translate this type, if possible. Odds are that
-            // it won't appear in the dictionary though.
-            return sprintf(Horde_ActiveSync_Translation::t('%s part'), _(Horde_String::ucfirst($ptype)));
+            default:
+                // Attempt to translate this type, if possible. Odds are that
+                // it won't appear in the dictionary though.
+                return sprintf(Horde_ActiveSync_Translation::t('%s part'), _(Horde_String::ucfirst($ptype)));
         }
     }
 
@@ -601,18 +603,19 @@ class Horde_ActiveSync_Imap_Message
     public function getBodyPart($id, $options)
     {
         $options = array_merge(
-            array(
+            [
                 'decode' => false,
                 'mimeheaders' => false,
-                'stream' => false),
-            $options);
+                'stream' => false],
+            $options
+        );
         $this->_lastBodyPartDecode = null;
         $query = new Horde_Imap_Client_Fetch_Query();
         if (!isset($options['length']) || !empty($options['length'])) {
-            $bodypart_params = array(
+            $bodypart_params = [
                 'decode' => true,
-                'peek' => true
-            );
+                'peek' => true,
+            ];
 
             if (isset($options['length'])) {
                 $bodypart_params['start'] = 0;
@@ -623,15 +626,15 @@ class Horde_ActiveSync_Imap_Message
         }
 
         if (!empty($options['mimeheaders'])) {
-            $query->mimeHeader($id, array(
-                'peek' => true
-            ));
+            $query->mimeHeader($id, [
+                'peek' => true,
+            ]);
         }
 
         $fetch_res = $this->_imap->fetch(
             $this->_mbox,
             $query,
-            array('ids' => new Horde_Imap_Client_Ids(array($this->uid)))
+            ['ids' => new Horde_Imap_Client_Ids([$this->uid])]
         );
 
         if (empty($fetch_res[$this->uid])) {
@@ -645,9 +648,9 @@ class Horde_ActiveSync_Imap_Message
             return $fetch_res[$this->uid]->getMimeHeader($id) . $fetch_res[$this->uid]->getBodyPart($id);
         } else {
             $swrapper = new Horde_Support_CombineStream(
-                array(
+                [
                     $fetch_res[$this->uid]->getMimeHeader($id, Horde_Imap_Client_Data_Fetch::HEADER_STREAM),
-                    $fetch_res[$this->uid]->getBodyPart($id, true))
+                    $fetch_res[$this->uid]->getBodyPart($id, true)]
             );
 
             return $swrapper->fopen();
@@ -663,13 +666,13 @@ class Horde_ActiveSync_Imap_Message
     public function getToAddresses()
     {
         $to = $this->envelope->to;
-        $dtos = $tos = array();
+        $dtos = $tos = [];
         foreach ($to->raw_addresses as $e) {
             $tos[] = Horde_ActiveSync_Utils::ensureUtf8($e->bare_address, 'UTF-8');
             $dtos[] = Horde_ActiveSync_Utils::ensureUtf8($e->label, 'UTF-8');
         }
 
-        return array('to' => $tos, 'displayto' => $dtos);
+        return ['to' => $tos, 'displayto' => $dtos];
     }
 
     /**
@@ -746,10 +749,10 @@ class Horde_ActiveSync_Imap_Message
         // Newer IMAP envelope handling may provide a Unix timestamp as string.
         // Horde_Date accepts int timestamps but not numeric timestamp strings.
         if (is_string($date) && ctype_digit($date)) {
-            return new Horde_Date((int)$date);
+            return new Horde_Date((int) $date);
         }
 
-        return new Horde_Date((string)$date);
+        return new Horde_Date((string) $date);
     }
 
     /**
@@ -815,7 +818,7 @@ class Horde_ActiveSync_Imap_Message
         if ($id = $this->basePart->hasiCalendar()) {
             // May already have downloaded the part.
             $part = $this->basePart->base->getPart($id);
-            if (!$part->getContents(array('stream' => true))) {
+            if (!$part->getContents(['stream' => true])) {
                 return $this->getMimePart($id);
             }
             return $part;
@@ -842,7 +845,7 @@ class Horde_ActiveSync_Imap_Message
      *
      * @return boolean True if message is S/MIME signed, false otherwise.
      */
-    public function isSigned(Horde_Mime_Part $message = null)
+    public function isSigned(?Horde_Mime_Part $message = null)
     {
         if (!empty($message)) {
             $message = new Horde_ActiveSync_Mime($message);
@@ -861,7 +864,7 @@ class Horde_ActiveSync_Imap_Message
      * @return boolean True if message is S/MIME signed or encrypted,
      *                 false otherwise.
      */
-    public function isEncrypted(Horde_Mime_Part $message = null)
+    public function isEncrypted(?Horde_Mime_Part $message = null)
     {
         if (!empty($message)) {
             $message = new Horde_ActiveSync_Mime($message);
