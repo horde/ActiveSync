@@ -296,6 +296,7 @@ class Horde_ActiveSync
     public const VERSION_FOURTEEN                      = '14.0';
     public const VERSION_FOURTEENONE                   = '14.1';
     public const VERSION_SIXTEEN                       = '16.0';
+    public const VERSION_SIXTEENONE                    = '16.1';
 
     public const MIME_SUPPORT_NONE                     = 0;
     public const MIME_SUPPORT_SMIME                    = 1;
