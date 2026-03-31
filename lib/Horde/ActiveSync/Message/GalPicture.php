@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_GalPicture::
  *
@@ -26,19 +27,19 @@ class Horde_ActiveSync_Message_GalPicture extends Horde_ActiveSync_Message_Base
      *
      * @var array
      */
-    protected $_mapping = array(
-        Horde_ActiveSync::GAL_STATUS => array(self::KEY_ATTRIBUTE => 'status'),
-        Horde_ActiveSync::GAL_DATA   => array(self::KEY_ATTRIBUTE => 'data')
-    );
+    protected $_mapping = [
+        Horde_ActiveSync::GAL_STATUS => [self::KEY_ATTRIBUTE => 'status'],
+        Horde_ActiveSync::GAL_DATA   => [self::KEY_ATTRIBUTE => 'data'],
+    ];
 
     /**
      * Property values.
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'status' => false,
-        'data'   => false
-    );
+        'data'   => false,
+    ];
 
 }

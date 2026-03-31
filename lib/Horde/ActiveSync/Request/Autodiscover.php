@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Request_Autodiscover::
  *
@@ -25,7 +26,7 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
      *
      * @return text  The content type of the response (text/xml).
      */
-    public function handle(Horde_Controller_Request $request = null)
+    public function handle(?Horde_Controller_Request $request = null)
     {
         $parser = xml_parser_create();
 
@@ -34,18 +35,19 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
 
         // Version 2 Autodisover request. Version 2 is always unauthenticated.
         if (!empty($server['REQUEST_URI']) && stripos($server['REQUEST_URI'], 'autodiscover/autodiscover.json') !== false) {
-          $params = array('protocol' => $request->getGetVars()['Protocol']);
-          $results = $this->_driver->autoDiscover($params, 2);
-          if (!empty($results['url'])) {
-            $this->_encoder->getStream()->add('{"Protocol": "' . $params['protocol'] . '", "Url": "' . $results['url'] . '"}');
-          }
-          return 'application/json';
+            $params = ['protocol' => $request->getGetVars()['Protocol']];
+            $results = $this->_driver->autoDiscover($params, 2);
+            if (!empty($results['url'])) {
+                $this->_encoder->getStream()->add('{"Protocol": "' . $params['protocol'] . '", "Url": "' . $results['url'] . '"}');
+            }
+            return 'application/json';
         }
 
         xml_parse_into_struct(
-          $parser,
-          $this->_decoder->getStream()->getString(),
-          $values);
+            $parser,
+            $this->_decoder->getStream()->getString(),
+            $values
+        );
 
         // Obtain the credentials sent by the client.
         // NOTE: Some broken clients *cough* android *cough* don't send the
@@ -66,7 +68,7 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
         }
 
         if (!empty($values)) {
-            $params = array('request_schema' => trim($values[0]['attributes']['XMLNS']));
+            $params = ['request_schema' => trim($values[0]['attributes']['XMLNS'])];
             // Response Schema is not in a set place.
             foreach ($values as $value) {
                 if ($value['tag'] == 'ACCEPTABLERESPONSESCHEMA') {
@@ -76,10 +78,10 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
             }
         } else {
             // Assume broken clients want these schemas.
-            $params = array(
-              'request_schema' => 'http://schemas.microsoft.com/exchange/autodiscover/mobilesync/requestschema/2006',
-              'response_schema' => 'http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006'
-            );
+            $params = [
+                'request_schema' => 'http://schemas.microsoft.com/exchange/autodiscover/mobilesync/requestschema/2006',
+                'response_schema' => 'http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006',
+            ];
         }
         $results = $this->_driver->autoDiscover($params);
         if (empty($results['raw_xml'])) {
@@ -95,9 +97,7 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
     /**
      * Noop. This class overrides the handle method.
      */
-    protected function _handle()
-    {
-    }
+    protected function _handle() {}
 
     /**
      * Build the appropriate response string to send back to the client.
@@ -122,8 +122,8 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
     protected function _buildResponseString($properties)
     {
         // Default response is for mobilesync.
-        if (empty($properties['request_schema']) ||
-            stripos($properties['request_schema'], 'autodiscover/mobilesync') !== false) {
+        if (empty($properties['request_schema'])
+            || stripos($properties['request_schema'], 'autodiscover/mobilesync') !== false) {
 
             return '<?xml version="1.0" encoding="utf-8"?>
               <Autodiscover xmlns="http://schemas.microsoft.com/exchange/autodiscover/responseschema/2006">
@@ -202,23 +202,23 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
 
             return $xml;
         } else {
-          // Unknown request.
-          return $this->_buildFailureResponse($properties['email'], '600', $properties['response_schema']);
+            // Unknown request.
+            return $this->_buildFailureResponse($properties['email'], '600', $properties['response_schema']);
         }
     }
 
     protected function _getEncryptionValue($type, $properties)
     {
-      if (!empty($properties[$type]['encryption'])) {
-          return '<Encryption>' . $properties[$type]['encryption'] . '</Encryption>';
-      }
-      // Older version of autodiscover.
-      if (!empty($properties[$type]['ssl'])) {
-        return '<Encryption>SSL</Encryption>';
-      }
+        if (!empty($properties[$type]['encryption'])) {
+            return '<Encryption>' . $properties[$type]['encryption'] . '</Encryption>';
+        }
+        // Older version of autodiscover.
+        if (!empty($properties[$type]['ssl'])) {
+            return '<Encryption>SSL</Encryption>';
+        }
 
-      // None specified.
-      return '<Encryption>None</Encryption>';
+        // None specified.
+        return '<Encryption>None</Encryption>';
     }
 
     /**

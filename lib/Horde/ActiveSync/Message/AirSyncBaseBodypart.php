@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_AirSyncBaseBodypart::
  *
@@ -29,36 +30,35 @@
  */
 class Horde_ActiveSync_Message_AirSyncBaseBodypart extends Horde_ActiveSync_Message_Base
 {
-
-    const STATUS_SUCCESS = 1;
+    public const STATUS_SUCCESS = 1;
 
     /**
      * Property mapping
      *
      * @var array
      */
-    protected $_mapping = array(
-        Horde_ActiveSync::AIRSYNCBASE_STATUS            => array(self::KEY_ATTRIBUTE => 'status'),
-        Horde_ActiveSync::AIRSYNCBASE_TYPE              => array(self::KEY_ATTRIBUTE => 'type'),
-        Horde_ActiveSync::AIRSYNCBASE_ESTIMATEDDATASIZE => array(self::KEY_ATTRIBUTE => 'estimateddatasize'),
-        Horde_ActiveSync::AIRSYNCBASE_TRUNCATED         => array(self::KEY_ATTRIBUTE => 'truncated'),
-        Horde_ActiveSync::AIRSYNCBASE_DATA              => array(self::KEY_ATTRIBUTE => 'data'),
-        Horde_ActiveSync::AIRSYNCBASE_PREVIEW           => array(self::KEY_ATTRIBUTE => 'preview')
-    );
+    protected $_mapping = [
+        Horde_ActiveSync::AIRSYNCBASE_STATUS            => [self::KEY_ATTRIBUTE => 'status'],
+        Horde_ActiveSync::AIRSYNCBASE_TYPE              => [self::KEY_ATTRIBUTE => 'type'],
+        Horde_ActiveSync::AIRSYNCBASE_ESTIMATEDDATASIZE => [self::KEY_ATTRIBUTE => 'estimateddatasize'],
+        Horde_ActiveSync::AIRSYNCBASE_TRUNCATED         => [self::KEY_ATTRIBUTE => 'truncated'],
+        Horde_ActiveSync::AIRSYNCBASE_DATA              => [self::KEY_ATTRIBUTE => 'data'],
+        Horde_ActiveSync::AIRSYNCBASE_PREVIEW           => [self::KEY_ATTRIBUTE => 'preview'],
+    ];
 
     /**
      * Property values
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'status'            => false,
         'type'              =>  Horde_ActiveSync::BODYPREF_TYPE_HTML,
         'estimateddatasize' => false,
         'truncated'         => false,
         'data'              => false,
         'preview'           => false,
-    );
+    ];
 
     /**
      * Return the message type.

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Unit tests for Horde_ActiveSync_Folder_Imap
  *
@@ -6,40 +7,42 @@
  * @category Horde
  * @package ActiveSync
  */
-namespace Horde\ActiveSync;
-use PHPUnit\Framework\TestCase;
-use Horde_Imap_Client_Socket;
 
+namespace Horde\ActiveSync;
+
+use Horde_Test_Case as TestCase;
+
+/**
+ * @coversNothing
+ */
 class ImapAdapterTest extends TestCase
 {
     public function testBug13711()
     {
         $this->markTestIncomplete("Useless test without all the fixtures.");
         $factory = new Horde_ActiveSync_Factory_TestServer();
-        $imap_client = $this->getMockBuilder(Horde_Imap_Client_Socket::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $imap_client = $this->getMockSkipConstructor('Horde_Imap_Client_Socket');
         $imap_client->expects($this->any())
             ->method('fetch')
             ->will($this->_getFixturesFor13711());
 
         $imap_factory = new Horde_ActiveSync_Stub_ImapFactory();
         $imap_factory->fixture = $imap_client;
-        $adapter = new Horde_ActiveSync_Imap_Adapter(array('factory' => $imap_factory));
+        $adapter = new Horde_ActiveSync_Imap_Adapter(['factory' => $imap_factory]);
 
         $adapter->getMessages(
             'INBOX',
-            array(462),
-            array(
+            [462],
+            [
                 'protocolversion' => 14.1,
-                'bodyprefs' => array(
+                'bodyprefs' => [
                     'wanted' => Horde_ActiveSync::BODYPREF_TYPE_MIME,
-                     Horde_ActiveSync::BODYPREF_TYPE_MIME => array(
-                           'type' => Horde_ActiveSync::BODYPREF_TYPE_MIME,
-                           'truncationsize' => 200000)
-                ),
+                    Horde_ActiveSync::BODYPREF_TYPE_MIME => [
+                        'type' => Horde_ActiveSync::BODYPREF_TYPE_MIME,
+                        'truncationsize' => 200000],
+                ],
                 'mimesupport' => Horde_ActiveSync::MIME_SUPPORT_ALL,
-            )
+            ]
         );
     }
 

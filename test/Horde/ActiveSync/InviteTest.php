@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Unit tests Horde_ActiveSync_Message_Appointment objects.
  *
@@ -6,9 +7,14 @@
  * @category Horde
  * @package ActiveSync
  */
-namespace Horde\ActiveSync;
-use PHPUnit\Framework\TestCase;
 
+namespace Horde\ActiveSync;
+
+use Horde_Test_Case as TestCase;
+
+/**
+ * @coversNothing
+ */
 class InviteTest extends TestCase
 {
     protected $_oldtz;

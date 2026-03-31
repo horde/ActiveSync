@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Wrapper around Horde_Log_Handler_Stream to allow passing a stream as the
  * event.
@@ -46,7 +47,7 @@ class Horde_ActiveSync_Log_Handler extends Horde_Log_Handler_Stream
 
         rewind($event['message']);
         while (!feof($event['message'])) {
-           fwrite($this->_stream, fread($message, 8192));
+            fwrite($this->_stream, fread($message, 8192));
         }
         fwrite($this->_stream, PHP_EOL);
         rewind($event['message']);

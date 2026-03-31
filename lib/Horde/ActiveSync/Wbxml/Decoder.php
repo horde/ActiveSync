@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Wbxml_Decoder::
  *
@@ -170,11 +171,11 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
             return false;
         }
         switch ($el[self::EN_TYPE]) {
-        case self::EN_TYPE_STARTTAG:
-            return !($el[self::EN_FLAGS] & self::EN_FLAGS_CONTENT);
-        default:
-            // Not applicable.
-            return false;
+            case self::EN_TYPE_STARTTAG:
+                return !($el[self::EN_FLAGS] & self::EN_FLAGS_CONTENT);
+            default:
+                // Not applicable.
+                return false;
         }
     }
 
@@ -212,8 +213,8 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
     {
         $element = $this->getToken();
         if ($element !== false) {
-            if ($element[self::EN_TYPE] === self::EN_TYPE_STARTTAG &&
-                $element[self::EN_TAG] === $tag) {
+            if ($element[self::EN_TYPE] === self::EN_TYPE_STARTTAG
+                && $element[self::EN_TAG] === $tag) {
                 $this->_lastStartElement = $element;
                 return $element;
             }
@@ -297,29 +298,29 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
     protected function _logToken($el)
     {
         switch ($el[self::EN_TYPE]) {
-        case self::EN_TYPE_STARTTAG:
-            $indent = count($this->_logStack);
-            if ($el[self::EN_FLAGS] & self::EN_FLAGS_CONTENT) {
-                $this->_logStack[] = $el[self::EN_TAG];
-                $this->_logger->client(sprintf('<%s>', $el[self::EN_TAG]), $indent);
-            } else {
-                $this->_logger->client(sprintf('<%s />', $el[self::EN_TAG]), $indent);
-            }
-            break;
-        case self::EN_TYPE_ENDTAG:
-            $tag = array_pop($this->_logStack);
-            $indent = count($this->_logStack);
-            $this->_logger->client(sprintf('</%s>', $tag), $indent);
-            break;
-        case self::EN_TYPE_CONTENT:
-            $indent = count($this->_logStack) + 1;
-            if ($this->_logLevel == self::LOG_PROTOCOL &&
-                ($l = Horde_String::length($el[self::EN_CONTENT])) > self::LOG_MAXCONTENT) {
-                $this->_logger->client(sprintf('[%d bytes of content]', $l), $indent);
-            } else {
-                $this->_logger->client($el[self::EN_CONTENT], $indent);
-            }
-            break;
+            case self::EN_TYPE_STARTTAG:
+                $indent = count($this->_logStack);
+                if ($el[self::EN_FLAGS] & self::EN_FLAGS_CONTENT) {
+                    $this->_logStack[] = $el[self::EN_TAG];
+                    $this->_logger->client(sprintf('<%s>', $el[self::EN_TAG]), $indent);
+                } else {
+                    $this->_logger->client(sprintf('<%s />', $el[self::EN_TAG]), $indent);
+                }
+                break;
+            case self::EN_TYPE_ENDTAG:
+                $tag = array_pop($this->_logStack);
+                $indent = count($this->_logStack);
+                $this->_logger->client(sprintf('</%s>', $tag), $indent);
+                break;
+            case self::EN_TYPE_CONTENT:
+                $indent = count($this->_logStack) + 1;
+                if ($this->_logLevel == self::LOG_PROTOCOL
+                    && ($l = Horde_String::length($el[self::EN_CONTENT])) > self::LOG_MAXCONTENT) {
+                    $this->_logger->client(sprintf('[%d bytes of content]', $l), $indent);
+                } else {
+                    $this->_logger->client($el[self::EN_CONTENT], $indent);
+                }
+                break;
         }
     }
 
@@ -328,7 +329,8 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
      *
      * @return array|boolean  The element array or false on end of stream.
      */
-   protected function _getToken() {
+    protected function _getToken()
+    {
 
         // Get the data from the input stream
         $element = [];
@@ -341,93 +343,93 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
             }
 
             switch ($byte) {
-            case self::SWITCH_PAGE:
-                $this->_tagcp = $this->_getByte();
-                break;
+                case self::SWITCH_PAGE:
+                    $this->_tagcp = $this->_getByte();
+                    break;
 
-            case self::END:
-                $element[self::EN_TYPE] = self::EN_TYPE_ENDTAG;
-                return $element;
+                case self::END:
+                    $element[self::EN_TYPE] = self::EN_TYPE_ENDTAG;
+                    return $element;
 
-            case self::ENTITY:
-                $entity = $this->_getMBUInt();
-                $element[self::EN_TYPE] = self::EN_TYPE_CONTENT;
-                $element[self::EN_CONTENT] = $this->entityToCharset($entity);
-                return $element;
+                case self::ENTITY:
+                    $entity = $this->_getMBUInt();
+                    $element[self::EN_TYPE] = self::EN_TYPE_CONTENT;
+                    $element[self::EN_CONTENT] = $this->entityToCharset($entity);
+                    return $element;
 
-            case self::STR_I:
-                $element[self::EN_TYPE] = self::EN_TYPE_CONTENT;
-                $element[self::EN_CONTENT] = $this->_getTermStr();
-                return $element;
+                case self::STR_I:
+                    $element[self::EN_TYPE] = self::EN_TYPE_CONTENT;
+                    $element[self::EN_CONTENT] = $this->_getTermStr();
+                    return $element;
 
-            case self::LITERAL:
-                $element[self::EN_TYPE] = self::EN_TYPE_STARTTAG;
-                $element[self::EN_TAG] = $this->_getStringTableEntry($this->_getMBUInt());
-                $element[self::EN_FLAGS] = 0;
-                return $element;
+                case self::LITERAL:
+                    $element[self::EN_TYPE] = self::EN_TYPE_STARTTAG;
+                    $element[self::EN_TAG] = $this->_getStringTableEntry($this->_getMBUInt());
+                    $element[self::EN_FLAGS] = 0;
+                    return $element;
 
-            case self::EXT_I_0:
-            case self::EXT_I_1:
-            case self::EXT_I_2:
-                $this->_getTermStr();
-                // Ignore extensions
-                break;
+                case self::EXT_I_0:
+                case self::EXT_I_1:
+                case self::EXT_I_2:
+                    $this->_getTermStr();
+                    // Ignore extensions
+                    break;
 
-            case self::PI:
-                // Ignore PI
-                $this->_getAttributes();
-                break;
+                case self::PI:
+                    // Ignore PI
+                    $this->_getAttributes();
+                    break;
 
-            case self::LITERAL_C:
-                $element[self::EN_TYPE] = self::EN_TYPE_STARTTAG;
-                $element[self::EN_TAG] = $this->_getStringTableEntry($this->_getMBUInt());
-                $element[self::EN_FLAGS] = self::EN_FLAGS_CONTENT;
-                return $element;
+                case self::LITERAL_C:
+                    $element[self::EN_TYPE] = self::EN_TYPE_STARTTAG;
+                    $element[self::EN_TAG] = $this->_getStringTableEntry($this->_getMBUInt());
+                    $element[self::EN_FLAGS] = self::EN_FLAGS_CONTENT;
+                    return $element;
 
-            case self::EXT_T_0:
-            case self::EXT_T_1:
-            case self::EXT_T_2:
-                $this->_getMBUInt();
-                // Ingore extensions;
-                break;
+                case self::EXT_T_0:
+                case self::EXT_T_1:
+                case self::EXT_T_2:
+                    $this->_getMBUInt();
+                    // Ingore extensions;
+                    break;
 
-            case self::STR_T:
-                $element[self::EN_TYPE] = self::EN_TYPE_CONTENT;
-                $element[self::EN_CONTENT] = $this->_getStringTableEntry($this->_getMBUInt());
-                return $element;
+                case self::STR_T:
+                    $element[self::EN_TYPE] = self::EN_TYPE_CONTENT;
+                    $element[self::EN_CONTENT] = $this->_getStringTableEntry($this->_getMBUInt());
+                    return $element;
 
-            case self::LITERAL_A:
-                $element[self::EN_TYPE] = self::EN_TYPE_STARTTAG;
-                $element[self::EN_TAG] = $this->_getStringTableEntry($this->_getMBUInt());
-                $element[self::EN_ATTRIBUTES] = $this->_getAttributes();
-                $element[self::EN_FLAGS] = self::EN_FLAGS_ATTRIBUTES;
-                return $element;
-            case self::EXT_0:
-            case self::EXT_1:
-            case self::EXT_2:
-                break;
-
-            case self::OPAQUE:
-                $length = $this->_getMBUInt();
-                $element[self::EN_TYPE] = self::EN_TYPE_CONTENT;
-                $element[self::EN_CONTENT] = $this->_getOpaque($length);
-                return $element;
-
-            case self::LITERAL_AC:
-                $element[self::EN_TYPE] = self::EN_TYPE_STARTTAG;
-                $element[self::EN_TAG] = $this->_getStringTableEntry($this->_getMBUInt());
-                $element[self::EN_ATTRIBUTES] = $this->_getAttributes();
-                $element[self::EN_FLAGS] = self::EN_FLAGS_ATTRIBUTES | self::EN_FLAGS_CONTENT;
-                return $element;
-
-            default:
-                $element[self::EN_TYPE] = self::EN_TYPE_STARTTAG;
-                $element[self::EN_TAG] = $this->_getMapping($this->_tagcp, $byte & 0x3f);
-                $element[self::EN_FLAGS] = ($byte & 0x80 ? self::EN_FLAGS_ATTRIBUTES : 0) | ($byte & 0x40 ? self::EN_FLAGS_CONTENT : 0);
-                if ($byte & 0x80) {
+                case self::LITERAL_A:
+                    $element[self::EN_TYPE] = self::EN_TYPE_STARTTAG;
+                    $element[self::EN_TAG] = $this->_getStringTableEntry($this->_getMBUInt());
                     $element[self::EN_ATTRIBUTES] = $this->_getAttributes();
-                }
-                return $element;
+                    $element[self::EN_FLAGS] = self::EN_FLAGS_ATTRIBUTES;
+                    return $element;
+                case self::EXT_0:
+                case self::EXT_1:
+                case self::EXT_2:
+                    break;
+
+                case self::OPAQUE:
+                    $length = $this->_getMBUInt();
+                    $element[self::EN_TYPE] = self::EN_TYPE_CONTENT;
+                    $element[self::EN_CONTENT] = $this->_getOpaque($length);
+                    return $element;
+
+                case self::LITERAL_AC:
+                    $element[self::EN_TYPE] = self::EN_TYPE_STARTTAG;
+                    $element[self::EN_TAG] = $this->_getStringTableEntry($this->_getMBUInt());
+                    $element[self::EN_ATTRIBUTES] = $this->_getAttributes();
+                    $element[self::EN_FLAGS] = self::EN_FLAGS_ATTRIBUTES | self::EN_FLAGS_CONTENT;
+                    return $element;
+
+                default:
+                    $element[self::EN_TYPE] = self::EN_TYPE_STARTTAG;
+                    $element[self::EN_TAG] = $this->_getMapping($this->_tagcp, $byte & 0x3f);
+                    $element[self::EN_FLAGS] = ($byte & 0x80 ? self::EN_FLAGS_ATTRIBUTES : 0) | ($byte & 0x40 ? self::EN_FLAGS_CONTENT : 0);
+                    if ($byte & 0x80) {
+                        $element[self::EN_ATTRIBUTES] = $this->_getAttributes();
+                    }
+                    return $element;
             }
         }
 
@@ -457,7 +459,7 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
     protected function _readVersion()
     {
         $b = $this->_getByte();
-        if ($b != NULL) {
+        if ($b != null) {
             $this->version = $b;
         }
     }
@@ -469,7 +471,7 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
      */
     protected function _getAttributes()
     {
-        $attributes = array();
+        $attributes = [];
         $attr = '';
 
         while (1) {
@@ -478,80 +480,80 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
                 break;
             }
 
-            switch($byte) {
-            case self::SWITCH_PAGE:
-                $this->_attrcp = $this->_getByte();
-                break;
+            switch ($byte) {
+                case self::SWITCH_PAGE:
+                    $this->_attrcp = $this->_getByte();
+                    break;
 
-            case self::END:
-                if ($attr != '') {
-                    $attributes += $this->_splitAttribute($attr);
-                }
-                return $attributes;
-
-            case self::ENTITY:
-                $entity = $this->_getMBUInt();
-                $attr .= $this->entityToCharset($entity);
-                return $element;
-
-            case self::STR_I:
-                $attr .= $this->_getTermStr();
-                return $element;
-
-            case self::LITERAL:
-                if ($attr != '') {
-                    $attributes += $this->_splitAttribute($attr);
-                }
-                $attr = $this->_getStringTableEntry($this->_getMBUInt());
-                return $element;
-
-            case self::EXT_I_0:
-            case self::EXT_I_1:
-            case self::EXT_I_2:
-                $this->_getTermStr();
-                break;
-
-            case self::PI:
-            case self::LITERAL_C:
-                // Invalid
-                return false;
-
-            case self::EXT_T_0:
-            case self::EXT_T_1:
-            case self::EXT_T_2:
-                $this->_getMBUInt();
-                break;
-
-            case self::STR_T:
-                $attr .= $this->_getStringTableEntry($this->_getMBUInt());
-                return $element;
-
-            case self::LITERAL_A:
-                return false;
-
-            case self::EXT_0:
-            case self::EXT_1:
-            case self::EXT_2:
-                break;
-
-            case self::OPAQUE:
-                $length = $this->_getMBUInt();
-                $attr .= $this->_getOpaque($length);
-                return $element;
-
-            case self::LITERAL_AC:
-                return false;
-
-            default:
-                if ($byte < 128) {
+                case self::END:
                     if ($attr != '') {
                         $attributes += $this->_splitAttribute($attr);
-                        $attr = '';
                     }
-                }
+                    return $attributes;
 
-                $attr .= $this->_getMapping($this->_attrcp, $byte);
-                break;
+                case self::ENTITY:
+                    $entity = $this->_getMBUInt();
+                    $attr .= $this->entityToCharset($entity);
+                    return $element;
+
+                case self::STR_I:
+                    $attr .= $this->_getTermStr();
+                    return $element;
+
+                case self::LITERAL:
+                    if ($attr != '') {
+                        $attributes += $this->_splitAttribute($attr);
+                    }
+                    $attr = $this->_getStringTableEntry($this->_getMBUInt());
+                    return $element;
+
+                case self::EXT_I_0:
+                case self::EXT_I_1:
+                case self::EXT_I_2:
+                    $this->_getTermStr();
+                    break;
+
+                case self::PI:
+                case self::LITERAL_C:
+                    // Invalid
+                    return false;
+
+                case self::EXT_T_0:
+                case self::EXT_T_1:
+                case self::EXT_T_2:
+                    $this->_getMBUInt();
+                    break;
+
+                case self::STR_T:
+                    $attr .= $this->_getStringTableEntry($this->_getMBUInt());
+                    return $element;
+
+                case self::LITERAL_A:
+                    return false;
+
+                case self::EXT_0:
+                case self::EXT_1:
+                case self::EXT_2:
+                    break;
+
+                case self::OPAQUE:
+                    $length = $this->_getMBUInt();
+                    $attr .= $this->_getOpaque($length);
+                    return $element;
+
+                case self::LITERAL_AC:
+                    return false;
+
+                default:
+                    if ($byte < 128) {
+                        if ($attr != '') {
+                            $attributes += $this->_splitAttribute($attr);
+                            $attr = '';
+                        }
+                    }
+
+                    $attr .= $this->_getMapping($this->_attrcp, $byte);
+                    break;
             }
         }
     }
@@ -565,10 +567,10 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
      */
     protected function _splitAttribute($attr)
     {
-        $attributes = array();
-        $pos = strpos($attr,chr(61)); // equals sign
+        $attributes = [];
+        $pos = strpos($attr, chr(61)); // equals sign
         if ($pos) {
-            $attributes[substr($attr, 0, $pos)] = substr($attr, $pos+1);
+            $attributes[substr($attr, 0, $pos)] = substr($attr, $pos + 1);
         } else {
             $attributes[$attr] = null;
         }
@@ -584,7 +586,7 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
     protected function _getTermStr()
     {
         $str = '';
-        while(1) {
+        while (1) {
             $in = $this->_getByte();
 
             if ($in == 0) {
@@ -620,7 +622,8 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
                     throw new Horde_ActiveSync_Exception(sprintf(
                         'Connection unavailable while trying to read %d bytes from stream. Aborting after %d bytes read.',
                         $len,
-                        strlen($d)));
+                        strlen($d)
+                    ));
                 } else {
                     $d .= $data;
                 }
@@ -658,13 +661,13 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
     {
         $uint = 0;
         while (1) {
-          $byte = $this->_getByte();
-          $uint |= $byte & 0x7f;
-          if ($byte & 0x80) {
-              $uint = $uint << 7;
-          } else {
-              break;
-          }
+            $byte = $this->_getByte();
+            $uint |= $byte & 0x7f;
+            if ($byte & 0x80) {
+                $uint = $uint << 7;
+            } else {
+                break;
+            }
         }
 
         return $uint;

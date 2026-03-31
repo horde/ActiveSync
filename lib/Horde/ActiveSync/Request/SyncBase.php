@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Request_SyncBase::
  *
@@ -27,12 +28,12 @@ abstract class Horde_ActiveSync_Request_SyncBase extends Horde_ActiveSync_Reques
      */
     protected function _bodyPartPrefs(&$options)
     {
-        $options['bodypartprefs'] = array();
+        $options['bodypartprefs'] = [];
         if ($this->_decoder->getElementStartTag(Horde_ActiveSync::AIRSYNCBASE_TYPE)) {
             $options['bodypartprefs']['type'] = $this->_decoder->getElementContent();
             // MS-ASAIRS 2.2.2.22.3 type MUST be BODYPREF_TYPE_HTML
-            if (!$this->_decoder->getElementEndTag() ||
-                $options['bodypartprefs']['type'] != Horde_ActiveSync::BODYPREF_TYPE_HTML) {
+            if (!$this->_decoder->getElementEndTag()
+                || $options['bodypartprefs']['type'] != Horde_ActiveSync::BODYPREF_TYPE_HTML) {
                 $this->_statusCode = self::STATUS_PROTERROR;
                 $this->_handleError($options);
                 exit;
@@ -64,8 +65,8 @@ abstract class Horde_ActiveSync_Request_SyncBase extends Horde_ActiveSync_Reques
         if ($this->_decoder->getElementStartTag(Horde_ActiveSync::AIRSYNCBASE_PREVIEW)) {
             $options['bodypartprefs']['preview'] = $this->_decoder->getElementContent();
             // MS-ASAIRS 2.2.2.18.3 - Max size of preview is 255.
-            if (!$this->_decoder->getElementEndTag() ||
-                $options['bodypartprefs']['preview'] > 255) {
+            if (!$this->_decoder->getElementEndTag()
+                || $options['bodypartprefs']['preview'] > 255) {
 
                 $this->_statusCode = self::STATUS_PROTERROR;
                 $this->_handleError($options);
@@ -86,9 +87,9 @@ abstract class Horde_ActiveSync_Request_SyncBase extends Horde_ActiveSync_Reques
      */
     protected function _bodyPrefs(&$options)
     {
-        $body_pref = array();
+        $body_pref = [];
         if (empty($options['bodyprefs'])) {
-            $options['bodyprefs'] = array();
+            $options['bodyprefs'] = [];
         }
         while (1) {
             if ($this->_decoder->getElementStartTag(Horde_ActiveSync::AIRSYNCBASE_TYPE)) {

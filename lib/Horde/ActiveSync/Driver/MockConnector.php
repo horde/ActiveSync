@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Driver_MockConnector::
  *
@@ -19,14 +20,13 @@
  */
 class Horde_ActiveSync_Driver_MockConnector
 {
-
     /**
      * By default, support the main groupware apps, minus mail.
      * Mock this method to override.
      */
     public function listApis()
     {
-        return array('calendar', 'contacts', 'tasks', 'notes');
+        return ['calendar', 'contacts', 'tasks', 'notes'];
     }
 
     /**
@@ -34,7 +34,7 @@ class Horde_ActiveSync_Driver_MockConnector
      */
     public function listUids()
     {
-        return array('UID_001', 'UID_002');
+        return ['UID_001', 'UID_002'];
     }
 
     /**
@@ -42,10 +42,10 @@ class Horde_ActiveSync_Driver_MockConnector
      */
     public function getChanges($folderid, $from_ts, $to_ts)
     {
-        return array(
-            'add' => array(),
-            'modify' => array(),
-            'delete' => array());
+        return [
+            'add' => [],
+            'modify' => [],
+            'delete' => []];
     }
 
     /**
@@ -61,10 +61,7 @@ class Horde_ActiveSync_Driver_MockConnector
      *
      * @return Horde_ActiveSync_Message_Base
      */
-    public function export($id, $options)
-    {
-
-    }
+    public function export($id, $options) {}
 
 
 

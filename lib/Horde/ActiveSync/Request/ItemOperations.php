@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Request_ItemOperations::
  *
@@ -31,41 +32,41 @@
  */
 class Horde_ActiveSync_Request_ItemOperations extends Horde_ActiveSync_Request_SyncBase
 {
-    const ITEMOPERATIONS_ITEMOPERATIONS     = 'ItemOperations:ItemOperations';
-    const ITEMOPERATIONS_FETCH              = 'ItemOperations:Fetch';
-    const ITEMOPERATIONS_STORE              = 'ItemOperations:Store';
-    const ITEMOPERATIONS_OPTIONS            = 'ItemOperations:Options';
-    const ITEMOPERATIONS_RANGE              = 'ItemOperations:Range';
-    const ITEMOPERATIONS_TOTAL              = 'ItemOperations:Total';
-    const ITEMOPERATIONS_PROPERTIES         = 'ItemOperations:Properties';
-    const ITEMOPERATIONS_DATA               = 'ItemOperations:Data';
-    const ITEMOPERATIONS_STATUS             = 'ItemOperations:Status';
-    const ITEMOPERATIONS_RESPONSE           = 'ItemOperations:Response';
-    const ITEMOPERATIONS_VERSION            = 'ItemOperations:Version';
-    const ITEMOPERATIONS_SCHEMA             = 'ItemOperations:Schema';
-    const ITEMOPERATIONS_PART               = 'ItemOperations:Part';
-    const ITEMOPERATIONS_EMPTYFOLDERCONTENT = 'ItemOperations:EmptyFolderContent';
-    const ITEMOPERATIONS_DELETESUBFOLDERS   = 'ItemOperations:DeleteSubFolders';
-    const ITEMOPERATIONS_USERNAME           = 'ItemOperations:UserName';
-    const ITEMOPERATIONS_PASSWORD           = 'ItemOperations:Password';
+    public const ITEMOPERATIONS_ITEMOPERATIONS     = 'ItemOperations:ItemOperations';
+    public const ITEMOPERATIONS_FETCH              = 'ItemOperations:Fetch';
+    public const ITEMOPERATIONS_STORE              = 'ItemOperations:Store';
+    public const ITEMOPERATIONS_OPTIONS            = 'ItemOperations:Options';
+    public const ITEMOPERATIONS_RANGE              = 'ItemOperations:Range';
+    public const ITEMOPERATIONS_TOTAL              = 'ItemOperations:Total';
+    public const ITEMOPERATIONS_PROPERTIES         = 'ItemOperations:Properties';
+    public const ITEMOPERATIONS_DATA               = 'ItemOperations:Data';
+    public const ITEMOPERATIONS_STATUS             = 'ItemOperations:Status';
+    public const ITEMOPERATIONS_RESPONSE           = 'ItemOperations:Response';
+    public const ITEMOPERATIONS_VERSION            = 'ItemOperations:Version';
+    public const ITEMOPERATIONS_SCHEMA             = 'ItemOperations:Schema';
+    public const ITEMOPERATIONS_PART               = 'ItemOperations:Part';
+    public const ITEMOPERATIONS_EMPTYFOLDERCONTENT = 'ItemOperations:EmptyFolderContent';
+    public const ITEMOPERATIONS_DELETESUBFOLDERS   = 'ItemOperations:DeleteSubFolders';
+    public const ITEMOPERATIONS_USERNAME           = 'ItemOperations:UserName';
+    public const ITEMOPERATIONS_PASSWORD           = 'ItemOperations:Password';
 
     // 14.0
-    const ITEMOPERATIONS_MOVE               = 'ItemOperations:Move';
-    const ITEMOPERATIONS_DSTFLDID           = 'ItemOperations:DstFldId';
-    const ITEMOPERATIONS_CONVERSATIONID     = 'ItemOperations:ConversationId';
-    const ITEMOPERATIONS_MOVEALWAYS         = 'ItemOperations:MoveAlways';
+    public const ITEMOPERATIONS_MOVE               = 'ItemOperations:Move';
+    public const ITEMOPERATIONS_DSTFLDID           = 'ItemOperations:DstFldId';
+    public const ITEMOPERATIONS_CONVERSATIONID     = 'ItemOperations:ConversationId';
+    public const ITEMOPERATIONS_MOVEALWAYS         = 'ItemOperations:MoveAlways';
 
     /* Status */
-    const STATUS_SUCCESS         = 1;
-    const STATUS_PROTERR         = 2;
-    const STATUS_SERVERERR       = 3;
+    public const STATUS_SUCCESS         = 1;
+    public const STATUS_PROTERR         = 2;
+    public const STATUS_SERVERERR       = 3;
     // 4 - 13 are Document library related.
-    const STATUS_ATTINVALID      = 15;
-    const STATUS_POLICYERR       = 16;
-    const STATUS_PARTSUCCESS     = 17;
-    const STATUS_CREDENTIALS     = 18;
-    const STATUS_PROTERR_OPTIONS = 155;
-    const STATUS_NOT_SUPPORTED   = 156;
+    public const STATUS_ATTINVALID      = 15;
+    public const STATUS_POLICYERR       = 16;
+    public const STATUS_PARTSUCCESS     = 17;
+    public const STATUS_CREDENTIALS     = 18;
+    public const STATUS_PROTERR_OPTIONS = 155;
+    public const STATUS_NOT_SUPPORTED   = 156;
 
 
     /**
@@ -83,68 +84,68 @@ class Horde_ActiveSync_Request_ItemOperations extends Horde_ActiveSync_Request_S
         }
 
         // The current itemoperation task
-        $thisio = array();
+        $thisio = [];
         $mimesupport = 0;
-        while (($reqtype = ($this->_decoder->getElementStartTag(self::ITEMOPERATIONS_FETCH) ? self::ITEMOPERATIONS_FETCH :
-                  ($this->_decoder->getElementStartTag(self::ITEMOPERATIONS_EMPTYFOLDERCONTENT) ? self::ITEMOPERATIONS_EMPTYFOLDERCONTENT  : -1))) != -1) {
+        while (($reqtype = ($this->_decoder->getElementStartTag(self::ITEMOPERATIONS_FETCH) ? self::ITEMOPERATIONS_FETCH
+                  : ($this->_decoder->getElementStartTag(self::ITEMOPERATIONS_EMPTYFOLDERCONTENT) ? self::ITEMOPERATIONS_EMPTYFOLDERCONTENT : -1))) != -1) {
 
             if ($reqtype == self::ITEMOPERATIONS_FETCH) {
                 $thisio['type'] = 'fetch';
 
-                while (($reqtag = ($this->_decoder->getElementStartTag(self::ITEMOPERATIONS_STORE) ? self::ITEMOPERATIONS_STORE :
-                              ($this->_decoder->getElementStartTag(self::ITEMOPERATIONS_OPTIONS) ? self::ITEMOPERATIONS_OPTIONS :
-                              ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_SERVERENTRYID) ? Horde_ActiveSync::SYNC_SERVERENTRYID :
-                              ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_FOLDERID) ? Horde_ActiveSync::SYNC_FOLDERID :
-                              ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_LINKID) ? Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_LINKID :
-                              ($this->_decoder->getElementStartTag(Horde_ActiveSync::AIRSYNCBASE_FILEREFERENCE) ? Horde_ActiveSync::AIRSYNCBASE_FILEREFERENCE :
-                              ($this->_decoder->getElementStartTag(Horde_ActiveSync_Request_Search::SEARCH_LONGID) ? Horde_ActiveSync_Request_Search::SEARCH_LONGID :
-                              -1)))))))) != -1) {
+                while (($reqtag = ($this->_decoder->getElementStartTag(self::ITEMOPERATIONS_STORE) ? self::ITEMOPERATIONS_STORE
+                              : ($this->_decoder->getElementStartTag(self::ITEMOPERATIONS_OPTIONS) ? self::ITEMOPERATIONS_OPTIONS
+                              : ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_SERVERENTRYID) ? Horde_ActiveSync::SYNC_SERVERENTRYID
+                              : ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_FOLDERID) ? Horde_ActiveSync::SYNC_FOLDERID
+                              : ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_LINKID) ? Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_LINKID
+                              : ($this->_decoder->getElementStartTag(Horde_ActiveSync::AIRSYNCBASE_FILEREFERENCE) ? Horde_ActiveSync::AIRSYNCBASE_FILEREFERENCE
+                              : ($this->_decoder->getElementStartTag(Horde_ActiveSync_Request_Search::SEARCH_LONGID) ? Horde_ActiveSync_Request_Search::SEARCH_LONGID
+                              : -1)))))))) != -1) {
 
                     if ($reqtag == self::ITEMOPERATIONS_OPTIONS) {
-                        while (($thisoption = ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_MIMESUPPORT) ? Horde_ActiveSync::SYNC_MIMESUPPORT :
-                               ($this->_decoder->getElementStartTag(Horde_ActiveSync::AIRSYNCBASE_BODYPREFERENCE) ? Horde_ActiveSync::AIRSYNCBASE_BODYPREFERENCE :
-                               ($this->_decoder->getElementStartTag(Horde_ActiveSync::AIRSYNCBASE_BODYPARTPREFERENCE) ? Horde_ActiveSync::AIRSYNCBASE_BODYPARTPREFERENCE :
-                               ($this->_decoder->getElementStartTag(self::ITEMOPERATIONS_SCHEMA) ? self::ITEMOPERATIONS_SCHEMA :
-                               ($this->_decoder->getElementStartTag(self::ITEMOPERATIONS_RANGE) ? self::ITEMOPERATIONS_RANGE :
-                               ($this->_decoder->getElementStartTag(self::ITEMOPERATIONS_USERNAME) ? self::ITEMOPERATIONS_USERNAME :
-                               ($this->_decoder->getElementStartTag(self::ITEMOPERATIONS_PASSWORD) ? self::ITEMOPERATIONS_PASSWORD :
-                               ($this->_decoder->getElementStartTag(Horde_ActiveSync::RM_SUPPORT) ? Horde_ActiveSync::RM_SUPPORT :
-                               -1))))))))) != -1) {
+                        while (($thisoption = ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_MIMESUPPORT) ? Horde_ActiveSync::SYNC_MIMESUPPORT
+                               : ($this->_decoder->getElementStartTag(Horde_ActiveSync::AIRSYNCBASE_BODYPREFERENCE) ? Horde_ActiveSync::AIRSYNCBASE_BODYPREFERENCE
+                               : ($this->_decoder->getElementStartTag(Horde_ActiveSync::AIRSYNCBASE_BODYPARTPREFERENCE) ? Horde_ActiveSync::AIRSYNCBASE_BODYPARTPREFERENCE
+                               : ($this->_decoder->getElementStartTag(self::ITEMOPERATIONS_SCHEMA) ? self::ITEMOPERATIONS_SCHEMA
+                               : ($this->_decoder->getElementStartTag(self::ITEMOPERATIONS_RANGE) ? self::ITEMOPERATIONS_RANGE
+                               : ($this->_decoder->getElementStartTag(self::ITEMOPERATIONS_USERNAME) ? self::ITEMOPERATIONS_USERNAME
+                               : ($this->_decoder->getElementStartTag(self::ITEMOPERATIONS_PASSWORD) ? self::ITEMOPERATIONS_PASSWORD
+                               : ($this->_decoder->getElementStartTag(Horde_ActiveSync::RM_SUPPORT) ? Horde_ActiveSync::RM_SUPPORT
+                               : -1))))))))) != -1) {
 
                             switch ($thisoption) {
-                            case Horde_ActiveSync::SYNC_MIMESUPPORT:
-                                $mimesupport = $this->_decoder->getElementContent();
-                                $this->_decoder->getElementEndTag();
-                                break;
-                            case Horde_ActiveSync::AIRSYNCBASE_BODYPREFERENCE:
-                                $this->_bodyPrefs($thisio);
-                                break;
-                            case Horde_ActiveSync::AIRSYNCBASE_BODYPARTPREFERENCE:
-                                $this->_bodyPartPrefs($thisio);
-                                break;
-                            case Horde_ActiveSync::RM_SUPPORT:
-                                $this->_rightsManagement($thisio);
-                                break;
-                            case self::ITEMOPERATIONS_PASSWORD:
-                                $thisio['password'] = $this->_decoder->getElementContent();
-                                break;
-                            case self::ITEMOPERATIONS_USERNAME:
-                                $thisio['username'] = $this->_decoder->getElementContent();
-                                break;
+                                case Horde_ActiveSync::SYNC_MIMESUPPORT:
+                                    $mimesupport = $this->_decoder->getElementContent();
+                                    $this->_decoder->getElementEndTag();
+                                    break;
+                                case Horde_ActiveSync::AIRSYNCBASE_BODYPREFERENCE:
+                                    $this->_bodyPrefs($thisio);
+                                    break;
+                                case Horde_ActiveSync::AIRSYNCBASE_BODYPARTPREFERENCE:
+                                    $this->_bodyPartPrefs($thisio);
+                                    break;
+                                case Horde_ActiveSync::RM_SUPPORT:
+                                    $this->_rightsManagement($thisio);
+                                    break;
+                                case self::ITEMOPERATIONS_PASSWORD:
+                                    $thisio['password'] = $this->_decoder->getElementContent();
+                                    break;
+                                case self::ITEMOPERATIONS_USERNAME:
+                                    $thisio['username'] = $this->_decoder->getElementContent();
+                                    break;
 
-                            case self::ITEMOPERATIONS_RANGE:
-                                $thisio['range'] = $this->_decoder->getElementContent();
-                                break;
+                                case self::ITEMOPERATIONS_RANGE:
+                                    $thisio['range'] = $this->_decoder->getElementContent();
+                                    break;
 
-                            case self::ITEMOPERATIONS_SCHEMA:
-                                while (1) {
-                                    $el = $this->_decoder->getElement();
-                                    $e = $this->_decoder->peek();
-                                    if ($e[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_ENDTAG) {
-                                        $this->_decoder->getElementEndTag();
-                                        break;
+                                case self::ITEMOPERATIONS_SCHEMA:
+                                    while (1) {
+                                        $el = $this->_decoder->getElement();
+                                        $e = $this->_decoder->peek();
+                                        if ($e[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_ENDTAG) {
+                                            $this->_decoder->getElementEndTag();
+                                            break;
+                                        }
                                     }
-                                }
                             }
                         }
                     } elseif ($reqtag == self::ITEMOPERATIONS_STORE) {
@@ -169,8 +170,8 @@ class Horde_ActiveSync_Request_ItemOperations extends Horde_ActiveSync_Request_S
                 $this->_decoder->getElementEndTag(); // end SYNC_ITEMOPERATIONS_FETCH
             } elseif ($reqtype == self::ITEMOPERATIONS_EMPTYFOLDERCONTENT) {
                 $thisio['type'] = 'empty';
-                while (($tag = ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_FOLDERID) ? Horde_ActiveSync::SYNC_FOLDERID :
-                          ($this->_decoder->getElementStartTag(self::ITEMOPERATIONS_OPTIONS) ? self::ITEMOPERATIONS_OPTIONS  : -1))) != -1) {
+                while (($tag = ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_FOLDERID) ? Horde_ActiveSync::SYNC_FOLDERID
+                          : ($this->_decoder->getElementStartTag(self::ITEMOPERATIONS_OPTIONS) ? self::ITEMOPERATIONS_OPTIONS : -1))) != -1) {
 
                     if ($tag == Horde_ActiveSync::SYNC_FOLDERID) {
                         $thisio['folderid'] = $this->_decoder->getElementContent();
@@ -195,129 +196,134 @@ class Horde_ActiveSync_Request_ItemOperations extends Horde_ActiveSync_Request_S
 
         $this->_encoder->startTag(self::ITEMOPERATIONS_RESPONSE);
         $collections = $this->_activeSync->getCollectionsObject();
-        foreach($itemoperations as $value) {
-            switch($value['type']) {
-            case 'fetch' :
-                switch(Horde_String::lower($value['store'])) {
-                case 'mailbox' :
-                    // Yes, even though this is a "mailbox" store, this is
-                    // how EAS identifies calendar attachments too since
-                    // they are not documentLibrary items. The backend
-                    // needs to be able to identify where to get the
-                    // item from based solely on the filereference.
-                    $this->_encoder->startTag(self::ITEMOPERATIONS_FETCH);
-                    if (isset($value['airsyncbasefilereference'])) {
-                        // filereference is already in the backend serverid format
-                        // since it is taken from the AIRSYNCBASE_FILEREFERENCE
-                        try {
-                            $msg = $this->_driver->itemOperationsGetAttachmentData($value['airsyncbasefilereference']);
-                        } catch (Horde_ActiveSync_Exception $e) {
-                            $this->_statusCode = self::STATUS_ATTINVALID;
-                        }
-                        if (!$this->_encoder->multipart) {
-                            $msg->total = $this->_getDataSize($msg->data);
-                            $msg->range = '0-' . ($msg->total - 1);
-                        }
-                        $this->_outputStatus();
-                        $this->_encoder->startTag(Horde_ActiveSync::AIRSYNCBASE_FILEREFERENCE);
-                        $this->_encoder->content($value['airsyncbasefilereference']);
-                        $this->_encoder->endTag();
-                    } elseif (isset($value['searchlongid'])) {
-                        $this->_outputStatus();
-                        $this->_encoder->startTag(Horde_ActiveSync_Request_Search::SEARCH_LONGID);
-                        $this->_encoder->content($value['searchlongid']);
-                        $this->_encoder->endTag();
-                        $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERTYPE);
-                        $this->_encoder->content('Email');
-                        $this->_encoder->endTag();
-                        $msg = $this->_driver->itemOperationsFetchMailbox($value['searchlongid'], $value['bodyprefs'], $mimesupport);
-                    } else {
-                        $this->_outputStatus();
-                        if (isset($value['folderid']) && isset($value['serverentryid'])) {
-                            $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERID);
-                            $this->_encoder->content($value['folderid']);
+        foreach ($itemoperations as $value) {
+            switch ($value['type']) {
+                case 'fetch':
+                    switch (Horde_String::lower($value['store'])) {
+                        case 'mailbox':
+                            // Yes, even though this is a "mailbox" store, this is
+                            // how EAS identifies calendar attachments too since
+                            // they are not documentLibrary items. The backend
+                            // needs to be able to identify where to get the
+                            // item from based solely on the filereference.
+                            $this->_encoder->startTag(self::ITEMOPERATIONS_FETCH);
+                            if (isset($value['airsyncbasefilereference'])) {
+                                // filereference is already in the backend serverid format
+                                // since it is taken from the AIRSYNCBASE_FILEREFERENCE
+                                try {
+                                    $msg = $this->_driver->itemOperationsGetAttachmentData($value['airsyncbasefilereference']);
+                                } catch (Horde_ActiveSync_Exception $e) {
+                                    $this->_statusCode = self::STATUS_ATTINVALID;
+                                }
+                                if (!$this->_encoder->multipart) {
+                                    $msg->total = $this->_getDataSize($msg->data);
+                                    $msg->range = '0-' . ($msg->total - 1);
+                                }
+                                $this->_outputStatus();
+                                $this->_encoder->startTag(Horde_ActiveSync::AIRSYNCBASE_FILEREFERENCE);
+                                $this->_encoder->content($value['airsyncbasefilereference']);
+                                $this->_encoder->endTag();
+                            } elseif (isset($value['searchlongid'])) {
+                                $this->_outputStatus();
+                                $this->_encoder->startTag(Horde_ActiveSync_Request_Search::SEARCH_LONGID);
+                                $this->_encoder->content($value['searchlongid']);
+                                $this->_encoder->endTag();
+                                $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERTYPE);
+                                $this->_encoder->content('Email');
+                                $this->_encoder->endTag();
+                                $msg = $this->_driver->itemOperationsFetchMailbox($value['searchlongid'], $value['bodyprefs'], $mimesupport);
+                            } else {
+                                $this->_outputStatus();
+                                if (isset($value['folderid']) && isset($value['serverentryid'])) {
+                                    $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERID);
+                                    $this->_encoder->content($value['folderid']);
+                                    $this->_encoder->endTag();
+
+                                    $this->_encoder->startTag(Horde_ActiveSync::SYNC_SERVERENTRYID);
+                                    $this->_encoder->content($value['serverentryid']);
+                                    $this->_encoder->endTag();
+
+                                    $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERTYPE);
+                                    $this->_encoder->content('Email');
+                                    $this->_encoder->endTag();
+                                    $mailbox = $collections->getBackendIdForFolderUid($value['folderid']);
+                                    $msg = $this->_driver->fetch(
+                                        $mailbox,
+                                        $value['serverentryid'],
+                                        [
+                                            'bodyprefs' => $value['bodyprefs'],
+                                            'mimesupport' => $mimesupport]
+                                    );
+                                }
+                            }
+                            if ($this->_statusCode == self::STATUS_SUCCESS) {
+                                $this->_encoder->startTag(self::ITEMOPERATIONS_PROPERTIES);
+                                $msg->encodeStream($this->_encoder);
+                                $this->_encoder->endTag();
+                            }
+                            $this->_encoder->endTag();
+                            break;
+                        case 'documentlibrary':
+                            $this->_encoder->startTag(self::ITEMOPERATIONS_FETCH);
+                            try {
+                                $u = $this->_driver->itemOperationsGetDocumentLibraryLink($value['documentlibrarylinkid'], []);
+                                $doc = Horde_ActiveSync::messageFactory('Document');
+                                $doc->range = '0-' . ($u['content-length'] - 1);
+                                $doc->total = $u['content-length'];
+                                $doc->data = $u['data']->stream;
+                                $doc->version = $u['modified'];
+                            } catch (Horde_ActiveSync_Exception $e) {
+                                $this->_status = self::STATUS_NOT_SUPPORTED;
+                            }
+                            $this->_outputStatus();
+
+                            $this->_encoder->startTag(Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_LINKID);
+                            $this->_encoder->content($u['linkid']);
                             $this->_encoder->endTag();
 
-                            $this->_encoder->startTag(Horde_ActiveSync::SYNC_SERVERENTRYID);
-                            $this->_encoder->content($value['serverentryid']);
+                            $this->_encoder->startTag(self::ITEMOPERATIONS_PROPERTIES);
+                            $doc->encodeStream($this->_encoder);
                             $this->_encoder->endTag();
 
-                            $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERTYPE);
-                            $this->_encoder->content('Email');
                             $this->_encoder->endTag();
-                            $mailbox = $collections->getBackendIdForFolderUid($value['folderid']);
-                            $msg = $this->_driver->fetch(
-                                $mailbox,
-                                $value['serverentryid'],
-                                array(
-                                    'bodyprefs' => $value['bodyprefs'],
-                                    'mimesupport' => $mimesupport)
+                            break;
+
+                        default:
+                            $this->_logger->err(
+                                sprintf(
+                                    '%s not supported by HANDLEITEMOPERATIONS.',
+                                    $value['type']
+                                )
                             );
+                            break;
+                    }
+                    break;
+                case 'empty':
+                    // @todo remove check for H6.
+                    if (method_exists($this->_driver, 'itemOperationsEmptyFolder')) {
+                        $map = array_flip($this->_state->getFolderUidToBackendIdMap());
+                        $value['folderid'] = $map[$value['folderid']];
+                        $this->_logger->meta(sprintf(
+                            'Handling EMPTYFOLDERCONTENT for collection %s.',
+                            $value['folderid']
+                        ));
+                        try {
+                            $this->_driver->itemOperationsEmptyFolder($value);
+                        } catch (Horde_ActiveSync_Exception $e) {
+                            $this->_status = self::STATUS_NOT_SUPPORTED;
                         }
+                    } else {
+                        $this->_logger->err('EMPTYFOLDERCONTENT not supported by driver.');
                     }
-                    if ($this->_statusCode == self::STATUS_SUCCESS) {
-                        $this->_encoder->startTag(self::ITEMOPERATIONS_PROPERTIES);
-                        $msg->encodeStream($this->_encoder);
-                        $this->_encoder->endTag();
-                    }
-                    $this->_encoder->endTag();
                     break;
-                case 'documentlibrary':
-                    $this->_encoder->startTag(self::ITEMOPERATIONS_FETCH);
-                    try {
-                        $u = $this->_driver->itemOperationsGetDocumentLibraryLink($value['documentlibrarylinkid'], array());
-                        $doc = Horde_ActiveSync::messageFactory('Document');
-                        $doc->range = '0-' . ($u['content-length'] - 1);
-                        $doc->total = $u['content-length'];
-                        $doc->data = $u['data']->stream;
-                        $doc->version = $u['modified'];
-                    } catch (Horde_ActiveSync_Exception $e) {
-                        $this->_status = self::STATUS_NOT_SUPPORTED;
-                    }
-                    $this->_outputStatus();
-
-                    $this->_encoder->startTag(Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_LINKID);
-                    $this->_encoder->content($u['linkid']);
-                    $this->_encoder->endTag();
-
-                    $this->_encoder->startTag(self::ITEMOPERATIONS_PROPERTIES);
-                    $doc->encodeStream($this->_encoder);
-                    $this->_encoder->endTag();
-
-                    $this->_encoder->endTag();
-                    break;
-
-                default :
-                    $this->_logger->err(sprintf(
-                        '%s not supported by HANDLEITEMOPERATIONS.',
-                        $value['type'])
+                default:
+                    $this->_logger->err(
+                        sprintf(
+                            '%s not supported by HANDLEITEMOPERATIONS.',
+                            $value['type']
+                        )
                     );
                     break;
-                }
-                break;
-            case 'empty':
-                // @todo remove check for H6.
-                if (method_exists($this->_driver, 'itemOperationsEmptyFolder')) {
-                    $map = array_flip($this->_state->getFolderUidToBackendIdMap());
-                    $value['folderid'] = $map[$value['folderid']];
-                    $this->_logger->meta(sprintf(
-                        'Handling EMPTYFOLDERCONTENT for collection %s.',
-                        $value['folderid']));
-                    try {
-                        $this->_driver->itemOperationsEmptyFolder($value);
-                    } catch (Horde_ActiveSync_Exception $e) {
-                        $this->_status = self::STATUS_NOT_SUPPORTED;
-                    }
-                } else {
-                    $this->_logger->err('EMPTYFOLDERCONTENT not supported by driver.');
-                }
-                break;
-            default :
-                $this->_logger->err(sprintf(
-                    '%s not supported by HANDLEITEMOPERATIONS.',
-                    $value['type'])
-                );
-                break;
             }
         }
         $this->_encoder->endTag(); //end SYNC_ITEMOPERATIONS_RESPONSE

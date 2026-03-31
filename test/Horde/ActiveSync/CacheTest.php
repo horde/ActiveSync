@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Unit tests for the syncCache
  *
@@ -6,10 +7,15 @@
  * @category Horde
  * @package ActiveSync
  */
+
 namespace Horde\ActiveSync;
-use PHPUnit\Framework\TestCase;
+
+use Horde_Test_Case as TestCase;
 use Horde_ActiveSync_SyncCache;
 
+/**
+ * @coversNothing
+ */
 class CacheTest extends TestCase
 {
     protected $_fixture;
@@ -22,7 +28,7 @@ class CacheTest extends TestCase
         );
 
         $this->_state = $this->getMockBuilder('Horde_ActiveSync_State_Sql')->disableOriginalConstructor()->getMock();
-        $this->_state->expects($this->any())->method('getSyncCache')->willReturn($this->_fixture);
+        $this->_state->expects($this->any())->method('getSyncCache')->will($this->returnValue($this->_fixture));
     }
 
     public function testPropertyAccess()
@@ -43,9 +49,9 @@ class CacheTest extends TestCase
     {
         $cache = new Horde_ActiveSync_SyncCache($this->_state, 'devid', 'userone');
         $cache->save();
-        foreach (array('hbinterval', 'wait', 'hierarchy', 'confirmed_synckeys',
+        foreach (['hbinterval', 'wait', 'hierarchy', 'confirmed_synckeys',
             'lasthbsyncstarted', 'lastsyncendnormal', 'folders', 'pingheartbeat',
-            'timestamp') as $p) {
+            'timestamp'] as $p) {
 
             $cache->{$p};
         }

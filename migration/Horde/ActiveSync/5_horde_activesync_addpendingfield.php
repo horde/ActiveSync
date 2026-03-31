@@ -1,4 +1,5 @@
 <?php
+
 class HordeActiveSyncAddpendingfield extends Horde_Db_Migration_Base
 {
     public function up()
@@ -6,7 +7,8 @@ class HordeActiveSyncAddpendingfield extends Horde_Db_Migration_Base
         $this->addColumn(
             'horde_activesync_state',
             'sync_pending',
-            'mediumtext');
+            'mediumtext'
+        );
     }
 
     public function down()

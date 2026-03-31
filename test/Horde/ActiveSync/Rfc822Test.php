@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Unit tests for Horde_ActiveSync_Policies
  *
@@ -6,15 +7,21 @@
  * @category Horde
  * @package ActiveSync
  */
-namespace Horde\ActiveSync;
-use PHPUnit\Framework\TestCase;
-use PHPUnit\Framework\Attributes\DataProvider;
-use \Horde_ActiveSync_Rfc822;
-use \Horde_Mime_Headers;
 
+namespace Horde\ActiveSync;
+
+use Horde_Test_Case as TestCase;
+use Horde_ActiveSync_Rfc822;
+use Horde_Mime_Headers;
+
+/**
+ * @coversNothing
+ */
 class Rfc822Test extends TestCase
 {
-    #[DataProvider('headersMultipartAlternativeProvider')]
+    /**
+     * @dataProvider headersMultipartAlternativeProvider
+     */
     public function testHeadersMultipartAlternative($fixture, $expected)
     {
         $rfc822 = new Horde_ActiveSync_Rfc822($fixture);
@@ -35,9 +42,9 @@ class Rfc822Test extends TestCase
         }
     }
 
-    public static function headersMultipartAlternativeProvider()
+    public function headersMultipartAlternativeProvider()
     {
-        $expected = array_change_key_case(array(
+        $expected = array_change_key_case([
             'Subject' => 'Testing',
             'From' => 'mrubinsk@horde.org',
             'Content-Type' => 'multipart/alternative;
@@ -47,20 +54,20 @@ class Rfc822Test extends TestCase
             'To' => 'Michael Rubinsky <mike@theupstairsroom.com>',
             'Content-Transfer-Encoding' => '7bit',
             'Mime-Version' => '1.0 (1.0)',
-            'User-Agent' => 'Horde Application Framework 5'
-        ), CASE_LOWER);
+            'User-Agent' => 'Horde Application Framework 5',
+        ], CASE_LOWER);
         ksort($expected);
 
-        return array(
-            array(
+        return [
+            [
                 file_get_contents(__DIR__ . '/fixtures/iOSMultipartAlternative.eml'),
-                $expected
-            ),
-            array(
+                $expected,
+            ],
+            [
                 fopen(__DIR__ . '/fixtures/iOSMultipartAlternative.eml', 'r'),
-                $expected
-            )
-        );
+                $expected,
+            ],
+        ];
     }
 
     public function testBaseMimePart()
@@ -68,10 +75,10 @@ class Rfc822Test extends TestCase
         $fixture = file_get_contents(__DIR__ . '/fixtures/iOSMultipartAlternative.eml');
         $rfc822 = new Horde_ActiveSync_Rfc822($fixture);
         $mimepart = $rfc822->getMimeObject();
-        $expected =  array(
+        $expected =  [
             'multipart/alternative',
             'text/plain',
-            'text/html');
+            'text/html'];
 
         $this->assertEquals($expected, $mimepart->contentTypeMap());
         $this->assertEquals(1, $mimepart->findBody('plain'));
@@ -88,7 +95,7 @@ class Rfc822Test extends TestCase
         $rfc822 = new Horde_ActiveSync_Rfc822($fixture, true);
 
         $hdrs = Horde_Mime_Headers::parseHeaders($rfc822->getString());
-        $hdr_array = $hdrs->toArray(array('charset' => 'UTF-8'));
+        $hdr_array = $hdrs->toArray(['charset' => 'UTF-8']);
         $this->assertEquals('=?utf-8?b?w4PDhMOjw6s=?=', $hdr_array['Subject']);
     }
 

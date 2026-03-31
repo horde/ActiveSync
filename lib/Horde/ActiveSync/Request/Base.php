@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Request_Base::
  *
@@ -152,21 +153,26 @@ abstract class Horde_ActiveSync_Request_Base
         $this->_logger->meta(sprintf(
             'Checking policykey for device: %s user: %s',
             $this->_device->id,
-            $this->_driver->getUser()));
+            $this->_driver->getUser()
+        ));
 
         // Use looseprovisioning?
-        if (empty($sentKey) && !$this->_device->enforceProvisioning() &&
-            $this->_provisioning === Horde_ActiveSync::PROVISIONING_LOOSE) {
+        if (empty($sentKey) && !$this->_device->enforceProvisioning()
+            && $this->_provisioning === Horde_ActiveSync::PROVISIONING_LOOSE) {
             $sentKey = null;
-            $this->_logger->meta(sprintf(
-                'Allowing %s to connect since PROVISIONING_LOOSE is true and device is either non-provisionable or has broken provisioning.',
-                $this->_device->id)
+            $this->_logger->meta(
+                sprintf(
+                    'Allowing %s to connect since PROVISIONING_LOOSE is true and device is either non-provisionable or has broken provisioning.',
+                    $this->_device->id
+                )
             );
         } elseif (empty($sentKey) && $this->_device->isNonProvisionable()) {
             // Check for non-provisionable, but allowable, devices.
-            $this->_logger->meta(sprintf(
-                'Allowing %s to connect since it is non-provisionable.',
-                $this->_device->id)
+            $this->_logger->meta(
+                sprintf(
+                    'Allowing %s to connect since it is non-provisionable.',
+                    $this->_device->id
+                )
             );
             $sentKey = null;
         }
@@ -185,9 +191,9 @@ abstract class Horde_ActiveSync_Request_Base
 
             // Validate the stored key against the device key, honoring
             // the value of _provisioning.
-            if ((empty($storedKey) || $storedKey != $sentKey) &&
-               ($this->_provisioning != Horde_ActiveSync::PROVISIONING_LOOSE ||
-               ($this->_provisioning == Horde_ActiveSync::PROVISIONING_LOOSE && !is_null($sentKey)))) {
+            if ((empty($storedKey) || $storedKey != $sentKey)
+               && ($this->_provisioning != Horde_ActiveSync::PROVISIONING_LOOSE
+               || ($this->_provisioning == Horde_ActiveSync::PROVISIONING_LOOSE && !is_null($sentKey)))) {
 
                 // We send the headers AND the WBXML if EAS 12.1+ since some
                 // devices report EAS 14.1 but don't accept the WBXML.
@@ -228,17 +234,21 @@ abstract class Horde_ActiveSync_Request_Base
      */
     public function handle()
     {
-        $this->_logger->info(sprintf(
-            '%sRequest being handled for device: %s, of type: %s, supporting protocol version: %s, using Horde_ActiveSync v%s',
-            str_repeat('-', 10),
-            $this->_device->id,
-            $this->_device->deviceType,
-            $this->_device->version,
-            Horde_ActiveSync::LIBRARY_VERSION)
+        $this->_logger->info(
+            sprintf(
+                '%sRequest being handled for device: %s, of type: %s, supporting protocol version: %s, using Horde_ActiveSync v%s',
+                str_repeat('-', 10),
+                $this->_device->id,
+                $this->_device->deviceType,
+                $this->_device->version,
+                Horde_ActiveSync::LIBRARY_VERSION
+            )
         );
-        $this->_logger->meta(sprintf(
-            'GET VARIABLES: %s',
-            print_r($this->_activeSync->getGetVars(), true))
+        $this->_logger->meta(
+            sprintf(
+                'GET VARIABLES: %s',
+                print_r($this->_activeSync->getGetVars(), true)
+            )
         );
         $this->_logger->meta(sprintf(
             '%sDevice data: %s',
@@ -267,7 +277,7 @@ abstract class Horde_ActiveSync_Request_Base
         // to avoid having 2 device entries for every android client.
         if ($this->_device->id == 'validate') {
             $this->_logger->meta('Removing state for bogus VALIDATE device.');
-            $this->_state->removeState(array('devId' => 'validate'));
+            $this->_state->removeState(['devId' => 'validate']);
         }
     }
 

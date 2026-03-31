@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Request_SendMail::
  *
@@ -50,7 +51,8 @@ class Horde_ActiveSync_Request_SendMail extends Horde_ActiveSync_Request_Base
                 $this->_logger->err($e->getMessage());
                 $this->_handleError(
                     Horde_ActiveSync_Status::MAIL_SUBMISSION_FAILED,
-                    Horde_ActiveSync_Message_SendMail::COMPOSEMAIL_SENDMAIL);
+                    Horde_ActiveSync_Message_SendMail::COMPOSEMAIL_SENDMAIL
+                );
 
                 return true;
             }
@@ -71,33 +73,35 @@ class Horde_ActiveSync_Request_SendMail extends Horde_ActiveSync_Request_Base
         if ($e[Horde_ActiveSync_Wbxml::EN_TYPE] != Horde_ActiveSync_Wbxml::EN_TYPE_STARTTAG) {
             $this->_handleError(
                 Horde_ActiveSync_Status::INVALID_WBXML,
-                Horde_ActiveSync_Message_SendMail::COMPOSEMAIL_SENDMAIL);
+                Horde_ActiveSync_Message_SendMail::COMPOSEMAIL_SENDMAIL
+            );
             return true;
         }
 
         $sendmail = $smartreply = $smartforward = false;
         switch ($e[Horde_ActiveSync_Wbxml::EN_TAG]) {
-        case Horde_ActiveSync_Message_SendMail::COMPOSEMAIL_SENDMAIL:
-            $sendmail = true;
-            break;
-        case Horde_ActiveSync_Message_SendMail::COMPOSEMAIL_SMARTREPLY:
-            $smartreply = true;
-            break;
-        case Horde_ActiveSync_Message_SendMail::COMPOSEMAIL_SMARTFORWARD:
-            $smartforward = true;
+            case Horde_ActiveSync_Message_SendMail::COMPOSEMAIL_SENDMAIL:
+                $sendmail = true;
+                break;
+            case Horde_ActiveSync_Message_SendMail::COMPOSEMAIL_SMARTREPLY:
+                $smartreply = true;
+                break;
+            case Horde_ActiveSync_Message_SendMail::COMPOSEMAIL_SMARTFORWARD:
+                $smartforward = true;
         }
 
         if (!$sendmail && !$smartreply && !$smartforward) {
-           return $this->_handleError(
-            Horde_ActiveSync_Status::INVALID_CONTENT,
-            Horde_ActiveSync_Message_SendMail::COMPOSEMAIL_SENDMAIL);
+            return $this->_handleError(
+                Horde_ActiveSync_Status::INVALID_CONTENT,
+                Horde_ActiveSync_Message_SendMail::COMPOSEMAIL_SENDMAIL
+            );
         }
 
         $mail = Horde_ActiveSync::messageFactory('SendMail');
         $mail->decodeStream($this->_decoder);
         if ($smartreply || $smartforward) {
-            $mail->source->folderid =
-                $this->_activeSync->getCollectionsObject()
+            $mail->source->folderid
+                = $this->_activeSync->getCollectionsObject()
                     ->getBackendIdForFolderUid($mail->source->folderid);
         }
 
@@ -108,7 +112,8 @@ class Horde_ActiveSync_Request_SendMail extends Horde_ActiveSync_Request_Base
             $this->_logger->err($ex->getMessage());
             $this->_handleError(
                 Horde_ActiveSync_Status::ITEM_NOT_FOUND,
-                $e[Horde_ActiveSync_Wbxml::EN_TAG]);
+                $e[Horde_ActiveSync_Wbxml::EN_TAG]
+            );
         } catch (Horde_ActiveSync_Exception_EmailFatalFailure $ex) {
             $this->_logger->err($ex->getMessage());
             if ($this->_device->version < Horde_ActiveSync::VERSION_FOURTEEN) {
@@ -120,7 +125,8 @@ class Horde_ActiveSync_Request_SendMail extends Horde_ActiveSync_Request_Base
             }
             $this->_handleError(
                 Horde_ActiveSync_Status::SERVER_ERROR,
-                $e[Horde_ActiveSync_Wbxml::EN_TAG]);
+                $e[Horde_ActiveSync_Wbxml::EN_TAG]
+            );
         } catch (Horde_ActiveSync_Exception $ex) {
             $this->_logger->err($ex->getMessage());
             if ($this->_device->version < Horde_ActiveSync::VERSION_FOURTEEN) {
@@ -131,7 +137,8 @@ class Horde_ActiveSync_Request_SendMail extends Horde_ActiveSync_Request_Base
             }
             $this->_handleError(
                 Horde_ActiveSync_Status::MAIL_SUBMISSION_FAILED,
-                $e[Horde_ActiveSync_Wbxml::EN_TAG]);
+                $e[Horde_ActiveSync_Wbxml::EN_TAG]
+            );
         }
 
         return true;

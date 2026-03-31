@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Request_SmartReply::
  *
@@ -66,11 +67,13 @@ class Horde_ActiveSync_Request_SmartReply extends Horde_ActiveSync_Request_SendM
             $this->_logger->err($e->getMessage());
             $this->_handleError(
                 Horde_ActiveSync_Status::ITEM_NOT_FOUND,
-                Horde_ActiveSync_Message_SendMail::COMPOSEMAIL_SMARTREPLY);
+                Horde_ActiveSync_Message_SendMail::COMPOSEMAIL_SMARTREPLY
+            );
         } catch (Horde_ActiveSync_Exception $e) {
             $this->_handleError(
                 Horde_ActiveSync_Status::MAIL_REPLY_FAILED,
-                Horde_ActiveSync_Message_SendMail::COMPOSEMAIL_SMARTREPLY);
+                Horde_ActiveSync_Message_SendMail::COMPOSEMAIL_SMARTREPLY
+            );
         }
 
         return true;

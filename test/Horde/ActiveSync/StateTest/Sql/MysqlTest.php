@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @author Michael J Rubinsky <mrubinsk@horde.org>
  * @license http://www.horde.org/licenses/gpl GPLv2
@@ -6,9 +7,14 @@
  * @package Horde_ActiveSync
  * @subpackage UnitTests
  */
+
 namespace Horde\ActiveSync\StateTest\Sql;
+
 use Horde\ActiveSync\StateTest\Sql\TestBase;
 
+/**
+ * @coversNothing
+ */
 class MysqlTest extends TestBase
 {
     public static function setUpBeforeClass(): void

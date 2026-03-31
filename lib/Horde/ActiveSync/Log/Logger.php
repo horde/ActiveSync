@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ActiveSync logger.
  *
@@ -33,9 +34,9 @@
  */
 class Horde_ActiveSync_Log_Logger extends Horde_Log_Logger
 {
-    const SERVER = 10;
-    const CLIENT = 11;
-    const META   = 12;
+    public const SERVER = 10;
+    public const CLIENT = 11;
+    public const META   = 12;
 
     /**
      * Constructor.
@@ -67,20 +68,20 @@ class Horde_ActiveSync_Log_Logger extends Horde_Log_Logger
         if (!isset($this->_levels[$levelName])) {
             throw new Horde_Log_Exception('Bad log level ' . $levelName);
         }
-        if (in_array($method, array('client', 'server'))) {
-            $event = array(
+        if (in_array($method, ['client', 'server'])) {
+            $event = [
                 'message' => $params[0],
                 'indent' => $params[1],
                 'level' => $this->_levels[$levelName],
-                'timestamp' => date('c')
-            );
+                'timestamp' => date('c'),
+            ];
         } else {
-            $event = array(
+            $event = [
                 'message' => array_shift($params),
                 'level' =>  $this->_levels[$levelName],
                 'indent' => 0,
-                'timestamp' => date('c')
-            );
+                'timestamp' => date('c'),
+            ];
         }
 
         $this->log($event);

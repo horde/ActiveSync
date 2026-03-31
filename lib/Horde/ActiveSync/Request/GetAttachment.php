@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Handle GetAttachment requests.
  *
@@ -45,9 +46,11 @@ class Horde_ActiveSync_Request_GetAttachment extends Horde_ActiveSync_Request_Ba
         }
         $attname = $get['AttachmentName'];
 
-        $this->_logger->meta(sprintf(
-            'Fetching attachment: %s',
-            $attname)
+        $this->_logger->meta(
+            sprintf(
+                'Fetching attachment: %s',
+                $attname
+            )
         );
         $att = $this->_driver->getAttachment($attname);
 

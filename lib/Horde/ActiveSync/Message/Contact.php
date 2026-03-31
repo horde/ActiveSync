@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_Contact::
  *
@@ -99,157 +100,157 @@
 class Horde_ActiveSync_Message_Contact extends Horde_ActiveSync_Message_Base
 {
     /* POOMCONTACTS */
-    const ANNIVERSARY           = 'POOMCONTACTS:Anniversary';
-    const ASSISTANTNAME         = 'POOMCONTACTS:AssistantName';
-    const ASSISTNAMEPHONENUMBER = 'POOMCONTACTS:AssistnamePhoneNumber';
-    const BIRTHDAY              = 'POOMCONTACTS:Birthday';
-    const BODY                  = 'POOMCONTACTS:Body';
-    const BODYSIZE              = 'POOMCONTACTS:BodySize';
-    const BODYTRUNCATED         = 'POOMCONTACTS:BodyTruncated';
-    const BUSINESS2PHONENUMBER  = 'POOMCONTACTS:Business2PhoneNumber';
-    const BUSINESSCITY          = 'POOMCONTACTS:BusinessCity';
-    const BUSINESSCOUNTRY       = 'POOMCONTACTS:BusinessCountry';
-    const BUSINESSPOSTALCODE    = 'POOMCONTACTS:BusinessPostalCode';
-    const BUSINESSSTATE         = 'POOMCONTACTS:BusinessState';
-    const BUSINESSSTREET        = 'POOMCONTACTS:BusinessStreet';
-    const BUSINESSFAXNUMBER     = 'POOMCONTACTS:BusinessFaxNumber';
-    const BUSINESSPHONENUMBER   = 'POOMCONTACTS:BusinessPhoneNumber';
-    const CARPHONENUMBER        = 'POOMCONTACTS:CarPhoneNumber';
-    const CATEGORIES            = 'POOMCONTACTS:Categories';
-    const CATEGORY              = 'POOMCONTACTS:Category';
-    const CHILDREN              = 'POOMCONTACTS:Children';
-    const CHILD                 = 'POOMCONTACTS:Child';
-    const COMPANYNAME           = 'POOMCONTACTS:CompanyName';
-    const DEPARTMENT            = 'POOMCONTACTS:Department';
-    const EMAIL1ADDRESS         = 'POOMCONTACTS:Email1Address';
-    const EMAIL2ADDRESS         = 'POOMCONTACTS:Email2Address';
-    const EMAIL3ADDRESS         = 'POOMCONTACTS:Email3Address';
-    const FILEAS                = 'POOMCONTACTS:FileAs';
-    const FIRSTNAME             = 'POOMCONTACTS:FirstName';
-    const HOME2PHONENUMBER      = 'POOMCONTACTS:Home2PhoneNumber';
-    const HOMECITY              = 'POOMCONTACTS:HomeCity';
-    const HOMECOUNTRY           = 'POOMCONTACTS:HomeCountry';
-    const HOMEPOSTALCODE        = 'POOMCONTACTS:HomePostalCode';
-    const HOMESTATE             = 'POOMCONTACTS:HomeState';
-    const HOMESTREET            = 'POOMCONTACTS:HomeStreet';
-    const HOMEFAXNUMBER         = 'POOMCONTACTS:HomeFaxNumber';
-    const HOMEPHONENUMBER       = 'POOMCONTACTS:HomePhoneNumber';
-    const JOBTITLE              = 'POOMCONTACTS:JobTitle';
-    const LASTNAME              = 'POOMCONTACTS:LastName';
-    const MIDDLENAME            = 'POOMCONTACTS:MiddleName';
-    const MOBILEPHONENUMBER     = 'POOMCONTACTS:MobilePhoneNumber';
-    const OFFICELOCATION        = 'POOMCONTACTS:OfficeLocation';
-    const OTHERCITY             = 'POOMCONTACTS:OtherCity';
-    const OTHERCOUNTRY          = 'POOMCONTACTS:OtherCountry';
-    const OTHERPOSTALCODE       = 'POOMCONTACTS:OtherPostalCode';
-    const OTHERSTATE            = 'POOMCONTACTS:OtherState';
-    const OTHERSTREET           = 'POOMCONTACTS:OtherStreet';
-    const PAGERNUMBER           = 'POOMCONTACTS:PagerNumber';
-    const RADIOPHONENUMBER      = 'POOMCONTACTS:RadioPhoneNumber';
-    const SPOUSE                = 'POOMCONTACTS:Spouse';
-    const SUFFIX                = 'POOMCONTACTS:Suffix';
-    const TITLE                 = 'POOMCONTACTS:Title';
-    const WEBPAGE               = 'POOMCONTACTS:WebPage';
-    const YOMICOMPANYNAME       = 'POOMCONTACTS:YomiCompanyName';
-    const YOMIFIRSTNAME         = 'POOMCONTACTS:YomiFirstName';
-    const YOMILASTNAME          = 'POOMCONTACTS:YomiLastName';
-    const RTF                   = 'POOMCONTACTS:Rtf';
-    const PICTURE               = 'POOMCONTACTS:Picture';
+    public const ANNIVERSARY           = 'POOMCONTACTS:Anniversary';
+    public const ASSISTANTNAME         = 'POOMCONTACTS:AssistantName';
+    public const ASSISTNAMEPHONENUMBER = 'POOMCONTACTS:AssistnamePhoneNumber';
+    public const BIRTHDAY              = 'POOMCONTACTS:Birthday';
+    public const BODY                  = 'POOMCONTACTS:Body';
+    public const BODYSIZE              = 'POOMCONTACTS:BodySize';
+    public const BODYTRUNCATED         = 'POOMCONTACTS:BodyTruncated';
+    public const BUSINESS2PHONENUMBER  = 'POOMCONTACTS:Business2PhoneNumber';
+    public const BUSINESSCITY          = 'POOMCONTACTS:BusinessCity';
+    public const BUSINESSCOUNTRY       = 'POOMCONTACTS:BusinessCountry';
+    public const BUSINESSPOSTALCODE    = 'POOMCONTACTS:BusinessPostalCode';
+    public const BUSINESSSTATE         = 'POOMCONTACTS:BusinessState';
+    public const BUSINESSSTREET        = 'POOMCONTACTS:BusinessStreet';
+    public const BUSINESSFAXNUMBER     = 'POOMCONTACTS:BusinessFaxNumber';
+    public const BUSINESSPHONENUMBER   = 'POOMCONTACTS:BusinessPhoneNumber';
+    public const CARPHONENUMBER        = 'POOMCONTACTS:CarPhoneNumber';
+    public const CATEGORIES            = 'POOMCONTACTS:Categories';
+    public const CATEGORY              = 'POOMCONTACTS:Category';
+    public const CHILDREN              = 'POOMCONTACTS:Children';
+    public const CHILD                 = 'POOMCONTACTS:Child';
+    public const COMPANYNAME           = 'POOMCONTACTS:CompanyName';
+    public const DEPARTMENT            = 'POOMCONTACTS:Department';
+    public const EMAIL1ADDRESS         = 'POOMCONTACTS:Email1Address';
+    public const EMAIL2ADDRESS         = 'POOMCONTACTS:Email2Address';
+    public const EMAIL3ADDRESS         = 'POOMCONTACTS:Email3Address';
+    public const FILEAS                = 'POOMCONTACTS:FileAs';
+    public const FIRSTNAME             = 'POOMCONTACTS:FirstName';
+    public const HOME2PHONENUMBER      = 'POOMCONTACTS:Home2PhoneNumber';
+    public const HOMECITY              = 'POOMCONTACTS:HomeCity';
+    public const HOMECOUNTRY           = 'POOMCONTACTS:HomeCountry';
+    public const HOMEPOSTALCODE        = 'POOMCONTACTS:HomePostalCode';
+    public const HOMESTATE             = 'POOMCONTACTS:HomeState';
+    public const HOMESTREET            = 'POOMCONTACTS:HomeStreet';
+    public const HOMEFAXNUMBER         = 'POOMCONTACTS:HomeFaxNumber';
+    public const HOMEPHONENUMBER       = 'POOMCONTACTS:HomePhoneNumber';
+    public const JOBTITLE              = 'POOMCONTACTS:JobTitle';
+    public const LASTNAME              = 'POOMCONTACTS:LastName';
+    public const MIDDLENAME            = 'POOMCONTACTS:MiddleName';
+    public const MOBILEPHONENUMBER     = 'POOMCONTACTS:MobilePhoneNumber';
+    public const OFFICELOCATION        = 'POOMCONTACTS:OfficeLocation';
+    public const OTHERCITY             = 'POOMCONTACTS:OtherCity';
+    public const OTHERCOUNTRY          = 'POOMCONTACTS:OtherCountry';
+    public const OTHERPOSTALCODE       = 'POOMCONTACTS:OtherPostalCode';
+    public const OTHERSTATE            = 'POOMCONTACTS:OtherState';
+    public const OTHERSTREET           = 'POOMCONTACTS:OtherStreet';
+    public const PAGERNUMBER           = 'POOMCONTACTS:PagerNumber';
+    public const RADIOPHONENUMBER      = 'POOMCONTACTS:RadioPhoneNumber';
+    public const SPOUSE                = 'POOMCONTACTS:Spouse';
+    public const SUFFIX                = 'POOMCONTACTS:Suffix';
+    public const TITLE                 = 'POOMCONTACTS:Title';
+    public const WEBPAGE               = 'POOMCONTACTS:WebPage';
+    public const YOMICOMPANYNAME       = 'POOMCONTACTS:YomiCompanyName';
+    public const YOMIFIRSTNAME         = 'POOMCONTACTS:YomiFirstName';
+    public const YOMILASTNAME          = 'POOMCONTACTS:YomiLastName';
+    public const RTF                   = 'POOMCONTACTS:Rtf';
+    public const PICTURE               = 'POOMCONTACTS:Picture';
 
     /* POOMCONTACTS2 */
-    const CUSTOMERID            = 'POOMCONTACTS2:CustomerId';
-    const GOVERNMENTID          = 'POOMCONTACTS2:GovernmentId';
-    const IMADDRESS             = 'POOMCONTACTS2:IMAddress';
-    const IMADDRESS2            = 'POOMCONTACTS2:IMAddress2';
-    const IMADDRESS3            = 'POOMCONTACTS2:IMAddress3';
-    const MANAGERNAME           = 'POOMCONTACTS2:ManagerName';
-    const COMPANYMAINPHONE      = 'POOMCONTACTS2:CompanyMainPhone';
-    const ACCOUNTNAME           = 'POOMCONTACTS2:AccountName';
-    const NICKNAME              = 'POOMCONTACTS2:NickName';
-    const MMS                   = 'POOMCONTACTS2:MMS';
+    public const CUSTOMERID            = 'POOMCONTACTS2:CustomerId';
+    public const GOVERNMENTID          = 'POOMCONTACTS2:GovernmentId';
+    public const IMADDRESS             = 'POOMCONTACTS2:IMAddress';
+    public const IMADDRESS2            = 'POOMCONTACTS2:IMAddress2';
+    public const IMADDRESS3            = 'POOMCONTACTS2:IMAddress3';
+    public const MANAGERNAME           = 'POOMCONTACTS2:ManagerName';
+    public const COMPANYMAINPHONE      = 'POOMCONTACTS2:CompanyMainPhone';
+    public const ACCOUNTNAME           = 'POOMCONTACTS2:AccountName';
+    public const NICKNAME              = 'POOMCONTACTS2:NickName';
+    public const MMS                   = 'POOMCONTACTS2:MMS';
 
     /* EAS 14 (Only used in Recipient Information Cache responses) */
-    const ALIAS                 = 'POOMCONTACTS:Alias';
-    const WEIGHTEDRANK          = 'POOMCONTACTS:WeightedRank';
+    public const ALIAS                 = 'POOMCONTACTS:Alias';
+    public const WEIGHTEDRANK          = 'POOMCONTACTS:WeightedRank';
 
-    public $categories = array();
+    public $categories = [];
 
     /**
      * Property mapping.
      *
      * @var array
      */
-    protected $_mapping = array(
-        self::ANNIVERSARY           => array(self::KEY_ATTRIBUTE => 'anniversary', self::KEY_TYPE => self::TYPE_DATE_DASHES),
-        self::BIRTHDAY              => array(self::KEY_ATTRIBUTE => 'birthday', self::KEY_TYPE => self::TYPE_DATE_DASHES),
-        self::WEBPAGE               => array(self::KEY_ATTRIBUTE => 'webpage'),
-        self::CHILDREN              => array(self::KEY_ATTRIBUTE => 'children', self::KEY_VALUES => self::CHILD),
-        self::BUSINESSCOUNTRY       => array(self::KEY_ATTRIBUTE => 'businesscountry'),
-        self::DEPARTMENT            => array(self::KEY_ATTRIBUTE => 'department'),
-        self::EMAIL1ADDRESS         => array(self::KEY_ATTRIBUTE => 'email1address'),
-        self::EMAIL2ADDRESS         => array(self::KEY_ATTRIBUTE => 'email2address'),
-        self::EMAIL3ADDRESS         => array(self::KEY_ATTRIBUTE => 'email3address'),
-        self::BUSINESSFAXNUMBER     => array(self::KEY_ATTRIBUTE => 'businessfaxnumber'),
-        self::FILEAS                => array(self::KEY_ATTRIBUTE => 'fileas'),
-        self::FIRSTNAME             => array(self::KEY_ATTRIBUTE => 'firstname'),
-        self::HOMECITY              => array(self::KEY_ATTRIBUTE => 'homecity'),
-        self::HOMECOUNTRY           => array(self::KEY_ATTRIBUTE => 'homecountry'),
-        self::HOMEFAXNUMBER         => array(self::KEY_ATTRIBUTE => 'homefaxnumber'),
-        self::HOMEPHONENUMBER       => array(self::KEY_ATTRIBUTE => 'homephonenumber'),
-        self::HOME2PHONENUMBER      => array(self::KEY_ATTRIBUTE => 'home2phonenumber'),
-        self::HOMEPOSTALCODE        => array(self::KEY_ATTRIBUTE => 'homepostalcode'),
-        self::HOMESTATE             => array(self::KEY_ATTRIBUTE => 'homestate'),
-        self::HOMESTREET            => array(self::KEY_ATTRIBUTE => 'homestreet'),
-        self::BUSINESSCITY          => array(self::KEY_ATTRIBUTE => 'businesscity'),
-        self::MIDDLENAME            => array(self::KEY_ATTRIBUTE => 'middlename'),
-        self::MOBILEPHONENUMBER     => array(self::KEY_ATTRIBUTE => 'mobilephonenumber'),
-        self::SUFFIX                => array(self::KEY_ATTRIBUTE => 'suffix'),
-        self::COMPANYNAME           => array(self::KEY_ATTRIBUTE => 'companyname'),
-        self::OTHERCITY             => array(self::KEY_ATTRIBUTE => 'othercity'),
-        self::OTHERCOUNTRY          => array(self::KEY_ATTRIBUTE => 'othercountry'),
-        self::CARPHONENUMBER        => array(self::KEY_ATTRIBUTE => 'carphonenumber'),
-        self::OTHERPOSTALCODE       => array(self::KEY_ATTRIBUTE => 'otherpostalcode'),
-        self::OTHERSTATE            => array(self::KEY_ATTRIBUTE => 'otherstate'),
-        self::OTHERSTREET           => array(self::KEY_ATTRIBUTE => 'otherstreet'),
-        self::PAGERNUMBER           => array(self::KEY_ATTRIBUTE => 'pagernumber'),
-        self::TITLE                 => array(self::KEY_ATTRIBUTE => 'title'),
-        self::BUSINESSPOSTALCODE    => array(self::KEY_ATTRIBUTE => 'businesspostalcode'),
-        self::ASSISTANTNAME         => array(self::KEY_ATTRIBUTE => 'assistantname'),
-        self::ASSISTNAMEPHONENUMBER => array(self::KEY_ATTRIBUTE => 'assistnamephonenumber'),
-        self::LASTNAME              => array(self::KEY_ATTRIBUTE => 'lastname'),
-        self::SPOUSE                => array(self::KEY_ATTRIBUTE => 'spouse'),
-        self::BUSINESSSTATE         => array(self::KEY_ATTRIBUTE => 'businessstate'),
-        self::BUSINESSSTREET        => array(self::KEY_ATTRIBUTE => 'businessstreet'),
-        self::BUSINESSPHONENUMBER   => array(self::KEY_ATTRIBUTE => 'businessphonenumber'),
-        self::BUSINESS2PHONENUMBER  => array(self::KEY_ATTRIBUTE => 'business2phonenumber'),
-        self::JOBTITLE              => array(self::KEY_ATTRIBUTE => 'jobtitle'),
-        self::YOMIFIRSTNAME         => array(self::KEY_ATTRIBUTE => 'yomifirstname'),
-        self::YOMILASTNAME          => array(self::KEY_ATTRIBUTE => 'yomilastname'),
-        self::YOMICOMPANYNAME       => array(self::KEY_ATTRIBUTE => 'yomicompanyname'),
-        self::OFFICELOCATION        => array(self::KEY_ATTRIBUTE => 'officelocation'),
-        self::RADIOPHONENUMBER      => array(self::KEY_ATTRIBUTE => 'radiophonenumber'),
-        self::CATEGORIES            => array(self::KEY_ATTRIBUTE => 'categories', self::KEY_VALUES => self::CATEGORY),
-        self::PICTURE               => array(self::KEY_ATTRIBUTE => 'picture'),
+    protected $_mapping = [
+        self::ANNIVERSARY           => [self::KEY_ATTRIBUTE => 'anniversary', self::KEY_TYPE => self::TYPE_DATE_DASHES],
+        self::BIRTHDAY              => [self::KEY_ATTRIBUTE => 'birthday', self::KEY_TYPE => self::TYPE_DATE_DASHES],
+        self::WEBPAGE               => [self::KEY_ATTRIBUTE => 'webpage'],
+        self::CHILDREN              => [self::KEY_ATTRIBUTE => 'children', self::KEY_VALUES => self::CHILD],
+        self::BUSINESSCOUNTRY       => [self::KEY_ATTRIBUTE => 'businesscountry'],
+        self::DEPARTMENT            => [self::KEY_ATTRIBUTE => 'department'],
+        self::EMAIL1ADDRESS         => [self::KEY_ATTRIBUTE => 'email1address'],
+        self::EMAIL2ADDRESS         => [self::KEY_ATTRIBUTE => 'email2address'],
+        self::EMAIL3ADDRESS         => [self::KEY_ATTRIBUTE => 'email3address'],
+        self::BUSINESSFAXNUMBER     => [self::KEY_ATTRIBUTE => 'businessfaxnumber'],
+        self::FILEAS                => [self::KEY_ATTRIBUTE => 'fileas'],
+        self::FIRSTNAME             => [self::KEY_ATTRIBUTE => 'firstname'],
+        self::HOMECITY              => [self::KEY_ATTRIBUTE => 'homecity'],
+        self::HOMECOUNTRY           => [self::KEY_ATTRIBUTE => 'homecountry'],
+        self::HOMEFAXNUMBER         => [self::KEY_ATTRIBUTE => 'homefaxnumber'],
+        self::HOMEPHONENUMBER       => [self::KEY_ATTRIBUTE => 'homephonenumber'],
+        self::HOME2PHONENUMBER      => [self::KEY_ATTRIBUTE => 'home2phonenumber'],
+        self::HOMEPOSTALCODE        => [self::KEY_ATTRIBUTE => 'homepostalcode'],
+        self::HOMESTATE             => [self::KEY_ATTRIBUTE => 'homestate'],
+        self::HOMESTREET            => [self::KEY_ATTRIBUTE => 'homestreet'],
+        self::BUSINESSCITY          => [self::KEY_ATTRIBUTE => 'businesscity'],
+        self::MIDDLENAME            => [self::KEY_ATTRIBUTE => 'middlename'],
+        self::MOBILEPHONENUMBER     => [self::KEY_ATTRIBUTE => 'mobilephonenumber'],
+        self::SUFFIX                => [self::KEY_ATTRIBUTE => 'suffix'],
+        self::COMPANYNAME           => [self::KEY_ATTRIBUTE => 'companyname'],
+        self::OTHERCITY             => [self::KEY_ATTRIBUTE => 'othercity'],
+        self::OTHERCOUNTRY          => [self::KEY_ATTRIBUTE => 'othercountry'],
+        self::CARPHONENUMBER        => [self::KEY_ATTRIBUTE => 'carphonenumber'],
+        self::OTHERPOSTALCODE       => [self::KEY_ATTRIBUTE => 'otherpostalcode'],
+        self::OTHERSTATE            => [self::KEY_ATTRIBUTE => 'otherstate'],
+        self::OTHERSTREET           => [self::KEY_ATTRIBUTE => 'otherstreet'],
+        self::PAGERNUMBER           => [self::KEY_ATTRIBUTE => 'pagernumber'],
+        self::TITLE                 => [self::KEY_ATTRIBUTE => 'title'],
+        self::BUSINESSPOSTALCODE    => [self::KEY_ATTRIBUTE => 'businesspostalcode'],
+        self::ASSISTANTNAME         => [self::KEY_ATTRIBUTE => 'assistantname'],
+        self::ASSISTNAMEPHONENUMBER => [self::KEY_ATTRIBUTE => 'assistnamephonenumber'],
+        self::LASTNAME              => [self::KEY_ATTRIBUTE => 'lastname'],
+        self::SPOUSE                => [self::KEY_ATTRIBUTE => 'spouse'],
+        self::BUSINESSSTATE         => [self::KEY_ATTRIBUTE => 'businessstate'],
+        self::BUSINESSSTREET        => [self::KEY_ATTRIBUTE => 'businessstreet'],
+        self::BUSINESSPHONENUMBER   => [self::KEY_ATTRIBUTE => 'businessphonenumber'],
+        self::BUSINESS2PHONENUMBER  => [self::KEY_ATTRIBUTE => 'business2phonenumber'],
+        self::JOBTITLE              => [self::KEY_ATTRIBUTE => 'jobtitle'],
+        self::YOMIFIRSTNAME         => [self::KEY_ATTRIBUTE => 'yomifirstname'],
+        self::YOMILASTNAME          => [self::KEY_ATTRIBUTE => 'yomilastname'],
+        self::YOMICOMPANYNAME       => [self::KEY_ATTRIBUTE => 'yomicompanyname'],
+        self::OFFICELOCATION        => [self::KEY_ATTRIBUTE => 'officelocation'],
+        self::RADIOPHONENUMBER      => [self::KEY_ATTRIBUTE => 'radiophonenumber'],
+        self::CATEGORIES            => [self::KEY_ATTRIBUTE => 'categories', self::KEY_VALUES => self::CATEGORY],
+        self::PICTURE               => [self::KEY_ATTRIBUTE => 'picture'],
 
         // POOMCONTACTS2
-        self::CUSTOMERID            => array(self::KEY_ATTRIBUTE => 'customerid'),
-        self::GOVERNMENTID          => array(self::KEY_ATTRIBUTE => 'governmentid'),
-        self::IMADDRESS             => array(self::KEY_ATTRIBUTE => 'imaddress'),
-        self::IMADDRESS2            => array(self::KEY_ATTRIBUTE => 'imaddress2'),
-        self::IMADDRESS3            => array(self::KEY_ATTRIBUTE => 'imaddress3'),
-        self::MANAGERNAME           => array(self::KEY_ATTRIBUTE => 'managername'),
-        self::COMPANYMAINPHONE      => array(self::KEY_ATTRIBUTE => 'companymainphone'),
-        self::ACCOUNTNAME           => array(self::KEY_ATTRIBUTE => 'accountname'),
-        self::NICKNAME              => array(self::KEY_ATTRIBUTE => 'nickname'),
-        self::MMS                   => array(self::KEY_ATTRIBUTE => 'mms'),
-    );
+        self::CUSTOMERID            => [self::KEY_ATTRIBUTE => 'customerid'],
+        self::GOVERNMENTID          => [self::KEY_ATTRIBUTE => 'governmentid'],
+        self::IMADDRESS             => [self::KEY_ATTRIBUTE => 'imaddress'],
+        self::IMADDRESS2            => [self::KEY_ATTRIBUTE => 'imaddress2'],
+        self::IMADDRESS3            => [self::KEY_ATTRIBUTE => 'imaddress3'],
+        self::MANAGERNAME           => [self::KEY_ATTRIBUTE => 'managername'],
+        self::COMPANYMAINPHONE      => [self::KEY_ATTRIBUTE => 'companymainphone'],
+        self::ACCOUNTNAME           => [self::KEY_ATTRIBUTE => 'accountname'],
+        self::NICKNAME              => [self::KEY_ATTRIBUTE => 'nickname'],
+        self::MMS                   => [self::KEY_ATTRIBUTE => 'mms'],
+    ];
 
     /**
      * Property values.
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'anniversary'           => false,
         'assistantname'         => false,
         'assistnamephonenumber' => false,
@@ -263,7 +264,7 @@ class Horde_ActiveSync_Message_Contact extends Horde_ActiveSync_Message_Base
         'businessfaxnumber'     => false,
         'businessphonenumber'   => false,
         'carphonenumber'        => false,
-        'children'              => array(),
+        'children'              => [],
         'companyname'           => false,
         'department'            => false,
         'email1address'         => false,
@@ -312,46 +313,46 @@ class Horde_ActiveSync_Message_Contact extends Horde_ActiveSync_Message_Base
         'accountname'           => false,
         'nickname'              => false,
         'mms'                   => false,
-    );
+    ];
 
     /**
      * Const'r
      *
      * @see Horde_ActiveSync_Message_Base::__construct()
      */
-    public function __construct(array $options = array())
+    public function __construct(array $options = [])
     {
         parent::__construct($options);
         if ($this->_version < Horde_ActiveSync::VERSION_TWELVE) {
-            $this->_mapping += array(
-                self::BODY                  => array(self::KEY_ATTRIBUTE => 'body'),
-                self::BODYSIZE              => array(self::KEY_ATTRIBUTE => 'bodysize'),
-                self::BODYTRUNCATED         => array(self::KEY_ATTRIBUTE => 'bodytruncated'),
-                self::RTF                   => array(self::KEY_ATTRIBUTE => 'rtf'),
-            );
+            $this->_mapping += [
+                self::BODY                  => [self::KEY_ATTRIBUTE => 'body'],
+                self::BODYSIZE              => [self::KEY_ATTRIBUTE => 'bodysize'],
+                self::BODYTRUNCATED         => [self::KEY_ATTRIBUTE => 'bodytruncated'],
+                self::RTF                   => [self::KEY_ATTRIBUTE => 'rtf'],
+            ];
 
-            $this->_properties += array(
+            $this->_properties += [
                 'body'                  => false,
                 'bodysize'              => false,
                 'bodytruncated'         => 0,
-                'rtf'                   => false
-            );
+                'rtf'                   => false,
+            ];
         } else {
-            $this->_mapping += array(
-                Horde_ActiveSync::AIRSYNCBASE_BODY => array(self::KEY_ATTRIBUTE => 'airsyncbasebody', self::KEY_TYPE => 'Horde_ActiveSync_Message_AirSyncBaseBody')
-            );
-            $this->_properties += array(
-                'airsyncbasebody' => false
-            );
+            $this->_mapping += [
+                Horde_ActiveSync::AIRSYNCBASE_BODY => [self::KEY_ATTRIBUTE => 'airsyncbasebody', self::KEY_TYPE => 'Horde_ActiveSync_Message_AirSyncBaseBody'],
+            ];
+            $this->_properties += [
+                'airsyncbasebody' => false,
+            ];
             if ($this->_version > Horde_ActiveSync::VERSION_TWELVEONE) {
-                $this->_mapping += array(
-                    self::ALIAS => array(self::KEY_ATTRIBUTE => 'alias'),
-                    self::WEIGHTEDRANK => array(self::KEY_ATTRIBUTE  => 'weightedrank')
-                );
-                $this->_properties += array(
+                $this->_mapping += [
+                    self::ALIAS => [self::KEY_ATTRIBUTE => 'alias'],
+                    self::WEIGHTEDRANK => [self::KEY_ATTRIBUTE  => 'weightedrank'],
+                ];
+                $this->_properties += [
                     'alias' => false,
-                    'weightedrank' => false
-                );
+                    'weightedrank' => false,
+                ];
             }
         }
     }
@@ -443,7 +444,7 @@ class Horde_ActiveSync_Message_Contact extends Horde_ActiveSync_Message_Base
      *
      * @return boolean
      */
-    public function isGhosted($property, $options = array())
+    public function isGhosted($property, $options = [])
     {
         // MS-ASCMD 2.2.3.168:
         // An empty SUPPORTED container indicates that ALL elements able to be
@@ -453,16 +454,16 @@ class Horde_ActiveSync_Message_Contact extends Horde_ActiveSync_Message_Base
         // any SUPPORTED container and also not sending the picture field during
         // edits.
         if ($property == $this->_mapping[self::PICTURE][self::KEY_ATTRIBUTE]) {
-            if (empty($options['ignoreEmptyPictureTagCheck']) &&
-                $this->_device->hasQuirk(Horde_ActiveSync_Device::QUIRK_INCORRECTLY_SENDS_EMPTY_PICTURE_TAG) &&
-                ((!empty($this->_exists[$property]) &&
-                $this->{$property} == '') || empty($this->_exists[$property]))) {
+            if (empty($options['ignoreEmptyPictureTagCheck'])
+                && $this->_device->hasQuirk(Horde_ActiveSync_Device::QUIRK_INCORRECTLY_SENDS_EMPTY_PICTURE_TAG)
+                && ((!empty($this->_exists[$property])
+                && $this->{$property} == '') || empty($this->_exists[$property]))) {
                 return true;
             }
 
-            if (empty($this->_exists[$property]) &&
-                empty($this->_supported) &&
-                $this->_device->hasQuirk(Horde_ActiveSync_Device::QUIRK_NEEDS_SUPPORTED_PICTURE_TAG)) {
+            if (empty($this->_exists[$property])
+                && empty($this->_supported)
+                && $this->_device->hasQuirk(Horde_ActiveSync_Device::QUIRK_NEEDS_SUPPORTED_PICTURE_TAG)) {
                 return true;
             }
         }

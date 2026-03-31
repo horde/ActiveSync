@@ -1,4 +1,5 @@
 <?php
+
 class HordeActiveSyncLongtextstatefield extends Horde_Db_Migration_Base
 {
     public function up()
@@ -6,7 +7,8 @@ class HordeActiveSyncLongtextstatefield extends Horde_Db_Migration_Base
         $this->changeColumn(
             'horde_activesync_state',
             'sync_data',
-            'mediumtext');
+            'mediumtext'
+        );
     }
 
     public function down()
@@ -14,7 +16,8 @@ class HordeActiveSyncLongtextstatefield extends Horde_Db_Migration_Base
         $this->changeColumn(
             'horde_activesync_state',
             'sync_data',
-            'text');
+            'text'
+        );
     }
 
 }

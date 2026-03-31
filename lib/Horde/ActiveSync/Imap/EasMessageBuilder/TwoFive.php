@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *

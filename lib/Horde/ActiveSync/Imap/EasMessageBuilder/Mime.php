@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
@@ -26,8 +27,10 @@ class Horde_ActiveSync_Imap_EasMessageBuilder_Mime extends Horde_ActiveSync_Imap
      * @param Horde_Log_Logger $logger                     The logger.
      */
     public function __construct(
-        Horde_ActiveSync_Imap_Message $imap_message, array $options, $logger)
-    {
+        Horde_ActiveSync_Imap_Message $imap_message,
+        array $options,
+        $logger
+    ) {
         parent::__construct($imap_message, $options, $logger);
 
         $this->_airsyncBody->type = Horde_ActiveSync::BODYPREF_TYPE_MIME;
@@ -102,16 +105,18 @@ class Horde_ActiveSync_Imap_EasMessageBuilder_Mime extends Horde_ActiveSync_Imap
         try {
             $headers = $this->_getHeaders();
             // Populate the EAS body structure with the MIME data.
-            $this->_airsyncBody->data = $base->toString(array(
-                'headers' => $headers,
-                'stream' => true)
+            $this->_airsyncBody->data = $base->toString(
+                [
+                    'headers' => $headers,
+                    'stream' => true]
             );
         } catch (Horde_Idna_Exception $e) {
             $this->_logger->err($e->getMessage());
             $this->_handleIdnaErrors($headers);
-            $this->_airsyncBody->data = $base->toString(array(
-                'headers' => $headers,
-                'stream' => true)
+            $this->_airsyncBody->data = $base->toString(
+                [
+                    'headers' => $headers,
+                    'stream' => true]
             );
         }
         $this->_airsyncBody->estimateddatasize = $base->getBytes();
@@ -125,7 +130,7 @@ class Horde_ActiveSync_Imap_EasMessageBuilder_Mime extends Horde_ActiveSync_Imap
      */
     protected function _handleIdnaErrors(Horde_Mime_Headers $headers)
     {
-        foreach (array('from', 'to', 'cc', 'reply-to') as $name) {
+        foreach (['from', 'to', 'cc', 'reply-to'] as $name) {
             if ($obj = $headers->getHeader($name)) {
                 $obj_idn = new Horde_ActiveSync_Mime_Headers_Addresses($name, $obj->full_value);
                 $headers->removeHeader($name);
@@ -151,14 +156,16 @@ class Horde_ActiveSync_Imap_EasMessageBuilder_Mime extends Horde_ActiveSync_Imap
                 ? $this->_options['truncation']
                 : false);
 
-        $this->_logger->meta(sprintf(
-            'Checking MIMETRUNCATION: %d, ServerData: %d',
-            $mime_truncation,
-            $this->_airsyncBody->estimateddatasize)
+        $this->_logger->meta(
+            sprintf(
+                'Checking MIMETRUNCATION: %d, ServerData: %d',
+                $mime_truncation,
+                $this->_airsyncBody->estimateddatasize
+            )
         );
 
-        if (!empty($mime_truncation) &&
-            $this->_airsyncBody->estimateddatasize > $mime_truncation) {
+        if (!empty($mime_truncation)
+            && $this->_airsyncBody->estimateddatasize > $mime_truncation) {
             ftruncate($this->_airsyncBody->data, $mime_truncation);
             $this->_airsyncBody->truncated = '1';
         } else {
@@ -175,7 +182,7 @@ class Horde_ActiveSync_Imap_EasMessageBuilder_Mime extends Horde_ActiveSync_Imap
     {
         $part = new Horde_Mime_Part();
         $part->setType('text/plain');
-        $part->setContents($this->_mbd->plain['body']->stream, array('usestream' => true));
+        $part->setContents($this->_mbd->plain['body']->stream, ['usestream' => true]);
         $part->setCharset('UTF-8');
 
         return $part;
@@ -190,7 +197,7 @@ class Horde_ActiveSync_Imap_EasMessageBuilder_Mime extends Horde_ActiveSync_Imap
     {
         $part = new Horde_Mime_Part();
         $part->setType('text/html');
-        $part->setContents($this->_mbd->html['body']->stream, array('usestream' => true));
+        $part->setContents($this->_mbd->html['body']->stream, ['usestream' => true]);
         $part->setCharset('UTF-8');
 
         return $part;

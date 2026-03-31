@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_State_Base::
  *
@@ -125,7 +126,7 @@ abstract class Horde_ActiveSync_State_Base
      *
      * @param array $params  All configuration parameters.
      */
-    public function __construct(array $params = array())
+    public function __construct(array $params = [])
     {
         $this->_params = $params;
         if (empty($params['logger'])) {
@@ -163,7 +164,7 @@ abstract class Horde_ActiveSync_State_Base
      */
     public function generatePolicyKey()
     {
-            return mt_rand(1000000000, mt_getrandmax());
+        return mt_rand(1000000000, mt_getrandmax());
     }
 
     /**
@@ -203,7 +204,9 @@ abstract class Horde_ActiveSync_State_Base
         /* Should we refresh? */
         if ($refresh) {
             $this->loadDeviceInfo(
-                $this->_deviceInfo->id, $this->_deviceInfo->user, array('force' => true)
+                $this->_deviceInfo->id,
+                $this->_deviceInfo->user,
+                ['force' => true]
             );
         }
 
@@ -263,13 +266,13 @@ abstract class Horde_ActiveSync_State_Base
     public function isConflict($stat, $type)
     {
         // $stat == server's message information
-        if ($stat['mod'] > $this->_lastSyncStamp &&
-            ($type == Horde_ActiveSync::CHANGE_TYPE_DELETE ||
-             $type == Horde_ActiveSync::CHANGE_TYPE_CHANGE)) {
+        if ($stat['mod'] > $this->_lastSyncStamp
+            && ($type == Horde_ActiveSync::CHANGE_TYPE_DELETE
+             || $type == Horde_ActiveSync::CHANGE_TYPE_CHANGE)) {
 
-             // changed here - deleted there
-             // changed here - changed there
-             return true;
+            // changed here - deleted there
+            // changed here - changed there
+            return true;
         }
 
         return false;
@@ -287,7 +290,7 @@ abstract class Horde_ActiveSync_State_Base
         if (!isset($this->_folder)) {
             throw new Horde_ActiveSync_Exception('Sync state not loaded');
         }
-        $folders = array();
+        $folders = [];
         foreach ($this->_folder as $folder) {
             $folders[] = $folder['id'];
         }
@@ -304,11 +307,12 @@ abstract class Horde_ActiveSync_State_Base
     public function getFolderUidToBackendIdMap()
     {
         if (!isset($this->_folderUidMap)) {
-            $this->_folderUidMap = array();
+            $this->_folderUidMap = [];
             $cache = $this->getSyncCache(
                 $this->_deviceInfo->id,
                 $this->_deviceInfo->user,
-                array('folders'));
+                ['folders']
+            );
             foreach ($cache['folders'] as $id => $folder) {
                 $this->_folderUidMap[$folder['serverid']] = $id;
             }
@@ -331,22 +335,28 @@ abstract class Horde_ActiveSync_State_Base
     {
         $cache = $this->getSyncCache(
             $this->_deviceInfo->id,
-            $this->_deviceInfo->user);
+            $this->_deviceInfo->user
+        );
 
         $folders = $cache['folders'];
         foreach ($folders as $id => $folder) {
             if ($folder['serverid'] == $serverid) {
-                $this->_logger->meta(sprintf(
-                    'STORAGE: Found serverid for %s: %s',
-                    $serverid, $id)
+                $this->_logger->meta(
+                    sprintf(
+                        'STORAGE: Found serverid for %s: %s',
+                        $serverid,
+                        $id
+                    )
                 );
                 return $id;
             }
         }
 
-        $this->_logger->meta(sprintf(
-            'STORAGE: No folderid found for %s',
-            $serverid)
+        $this->_logger->meta(
+            sprintf(
+                'STORAGE: No folderid found for %s',
+                $serverid
+            )
         );
 
         return false;
@@ -377,7 +387,7 @@ abstract class Horde_ActiveSync_State_Base
      * @throws Horde_ActiveSync_Exception_StaleState
      * @throws Horde_ActiveSync_Exception_FolderGone
      */
-    public function getChanges(array $options = array())
+    public function getChanges(array $options = [])
     {
         if (!empty($this->_collection['id'])) {
             // How far back to sync for those collections that use this.
@@ -385,10 +395,12 @@ abstract class Horde_ActiveSync_State_Base
                 ? $this->_collection['filtertype']
                 : 0);
 
-            $this->_logger->meta(sprintf(
-                'STATE: Initializing message diff engine for %s (%s)',
-                $this->_collection['id'],
-                $this->_folder->serverid())
+            $this->_logger->meta(
+                sprintf(
+                    'STATE: Initializing message diff engine for %s (%s)',
+                    $this->_collection['id'],
+                    $this->_folder->serverid()
+                )
             );
 
             // Check for previously found changes first.
@@ -409,18 +421,20 @@ abstract class Horde_ActiveSync_State_Base
                 );
             }
 
-            $this->_logger->meta(sprintf(
-                'STATE: Using SYNCSTAMP %s for %s.',
-                $this->_thisSyncStamp,
-                $this->_collection['id'])
+            $this->_logger->meta(
+                sprintf(
+                    'STATE: Using SYNCSTAMP %s for %s.',
+                    $this->_thisSyncStamp,
+                    $this->_collection['id']
+                )
             );
 
             // No existing changes, poll the backend
             try {
                 $changes = $this->_backend->getServerChanges(
                     $this->_folder,
-                    (int)$this->_lastSyncStamp,
-                    (int)$this->_thisSyncStamp,
+                    (int) $this->_lastSyncStamp,
+                    (int) $this->_thisSyncStamp,
                     $cutoffdate,
                     !empty($options['ping']),
                     $this->_folder->haveInitialSync,
@@ -431,9 +445,11 @@ abstract class Horde_ActiveSync_State_Base
                 // @todo For BC reasons, we need to treat AuthenticationFailure
                 //  here as a need to resync folders since to the backend, the
                 //  end result is the same, the folder is "missing".
-                $this->_logger->meta(sprintf(
-                    'STATE: Unable to find folder %s. Could be vanished, or permissions denied.',
-                    $this->_folder->serverId())
+                $this->_logger->meta(
+                    sprintf(
+                        'STATE: Unable to find folder %s. Could be vanished, or permissions denied.',
+                        $this->_folder->serverId()
+                    )
                 );
                 throw new Horde_ActiveSync_Exception_FolderGone($e->getMessage());
             }
@@ -443,100 +459,108 @@ abstract class Horde_ActiveSync_State_Base
                 $this->_folder->updateState();
             }
 
-            $this->_logger->meta(sprintf(
-                'STATE: Found %d message changes in %s.',
-                count($changes),
-                $this->_collection['id'])
+            $this->_logger->meta(
+                sprintf(
+                    'STATE: Found %d message changes in %s.',
+                    count($changes),
+                    $this->_collection['id']
+                )
             );
 
             // Check for mirrored client changes.
-            $this->_changes = array();
+            $this->_changes = [];
             if (count($changes) && $this->_havePIMChanges()) {
                 $this->_logger->meta('STATE: Checking for client initiated changes.');
                 switch ($this->_collection['class']) {
-                case Horde_ActiveSync::CLASS_EMAIL:
-                    // @todo Fix me with a changes object that transparently
-                    // deals with different data structure for initial sync and
-                    // knows how to filter out client-sourced changes
-                    if (!empty($changes) && !is_array($changes[0])) {
-                        $this->_changes = $changes;
-                        break;
-                    }
+                    case Horde_ActiveSync::CLASS_EMAIL:
+                        // @todo Fix me with a changes object that transparently
+                        // deals with different data structure for initial sync and
+                        // knows how to filter out client-sourced changes
+                        if (!empty($changes) && !is_array($changes[0])) {
+                            $this->_changes = $changes;
+                            break;
+                        }
 
-                    // Map of client-sourced changes
-                    $mailmap = $this->_getMailMapChanges($changes);
+                        // Map of client-sourced changes
+                        $mailmap = $this->_getMailMapChanges($changes);
 
-                    // Map constants to more human readable/loggable text.
-                    $flag_map = array(
-                        Horde_ActiveSync::CHANGE_TYPE_FLAGS =>  'flag change',
-                        Horde_ActiveSync::CHANGE_TYPE_DELETE => 'deletion',
-                        Horde_ActiveSync::CHANGE_TYPE_CHANGE => 'move',
-                        Horde_ActiveSync::CHANGE_TYPE_DRAFT => 'draft'
-                    );
+                        // Map constants to more human readable/loggable text.
+                        $flag_map = [
+                            Horde_ActiveSync::CHANGE_TYPE_FLAGS =>  'flag change',
+                            Horde_ActiveSync::CHANGE_TYPE_DELETE => 'deletion',
+                            Horde_ActiveSync::CHANGE_TYPE_CHANGE => 'move',
+                            Horde_ActiveSync::CHANGE_TYPE_DRAFT => 'draft',
+                        ];
 
-                    $cnt = count($changes);
-                    for ($i = 0; $i < $cnt; $i++) {
-                        if (empty($mailmap[$changes[$i]['id']][$changes[$i]['type']])) {
+                        $cnt = count($changes);
+                        for ($i = 0; $i < $cnt; $i++) {
+                            if (empty($mailmap[$changes[$i]['id']][$changes[$i]['type']])) {
+                                $this->_changes[] = $changes[$i];
+                                continue;
+                            }
+                            // @todo For 3.0, create a Changes and
+                            // ChangeFilter classes to abstract out a bunch of
+                            // this stuff. (Needs BC breaking changes in
+                            // storage/state classes).
+
+                            // OL2013 is broken and duplicates the destination
+                            // email during MOVEITEMS requests (instead it
+                            // reassigns the existing email the new UID). Don't
+                            // send the ADD command for these changes.
+                            if ($changes[$i]['type'] == Horde_ActiveSync::CHANGE_TYPE_CHANGE
+                                && $changes[$i]['flags'] == Horde_ActiveSync::FLAG_NEWMESSAGE
+                                && $this->_deviceInfo->deviceType != 'WindowsOutlook15') {
+                                $this->_changes[] = $changes[$i];
+                                continue;
+                            }
+                            $changes[$i]['ignore'] = true;
                             $this->_changes[] = $changes[$i];
-                            continue;
-                        }
-                        // @todo For 3.0, create a Changes and
-                        // ChangeFilter classes to abstract out a bunch of
-                        // this stuff. (Needs BC breaking changes in
-                        // storage/state classes).
-
-                        // OL2013 is broken and duplicates the destination
-                        // email during MOVEITEMS requests (instead it
-                        // reassigns the existing email the new UID). Don't
-                        // send the ADD command for these changes.
-                        if ($changes[$i]['type'] == Horde_ActiveSync::CHANGE_TYPE_CHANGE &&
-                            $changes[$i]['flags'] == Horde_ActiveSync::FLAG_NEWMESSAGE &&
-                            $this->_deviceInfo->deviceType != 'WindowsOutlook15') {
-                            $this->_changes[] = $changes[$i];
-                            continue;
-                        }
-                        $changes[$i]['ignore'] = true;
-                        $this->_changes[] = $changes[$i];
-                        $this->_logger->meta(sprintf(
-                            'STATE: Ignoring client initiated %s for %s',
-                            $flag_map[$changes[$i]['type']],
-                            $changes[$i]['id'])
-                        );
-                    }
-                    break;
-
-                default:
-                    $client_timestamps = $this->_getPIMChangeTS($changes);
-                    $cnt = count($changes);
-
-                    if (!empty($changes) && !is_array($changes[0])) {
-                        $this->_changes = $changes;
-                        break;
-                    }
-
-                    for ($i = 0; $i < $cnt; $i++) {
-                        if (empty($client_timestamps[$changes[$i]['id']])) {
-                            $this->_changes[] = $changes[$i];
-                            continue;
-                        }
-                        if ($changes[$i]['type'] == Horde_ActiveSync::CHANGE_TYPE_DELETE) {
-                            // If we have a delete, don't bother stating the message,
-                            // the entry should already be deleted on the client.
-                            $stat['mod'] = 0;
-                        } else {
-                            // stat only returns MODIFY times, not deletion times,
-                            // so will return (int)0 for ADD or DELETE.
-                            $stat = $this->_backend->statMessage($this->_folder->serverid(), $changes[$i]['id']);
-                        }
-                        if ($client_timestamps[$changes[$i]['id']] >= $stat['mod']) {
-                            $this->_logger->meta(sprintf(
-                                'STATE: Ignoring client initiated change for %s (client TS: %s Stat TS: %s)',
-                                $changes[$i]['id'], $client_timestamps[$changes[$i]['id']], $stat['mod'])
+                            $this->_logger->meta(
+                                sprintf(
+                                    'STATE: Ignoring client initiated %s for %s',
+                                    $flag_map[$changes[$i]['type']],
+                                    $changes[$i]['id']
+                                )
                             );
-                        } else {
-                            $this->_changes[] = $changes[$i];
                         }
-                    }
+                        break;
+
+                    default:
+                        $client_timestamps = $this->_getPIMChangeTS($changes);
+                        $cnt = count($changes);
+
+                        if (!empty($changes) && !is_array($changes[0])) {
+                            $this->_changes = $changes;
+                            break;
+                        }
+
+                        for ($i = 0; $i < $cnt; $i++) {
+                            if (empty($client_timestamps[$changes[$i]['id']])) {
+                                $this->_changes[] = $changes[$i];
+                                continue;
+                            }
+                            if ($changes[$i]['type'] == Horde_ActiveSync::CHANGE_TYPE_DELETE) {
+                                // If we have a delete, don't bother stating the message,
+                                // the entry should already be deleted on the client.
+                                $stat['mod'] = 0;
+                            } else {
+                                // stat only returns MODIFY times, not deletion times,
+                                // so will return (int)0 for ADD or DELETE.
+                                $stat = $this->_backend->statMessage($this->_folder->serverid(), $changes[$i]['id']);
+                            }
+                            if ($client_timestamps[$changes[$i]['id']] >= $stat['mod']) {
+                                $this->_logger->meta(
+                                    sprintf(
+                                        'STATE: Ignoring client initiated change for %s (client TS: %s Stat TS: %s)',
+                                        $changes[$i]['id'],
+                                        $client_timestamps[$changes[$i]['id']],
+                                        $stat['mod']
+                                    )
+                                );
+                            } else {
+                                $this->_changes[] = $changes[$i];
+                            }
+                        }
                 }
             } elseif (count($changes)) {
                 $this->_logger->meta('STATE: No client changes, returning all messages.');
@@ -573,15 +597,18 @@ abstract class Horde_ActiveSync_State_Base
             }
         }
         $this->_changes = $this->_getDiff(
-            (empty($this->_folder) ? array() : $this->_folder),
-            $folderlist);
+            (empty($this->_folder) ? [] : $this->_folder),
+            $folderlist
+        );
 
         if (!count($this->_changes)) {
             $this->_logger->meta('STATE: No folder changes found.');
         } else {
-            $this->_logger->meta(sprintf(
-                'STATE: Found %d folder changes.',
-                count($this->_changes))
+            $this->_logger->meta(
+                sprintf(
+                    'STATE: Found %d folder changes.',
+                    count($this->_changes)
+                )
             );
         }
     }
@@ -599,9 +626,11 @@ abstract class Horde_ActiveSync_State_Base
     public function getNewSyncKeyWrapper($syncKey)
     {
         if ($this->checkCollision($newKey = self::getNewSyncKey($syncKey))) {
-            $this->_logger->err(sprintf(
-                'STATE: Found collision when generating synckey %s. Trying again.',
-                $newKey)
+            $this->_logger->err(
+                sprintf(
+                    'STATE: Found collision when generating synckey %s. Trying again.',
+                    $newKey
+                )
             );
             return $this->getNewSyncKeyWrapper($synckey);
         }
@@ -683,18 +712,18 @@ abstract class Horde_ActiveSync_State_Base
      */
     public static function getSyncKeyUid($syncKey)
     {
-       if (preg_match('/^(\{[a-fA-F0-9-]+\})([0-9]+)$/', $syncKey, $matches)) {
+        if (preg_match('/^(\{[a-fA-F0-9-]+\})([0-9]+)$/', $syncKey, $matches)) {
             return $matches[1];
         }
     }
 
-   /**
-    * Returns the timestamp of the earliest modification time to consider
-    *
-    * @param integer $restrict  The time period to restrict to
-    *
-    * @return integer
-    */
+    /**
+     * Returns the timestamp of the earliest modification time to consider
+     *
+     * @param integer $restrict  The time period to restrict to
+     *
+     * @return integer
+     */
     protected static function _getCutOffDate($restrict)
     {
         // @todo Should just pass the filtertype to the driver instead
@@ -702,30 +731,30 @@ abstract class Horde_ActiveSync_State_Base
         if ($restrict == Horde_ActiveSync::FILTERTYPE_INCOMPLETETASKS) {
             return $restrict;
         }
-        switch($restrict) {
-        case Horde_ActiveSync::FILTERTYPE_1DAY:
-            $back = 86400;
-            break;
-        case Horde_ActiveSync::FILTERTYPE_3DAYS:
-            $back = 259200;
-            break;
-        case Horde_ActiveSync::FILTERTYPE_1WEEK:
-            $back = 604800;
-            break;
-        case Horde_ActiveSync::FILTERTYPE_2WEEKS:
-            $back = 1209600;
-            break;
-        case Horde_ActiveSync::FILTERTYPE_1MONTH:
-            $back = 2419200;
-            break;
-        case Horde_ActiveSync::FILTERTYPE_3MONTHS:
-            $back = 7257600;
-            break;
-        case Horde_ActiveSync::FILTERTYPE_6MONTHS:
-            $back = 14515200;
-            break;
-        default:
-            break;
+        switch ($restrict) {
+            case Horde_ActiveSync::FILTERTYPE_1DAY:
+                $back = 86400;
+                break;
+            case Horde_ActiveSync::FILTERTYPE_3DAYS:
+                $back = 259200;
+                break;
+            case Horde_ActiveSync::FILTERTYPE_1WEEK:
+                $back = 604800;
+                break;
+            case Horde_ActiveSync::FILTERTYPE_2WEEKS:
+                $back = 1209600;
+                break;
+            case Horde_ActiveSync::FILTERTYPE_1MONTH:
+                $back = 2419200;
+                break;
+            case Horde_ActiveSync::FILTERTYPE_3MONTHS:
+                $back = 7257600;
+                break;
+            case Horde_ActiveSync::FILTERTYPE_6MONTHS:
+                $back = 14515200;
+                break;
+            default:
+                break;
         }
 
         if (isset($back)) {
@@ -747,18 +776,18 @@ abstract class Horde_ActiveSync_State_Base
      */
     protected function _getDiff($old, $new)
     {
-        $changes = array();
+        $changes = [];
 
         // Sort both arrays in the same way by ID
-        usort($old, array(__CLASS__, 'RowCmp'));
-        usort($new, array(__CLASS__, 'RowCmp'));
+        usort($old, [__CLASS__, 'RowCmp']);
+        usort($new, [__CLASS__, 'RowCmp']);
         $inew = 0;
         $iold = 0;
 
         // Get changes by comparing our list of folders with
         // our previous state
         while (1) {
-            $change = array();
+            $change = [];
             if ($iold >= count($old) || $inew >= count($new)) {
                 break;
             }
@@ -856,17 +885,19 @@ abstract class Horde_ActiveSync_State_Base
 
         // synckey == 0 is an initial sync or reset.
         if (empty($syncKey)) {
-            $this->_logger->notice(sprintf(
-                '%s::loadState: clearing folder state.',
-                __CLASS__)
+            $this->_logger->notice(
+                sprintf(
+                    '%s::loadState: clearing folder state.',
+                    __CLASS__
+                )
             );
             if ($type == Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC) {
-                $this->_folder = array();
+                $this->_folder = [];
             } else {
                 // Create a new folder object.
-                $this->_folder = ($this->_collection['class'] == Horde_ActiveSync::CLASS_EMAIL) ?
-                    new Horde_ActiveSync_Folder_Imap($this->_collection['serverid'], Horde_ActiveSync::CLASS_EMAIL) :
-                    ($this->_collection['serverid'] == 'RI' ? new Horde_ActiveSync_Folder_RI('RI', 'RI') : new Horde_ActiveSync_Folder_Collection($this->_collection['serverid'], $this->_collection['class']));
+                $this->_folder = ($this->_collection['class'] == Horde_ActiveSync::CLASS_EMAIL)
+                    ? new Horde_ActiveSync_Folder_Imap($this->_collection['serverid'], Horde_ActiveSync::CLASS_EMAIL)
+                    : ($this->_collection['serverid'] == 'RI' ? new Horde_ActiveSync_Folder_RI('RI', 'RI') : new Horde_ActiveSync_Folder_Collection($this->_collection['serverid'], $this->_collection['class']));
             }
             $this->_syncKey = '0';
             $this->_resetDeviceState($id);
@@ -986,8 +1017,12 @@ abstract class Horde_ActiveSync_State_Base
      * @param string $clientid  client clientid sent when adding a new message
      */
     abstract public function updateState(
-        $type, array $change, $origin = Horde_ActiveSync::CHANGE_ORIGIN_NA,
-        $user = null, $clientid = '');
+        $type,
+        array $change,
+        $origin = Horde_ActiveSync::CHANGE_ORIGIN_NA,
+        $user = null,
+        $clientid = ''
+    );
 
     /**
      * Save a new device policy key to storage.
@@ -1029,7 +1064,7 @@ abstract class Horde_ActiveSync_State_Base
      *
      * @return Horde_ActiveSync_Device
      */
-    abstract public function loadDeviceInfo($device, $user = null, $params = array());
+    abstract public function loadDeviceInfo($device, $user = null, $params = []);
 
     /**
      * Check that a given device id is known to the server. This is regardless
@@ -1048,7 +1083,7 @@ abstract class Horde_ActiveSync_State_Base
      * @param object $data  The device information
      * @param array $dirty  Array of dirty properties. @since 2.9.0
      */
-    abstract public function setDeviceInfo(Horde_ActiveSync_Device $data, array $dirty = array());
+    abstract public function setDeviceInfo(Horde_ActiveSync_Device $data, array $dirty = []);
 
     /**
      * Set the device's properties as sent by a SETTINGS request.
@@ -1114,7 +1149,7 @@ abstract class Horde_ActiveSync_State_Base
      *
      * @throws Horde_ActiveSync_Exception
      */
-    abstract public function saveSyncCache(array $cache, $devid, $user, array $dirty = array());
+    abstract public function saveSyncCache(array $cache, $devid, $user, array $dirty = []);
 
     /**
      * Delete a complete sync cache
@@ -1136,17 +1171,17 @@ abstract class Horde_ActiveSync_State_Base
      * @return string The UID for the given clientid, null if none found.
      * @throws Horde_ActiveSync_Exception
      */
-     abstract public function isDuplicatePIMAddition($id);
+    abstract public function isDuplicatePIMAddition($id);
 
-     /**
-      * Close the underlying backend storage connection.
-      * To be used during PING or looping SYNC operations.
-      */
-     abstract public function disconnect();
+    /**
+     * Close the underlying backend storage connection.
+     * To be used during PING or looping SYNC operations.
+     */
+    abstract public function disconnect();
 
-     /**
-      * (Re)open backend storage connection.
-      */
-     abstract public function connect();
+    /**
+     * (Re)open backend storage connection.
+     */
+    abstract public function connect();
 
 }

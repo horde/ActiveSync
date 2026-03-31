@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Utils::
  *
@@ -28,31 +29,31 @@ class Horde_ActiveSync_Utils
      */
     public static function decodeBase64($uri)
     {
-        $commandMap = array(
-                0  => 'Sync',
-                1  => 'SendMail',
-                2  => 'SmartForward',
-                3  => 'SmartReply',
-                4  => 'GetAttachment',
-                9  => 'FolderSync',
-                10 => 'FolderCreate',
-                11 => 'FolderDelete',
-                12 => 'FolderUpdate',
-                13 => 'MoveItems',
-                14 => 'GetItemEstimate',
-                15 => 'MeetingResponse',
-                16 => 'Search',
-                17 => 'Settings',
-                18 => 'Ping',
-                19 => 'ItemOperations',
-                20 => 'Provision',
-                21 => 'ResolveRecipients',
-                22 => 'ValidateCert'
-            );
+        $commandMap = [
+            0  => 'Sync',
+            1  => 'SendMail',
+            2  => 'SmartForward',
+            3  => 'SmartReply',
+            4  => 'GetAttachment',
+            9  => 'FolderSync',
+            10 => 'FolderCreate',
+            11 => 'FolderDelete',
+            12 => 'FolderUpdate',
+            13 => 'MoveItems',
+            14 => 'GetItemEstimate',
+            15 => 'MeetingResponse',
+            16 => 'Search',
+            17 => 'Settings',
+            18 => 'Ping',
+            19 => 'ItemOperations',
+            20 => 'Provision',
+            21 => 'ResolveRecipients',
+            22 => 'ValidateCert',
+        ];
         $stream = fopen('php://temp', 'r+');
         fwrite($stream, base64_decode($uri));
         rewind($stream);
-        $results = array();
+        $results = [];
         // Version, command, locale
         $data = unpack('CprotocolVersion/Ccommand/vlocale', fread($stream, 4));
         $results['ProtVer'] = substr($data['protocolVersion'], 0, -1) . '.' . substr($data['protocolVersion'], -1);
@@ -87,39 +88,39 @@ class Horde_ActiveSync_Utils
             $length = ord(fread($stream, 1));
             if ($length > 0 || $tag == 7) {
                 switch ($tag) {
-                case 0:
-                    $data = unpack('A' . $length . 'AttName', fread($stream, $length));
-                    $results['AttachmentName'] = $data['AttName'];
-                    break;
-                case 1:
-                    $data = unpack('A' . $length . 'CollId', fread($stream, $length));
-                    $results['CollectionId'] = $data['CollId'];
-                    break;
-                case 3:
-                    $data = unpack('A' . $length . 'ItemId', fread($stream, $length));
-                    $results['ItemId'] = $data['ItemId'];
-                    break;
-                case 4:
-                    $data = unpack('A' . $length . 'Lid', fread($stream, $length));
-                    $results['LongId'] = $data['Lid'];
-                    break;
-                case 5:
-                    $data = unpack('A' . $length . 'Pid', fread($stream, $length));
-                    $results['ParentId'] = $data['Pid'];
-                    break;
-                case 6:
-                    $data = unpack('A' . $length . 'Oc', fread($stream, $length));
-                    $results['Occurrence'] = $data['Oc'];
-                    break;
-                case 7:
-                    $options = ord(fread($stream, 1));
-                    $results['SaveInSent'] = !!($options & 0x01);
-                    $results['AcceptMultiPart'] = !!($options & 0x02);
-                    break;
-                case 8:
-                    $data = unpack('A' . $length . 'User', fread($stream, $length));
-                    $results['User'] = $data['User'];
-                    break;
+                    case 0:
+                        $data = unpack('A' . $length . 'AttName', fread($stream, $length));
+                        $results['AttachmentName'] = $data['AttName'];
+                        break;
+                    case 1:
+                        $data = unpack('A' . $length . 'CollId', fread($stream, $length));
+                        $results['CollectionId'] = $data['CollId'];
+                        break;
+                    case 3:
+                        $data = unpack('A' . $length . 'ItemId', fread($stream, $length));
+                        $results['ItemId'] = $data['ItemId'];
+                        break;
+                    case 4:
+                        $data = unpack('A' . $length . 'Lid', fread($stream, $length));
+                        $results['LongId'] = $data['Lid'];
+                        break;
+                    case 5:
+                        $data = unpack('A' . $length . 'Pid', fread($stream, $length));
+                        $results['ParentId'] = $data['Pid'];
+                        break;
+                    case 6:
+                        $data = unpack('A' . $length . 'Oc', fread($stream, $length));
+                        $results['Occurrence'] = $data['Oc'];
+                        break;
+                    case 7:
+                        $options = ord(fread($stream, 1));
+                        $results['SaveInSent'] = !!($options & 0x01);
+                        $results['AcceptMultiPart'] = !!($options & 0x02);
+                        break;
+                    case 8:
+                        $data = unpack('A' . $length . 'User', fread($stream, $length));
+                        $results['User'] = $data['User'];
+                        break;
                 }
             }
         }
@@ -152,11 +153,11 @@ class Horde_ActiveSync_Utils
             // If it's not a vCal UID, then it is Outlook style UID:
             // The entire decoded goid is converted to hex representation with
             // bytes 17 - 20 converted to zero
-            $hex = array();
+            $hex = [];
             foreach (str_split($goid) as $chr) {
                 $hex[] = sprintf('%02X', ord($chr));
             }
-            array_splice($hex, 16, 4, array('00', '00', '00', '00'));
+            array_splice($hex, 16, 4, ['00', '00', '00', '00']);
             return implode('', $hex);
         }
     }
@@ -170,7 +171,7 @@ class Horde_ActiveSync_Utils
      * @return string  A Base64 encoded GOID
      * @deprecated  Will be removed in H6. Use Horde_Mapi::createGoid
      */
-    public static function createGoid($uid, $options = array())
+    public static function createGoid($uid, $options = [])
     {
         // Bytes 1 - 16 MUST be equal to the GOID identifier:
         $arrayid = '040000008200E00074C5B7101A82E008';
@@ -219,10 +220,10 @@ class Horde_ActiveSync_Utils
     {
         $text = Horde_String::convertCharset($data, $from_charset, 'UTF-8');
         if (!Horde_String::validUtf8($text)) {
-            $test_charsets = array(
+            $test_charsets = [
                 'windows-1252',
-                'UTF-8'
-            );
+                'UTF-8',
+            ];
             foreach ($test_charsets as $charset) {
                 if ($charset != $from_charset) {
                     $text = Horde_String::convertCharset($data, $charset, 'UTF-8');

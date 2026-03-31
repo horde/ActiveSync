@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Base exception class for Horde_ActiveSync
  *
- * Copyright 2010-2017 Horde LLC (http://www.horde.org/)
+ * Copyright 2010-2026 Horde LLC (http://www.horde.org/)
  *
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
@@ -13,7 +14,7 @@
 /**
  * Base exception class for Horde_ActiveSync
  *
- * Copyright 2010-2017 Horde LLC (http://www.horde.org/)
+ * Copyright 2010-2026 Horde LLC (http://www.horde.org/)
  *
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
@@ -26,8 +27,8 @@ class Horde_ActiveSync_Exception extends Horde_Exception_Wrapped
     /** Error codes **/
 
     // Defauld, unspecified.
-    const UNSPECIFIED = 0;
+    public const UNSPECIFIED = 0;
 
     // Unsupported action was attempted.
-    const UNSUPPORTED = 3;
+    public const UNSUPPORTED = 3;
 }

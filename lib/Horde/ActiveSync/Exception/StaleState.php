@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Exception_StaleState::
  *
@@ -17,6 +18,4 @@
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */
-class Horde_ActiveSync_Exception_StaleState extends Horde_ActiveSync_Exception
-{
-}
+class Horde_ActiveSync_Exception_StaleState extends Horde_ActiveSync_Exception {}

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Request_GetItemEstimate::
  *
@@ -32,22 +33,22 @@
 class Horde_ActiveSync_Request_GetItemEstimate extends Horde_ActiveSync_Request_Base
 {
     /** Status Codes **/
-    const STATUS_SUCCESS    = 1;
-    const STATUS_INVALIDCOL = 2;
-    const STATUS_NOTPRIMED  = 3;
-    const STATUS_KEYMISM    = 4;
+    public const STATUS_SUCCESS    = 1;
+    public const STATUS_INVALIDCOL = 2;
+    public const STATUS_NOTPRIMED  = 3;
+    public const STATUS_KEYMISM    = 4;
 
     /* Request tag constants */
-    const GETITEMESTIMATE = 'GetItemEstimate:GetItemEstimate';
-    const VERSION         = 'GetItemEstimate:Version';
-    const FOLDERS         = 'GetItemEstimate:Folders';
-    const FOLDER          = 'GetItemEstimate:Folder';
-    const FOLDERTYPE      = 'GetItemEstimate:FolderType';
-    const FOLDERID        = 'GetItemEstimate:FolderId';
-    const DATETIME        = 'GetItemEstimate:DateTime';
-    const ESTIMATE        = 'GetItemEstimate:Estimate';
-    const RESPONSE        = 'GetItemEstimate:Response';
-    const STATUS          = 'GetItemEstimate:Status';
+    public const GETITEMESTIMATE = 'GetItemEstimate:GetItemEstimate';
+    public const VERSION         = 'GetItemEstimate:Version';
+    public const FOLDERS         = 'GetItemEstimate:Folders';
+    public const FOLDER          = 'GetItemEstimate:Folder';
+    public const FOLDERTYPE      = 'GetItemEstimate:FolderType';
+    public const FOLDERID        = 'GetItemEstimate:FolderId';
+    public const DATETIME        = 'GetItemEstimate:DateTime';
+    public const ESTIMATE        = 'GetItemEstimate:Estimate';
+    public const RESPONSE        = 'GetItemEstimate:Response';
+    public const STATUS          = 'GetItemEstimate:Status';
 
     /**
      * Handle the request
@@ -62,106 +63,106 @@ class Horde_ActiveSync_Request_GetItemEstimate extends Horde_ActiveSync_Request_
             return true;
         }
 
-        $status = array();
+        $status = [];
         $gStatus = self::STATUS_SUCCESS;
 
         $collections = $this->_activeSync->getCollectionsObject();
-        if (!$this->_decoder->getElementStartTag(self::GETITEMESTIMATE) ||
-            !$this->_decoder->getElementStartTag(self::FOLDERS)) {
+        if (!$this->_decoder->getElementStartTag(self::GETITEMESTIMATE)
+            || !$this->_decoder->getElementStartTag(self::FOLDERS)) {
             return false;
         }
 
         while ($this->_decoder->getElementStartTag(self::FOLDER)) {
-            $options = array();
+            $options = [];
             $cStatus = self::STATUS_SUCCESS;
-            while (($type = ($this->_decoder->getElementStartTag(self::FOLDERTYPE) ? self::FOLDERTYPE :
-                            ($this->_decoder->getElementStartTag(self::FOLDERID) ? self::FOLDERID :
-                            ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_FILTERTYPE) ? Horde_ActiveSync::SYNC_FILTERTYPE :
-                            ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_SYNCKEY) ? Horde_ActiveSync::SYNC_SYNCKEY :
-                            ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_CONVERSATIONMODE) ? Horde_ActiveSync::SYNC_CONVERSATIONMODE :
-                            ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_OPTIONS) ? Horde_ActiveSync::SYNC_OPTIONS :
-                            -1))))))) != -1) {
+            while (($type = ($this->_decoder->getElementStartTag(self::FOLDERTYPE) ? self::FOLDERTYPE
+                            : ($this->_decoder->getElementStartTag(self::FOLDERID) ? self::FOLDERID
+                            : ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_FILTERTYPE) ? Horde_ActiveSync::SYNC_FILTERTYPE
+                            : ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_SYNCKEY) ? Horde_ActiveSync::SYNC_SYNCKEY
+                            : ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_CONVERSATIONMODE) ? Horde_ActiveSync::SYNC_CONVERSATIONMODE
+                            : ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_OPTIONS) ? Horde_ActiveSync::SYNC_OPTIONS
+                            : -1))))))) != -1) {
                 switch ($type) {
-                case self::FOLDERTYPE:
-                    $class = $this->_decoder->getElementContent();
-                    if (!$this->_decoder->getElementEndTag()) {
-                        return false;
-                    }
-                    break;
-                case self::FOLDERID:
-                    $collectionid = $this->_decoder->getElementContent();
-                    if (!$this->_decoder->getElementEndTag()) {
-                        return false;
-                    }
-                    break;
-                case Horde_ActiveSync::SYNC_CONVERSATIONMODE:
-                    $conversationmode = $this->_decoder->getElementContent();
-                    if ($conversationmode !== false && !$this->_decoder->getElementEndTag()) {
-                        throw new Horde_ActiveSync_Exception('Protocol Error');
-                    } elseif ($conversationmode === false) {
-                        $conversationmode = true;
-                    }
-                    break;
-                case Horde_ActiveSync::SYNC_FILTERTYPE:
-                    $filtertype = $this->_decoder->getElementContent();
-                    if (!$this->_decoder->getElementEndTag()) {
-                        return false;
-                    }
-                    break;
-                case Horde_ActiveSync::SYNC_SYNCKEY:
-                    $synckey = $this->_decoder->getElementContent();
-                    if (empty($synckey)) {
-                        $cStatus = self::STATUS_NOTPRIMED;
-                    }
-                    if (!$this->_decoder->getElementEndTag()) {
-                        return false;
-                    }
-                    break;
-                case Horde_ActiveSync::SYNC_OPTIONS:
-                    // EAS > 12.1 only.
-                    while (1) {
-                        $firstOption = true;
-                        if ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_FOLDERTYPE)) {
-                            $class = $this->_decoder->getElementContent();
-                            if (!$this->_decoder->getElementEndTag()) {
-                                throw new Horde_ActiveSync_Exception('Protocol Error');
-                            }
-                        } elseif ($firstOption) {
-                            // Default options?
+                    case self::FOLDERTYPE:
+                        $class = $this->_decoder->getElementContent();
+                        if (!$this->_decoder->getElementEndTag()) {
+                            return false;
                         }
-                        $firstOption = false;
+                        break;
+                    case self::FOLDERID:
+                        $collectionid = $this->_decoder->getElementContent();
+                        if (!$this->_decoder->getElementEndTag()) {
+                            return false;
+                        }
+                        break;
+                    case Horde_ActiveSync::SYNC_CONVERSATIONMODE:
+                        $conversationmode = $this->_decoder->getElementContent();
+                        if ($conversationmode !== false && !$this->_decoder->getElementEndTag()) {
+                            throw new Horde_ActiveSync_Exception('Protocol Error');
+                        } elseif ($conversationmode === false) {
+                            $conversationmode = true;
+                        }
+                        break;
+                    case Horde_ActiveSync::SYNC_FILTERTYPE:
+                        $filtertype = $this->_decoder->getElementContent();
+                        if (!$this->_decoder->getElementEndTag()) {
+                            return false;
+                        }
+                        break;
+                    case Horde_ActiveSync::SYNC_SYNCKEY:
+                        $synckey = $this->_decoder->getElementContent();
+                        if (empty($synckey)) {
+                            $cStatus = self::STATUS_NOTPRIMED;
+                        }
+                        if (!$this->_decoder->getElementEndTag()) {
+                            return false;
+                        }
+                        break;
+                    case Horde_ActiveSync::SYNC_OPTIONS:
+                        // EAS > 12.1 only.
+                        while (1) {
+                            $firstOption = true;
+                            if ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_FOLDERTYPE)) {
+                                $class = $this->_decoder->getElementContent();
+                                if (!$this->_decoder->getElementEndTag()) {
+                                    throw new Horde_ActiveSync_Exception('Protocol Error');
+                                }
+                            } elseif ($firstOption) {
+                                // Default options?
+                            }
+                            $firstOption = false;
 
-                        if ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_FILTERTYPE)) {
-                            // Set filtertype? self::$decoder->getElementContent());
-                            $filtertype = $this->_decoder->getElementContent();
-                            if (!$this->_decoder->getElementEndTag()) {
-                                throw new Horde_ActiveSync_Exception('Protocol Error');
+                            if ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_FILTERTYPE)) {
+                                // Set filtertype? self::$decoder->getElementContent());
+                                $filtertype = $this->_decoder->getElementContent();
+                                if (!$this->_decoder->getElementEndTag()) {
+                                    throw new Horde_ActiveSync_Exception('Protocol Error');
+                                }
                             }
-                        }
-                        if ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_WINDOWSIZE)) {
-                            // Setwindowsize ($maxitems = self::$decoder->getElementContent());
-                            if (!$this->_decoder->getElementEndTag()) {
-                                throw new Horde_ActiveSync_Exception('Protocol Error');
+                            if ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_WINDOWSIZE)) {
+                                // Setwindowsize ($maxitems = self::$decoder->getElementContent());
+                                if (!$this->_decoder->getElementEndTag()) {
+                                    throw new Horde_ActiveSync_Exception('Protocol Error');
+                                }
                             }
-                        }
 
-                        // Only supported for 'RI' searches - which we don't support
-                        // need to parse it though to avoid wbxml errors.
-                        if ($this->_decoder->getELementStartTag(Horde_ActiveSync::SYNC_MAXITEMS)) {
-                            if ($collectionid != 'RI') {
-                                $gStatus = self::STATUS_INVALIDCOL;
+                            // Only supported for 'RI' searches - which we don't support
+                            // need to parse it though to avoid wbxml errors.
+                            if ($this->_decoder->getELementStartTag(Horde_ActiveSync::SYNC_MAXITEMS)) {
+                                if ($collectionid != 'RI') {
+                                    $gStatus = self::STATUS_INVALIDCOL;
+                                }
+                                if (!$this->_decoder->getElementEndTag()) {
+                                    throw new Horde_ActiveSync_Exception('Protocol Error');
+                                }
                             }
-                            if (!$this->_decoder->getElementEndTag()) {
-                                throw new Horde_ActiveSync_Exception('Protocol Error');
-                            }
-                        }
 
-                        $elm = $this->_decoder->peek();
-                        if ($elm[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_ENDTAG) {
-                            $this->_decoder->getElementEndTag();
-                            break;
+                            $elm = $this->_decoder->peek();
+                            if ($elm[Horde_ActiveSync_Wbxml::EN_TYPE] == Horde_ActiveSync_Wbxml::EN_TYPE_ENDTAG) {
+                                $this->_decoder->getElementEndTag();
+                                break;
+                            }
                         }
-                    }
                 }
             }
             // End the FOLDER element
@@ -170,11 +171,11 @@ class Horde_ActiveSync_Request_GetItemEstimate extends Horde_ActiveSync_Request_
             }
 
             // Build the collection array
-            $collection = array();
+            $collection = [];
             $collection['synckey'] = $synckey;
             $collection['filtertype'] = !empty($filtertype) ? $filtertype : false;
             $collection['id'] = $collectionid;
-            $collection['conversationmode'] = isset($conversationmode) ? $conversationmode : false;
+            $collection['conversationmode'] = $conversationmode ?? false;
             $status[$collection['id']] = $cStatus;
             if (!empty($class)) {
                 $collection['class'] = $class;
@@ -202,8 +203,11 @@ class Horde_ActiveSync_Request_GetItemEstimate extends Horde_ActiveSync_Request_
                 $collections->initCollectionState($collection);
                 $count = $collections->getCollectionChangeCount();
             } catch (Horde_ActiveSync_Exception_StaleState $e) {
-                $this->_logger->warn(sprintf('Stale state detected: %s',
-                    $e->getMessage())
+                $this->_logger->warn(
+                    sprintf(
+                        'Stale state detected: %s',
+                        $e->getMessage()
+                    )
                 );
                 $status = self::STATUS_KEYMISM;
             } catch (Horde_ActiveSync_Exception_StateGone $e) {

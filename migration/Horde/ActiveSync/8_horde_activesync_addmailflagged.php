@@ -1,4 +1,5 @@
 <?php
+
 class HordeActiveSyncAddmailflagged extends Horde_Db_Migration_Base
 {
     public function up()
@@ -6,7 +7,8 @@ class HordeActiveSyncAddmailflagged extends Horde_Db_Migration_Base
         $this->addColumn(
             'horde_activesync_mailmap',
             'sync_flagged',
-            'integer');
+            'integer'
+        );
     }
 
     public function down()

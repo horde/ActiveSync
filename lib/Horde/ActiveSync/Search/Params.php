@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Search_Params
  *
@@ -39,6 +40,5 @@ class Horde_ActiveSync_Search_Params
         public int $limit,
         public bool $rebuildResults,
         public bool $deepTraversal,
-    ) {
-    }
+    ) {}
 }

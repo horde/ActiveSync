@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Request_Ping::
  *
@@ -32,25 +33,25 @@
 class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
 {
     /* Status Constants */
-    const STATUS_NOCHANGES      = 1;
-    const STATUS_NEEDSYNC       = 2;
-    const STATUS_MISSING        = 3;
-    const STATUS_PROTERROR      = 4;
-    const STATUS_HBOUTOFBOUNDS  = 5;
-    const STATUS_MAXFOLDERS     = 6;
-    const STATUS_FOLDERSYNCREQD = 7;
-    const STATUS_SERVERERROR    = 8;
+    public const STATUS_NOCHANGES      = 1;
+    public const STATUS_NEEDSYNC       = 2;
+    public const STATUS_MISSING        = 3;
+    public const STATUS_PROTERROR      = 4;
+    public const STATUS_HBOUTOFBOUNDS  = 5;
+    public const STATUS_MAXFOLDERS     = 6;
+    public const STATUS_FOLDERSYNCREQD = 7;
+    public const STATUS_SERVERERROR    = 8;
 
     /* PING Wbxml entities */
-    const PING              = 'Ping:Ping';
-    const STATUS            = 'Ping:Status';
-    const HEARTBEATINTERVAL = 'Ping:HeartbeatInterval';
-    const FOLDERS           = 'Ping:Folders';
-    const FOLDER            = 'Ping:Folder';
-    const SERVERENTRYID     = 'Ping:ServerEntryId';
-    const FOLDERTYPE        = 'Ping:FolderType';
-    const MAXFOLDERS        = 'Ping:MaxFolders';
-    const VERSION           = 'Ping:Version';
+    public const PING              = 'Ping:Ping';
+    public const STATUS            = 'Ping:Status';
+    public const HEARTBEATINTERVAL = 'Ping:HeartbeatInterval';
+    public const FOLDERS           = 'Ping:Folders';
+    public const FOLDER            = 'Ping:Folder';
+    public const SERVERENTRYID     = 'Ping:ServerEntryId';
+    public const FOLDERTYPE        = 'Ping:FolderType';
+    public const MAXFOLDERS        = 'Ping:MaxFolders';
+    public const VERSION           = 'Ping:Version';
 
     /**
      * The device's PING configuration (obtained from state)
@@ -98,9 +99,11 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
     {
         $now = time();
         $forceCacheSave = false;
-        $this->_logger->meta(sprintf(
-            'Handling PING command received at timestamp: %s.',
-            $now)
+        $this->_logger->meta(
+            sprintf(
+                'Handling PING command received at timestamp: %s.',
+                $now
+            )
         );
 
         // Check global errors.
@@ -126,9 +129,11 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
             $heartbeat = !empty($this->_pingSettings['heartbeatdefault'])
                 ? $this->_pingSettings['heartbeatdefault']
                 : 60;
-            $this->_logger->meta(sprintf(
-                'Cached heartbeat is %s',
-                $heartbeat)
+            $this->_logger->meta(
+                sprintf(
+                    'Cached heartbeat is %s',
+                    $heartbeat
+                )
             );
         }
         $this->_statusCode = self::STATUS_NOCHANGES;
@@ -138,8 +143,8 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
             $this->_logger->info('Handling empty PING request.');
             $isEmpty = true;
             $collections->loadCollectionsFromCache();
-            if ($collections->collectionCount() == 0 ||
-                !$collections->havePingableCollections()) {
+            if ($collections->collectionCount() == 0
+                || !$collections->havePingableCollections()) {
                 $this->_logger->warn('Empty PING request with no cached collections. Request full PING.');
                 $this->_statusCode = self::STATUS_MISSING;
                 $this->_handleGlobalError();
@@ -151,14 +156,14 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
                 if (!$heartbeat = $this->_checkHeartbeat($this->_decoder->getElementContent())) {
                     $heartbeat = $this->_pingSettings['heartbeatdefault'];
                 }
-                $collections->setHeartbeat(array('hbinterval' => $heartbeat));
+                $collections->setHeartbeat(['hbinterval' => $heartbeat]);
                 $forceCacheSave = true;
                 $this->_decoder->getElementEndTag();
             }
             $this->_logger->meta(sprintf('Actual heartbeat value in use is %s.', $heartbeat));
             if ($this->_decoder->getElementStartTag(self::FOLDERS)) {
                 while ($this->_decoder->getElementStartTag(self::FOLDER)) {
-                    $collection = array();
+                    $collection = [];
                     if ($this->_decoder->getElementStartTag(self::SERVERENTRYID)) {
                         $collection['id'] = $this->_decoder->getElementContent();
                         $this->_decoder->getElementEndTag();
@@ -205,38 +210,38 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
 
         // Start waiting for changes, but only if we don't have any errors
         if ($this->_statusCode == self::STATUS_NOCHANGES) {
-            $changes = $collections->pollForChanges($heartbeat, $interval, array('pingable' => true));
+            $changes = $collections->pollForChanges($heartbeat, $interval, ['pingable' => true]);
             if ($changes !== true && $changes !== false) {
                 switch ($changes) {
-                case Horde_ActiveSync_Collections::COLLECTION_ERR_STALE:
-                    $this->_logger->info('Changes in cache detected during PING, exiting here.');
-                    return true;
-                case Horde_ActiveSync_Collections::COLLECTION_ERR_FOLDERSYNC_REQUIRED;
-                    $this->_statusCode = self::STATUS_FOLDERSYNCREQD;
-                    $this->_handleGlobalError();
-                    return true;
-                case Horde_ActiveSync_Collections::COLLECTION_ERR_AUTHENTICATION;
-                    // If we lose authentication here, it means it was
-                    // successful initially, but later failed for some reason.
-                    // Send it as a general ping error, which should allow the
-                    // client to retry later. If the auth is still bad, it will
-                    // be caught during initial login,
-                    $this->_statusCode = self::STATUS_SERVERERROR;
-                    $this->_handleGlobalError();
-                    return true;
-                case Horde_ActiveSync_Collections::COLLECTION_ERR_SYNC_REQUIRED;
-                    $this->_statusCode = self::STATUS_NEEDSYNC;
-                    break;
-                default:
-                    if ($this->_device->version < Horde_ActiveSync::VERSION_FOURTEEN) {
-                        $this->_logger->warn('Version is < 14.0, returning false since we have no PINGABLE collections.');
-                        return false;
-                    } else {
-                        $this->_logger->warn('Version is >= 14.0 returning status code 132 since we have no PINGABLE collections.');
-                        $this->_statusCode = Horde_ActiveSync_Status::STATEFILE_NOT_FOUND;
+                    case Horde_ActiveSync_Collections::COLLECTION_ERR_STALE:
+                        $this->_logger->info('Changes in cache detected during PING, exiting here.');
+                        return true;
+                    case Horde_ActiveSync_Collections::COLLECTION_ERR_FOLDERSYNC_REQUIRED:
+                        $this->_statusCode = self::STATUS_FOLDERSYNCREQD;
                         $this->_handleGlobalError();
                         return true;
-                    }
+                    case Horde_ActiveSync_Collections::COLLECTION_ERR_AUTHENTICATION:
+                        // If we lose authentication here, it means it was
+                        // successful initially, but later failed for some reason.
+                        // Send it as a general ping error, which should allow the
+                        // client to retry later. If the auth is still bad, it will
+                        // be caught during initial login,
+                        $this->_statusCode = self::STATUS_SERVERERROR;
+                        $this->_handleGlobalError();
+                        return true;
+                    case Horde_ActiveSync_Collections::COLLECTION_ERR_SYNC_REQUIRED:
+                        $this->_statusCode = self::STATUS_NEEDSYNC;
+                        break;
+                    default:
+                        if ($this->_device->version < Horde_ActiveSync::VERSION_FOURTEEN) {
+                            $this->_logger->warn('Version is < 14.0, returning false since we have no PINGABLE collections.');
+                            return false;
+                        } else {
+                            $this->_logger->warn('Version is >= 14.0 returning status code 132 since we have no PINGABLE collections.');
+                            $this->_statusCode = Horde_ActiveSync_Status::STATEFILE_NOT_FOUND;
+                            $this->_handleGlobalError();
+                            return true;
+                        }
                 }
             } elseif ($changes) {
                 $collections->save(true);

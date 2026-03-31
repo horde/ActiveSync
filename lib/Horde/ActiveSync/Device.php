@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Device::
  *
@@ -43,64 +44,64 @@
  */
 class Horde_ActiveSync_Device
 {
-    const MODEL             = 'Settings:Model';
-    const IMEI              = 'Settings:IMEI';
-    const NAME              = 'Settings:FriendlyName';
-    const OS                = 'Settings:OS';
-    const OS_LANGUAGE       = 'Settings:OSLanguage';
-    const PHONE_NUMBER      = 'Settings:PhoneNumber';
-    const OPERATOR          = 'Settings:MobileOperator';
-    const VERSION           = 'version';
-    const MULTIPLEX         = 'multiplex';
-    const ANNOUNCED_VERSION = 'announcedVersion';
-    const BLOCKED           = 'blocked';
+    public const MODEL             = 'Settings:Model';
+    public const IMEI              = 'Settings:IMEI';
+    public const NAME              = 'Settings:FriendlyName';
+    public const OS                = 'Settings:OS';
+    public const OS_LANGUAGE       = 'Settings:OSLanguage';
+    public const PHONE_NUMBER      = 'Settings:PhoneNumber';
+    public const OPERATOR          = 'Settings:MobileOperator';
+    public const VERSION           = 'version';
+    public const MULTIPLEX         = 'multiplex';
+    public const ANNOUNCED_VERSION = 'announcedVersion';
+    public const BLOCKED           = 'blocked';
 
 
     // Bitwise constants for flagging device must use multiplexed collections.
     // @since 2.9.0
-    const MULTIPLEX_CONTACTS = 1;
-    const MULTIPLEX_CALENDAR = 2;
-    const MULTIPLEX_TASKS    = 4;
-    const MULTIPLEX_NOTES    = 8;
+    public const MULTIPLEX_CONTACTS = 1;
+    public const MULTIPLEX_CALENDAR = 2;
+    public const MULTIPLEX_TASKS    = 4;
+    public const MULTIPLEX_NOTES    = 8;
 
-    const TYPE_IPHONE          = 'iphone';
-    const TYPE_IPOD            = 'ipod';
-    const TYPE_IPAD            = 'ipad';
-    const TYPE_WEBOS           = 'webos';
-    const TYPE_ANDROID         = 'android';
-    const TYPE_BLACKBERRY      = 'blackberry';
-    const TYPE_WP              = 'windowsphone';
-    const TYPE_TOUCHDOWN       = 'touchdown';
-    const TYPE_UNKNOWN         = 'unknown';
-    const TYPE_NINE            = 'nine';
-    const TYPE_GMAIL           = 'gmail';
+    public const TYPE_IPHONE          = 'iphone';
+    public const TYPE_IPOD            = 'ipod';
+    public const TYPE_IPAD            = 'ipad';
+    public const TYPE_WEBOS           = 'webos';
+    public const TYPE_ANDROID         = 'android';
+    public const TYPE_BLACKBERRY      = 'blackberry';
+    public const TYPE_WP              = 'windowsphone';
+    public const TYPE_TOUCHDOWN       = 'touchdown';
+    public const TYPE_UNKNOWN         = 'unknown';
+    public const TYPE_NINE            = 'nine';
+    public const TYPE_GMAIL           = 'gmail';
 
     /**
      * Quirk to specify if the client fails to property ghost the
      * POOMCONTACTS:Picture field. If this quirk is present, it means we should
      * add the POOMCONTACTS:Picture field to the SUPPORTED array for this client.
      */
-    const QUIRK_NEEDS_SUPPORTED_PICTURE_TAG = 1;
+    public const QUIRK_NEEDS_SUPPORTED_PICTURE_TAG = 1;
 
     /**
      * iOS sends an empty picture tag on every edit of contacts whose pictures
      * did not originate on the client itself.
      */
-    const QUIRK_INCORRECTLY_SENDS_EMPTY_PICTURE_TAG = 2;
+    public const QUIRK_INCORRECTLY_SENDS_EMPTY_PICTURE_TAG = 2;
 
     /**
      * These client can support TNEF data without decoding it first.
      *
      * @since 2.40.0
      */
-    const QUIRK_SUPPORTS_TNEF = 3;
+    public const QUIRK_SUPPORTS_TNEF = 3;
 
     /**
      * Device properties.
      *
      * @var array
      */
-    protected $_properties = array();
+    protected $_properties = [];
 
     /**
      * State handler
@@ -114,7 +115,7 @@ class Horde_ActiveSync_Device
      *
      * @var array
      */
-    protected $_dirty = array();
+    protected $_dirty = [];
 
     /**
      * Flag to indicate self::multiplex was set externally.
@@ -143,7 +144,7 @@ class Horde_ActiveSync_Device
      * @param Horde_ActiveSync_State_Base $state  The state driver.
      * @param array $data                         The current device data.
      */
-    public function __construct(Horde_ActiveSync_State_Base $state, array $data = array())
+    public function __construct(Horde_ActiveSync_State_Base $state, array $data = [])
     {
         $this->_state = $state;
         $this->_properties = $data;
@@ -155,40 +156,42 @@ class Horde_ActiveSync_Device
     public function &__get($property)
     {
         switch ($property) {
-        case self::MULTIPLEX:
-            if (!$this->_multiplexSet && empty($this->_properties['properties'][self::MULTIPLEX])) {
-                $this->_sniffMultiplex();
-                $this->multiplex = $this->_properties['properties'][self::MULTIPLEX];
-                $this->save();
-            }
-        case self::ANNOUNCED_VERSION:
-        case self::BLOCKED:
-            return $this->_properties['properties'][$property];
-        case 'clientType':
-            if (!isset($this->_clientType)) {
-                $this->_clientType = $this->_getClientType();
-            }
-            return $this->_clientType;
-        case self::VERSION:
-            if (isset($this->_properties['properties'][self::VERSION])) {
-                return $this->_properties['properties'][self::VERSION];
-            }
-            break;
-        case self::OS:
-            if (isset($this->_properties['properties'][self::OS])) {
-                return $this->_properties['properties'][self::OS];
-            }
-            break;
-        case 'properties':
-            if (!isset($this->_properties['properties'])) {
-                $return = array();
-                return $return;
-            }
-            // Fall through.
-        default:
-            if (isset($this->_properties[$property])) {
-                return $this->_properties[$property];
-            }
+            case self::MULTIPLEX:
+                if (!$this->_multiplexSet && empty($this->_properties['properties'][self::MULTIPLEX])) {
+                    $this->_sniffMultiplex();
+                    $this->multiplex = $this->_properties['properties'][self::MULTIPLEX];
+                    $this->save();
+                }
+                // no break
+            case self::ANNOUNCED_VERSION:
+            case self::BLOCKED:
+                return $this->_properties['properties'][$property];
+            case 'clientType':
+                if (!isset($this->_clientType)) {
+                    $this->_clientType = $this->_getClientType();
+                }
+                return $this->_clientType;
+            case self::VERSION:
+                if (isset($this->_properties['properties'][self::VERSION])) {
+                    return $this->_properties['properties'][self::VERSION];
+                }
+                break;
+            case self::OS:
+                if (isset($this->_properties['properties'][self::OS])) {
+                    return $this->_properties['properties'][self::OS];
+                }
+                break;
+            case 'properties':
+                if (!isset($this->_properties['properties'])) {
+                    $return = [];
+                    return $return;
+                }
+                // Fall through.
+                // no break
+            default:
+                if (isset($this->_properties[$property])) {
+                    return $this->_properties[$property];
+                }
         }
 
         $return = null;
@@ -201,29 +204,30 @@ class Horde_ActiveSync_Device
     public function __set($property, $value)
     {
         switch ($property) {
-        case self::MULTIPLEX:
-            $this->_multiplexSet = true;
-            // fallthrough
-        case self::ANNOUNCED_VERSION:
-        case self::BLOCKED:
-        case self::VERSION:
-        case self::OS:
-            $properties = $this->properties;
-            if (empty($properties)) {
-                $properties = array();
-            }
-            $properties[$property] = $value;
-            $this->setDeviceProperties($properties);
-            break;
-        case 'clientType':
-            $this->_clientType = $value;
-            break;
+            case self::MULTIPLEX:
+                $this->_multiplexSet = true;
+                // fallthrough
+                // no break
+            case self::ANNOUNCED_VERSION:
+            case self::BLOCKED:
+            case self::VERSION:
+            case self::OS:
+                $properties = $this->properties;
+                if (empty($properties)) {
+                    $properties = [];
+                }
+                $properties[$property] = $value;
+                $this->setDeviceProperties($properties);
+                break;
+            case 'clientType':
+                $this->_clientType = $value;
+                break;
 
-        default:
-            if (!isset($this->_properties[$property]) || $value != $this->_properties[$property]) {
-                $this->_dirty[$property] = true;
-                $this->_properties[$property] = $value;
-            }
+            default:
+                if (!isset($this->_properties[$property]) || $value != $this->_properties[$property]) {
+                    $this->_dirty[$property] = true;
+                    $this->_properties[$property] = $value;
+                }
         }
     }
 
@@ -278,8 +282,8 @@ class Horde_ActiveSync_Device
         // but Outlook 2013 doesn't even send the ITEMSETTINGS command, so we
         // need to check the userAgent header. Early versions used Microsoft.Outlook,
         // but after some update it was changed to 'Outlook/15.0'
-        if (strpos($this->deviceType, 'MicrosoftOutlook') !== false ||
-            strpos($this->userAgent, 'Outlook') !== false) {
+        if (strpos($this->deviceType, 'MicrosoftOutlook') !== false
+            || strpos($this->userAgent, 'Outlook') !== false) {
             return true;
         }
 
@@ -330,11 +334,11 @@ class Horde_ActiveSync_Device
      */
     public function getFormattedDeviceProperties()
     {
-        $data = array(
+        $data = [
             _("Id") => $this->id,
             _("Policy Key") => $this->policykey,
-            _("User Agent") => $this->userAgent
-        );
+            _("User Agent") => $this->userAgent,
+        ];
 
         if (!empty($this->properties[self::MODEL])) {
             $data[_("Model")] = $this->properties[self::MODEL];
@@ -394,7 +398,7 @@ class Horde_ActiveSync_Device
         if (!empty($this->_dirty['properties'])) {
             $this->_state->setDeviceProperties($this->properties, $this->id);
         }
-        $this->_dirty = array();
+        $this->_dirty = [];
     }
 
     /**
@@ -437,7 +441,7 @@ class Horde_ActiveSync_Device
                 }
                 break;
             case self::TYPE_TOUCHDOWN:
-                 if (preg_match('/(.+)\/(\d+)\.(\d+)/', $this->userAgent, $matches)) {
+                if (preg_match('/(.+)\/(\d+)\.(\d+)/', $this->userAgent, $matches)) {
                     return $matches[2];
                 }
                 break;
@@ -453,8 +457,8 @@ class Horde_ActiveSync_Device
     {
         // First see if we have a newer client that sends the OS version
         // Newer iOS sends e.g., "iOS 8.2.2" in OS field.
-        if (!empty($this->properties[self::OS]) &&
-            preg_match('/\d+\.\d+\.?\d?/', $this->properties[self::OS], $matches)) {
+        if (!empty($this->properties[self::OS])
+            && preg_match('/\d+\.\d+\.?\d?/', $this->properties[self::OS], $matches)) {
             if (!empty($matches[0])) {
                 $this->_iOSVersion = $matches[0];
                 return;
@@ -508,7 +512,7 @@ class Horde_ActiveSync_Device
                 }
                 break;
             case self::TYPE_TOUCHDOWN:
-                 if (preg_match('/(.+)\/(\d+)\.(\d+)/', $this->userAgent, $matches)) {
+                if (preg_match('/(.+)\/(\d+)\.(\d+)/', $this->userAgent, $matches)) {
                     return $matches[3];
                 }
                 break;
@@ -600,80 +604,80 @@ class Horde_ActiveSync_Device
     public function normalizePoomContactsDates($date, $toEas = false)
     {
         switch (Horde_String::lower($this->clientType)) {
-        case self::TYPE_WP:
-        case 'wp8': // Legacy. Remove in H6.
-        case 'wp':  // Legacy. Remove in H6.
-            if ($toEas) {
-                return new Horde_Date($date->format('Y-m-d'), 'UTC');
-            }
-            $date = new Horde_Date($date->format('Y-m-d'));
-            return $date->setTimezone('UTC');
-
-        case self::TYPE_GMAIL:
-            if ($toEas) {
-                return new Horde_Date($date->format('Y-m-d'), 'UTC');
-            }
-            $date = new Horde_Date($date->format('Y-m-d'));
-            return $date->setTimezone('UTC');
-
-        case self::TYPE_ANDROID:
-            // Need to protect against clients that don't send the actual Android
-            // version in the OS field.
-            if (stripos($this->deviceType, 'samsung') === 0) {
-                // Samsung's native Contacts app works differently than stock
-                // Android, always sending as 00:00:00
+            case self::TYPE_WP:
+            case 'wp8': // Legacy. Remove in H6.
+            case 'wp':  // Legacy. Remove in H6.
                 if ($toEas) {
                     return new Horde_Date($date->format('Y-m-d'), 'UTC');
                 }
                 $date = new Horde_Date($date->format('Y-m-d'));
                 return $date->setTimezone('UTC');
-            }
-            if ($this->getMajorVersion() >= 4 && $this->getMajorVersion() <= 10) {
+
+            case self::TYPE_GMAIL:
                 if ($toEas) {
-                    return new Horde_Date($date->format('Y-m-d 08:00:00'), 'UTC');
+                    return new Horde_Date($date->format('Y-m-d'), 'UTC');
                 }
                 $date = new Horde_Date($date->format('Y-m-d'));
                 return $date->setTimezone('UTC');
 
-            }
-            // POOMCONTACTS:BIRTHDAY not really supported in early Android
-            // versions. Return as is.
-            return $date;
+            case self::TYPE_ANDROID:
+                // Need to protect against clients that don't send the actual Android
+                // version in the OS field.
+                if (stripos($this->deviceType, 'samsung') === 0) {
+                    // Samsung's native Contacts app works differently than stock
+                    // Android, always sending as 00:00:00
+                    if ($toEas) {
+                        return new Horde_Date($date->format('Y-m-d'), 'UTC');
+                    }
+                    $date = new Horde_Date($date->format('Y-m-d'));
+                    return $date->setTimezone('UTC');
+                }
+                if ($this->getMajorVersion() >= 4 && $this->getMajorVersion() <= 10) {
+                    if ($toEas) {
+                        return new Horde_Date($date->format('Y-m-d 08:00:00'), 'UTC');
+                    }
+                    $date = new Horde_Date($date->format('Y-m-d'));
+                    return $date->setTimezone('UTC');
 
-        case self::TYPE_IPAD:
-        case self::TYPE_IPHONE:
-        case self::TYPE_IPOD:
-            if ($this->getMajorVersion() >= 5) {
-                // iOS >= 5 handles it correctly more or less.
+                }
+                // POOMCONTACTS:BIRTHDAY not really supported in early Android
+                // versions. Return as is.
+                return $date;
+
+            case self::TYPE_IPAD:
+            case self::TYPE_IPHONE:
+            case self::TYPE_IPOD:
+                if ($this->getMajorVersion() >= 5) {
+                    // iOS >= 5 handles it correctly more or less.
+                    if ($toEas) {
+                        return new Horde_Date($date->format('Y-m-d 00:00:00'), 'UTC');
+                    }
+                    $date = new Horde_Date($date->format('Y-m-d'));
+                    return $date->setTimezone('UTC');
+                }
+                if ($toEas) {
+                    return new Horde_Date($date->format('Y-m-d'), 'UTC');
+                }
+                return new Horde_Date($date->format('Y-m-d'));
+
+            case self::TYPE_NINE:
                 if ($toEas) {
                     return new Horde_Date($date->format('Y-m-d 00:00:00'), 'UTC');
                 }
                 $date = new Horde_Date($date->format('Y-m-d'));
                 return $date->setTimezone('UTC');
-            }
-            if ($toEas) {
-                return new Horde_Date($date->format('Y-m-d'), 'UTC');
-            }
-            return new Horde_Date($date->format('Y-m-d'));
 
-        case self::TYPE_NINE:
-            if ($toEas) {
-                return new Horde_Date($date->format('Y-m-d 00:00:00'), 'UTC');
-            }
-            $date = new Horde_Date($date->format('Y-m-d'));
-            return $date->setTimezone('UTC');
+            case self::TYPE_BLACKBERRY:
+                if ($toEas) {
+                    return new Horde_Date($date->format('Y-m-d 11:00:00'), 'UTC');
+                }
+                $date = new Horde_Date($date->format('Y-m-d'));
+                return $date->setTimezone('UTC');
 
-        case self::TYPE_BLACKBERRY:
-            if ($toEas) {
-                return new Horde_Date($date->format('Y-m-d 11:00:00'), 'UTC');
-            }
-            $date = new Horde_Date($date->format('Y-m-d'));
-            return $date->setTimezone('UTC');
-
-        case self::TYPE_TOUCHDOWN:
-        case self::TYPE_UNKNOWN:
-        default:
-            return $date;
+            case self::TYPE_TOUCHDOWN:
+            case self::TYPE_UNKNOWN:
+            default:
+                return $date;
         }
     }
 
@@ -695,9 +699,9 @@ class Horde_ActiveSync_Device
 
             case self::QUIRK_SUPPORTS_TNEF:
                 // These clients can support TNEF data naitively.
-                return (strpos($this->deviceType, 'MicrosoftOutlook') !== false ||
-                    strpos($this->deviceType, 'WindowsOutlook') != false ||
-                    strpos($this->userAgent, 'Outlook') !== false);
+                return (strpos($this->deviceType, 'MicrosoftOutlook') !== false
+                    || strpos($this->deviceType, 'WindowsOutlook') != false
+                    || strpos($this->userAgent, 'Outlook') !== false);
 
             default:
                 return false;
@@ -713,27 +717,27 @@ class Horde_ActiveSync_Device
     protected function _getClientType()
     {
         // Differentiate between the deviceType and the client app.
-        if ((!empty($this->properties[self::OS]) &&
-             stripos($this->properties[self::OS], 'Android') !== false) ||
-             Horde_String::lower($this->deviceType) == self::TYPE_ANDROID) {
+        if ((!empty($this->properties[self::OS])
+             && stripos($this->properties[self::OS], 'Android') !== false)
+             || Horde_String::lower($this->deviceType) == self::TYPE_ANDROID) {
 
             // We can detect native Android, TouchDown, and Nine.
             // Moxier does not distinguish itself, so we can't sniff it.
             if (strpos($this->userAgent, 'TouchDown') !== false) {
                 return self::TYPE_TOUCHDOWN;
-            } else if ($this->_isNine()) {
+            } elseif ($this->_isNine()) {
                 return self::TYPE_NINE;
-            } else if (stripos($this->userAgent, 'Android-Mail') !== false) {
+            } elseif (stripos($this->userAgent, 'Android-Mail') !== false) {
                 // Modern android OS uses GMAIL as the stock client.
                 return self::TYPE_GMAIL;
-            } else if (stripos($this->userAgent, 'Android') !== false) {
+            } elseif (stripos($this->userAgent, 'Android') !== false) {
                 return $this->deviceType;
             } else {
                 return self::TYPE_ANDROID;
             }
-       } else {
+        } else {
             return $this->deviceType;
-       }
+        }
     }
 
     /**
@@ -763,63 +767,63 @@ class Horde_ActiveSync_Device
         if ($this->_isIos()) {
             // iOS seems to support multiple collections for everything except Notes.
             $this->_properties['properties'][self::MULTIPLEX] = Horde_ActiveSync_Device::MULTIPLEX_NOTES;
-        } else if ($clientType == self::TYPE_ANDROID) {
+        } elseif ($clientType == self::TYPE_ANDROID) {
             // Special cases: These clients don't support non-multiplexed
             // collections. Samsung's native client and HTCOnemini2.
-            if (stripos($this->deviceType, 'samsung') === 0 ||
-                stripos($this->model, 'HTCOnemini2') === 0 ||
-                $this->deviceType == 'HTCOnemini2') {
-                $this->_properties['properties'][self::MULTIPLEX] =
-                    Horde_ActiveSync_Device::MULTIPLEX_CONTACTS |
-                    Horde_ActiveSync_Device::MULTIPLEX_CALENDAR |
-                    Horde_ActiveSync_Device::MULTIPLEX_NOTES |
-                    Horde_ActiveSync_Device::MULTIPLEX_TASKS;
+            if (stripos($this->deviceType, 'samsung') === 0
+                || stripos($this->model, 'HTCOnemini2') === 0
+                || $this->deviceType == 'HTCOnemini2') {
+                $this->_properties['properties'][self::MULTIPLEX]
+                    = Horde_ActiveSync_Device::MULTIPLEX_CONTACTS
+                    | Horde_ActiveSync_Device::MULTIPLEX_CALENDAR
+                    | Horde_ActiveSync_Device::MULTIPLEX_NOTES
+                    | Horde_ActiveSync_Device::MULTIPLEX_TASKS;
 
                 return;
             }
 
             // Newer GMAIL applications may not send the self::OS value.
             if (strpos($this->userAgent, 'Android-Mail/7.5') !== false) {
-                $this->_properties['properties'][SELF::MULTIPLEX] = 0;
+                $this->_properties['properties'][self::MULTIPLEX] = 0;
                 return;
             }
             // All android before 4.4 KitKat requires multiplex. KitKat and
             // Android 5 native supports non-multiplexed calendars only.
-            if (!empty($this->properties[self::OS]) &&
-                preg_match('/(\d+\.\d+(\.\d+)*)/', $this->properties[self::OS], $matches) &&
-                version_compare($matches[0], '4.4.0') >= 0) {
-                $this->_properties['properties'][self::MULTIPLEX] =
-                    Horde_ActiveSync_Device::MULTIPLEX_NOTES |
-                    Horde_ActiveSync_Device::MULTIPLEX_CONTACTS |
-                    Horde_ActiveSync_Device::MULTIPLEX_TASKS;
+            if (!empty($this->properties[self::OS])
+                && preg_match('/(\d+\.\d+(\.\d+)*)/', $this->properties[self::OS], $matches)
+                && version_compare($matches[0], '4.4.0') >= 0) {
+                $this->_properties['properties'][self::MULTIPLEX]
+                    = Horde_ActiveSync_Device::MULTIPLEX_NOTES
+                    | Horde_ActiveSync_Device::MULTIPLEX_CONTACTS
+                    | Horde_ActiveSync_Device::MULTIPLEX_TASKS;
             } else {
-                $this->_properties['properties'][self::MULTIPLEX] =
-                    Horde_ActiveSync_Device::MULTIPLEX_CONTACTS |
-                    Horde_ActiveSync_Device::MULTIPLEX_CALENDAR |
-                    Horde_ActiveSync_Device::MULTIPLEX_NOTES |
-                    Horde_ActiveSync_Device::MULTIPLEX_TASKS;
+                $this->_properties['properties'][self::MULTIPLEX]
+                    = Horde_ActiveSync_Device::MULTIPLEX_CONTACTS
+                    | Horde_ActiveSync_Device::MULTIPLEX_CALENDAR
+                    | Horde_ActiveSync_Device::MULTIPLEX_NOTES
+                    | Horde_ActiveSync_Device::MULTIPLEX_TASKS;
             }
-        } else if (strpos($this->userAgent, 'MSFT-WP/8.10') !== false) {
+        } elseif (strpos($this->userAgent, 'MSFT-WP/8.10') !== false) {
             // Windows Phone 8.10 supports multiple calendars and tasks, but
             // no contacts.
-            $this->_properties['properties'][self::MULTIPLEX] =
-                Horde_ActiveSync_Device::MULTIPLEX_CONTACTS;
-        } else if (strpos($this->userAgent, 'MSFT-WP/8.0') !== false || $this->deviceType == 'WP8') {
+            $this->_properties['properties'][self::MULTIPLEX]
+                = Horde_ActiveSync_Device::MULTIPLEX_CONTACTS;
+        } elseif (strpos($this->userAgent, 'MSFT-WP/8.0') !== false || $this->deviceType == 'WP8') {
             // Windows Phone 8.0 seems that only multiple tasklists are
             // supported. The rest must be multiplexed.
-            $this->_properties['properties'][self::MULTIPLEX] =
-                Horde_ActiveSync_Device::MULTIPLEX_CONTACTS |
-                Horde_ActiveSync_Device::MULTIPLEX_CALENDAR;
-        } else if (strpos($this->userAgent, 'MSFT-PPC') !== false || $this->deviceType == 'PocketPC') {
+            $this->_properties['properties'][self::MULTIPLEX]
+                = Horde_ActiveSync_Device::MULTIPLEX_CONTACTS
+                | Horde_ActiveSync_Device::MULTIPLEX_CALENDAR;
+        } elseif (strpos($this->userAgent, 'MSFT-PPC') !== false || $this->deviceType == 'PocketPC') {
             // PocketPC versions seem to not support any user defined
             // collections at all, though I've only tested on a single HTC device.
-            $this->_properties['properties'][self::MULTIPLEX] =
-                Horde_ActiveSync_Device::MULTIPLEX_CONTACTS |
-                Horde_ActiveSync_Device::MULTIPLEX_CALENDAR |
-                Horde_ActiveSync_Device::MULTIPLEX_NOTES |
-                Horde_ActiveSync_Device::MULTIPLEX_TASKS;
-        } else if (strpos($this->userAgent, 'Outlook/15.0') !== false ||
-                   strpos($this->userAgent, 'Outlook/16.0') !== false) {
+            $this->_properties['properties'][self::MULTIPLEX]
+                = Horde_ActiveSync_Device::MULTIPLEX_CONTACTS
+                | Horde_ActiveSync_Device::MULTIPLEX_CALENDAR
+                | Horde_ActiveSync_Device::MULTIPLEX_NOTES
+                | Horde_ActiveSync_Device::MULTIPLEX_TASKS;
+        } elseif (strpos($this->userAgent, 'Outlook/15.0') !== false
+                   || strpos($this->userAgent, 'Outlook/16.0') !== false) {
             // OL2013 and OL2016 do not support multiple contact lists.
             $this->_properties['properties'][self::MULTIPLEX] = Horde_ActiveSync_Device::MULTIPLEX_CONTACTS;
         } else {
@@ -836,10 +840,10 @@ class Horde_ActiveSync_Device
     protected function _isIos()
     {
         // Compare in order of likelyhood / most recent to least recent versions.
-        if (strpos($this->{self::OS}, 'iOS') === 0 ||
-            strpos($this->userAgent, 'iOS') === 0 ||
-            in_array(Horde_String::lower($this->clientType), array(self::TYPE_IPAD, self::TYPE_IPOD, self::TYPE_IPHONE)) ||
-            strpos($this->userAgent, 'Apple-') === 0) {
+        if (strpos($this->{self::OS}, 'iOS') === 0
+            || strpos($this->userAgent, 'iOS') === 0
+            || in_array(Horde_String::lower($this->clientType), [self::TYPE_IPAD, self::TYPE_IPOD, self::TYPE_IPHONE])
+            || strpos($this->userAgent, 'Apple-') === 0) {
 
             return true;
         }

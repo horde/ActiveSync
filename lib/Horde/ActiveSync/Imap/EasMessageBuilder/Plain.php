@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
@@ -26,8 +27,10 @@ class Horde_ActiveSync_Imap_EasMessageBuilder_Plain extends Horde_ActiveSync_Ima
      * @param Horde_Log_Logger $logger                     The logger.
      */
     public function __construct(
-        Horde_ActiveSync_Imap_Message $imap_message, array $options, $logger)
-    {
+        Horde_ActiveSync_Imap_Message $imap_message,
+        array $options,
+        $logger
+    ) {
         parent::__construct($imap_message, $options, $logger);
         $this->_airsyncBody->type = Horde_ActiveSync::BODYPREF_TYPE_PLAIN;
     }
@@ -42,8 +45,8 @@ class Horde_ActiveSync_Imap_EasMessageBuilder_Plain extends Horde_ActiveSync_Ima
             $this->_buildPlainPart();
         }
         $this->_easMessage->airsyncbasebody = $this->_airsyncBody;
-        $this->_easMessage->airsyncbaseattachments =
-            $this->_imapMessage->getAttachments($this->_version);
+        $this->_easMessage->airsyncbaseattachments
+            = $this->_imapMessage->getAttachments($this->_version);
     }
 
     /**

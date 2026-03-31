@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Request_ValidateCertificate::
  *
@@ -32,21 +33,21 @@
  */
 class Horde_ActiveSync_Request_ValidateCert extends Horde_ActiveSync_Request_Base
 {
-    const VALIDATECERT_VALIDATECERT     = 'ValidateCert:ValidateCert';
-    const VALIDATECERT_CERTIFICATES     = 'ValidateCert:Certificates';
-    const VALIDATECERT_CERTIFICATE      = 'ValidateCert:Certificate';
-    const VALIDATECERT_CERTIFICATECHAIN = 'ValidateCert:CertificateChain';
-    const VALIDATECERT_CHECKCRL         = 'ValidateCert:CheckCRL';
-    const VALIDATECERT_STATUS           = 'ValidateCert:Status';
+    public const VALIDATECERT_VALIDATECERT     = 'ValidateCert:ValidateCert';
+    public const VALIDATECERT_CERTIFICATES     = 'ValidateCert:Certificates';
+    public const VALIDATECERT_CERTIFICATE      = 'ValidateCert:Certificate';
+    public const VALIDATECERT_CERTIFICATECHAIN = 'ValidateCert:CertificateChain';
+    public const VALIDATECERT_CHECKCRL         = 'ValidateCert:CheckCRL';
+    public const VALIDATECERT_STATUS           = 'ValidateCert:Status';
 
-    const STATUS_SUCCESS                = 1;
-    const STATUS_PROTERR                = 2;
-    const STATUS_SIGERR                 = 3;
-    const STATUS_UNTRUSTED              = 4;
-    const STATUS_EXPIRED                = 7;
-    const STATUS_PURPOSE_INVALID        = 9;
-    const STATUS_MISSING_INFO           = 10;
-    const STATUS_UNKNOWN                = 17;
+    public const STATUS_SUCCESS                = 1;
+    public const STATUS_PROTERR                = 2;
+    public const STATUS_SIGERR                 = 3;
+    public const STATUS_UNTRUSTED              = 4;
+    public const STATUS_EXPIRED                = 7;
+    public const STATUS_PURPOSE_INVALID        = 9;
+    public const STATUS_MISSING_INFO           = 10;
+    public const STATUS_UNKNOWN                = 17;
 
     /**
      * Handle request
@@ -61,12 +62,12 @@ class Horde_ActiveSync_Request_ValidateCert extends Horde_ActiveSync_Request_Bas
             throw new Horde_ActiveSync_Exception('Protocol Error');
         }
 
-        $certificates = array();
-        $chain_certificates = array();
-        while (($field = ($this->_decoder->getElementStartTag(self::VALIDATECERT_CERTIFICATES) ? self::VALIDATECERT_CERTIFICATES :
-            ($this->_decoder->getElementStartTag(self::VALIDATECERT_CERTIFICATECHAIN) ? self::VALIDATECERT_CERTIFICATECHAIN :
-            ($this->_decoder->getElementStartTag(self::VALIDATECERT_CHECKCRL) ? self::VALIDATECERT_CHECKCRL :
-            -1)))) != -1) {
+        $certificates = [];
+        $chain_certificates = [];
+        while (($field = ($this->_decoder->getElementStartTag(self::VALIDATECERT_CERTIFICATES) ? self::VALIDATECERT_CERTIFICATES
+            : ($this->_decoder->getElementStartTag(self::VALIDATECERT_CERTIFICATECHAIN) ? self::VALIDATECERT_CERTIFICATECHAIN
+            : ($this->_decoder->getElementStartTag(self::VALIDATECERT_CHECKCRL) ? self::VALIDATECERT_CHECKCRL
+            : -1)))) != -1) {
             if ($field == self::VALIDATECERT_CERTIFICATES) {
                 while ($this->_decoder->getElementStartTag(self::VALIDATECERT_CERTIFICATE)) {
                     $certificates[] = $this->_decoder->getElementContent();
@@ -90,14 +91,14 @@ class Horde_ActiveSync_Request_ValidateCert extends Horde_ActiveSync_Request_Bas
                     throw new Horde_ActiveSync_Exception('Protocol Error');
                 }
             } elseif ($field == self::VALIDATECERT_CHECKCRL) {
-               $checkcrl = $this->_decoder->getElementContent();
+                $checkcrl = $this->_decoder->getElementContent();
                 if (!$this->_decoder->getElementEndTag()) {
                     throw new Horde_ActiveSync_Exception('Protocol Error');
                 }
             }
         }
 
-        $cert_status = array();
+        $cert_status = [];
         foreach ($certificates as $key => $certificate) {
             $cert_der = base64_decode($certificate);
             $cert_pem = "-----BEGIN CERTIFICATE-----\n"
@@ -119,7 +120,7 @@ class Horde_ActiveSync_Request_ValidateCert extends Horde_ActiveSync_Request_Bas
 
             // Valid purpose/trusted?
             // @TODO: CRL support, CHAIN support
-            $result = openssl_x509_checkpurpose($cert_pem, X509_PURPOSE_SMIME_SIGN, array($this->_activeSync->certPath));
+            $result = openssl_x509_checkpurpose($cert_pem, X509_PURPOSE_SMIME_SIGN, [$this->_activeSync->certPath]);
             if ($result === false) {
                 // @TODO:
                 // checkpurpose returns false if either the purpose is invalid OR

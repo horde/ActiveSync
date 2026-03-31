@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Interface_Imap_Factory::
  *

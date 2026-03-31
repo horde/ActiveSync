@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_AirSyncBaseLocation::
  *
@@ -19,34 +20,33 @@
  */
 class Horde_ActiveSync_Message_AirSyncBaseLocation extends Horde_ActiveSync_Message_Base
 {
-
     /**
      * Property map
      *
      * @var array
      */
-    protected $_mapping = array(
-        Horde_ActiveSync::AIRSYNCBASE_ACCURACY => array(self::KEY_ATTRIBUTE => 'accuracy'),
-        Horde_ActiveSync::AIRSYNCBASE_ALTITUDE => array(self::KEY_ATTRIBUTE => 'altitude'),
-        Horde_ActiveSync::AIRSYNCBASE_ALTITUDEACCURACY => array(self::KEY_ATTRIBUTE => 'altitudeaccuracy'),
-        Horde_ActiveSync::AIRSYNCBASE_ANNOTATION => array(self::KEY_ATTRIBUTE => 'annotation'),
-        Horde_ActiveSync::AIRSYNCBASE_CITY => array(self::KEY_ATTRIBUTE => 'city'),
-        Horde_ActiveSync::AIRSYNCBASE_COUNTRY => array(self::KEY_ATTRIBUTE => 'country'),
-        Horde_ActiveSync::AIRSYNCBASE_DISPLAYNAME => array(self::KEY_ATTRIBUTE => 'displayname'),
-        Horde_ActiveSync::AIRSYNCBASE_LATITUDE => array(self::KEY_ATTRIBUTE => 'latitude'),
-        Horde_ActiveSync::AIRSYNCBASE_LOCATIONURI => array(self::KEY_ATTRIBUTE => 'locationuri'),
-        Horde_ActiveSync::AIRSYNCBASE_LONGITUDE => array(self::KEY_ATTRIBUTE => 'longitude'),
-        Horde_ActiveSync::AIRSYNCBASE_POSTALCODE => array(self::KEY_ATTRIBUTE => 'postalcode'),
-        Horde_ActiveSync::AIRSYNCBASE_STATE => array(self::KEY_ATTRIBUTE => 'state'),
-        Horde_ActiveSync::AIRSYNCBASE_STREET => array(self::KEY_ATTRIBUTE => 'street'),
-    );
+    protected $_mapping = [
+        Horde_ActiveSync::AIRSYNCBASE_ACCURACY => [self::KEY_ATTRIBUTE => 'accuracy'],
+        Horde_ActiveSync::AIRSYNCBASE_ALTITUDE => [self::KEY_ATTRIBUTE => 'altitude'],
+        Horde_ActiveSync::AIRSYNCBASE_ALTITUDEACCURACY => [self::KEY_ATTRIBUTE => 'altitudeaccuracy'],
+        Horde_ActiveSync::AIRSYNCBASE_ANNOTATION => [self::KEY_ATTRIBUTE => 'annotation'],
+        Horde_ActiveSync::AIRSYNCBASE_CITY => [self::KEY_ATTRIBUTE => 'city'],
+        Horde_ActiveSync::AIRSYNCBASE_COUNTRY => [self::KEY_ATTRIBUTE => 'country'],
+        Horde_ActiveSync::AIRSYNCBASE_DISPLAYNAME => [self::KEY_ATTRIBUTE => 'displayname'],
+        Horde_ActiveSync::AIRSYNCBASE_LATITUDE => [self::KEY_ATTRIBUTE => 'latitude'],
+        Horde_ActiveSync::AIRSYNCBASE_LOCATIONURI => [self::KEY_ATTRIBUTE => 'locationuri'],
+        Horde_ActiveSync::AIRSYNCBASE_LONGITUDE => [self::KEY_ATTRIBUTE => 'longitude'],
+        Horde_ActiveSync::AIRSYNCBASE_POSTALCODE => [self::KEY_ATTRIBUTE => 'postalcode'],
+        Horde_ActiveSync::AIRSYNCBASE_STATE => [self::KEY_ATTRIBUTE => 'state'],
+        Horde_ActiveSync::AIRSYNCBASE_STREET => [self::KEY_ATTRIBUTE => 'street'],
+    ];
 
     /**
      * Property values
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'accuracy' => false,
         'altitude' => false,
         'altitudeaccuracy' => false,
@@ -60,7 +60,7 @@ class Horde_ActiveSync_Message_AirSyncBaseLocation extends Horde_ActiveSync_Mess
         'postalcode' => false,
         'state' => false,
         'street' => false,
-    );
+    ];
 
     /**
      * Return the message type.
@@ -90,14 +90,14 @@ class Horde_ActiveSync_Message_AirSyncBaseLocation extends Horde_ActiveSync_Mess
             // PHP when using base64-encode as STREAM_FILTER_READ. feof() is
             // apparently not safe to use when using STREAM_FILTER_READ.
             if (is_resource($data)) {
-                 $temp = fopen('php://temp/', 'r+');
-                 $filter = stream_filter_prepend($temp, 'convert.base64-encode', STREAM_FILTER_WRITE);
-                 rewind($data);
-                 while (!feof($data)) {
-                     fwrite($temp, fread($data, 8192));
-                 }
-                 stream_filter_remove($filter);
-                 rewind($temp);
+                $temp = fopen('php://temp/', 'r+');
+                $filter = stream_filter_prepend($temp, 'convert.base64-encode', STREAM_FILTER_WRITE);
+                rewind($data);
+                while (!feof($data)) {
+                    fwrite($temp, fread($data, 8192));
+                }
+                stream_filter_remove($filter);
+                rewind($temp);
                 return $temp;
             } else {
                 return base64_encode($data);

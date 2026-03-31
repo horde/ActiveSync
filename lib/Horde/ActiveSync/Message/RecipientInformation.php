@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_RecipientInformation::
  *
@@ -29,24 +30,24 @@ class Horde_ActiveSync_Message_RecipientInformation extends Horde_ActiveSync_Mes
      *
      * @var array
      */
-    protected $_mapping = array(
-        Horde_ActiveSync_Message_Contact::EMAIL1ADDRESS  => array(self::KEY_ATTRIBUTE => 'email1address'),
-        Horde_ActiveSync_Message_Contact::FILEAS         => array(self::KEY_ATTRIBUTE => 'fileas'),
-        Horde_ActiveSync_Message_Contact::ALIAS          => array(self::KEY_ATTRIBUTE => 'alias'),
-        Horde_ActiveSync_Message_Contact::WEIGHTEDRANK   => array(self::KEY_ATTRIBUTE => 'weightedrank'),
-    );
+    protected $_mapping = [
+        Horde_ActiveSync_Message_Contact::EMAIL1ADDRESS  => [self::KEY_ATTRIBUTE => 'email1address'],
+        Horde_ActiveSync_Message_Contact::FILEAS         => [self::KEY_ATTRIBUTE => 'fileas'],
+        Horde_ActiveSync_Message_Contact::ALIAS          => [self::KEY_ATTRIBUTE => 'alias'],
+        Horde_ActiveSync_Message_Contact::WEIGHTEDRANK   => [self::KEY_ATTRIBUTE => 'weightedrank'],
+    ];
 
     /**
      * Property values.
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'email1address' => false,
         'fileas'        => false,
         'alias'         => false,
         'weightedrank'   => false,
-    );
+    ];
 
     /**
      * Return message type

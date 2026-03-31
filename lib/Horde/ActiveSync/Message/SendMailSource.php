@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_SendMailSource::
  *
@@ -40,34 +41,34 @@
  */
 class Horde_ActiveSync_Message_SendMailSource extends Horde_ActiveSync_Message_Base
 {
-    const COMPOSEMAIL_FOLDERID        = 'ComposeMail:FolderId';
-    const COMPOSEMAIL_ITEMID          = 'ComposeMail:ItemId';
-    const COMPOSEMAIL_LONGID          = 'ComposeMail:LongId';
-    const COMPOSEMAIL_INSTANCEID      = 'ComposeMail:InstanceId';
+    public const COMPOSEMAIL_FOLDERID        = 'ComposeMail:FolderId';
+    public const COMPOSEMAIL_ITEMID          = 'ComposeMail:ItemId';
+    public const COMPOSEMAIL_LONGID          = 'ComposeMail:LongId';
+    public const COMPOSEMAIL_INSTANCEID      = 'ComposeMail:InstanceId';
 
     /**
      * Property mapping
      *
      * @var array
      */
-    protected $_mapping = array (
-        self::COMPOSEMAIL_FOLDERID   => array(self::KEY_ATTRIBUTE => 'folderid'),
-        self::COMPOSEMAIL_ITEMID     => array(self::KEY_ATTRIBUTE => 'itemid'),
-        self::COMPOSEMAIL_LONGID     => array(self::KEY_ATTRIBUTE => 'longid'),
-        self::COMPOSEMAIL_INSTANCEID => array(self::KEY_ATTRIBUTE => 'instanceid')
-    );
+    protected $_mapping =  [
+        self::COMPOSEMAIL_FOLDERID   => [self::KEY_ATTRIBUTE => 'folderid'],
+        self::COMPOSEMAIL_ITEMID     => [self::KEY_ATTRIBUTE => 'itemid'],
+        self::COMPOSEMAIL_LONGID     => [self::KEY_ATTRIBUTE => 'longid'],
+        self::COMPOSEMAIL_INSTANCEID => [self::KEY_ATTRIBUTE => 'instanceid'],
+    ];
 
     /**
      * Property values.
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'folderid'   => false,
         'itemid'     => false,
         'longid'     => false,
         'instanceid' => false,
-    );
+    ];
 
     /**
      * Return this object's folder class

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Request_Provision::
  *
@@ -32,23 +33,23 @@
 class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
 {
     /* Status Constants */
-    const STATUS_SUCCESS           = 1;
-    const STATUS_PROTERROR         = 2; // Global status
-    const STATUS_NOTDEFINED        = 2; // Policy status
+    public const STATUS_SUCCESS           = 1;
+    public const STATUS_PROTERROR         = 2; // Global status
+    public const STATUS_NOTDEFINED        = 2; // Policy status
 
-    const STATUS_SERVERERROR       = 3; // Global
-    const STATUS_POLICYUNKNOWN     = 3; // Policy
+    public const STATUS_SERVERERROR       = 3; // Global
+    public const STATUS_POLICYUNKNOWN     = 3; // Policy
 
-    const STATUS_DEVEXTMANAGED     = 4; // Global
-    const STATUS_POLICYCORRUPT     = 4; // Policy
+    public const STATUS_DEVEXTMANAGED     = 4; // Global
+    public const STATUS_POLICYCORRUPT     = 4; // Policy
 
-    const STATUS_POLKEYMISM        = 5;
+    public const STATUS_POLKEYMISM        = 5;
 
     /* Client -> Server Status */
-    const STATUS_CLIENT_SUCCESS    = 1;
-    const STATUS_CLIENT_PARTIAL    = 2; // Only pin was enabled.
-    const STATUS_CLIENT_FAILED     = 3; // No policies applied at all.
-    const STATUS_CLIENT_THIRDPARTY = 4; // Client provisioned by 3rd party?
+    public const STATUS_CLIENT_SUCCESS    = 1;
+    public const STATUS_CLIENT_PARTIAL    = 2; // Only pin was enabled.
+    public const STATUS_CLIENT_FAILED     = 3; // No policies applied at all.
+    public const STATUS_CLIENT_THIRDPARTY = 4; // Client provisioned by 3rd party?
 
     /**
      * Handle the Provision request. This is a 3-phase process. Phase 1 is
@@ -82,8 +83,8 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
                 return $this->_globalError(self::STATUS_PROTERROR);
             }
             $status = $this->_decoder->getElementContent();
-            if (!$this->_decoder->getElementEndTag() ||
-                !$this->_decoder->getElementEndTag()) {
+            if (!$this->_decoder->getElementEndTag()
+                || !$this->_decoder->getElementEndTag()) {
                 return $this->_globalError(self::STATUS_PROTERROR);
             }
             if ($status == self::STATUS_CLIENT_SUCCESS) {
@@ -97,8 +98,8 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
                 $this->_device->save();
             }
 
-            if (!$this->_decoder->getElementStartTag(Horde_ActiveSync::PROVISION_POLICIES) ||
-                !$this->_decoder->getElementStartTag(Horde_ActiveSync::PROVISION_POLICY)) {
+            if (!$this->_decoder->getElementStartTag(Horde_ActiveSync::PROVISION_POLICIES)
+                || !$this->_decoder->getElementStartTag(Horde_ActiveSync::PROVISION_POLICY)) {
 
                 return $this->_globalError(self::STATUS_PROTERROR);
             }
@@ -129,8 +130,8 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
             if ($this->_decoder->getElementStartTag(Horde_ActiveSync::PROVISION_POLICYKEY)) {
                 $policykey = $this->_decoder->getElementContent();
                 $this->_logger->meta(sprintf('PHASE 3 policykey sent from client: %s', $policykey));
-                if (!$this->_decoder->getElementEndTag() ||
-                    !$this->_decoder->getElementStartTag(Horde_ActiveSync::PROVISION_STATUS)) {
+                if (!$this->_decoder->getElementEndTag()
+                    || !$this->_decoder->getElementStartTag(Horde_ActiveSync::PROVISION_STATUS)) {
 
                     return $this->_globalError(self::STATUS_PROTERROR);
                 }
@@ -152,8 +153,8 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
                 $phase2 = false;
             }
 
-            if (!$this->_decoder->getElementEndTag() ||
-                !$this->_decoder->getElementEndTag()) {
+            if (!$this->_decoder->getElementEndTag()
+                || !$this->_decoder->getElementEndTag()) {
 
                 return $this->_globalError(self::STATUS_PROTERROR);
             }
@@ -164,8 +165,8 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
                     return $this->_globalError(self::STATUS_PROTERROR);
                 }
                 $status = $this->_decoder->getElementContent();
-                if (!$this->_decoder->getElementEndTag() ||
-                    !$this->_decoder->getElementEndTag()) {
+                if (!$this->_decoder->getElementEndTag()
+                    || !$this->_decoder->getElementEndTag()) {
                     return $this->_globalError(self::STATUS_PROTERROR);
                 }
                 if ($status == self::STATUS_CLIENT_SUCCESS) {
@@ -191,9 +192,12 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
         // send it to the client.
         if (!$phase2) {
             // Verify intermediate key
-            $this->_logger->meta(sprintf(
-                'Verifying Phase 3 policykey: From Device: %s, Stored: %s',
-                $policykey, $this->_device->policykey)
+            $this->_logger->meta(
+                sprintf(
+                    'Verifying Phase 3 policykey: From Device: %s, Stored: %s',
+                    $policykey,
+                    $this->_device->policykey
+                )
             );
             if ($this->_state->getPolicyKey($this->_device->id) != $policykey) {
                 $policyStatus = self::STATUS_POLKEYMISM;
@@ -208,16 +212,18 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
             // This is phase2 - we need to set the intermediate key
             $policykey = $this->_state->generatePolicyKey();
             $this->_logger->meta(sprintf(
-                'Generating PHASE2 policy key: %s', $policykey));
+                'Generating PHASE2 policy key: %s',
+                $policykey
+            ));
             $this->_state->setPolicyKey($this->_device->id, $policykey);
         }
 
         // If we are phase2 we need to check this here, before the status is
         // sent. Prevents devices not supporting the required policies from
         // being able to connect.
-        if ($phase2 && $status == self::STATUS_SUCCESS &&
-            $policyStatus == self::STATUS_SUCCESS &&
-            $this->_provisioning == Horde_ActiveSync::PROVISIONING_FORCE) {
+        if ($phase2 && $status == self::STATUS_SUCCESS
+            && $policyStatus == self::STATUS_SUCCESS
+            && $this->_provisioning == Horde_ActiveSync::PROVISIONING_FORCE) {
 
             $policyHandler = new Horde_ActiveSync_Policies(
                 $this->_encoder,
@@ -263,8 +269,8 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
 
         // Remote wipe if requested.
         $rwstatus = $this->_state->getDeviceRWStatus($this->_device->id);
-        if ($rwstatus == Horde_ActiveSync::RWSTATUS_PENDING ||
-            $rwstatus == Horde_ActiveSync::RWSTATUS_WIPED) {
+        if ($rwstatus == Horde_ActiveSync::RWSTATUS_PENDING
+            || $rwstatus == Horde_ActiveSync::RWSTATUS_WIPED) {
 
             $this->_encoder->startTag(Horde_ActiveSync::PROVISION_REMOTEWIPE, false, true);
             $this->_state->setDeviceRWStatus($this->_device->id, Horde_ActiveSync::RWSTATUS_WIPED);
@@ -330,7 +336,7 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
         if (!$this->_decoder->getElementStartTag(Horde_ActiveSync_Request_Settings::SETTINGS_SET)) {
             return false;
         }
-        $di = array();
+        $di = [];
         $settings = Horde_ActiveSync::messageFactory('DeviceInformation');
         $settings->decodeStream($this->_decoder);
         $di[Horde_ActiveSync_Request_Settings::SETTINGS_MODEL] = $settings->model;

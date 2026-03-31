@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Message_AirSyncBaseBody::
  *
@@ -41,41 +42,41 @@ class Horde_ActiveSync_Message_AirSyncBaseBody extends Horde_ActiveSync_Message_
      *
      * @var array
      */
-    protected $_mapping = array(
-        Horde_ActiveSync::AIRSYNCBASE_TYPE              => array(self::KEY_ATTRIBUTE => 'type'),
-        Horde_ActiveSync::AIRSYNCBASE_ESTIMATEDDATASIZE => array(self::KEY_ATTRIBUTE => 'estimateddatasize'),
-        Horde_ActiveSync::AIRSYNCBASE_TRUNCATED         => array(self::KEY_ATTRIBUTE => 'truncated'),
-        Horde_ActiveSync::AIRSYNCBASE_DATA              => array(self::KEY_ATTRIBUTE => 'data'),
-    );
+    protected $_mapping = [
+        Horde_ActiveSync::AIRSYNCBASE_TYPE              => [self::KEY_ATTRIBUTE => 'type'],
+        Horde_ActiveSync::AIRSYNCBASE_ESTIMATEDDATASIZE => [self::KEY_ATTRIBUTE => 'estimateddatasize'],
+        Horde_ActiveSync::AIRSYNCBASE_TRUNCATED         => [self::KEY_ATTRIBUTE => 'truncated'],
+        Horde_ActiveSync::AIRSYNCBASE_DATA              => [self::KEY_ATTRIBUTE => 'data'],
+    ];
 
     /**
      * Property values
      *
      * @var array
      */
-    protected $_properties = array(
+    protected $_properties = [
         'type'              => false,
         'estimateddatasize' => false,
         'truncated'         => false,
-        'data'              => false
-    );
+        'data'              => false,
+    ];
 
     /**
      * Const'r
      *
      * @see Horde_ActiveSync_Message_Base::__construct()
      */
-    public function __construct(array $options = array())
+    public function __construct(array $options = [])
     {
         parent::__construct($options);
 
         if ($this->_version >= Horde_ActiveSync::VERSION_FOURTEEN) {
-            $this->_mapping += array(
-                Horde_ActiveSync::AIRSYNCBASE_PREVIEW => array(self::KEY_ATTRIBUTE => 'preview')
-            );
-            $this->_properties += array(
-                'preview' => false
-            );
+            $this->_mapping += [
+                Horde_ActiveSync::AIRSYNCBASE_PREVIEW => [self::KEY_ATTRIBUTE => 'preview'],
+            ];
+            $this->_properties += [
+                'preview' => false,
+            ];
         }
     }
 

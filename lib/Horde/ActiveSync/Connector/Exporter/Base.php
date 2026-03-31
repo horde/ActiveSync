@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Connector_Exporter_Base::
  *
@@ -32,7 +33,7 @@ abstract class Horde_ActiveSync_Connector_Exporter_Base
      *
      * @var array
      */
-    protected $_changes = array();
+    protected $_changes = [];
 
     /**
      * Counter of changes sent.
@@ -79,8 +80,8 @@ abstract class Horde_ActiveSync_Connector_Exporter_Base
      */
     public function __construct(
         Horde_ActiveSync $as,
-        Horde_ActiveSync_Wbxml_Encoder $encoder = null)
-    {
+        ?Horde_ActiveSync_Wbxml_Encoder $encoder = null
+    ) {
         $this->_as = $as;
         $this->_encoder = $encoder;
         $this->_logger = $as->logger;
@@ -97,7 +98,7 @@ abstract class Horde_ActiveSync_Connector_Exporter_Base
     public function setChanges($changes, $collection = null)
     {
         $this->_changes = $changes;
-        $this->_seenObjects = array();
+        $this->_seenObjects = [];
         $this->_step = 0;
     }
 

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Request_Search::
  *
@@ -32,57 +33,57 @@
 class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
 {
     /** Search code page **/
-    const SEARCH_SEARCH              = 'Search:Search';
-    const SEARCH_STORE               = 'Search:Store';
-    const SEARCH_NAME                = 'Search:Name';
-    const SEARCH_QUERY               = 'Search:Query';
-    const SEARCH_OPTIONS             = 'Search:Options';
-    const SEARCH_RANGE               = 'Search:Range';
-    const SEARCH_STATUS              = 'Search:Status';
-    const SEARCH_RESPONSE            = 'Search:Response';
-    const SEARCH_RESULT              = 'Search:Result';
-    const SEARCH_PROPERTIES          = 'Search:Properties';
-    const SEARCH_TOTAL               = 'Search:Total';
-    const SEARCH_EQUALTO             = 'Search:EqualTo';
-    const SEARCH_VALUE               = 'Search:Value';
-    const SEARCH_AND                 = 'Search:And';
-    const SEARCH_OR                  = 'Search:Or';
-    const SEARCH_FREETEXT            = 'Search:FreeText';
-    const SEARCH_DEEPTRAVERSAL       = 'Search:DeepTraversal';
-    const SEARCH_LONGID              = 'Search:LongId';
-    const SEARCH_REBUILDRESULTS      = 'Search:RebuildResults';
-    const SEARCH_LESSTHAN            = 'Search:LessThan';
-    const SEARCH_GREATERTHAN         = 'Search:GreaterThan';
-    const SEARCH_SCHEMA              = 'Search:Schema';
-    const SEARCH_SUPPORTED           = 'Search:Supported';
-    const SEARCH_USERNAME            = 'Search:UserName';
-    const SEARCH_PASSWORD            = 'Search:Password';
+    public const SEARCH_SEARCH              = 'Search:Search';
+    public const SEARCH_STORE               = 'Search:Store';
+    public const SEARCH_NAME                = 'Search:Name';
+    public const SEARCH_QUERY               = 'Search:Query';
+    public const SEARCH_OPTIONS             = 'Search:Options';
+    public const SEARCH_RANGE               = 'Search:Range';
+    public const SEARCH_STATUS              = 'Search:Status';
+    public const SEARCH_RESPONSE            = 'Search:Response';
+    public const SEARCH_RESULT              = 'Search:Result';
+    public const SEARCH_PROPERTIES          = 'Search:Properties';
+    public const SEARCH_TOTAL               = 'Search:Total';
+    public const SEARCH_EQUALTO             = 'Search:EqualTo';
+    public const SEARCH_VALUE               = 'Search:Value';
+    public const SEARCH_AND                 = 'Search:And';
+    public const SEARCH_OR                  = 'Search:Or';
+    public const SEARCH_FREETEXT            = 'Search:FreeText';
+    public const SEARCH_DEEPTRAVERSAL       = 'Search:DeepTraversal';
+    public const SEARCH_LONGID              = 'Search:LongId';
+    public const SEARCH_REBUILDRESULTS      = 'Search:RebuildResults';
+    public const SEARCH_LESSTHAN            = 'Search:LessThan';
+    public const SEARCH_GREATERTHAN         = 'Search:GreaterThan';
+    public const SEARCH_SCHEMA              = 'Search:Schema';
+    public const SEARCH_SUPPORTED           = 'Search:Supported';
+    public const SEARCH_USERNAME            = 'Search:UserName';
+    public const SEARCH_PASSWORD            = 'Search:Password';
 
     // 14
-    const SEARCH_CONVERSATIONID      = 'Search:ConversationId';
+    public const SEARCH_CONVERSATIONID      = 'Search:ConversationId';
 
     // 14.1
-    const SEARCH_PICTURE             = 'Search:Picture';
-    const SEARCH_MAXSIZE             = 'Search:MaxSize';
-    const SEARCH_MAXPICTURES         = 'Search:MaxPictures';
+    public const SEARCH_PICTURE             = 'Search:Picture';
+    public const SEARCH_MAXSIZE             = 'Search:MaxSize';
+    public const SEARCH_MAXPICTURES         = 'Search:MaxPictures';
 
     /** Search Status **/
-    const SEARCH_STATUS_SUCCESS      = 1;
-    const SEARCH_STATUS_ERROR        = 3;
+    public const SEARCH_STATUS_SUCCESS      = 1;
+    public const SEARCH_STATUS_ERROR        = 3;
 
     /** Compat **/
-    const STATUS_PROTERROR           = 3;
+    public const STATUS_PROTERROR           = 3;
 
     /** Store Status **/
-    const STORE_STATUS_SUCCESS       = 1;
-    const STORE_STATUS_PROTERR       = 2;
-    const STORE_STATUS_SERVERERR     = 3;
-    const STORE_STATUS_BADLINK       = 4;
-    const STORE_STATUS_NOTFOUND      = 6;
-    const STORE_STATUS_CONNECTIONERR = 7;
-    const STORE_STATUS_COMPLEX       = 8;
-    const STORE_STATUS_FOLDERSYNC    = 11;
-    const STORE_STATUS_RANGEERR      = 12;
+    public const STORE_STATUS_SUCCESS       = 1;
+    public const STORE_STATUS_PROTERR       = 2;
+    public const STORE_STATUS_SERVERERR     = 3;
+    public const STORE_STATUS_BADLINK       = 4;
+    public const STORE_STATUS_NOTFOUND      = 6;
+    public const STORE_STATUS_CONNECTIONERR = 7;
+    public const STORE_STATUS_COMPLEX       = 8;
+    public const STORE_STATUS_FOLDERSYNC    = 11;
+    public const STORE_STATUS_RANGEERR      = 12;
 
     /**
      * @var Horde_ActiveSync_Collections
@@ -104,9 +105,9 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
 
         $this->_collections = $this->_activeSync->getCollectionsObject();
 
-        if (!$this->_decoder->getElementStartTag(self::SEARCH_SEARCH) ||
-            !$this->_decoder->getElementStartTag(self::SEARCH_STORE) ||
-            !$this->_decoder->getElementStartTag(self::SEARCH_NAME)) {
+        if (!$this->_decoder->getElementStartTag(self::SEARCH_SEARCH)
+            || !$this->_decoder->getElementStartTag(self::SEARCH_STORE)
+            || !$this->_decoder->getElementStartTag(self::SEARCH_NAME)) {
 
             throw new Horde_ActiveSync_Exception_InvalidRequest('Missing required SEARCH|STORE|NAME');
         }
@@ -124,23 +125,24 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
         $maxResults = 100;
 
         switch (Horde_String::lower($search_name)) {
-        case 'documentlibrary':
-            $maxResults = 1000;
-            // fall through
-        case 'mailbox':
-            $query = $this->_parseQuery();
-            if (!$query) {
+            case 'documentlibrary':
+                $maxResults = 1000;
+                // fall through
+                // no break
+            case 'mailbox':
+                $query = $this->_parseQuery();
+                if (!$query) {
+                    $search_status = self::SEARCH_STATUS_ERROR;
+                    $store_status = self::STORE_STATUS_PROTERR;
+                }
+                break;
+            case 'gal':
+                $query = (array) $this->_decoder->getElementContent();
+                break;
+            default:
+                $query = null;
                 $search_status = self::SEARCH_STATUS_ERROR;
                 $store_status = self::STORE_STATUS_PROTERR;
-            }
-            break;
-        case 'gal':
-            $query = (array) $this->_decoder->getElementContent();
-            break;
-        default:
-            $query = null;
-            $search_status = self::SEARCH_STATUS_ERROR;
-            $store_status = self::STORE_STATUS_PROTERR;
         }
 
         if (!$this->_decoder->getElementEndTag()) {
@@ -154,7 +156,7 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
         $mime = Horde_ActiveSync::MIME_SUPPORT_NONE;
         $searchbodypreference = [];
         if ($this->_decoder->getElementStartTag(self::SEARCH_OPTIONS)) {
-            while(1) {
+            while (1) {
                 if ($this->_decoder->getElementStartTag(self::SEARCH_RANGE)) {
                     //FIXME: The result of including more than one Range element in a Search command request
                     //       is undefined. The server MAY return a protocol status error in response to such a command request.
@@ -185,11 +187,11 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
                     }
                 }
                 if ($this->_decoder->getElementStartTag(self::SEARCH_PASSWORD)) {
-                    if (!($options['password'] = $this->_decoder->getElementContent()))
+                    if (!($options['password'] = $this->_decoder->getElementContent())) {
                         return false;
-                    else
-                        if(!$this->_decoder->getElementEndTag())
+                    } elseif (!$this->_decoder->getElementEndTag()) {
                         return false;
+                    }
                 }
                 if ($this->_decoder->getElementStartTag(self::SEARCH_SCHEMA)) {
                     if (!($options['schema'] = $this->_decoder->getElementContent())) {
@@ -226,7 +228,7 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
 
                 // EAS 14.1
                 if ($this->_device->version >= Horde_ActiveSync::VERSION_FOURTEENONE) {
-                    $rm = array();
+                    $rm = [];
                     if ($this->_decoder->getElementStartTag(Horde_ActiveSync::RM_SUPPORT)) {
                         $this->_rightsManagement($rm);
                     }
@@ -259,8 +261,8 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
             $limit = $maxResults;
             if ($range !== null) {
                 if (preg_match('/^(\d+)-(\d+)$/', $range, $matches)) {
-                    $start = (int)$matches[1];
-                    $end = (int)$matches[2];
+                    $start = (int) $matches[1];
+                    $end = (int) $matches[2];
                     if ($end < $start) {
                         $store_status = self::STORE_STATUS_PROTERR;
                     } else {
@@ -278,7 +280,7 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
             }
         }
 
-        // In the Search command response, the Total element (section 2.2.3.184.3) indicates an estimate 
+        // In the Search command response, the Total element (section 2.2.3.184.3) indicates an estimate
         // of the total number of entries that matched the Query element (section 2.2.3.142.2) value.
         if ($store_status === self::STORE_STATUS_SUCCESS && $query) {
             // Prepare search parameters
@@ -322,102 +324,102 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
         if ($results && $results->rows) {
             foreach ($results->rows as $u) {
                 switch (Horde_String::lower($search_name)) {
-                case 'documentlibrary':
-                    $this->_encoder->startTag(self::SEARCH_RESULT);
+                    case 'documentlibrary':
+                        $this->_encoder->startTag(self::SEARCH_RESULT);
 
-                    $doc = Horde_ActiveSync::messageFactory('DocumentLibrary');
-                    $doc->linkid = $u['linkid'];
-                    $doc->displayname = $u['name'];
-                    $doc->isfolder = $u['is_folder'] ? '1' : '0';
-                    $doc->creationdate = $u['created'];
-                    $doc->lastmodifieddate = $u['modified'];
-                    $doc->ishidden = '0';
-                    $doc->contentlength = $u['content-length'];
-                    if (!empty($u['content-type'])) {
-                        $doc->contenttype = $u['content-type'];
-                    }
+                        $doc = Horde_ActiveSync::messageFactory('DocumentLibrary');
+                        $doc->linkid = $u['linkid'];
+                        $doc->displayname = $u['name'];
+                        $doc->isfolder = $u['is_folder'] ? '1' : '0';
+                        $doc->creationdate = $u['created'];
+                        $doc->lastmodifieddate = $u['modified'];
+                        $doc->ishidden = '0';
+                        $doc->contentlength = $u['content-length'];
+                        if (!empty($u['content-type'])) {
+                            $doc->contenttype = $u['content-type'];
+                        }
 
-                    $this->_encoder->startTag(self::SEARCH_PROPERTIES);
-                    $doc->encodeStream($this->_encoder);
-                    $this->_encoder->endTag();
-
-                    $this->_encoder->endTag();
-                    break;
-
-                case 'gal':
-                    $this->_encoder->startTag(self::SEARCH_RESULT);
-                    $this->_encoder->startTag(self::SEARCH_PROPERTIES);
-
-                    $this->_encoder->startTag(Horde_ActiveSync::GAL_DISPLAYNAME);
-                    $this->_encoder->content($u[Horde_ActiveSync::GAL_DISPLAYNAME]);
-                    $this->_encoder->endTag();
-
-                    $this->_encoder->startTag(Horde_ActiveSync::GAL_PHONE);
-                    $this->_encoder->content($u[Horde_ActiveSync::GAL_PHONE]);
-                    $this->_encoder->endTag();
-
-                    $this->_encoder->startTag(Horde_ActiveSync::GAL_OFFICE);
-                    $this->_encoder->content($u[Horde_ActiveSync::GAL_OFFICE]);
-                    $this->_encoder->endTag();
-
-                    $this->_encoder->startTag(Horde_ActiveSync::GAL_TITLE);
-                    $this->_encoder->content($u[Horde_ActiveSync::GAL_TITLE]);
-                    $this->_encoder->endTag();
-
-                    $this->_encoder->startTag(Horde_ActiveSync::GAL_COMPANY);
-                    $this->_encoder->content($u[Horde_ActiveSync::GAL_COMPANY]);
-                    $this->_encoder->endTag();
-
-                    $this->_encoder->startTag(Horde_ActiveSync::GAL_ALIAS);
-                    $this->_encoder->content($u[Horde_ActiveSync::GAL_ALIAS]);
-                    $this->_encoder->endTag();
-
-                    $this->_encoder->startTag(Horde_ActiveSync::GAL_FIRSTNAME);
-                    $this->_encoder->content($u[Horde_ActiveSync::GAL_FIRSTNAME]);
-                    $this->_encoder->endTag();
-
-                    $this->_encoder->startTag(Horde_ActiveSync::GAL_LASTNAME);
-                    $this->_encoder->content($u[Horde_ActiveSync::GAL_LASTNAME]);
-                    $this->_encoder->endTag();
-
-                    $this->_encoder->startTag(Horde_ActiveSync::GAL_HOMEPHONE);
-                    $this->_encoder->content($u[Horde_ActiveSync::GAL_HOMEPHONE]);
-                    $this->_encoder->endTag();
-
-                    $this->_encoder->startTag(Horde_ActiveSync::GAL_MOBILEPHONE);
-                    $this->_encoder->content($u[Horde_ActiveSync::GAL_MOBILEPHONE]);
-                    $this->_encoder->endTag();
-
-                    $this->_encoder->startTag(Horde_ActiveSync::GAL_EMAILADDRESS);
-                    $this->_encoder->content($u[Horde_ActiveSync::GAL_EMAILADDRESS]);
-                    $this->_encoder->endTag();
-
-                    if ($this->_device->version >= Horde_ActiveSync::VERSION_FOURTEENONE &&
-                        !empty($u[Horde_ActiveSync::GAL_PICTURE])) {
-                        $this->_encoder->startTag(Horde_ActiveSync::GAL_PICTURE);
-                        $u[Horde_ActiveSync::GAL_PICTURE]->encodeStream($this->_encoder);
+                        $this->_encoder->startTag(self::SEARCH_PROPERTIES);
+                        $doc->encodeStream($this->_encoder);
                         $this->_encoder->endTag();
-                    }
 
-                    $this->_encoder->endTag();//properties
-                    $this->_encoder->endTag();//result
-                    break;
-                case 'mailbox':
-                    $this->_encoder->startTag(self::SEARCH_RESULT);
-                    $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERTYPE);
-                    $this->_encoder->content(Horde_ActiveSync::CLASS_EMAIL);
-                    $this->_encoder->endTag();
-                    $this->_encoder->startTag(self::SEARCH_LONGID);
-                    $this->_encoder->content($u['uniqueid']);
-                    $this->_encoder->endTag();
-                    $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERID);
-                    $this->_encoder->content($this->_collections->getFolderUidForBackendId($u['searchfolderid']));
-                    $this->_encoder->endTag();
-                    $this->_encoder->startTag(self::SEARCH_PROPERTIES);
-                    $msg = $this->_driver->ItemOperationsFetchMailbox($u['uniqueid'], $searchbodypreference, $mime);
-                    $msg->encodeStream($this->_encoder);
-                    $this->_encoder->endTag();//properties
-                    $this->_encoder->endTag();//result
+                        $this->_encoder->endTag();
+                        break;
+
+                    case 'gal':
+                        $this->_encoder->startTag(self::SEARCH_RESULT);
+                        $this->_encoder->startTag(self::SEARCH_PROPERTIES);
+
+                        $this->_encoder->startTag(Horde_ActiveSync::GAL_DISPLAYNAME);
+                        $this->_encoder->content($u[Horde_ActiveSync::GAL_DISPLAYNAME]);
+                        $this->_encoder->endTag();
+
+                        $this->_encoder->startTag(Horde_ActiveSync::GAL_PHONE);
+                        $this->_encoder->content($u[Horde_ActiveSync::GAL_PHONE]);
+                        $this->_encoder->endTag();
+
+                        $this->_encoder->startTag(Horde_ActiveSync::GAL_OFFICE);
+                        $this->_encoder->content($u[Horde_ActiveSync::GAL_OFFICE]);
+                        $this->_encoder->endTag();
+
+                        $this->_encoder->startTag(Horde_ActiveSync::GAL_TITLE);
+                        $this->_encoder->content($u[Horde_ActiveSync::GAL_TITLE]);
+                        $this->_encoder->endTag();
+
+                        $this->_encoder->startTag(Horde_ActiveSync::GAL_COMPANY);
+                        $this->_encoder->content($u[Horde_ActiveSync::GAL_COMPANY]);
+                        $this->_encoder->endTag();
+
+                        $this->_encoder->startTag(Horde_ActiveSync::GAL_ALIAS);
+                        $this->_encoder->content($u[Horde_ActiveSync::GAL_ALIAS]);
+                        $this->_encoder->endTag();
+
+                        $this->_encoder->startTag(Horde_ActiveSync::GAL_FIRSTNAME);
+                        $this->_encoder->content($u[Horde_ActiveSync::GAL_FIRSTNAME]);
+                        $this->_encoder->endTag();
+
+                        $this->_encoder->startTag(Horde_ActiveSync::GAL_LASTNAME);
+                        $this->_encoder->content($u[Horde_ActiveSync::GAL_LASTNAME]);
+                        $this->_encoder->endTag();
+
+                        $this->_encoder->startTag(Horde_ActiveSync::GAL_HOMEPHONE);
+                        $this->_encoder->content($u[Horde_ActiveSync::GAL_HOMEPHONE]);
+                        $this->_encoder->endTag();
+
+                        $this->_encoder->startTag(Horde_ActiveSync::GAL_MOBILEPHONE);
+                        $this->_encoder->content($u[Horde_ActiveSync::GAL_MOBILEPHONE]);
+                        $this->_encoder->endTag();
+
+                        $this->_encoder->startTag(Horde_ActiveSync::GAL_EMAILADDRESS);
+                        $this->_encoder->content($u[Horde_ActiveSync::GAL_EMAILADDRESS]);
+                        $this->_encoder->endTag();
+
+                        if ($this->_device->version >= Horde_ActiveSync::VERSION_FOURTEENONE
+                            && !empty($u[Horde_ActiveSync::GAL_PICTURE])) {
+                            $this->_encoder->startTag(Horde_ActiveSync::GAL_PICTURE);
+                            $u[Horde_ActiveSync::GAL_PICTURE]->encodeStream($this->_encoder);
+                            $this->_encoder->endTag();
+                        }
+
+                        $this->_encoder->endTag();//properties
+                        $this->_encoder->endTag();//result
+                        break;
+                    case 'mailbox':
+                        $this->_encoder->startTag(self::SEARCH_RESULT);
+                        $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERTYPE);
+                        $this->_encoder->content(Horde_ActiveSync::CLASS_EMAIL);
+                        $this->_encoder->endTag();
+                        $this->_encoder->startTag(self::SEARCH_LONGID);
+                        $this->_encoder->content($u['uniqueid']);
+                        $this->_encoder->endTag();
+                        $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERID);
+                        $this->_encoder->content($this->_collections->getFolderUidForBackendId($u['searchfolderid']));
+                        $this->_encoder->endTag();
+                        $this->_encoder->startTag(self::SEARCH_PROPERTIES);
+                        $msg = $this->_driver->ItemOperationsFetchMailbox($u['uniqueid'], $searchbodypreference, $mime);
+                        $msg->encodeStream($this->_encoder);
+                        $this->_encoder->endTag();//properties
+                        $this->_encoder->endTag();//result
                 }
             }
 
@@ -452,58 +454,58 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
      */
     protected function _parseQuery($subquery = null)
     {
-        $query = array();
-        while (($type = ($this->_decoder->getElementStartTag(self::SEARCH_AND) ? self::SEARCH_AND :
-                ($this->_decoder->getElementStartTag(self::SEARCH_OR) ? self::SEARCH_OR :
-                ($this->_decoder->getElementStartTag(self::SEARCH_EQUALTO) ? self::SEARCH_EQUALTO :
-                ($this->_decoder->getElementStartTag(self::SEARCH_LESSTHAN) ? self::SEARCH_LESSTHAN :
-                ($this->_decoder->getElementStartTag(self::SEARCH_GREATERTHAN) ? self::SEARCH_GREATERTHAN :
-                ($this->_decoder->getElementStartTag(self::SEARCH_FREETEXT) ? self::SEARCH_FREETEXT :
-                ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_FOLDERID) ? Horde_ActiveSync::SYNC_FOLDERID :
-                ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_FOLDERTYPE) ? Horde_ActiveSync::SYNC_FOLDERTYPE :
-                ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_LINKID) ? Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_LINKID :
-                ($this->_decoder->getElementStartTag(Horde_ActiveSync_Message_Mail::POOMMAIL_DATERECEIVED) ? Horde_ActiveSync_Message_Mail::POOMMAIL_DATERECEIVED :
-                -1))))))))))) != -1) {
+        $query = [];
+        while (($type = ($this->_decoder->getElementStartTag(self::SEARCH_AND) ? self::SEARCH_AND
+                : ($this->_decoder->getElementStartTag(self::SEARCH_OR) ? self::SEARCH_OR
+                : ($this->_decoder->getElementStartTag(self::SEARCH_EQUALTO) ? self::SEARCH_EQUALTO
+                : ($this->_decoder->getElementStartTag(self::SEARCH_LESSTHAN) ? self::SEARCH_LESSTHAN
+                : ($this->_decoder->getElementStartTag(self::SEARCH_GREATERTHAN) ? self::SEARCH_GREATERTHAN
+                : ($this->_decoder->getElementStartTag(self::SEARCH_FREETEXT) ? self::SEARCH_FREETEXT
+                : ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_FOLDERID) ? Horde_ActiveSync::SYNC_FOLDERID
+                : ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_FOLDERTYPE) ? Horde_ActiveSync::SYNC_FOLDERTYPE
+                : ($this->_decoder->getElementStartTag(Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_LINKID) ? Horde_ActiveSync::SYNC_DOCUMENTLIBRARY_LINKID
+                : ($this->_decoder->getElementStartTag(Horde_ActiveSync_Message_Mail::POOMMAIL_DATERECEIVED) ? Horde_ActiveSync_Message_Mail::POOMMAIL_DATERECEIVED
+                : -1))))))))))) != -1) {
 
 
             switch ($type) {
-            case self::SEARCH_AND:
-            case self::SEARCH_OR:
-            case self::SEARCH_EQUALTO:
-            case self::SEARCH_LESSTHAN:
-            case self::SEARCH_GREATERTHAN:
-                $q = array(
-                    'op' => $type,
-                    'value' => $this->_parseQuery(true)
-                );
-                if ($subquery) {
-                    $query['subquery'][] = $q;
-                } else {
-                    $query[] = $q;
-                }
-                $this->_decoder->getElementEndTag();
-                break;
-            default:
-                if (($query[$type] = $this->_decoder->getElementContent())) {
-                    if ($type == Horde_ActiveSync::SYNC_FOLDERID) {
-                        try {
-                            $query['serverid'] = $this->_collections->getBackendIdForFolderUid($query[$type]);
-                        } catch (Horde_ActiveSync_Exception_FolderGone $e) {
-                            $this->_logger->err($e->getMessage());
+                case self::SEARCH_AND:
+                case self::SEARCH_OR:
+                case self::SEARCH_EQUALTO:
+                case self::SEARCH_LESSTHAN:
+                case self::SEARCH_GREATERTHAN:
+                    $q = [
+                        'op' => $type,
+                        'value' => $this->_parseQuery(true),
+                    ];
+                    if ($subquery) {
+                        $query['subquery'][] = $q;
+                    } else {
+                        $query[] = $q;
+                    }
+                    $this->_decoder->getElementEndTag();
+                    break;
+                default:
+                    if (($query[$type] = $this->_decoder->getElementContent())) {
+                        if ($type == Horde_ActiveSync::SYNC_FOLDERID) {
+                            try {
+                                $query['serverid'] = $this->_collections->getBackendIdForFolderUid($query[$type]);
+                            } catch (Horde_ActiveSync_Exception_FolderGone $e) {
+                                $this->_logger->err($e->getMessage());
+                            }
                         }
-                    }
-                    $this->_decoder->getElementEndTag();
-                } else {
-                    $this->_decoder->getElementStartTag(self::SEARCH_VALUE);
-                    $query[$type] = $this->_decoder->getElementContent();
-                    switch ($type) {
-                    case Horde_ActiveSync_Message_Mail::POOMMAIL_DATERECEIVED:
-                        $query[$type] = new Horde_Date($query[$type]);
-                        break;
-                    }
-                    $this->_decoder->getElementEndTag();
-                };
-                break;
+                        $this->_decoder->getElementEndTag();
+                    } else {
+                        $this->_decoder->getElementStartTag(self::SEARCH_VALUE);
+                        $query[$type] = $this->_decoder->getElementContent();
+                        switch ($type) {
+                            case Horde_ActiveSync_Message_Mail::POOMMAIL_DATERECEIVED:
+                                $query[$type] = new Horde_Date($query[$type]);
+                                break;
+                        }
+                        $this->_decoder->getElementEndTag();
+                    };
+                    break;
             }
         }
 

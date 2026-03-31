@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Horde_ActiveSync_Driver_Base::
  *
@@ -85,15 +86,15 @@ abstract class Horde_ActiveSync_Driver_Base
      *
      * @var array
      */
-    protected $_tempMap = array();
+    protected $_tempMap = [];
 
-    protected $_typeMap = array(
+    protected $_typeMap = [
         'F' => Horde_ActiveSync::CLASS_EMAIL,
         'C' => Horde_ActiveSync::CLASS_CONTACTS,
         'A' => Horde_ActiveSync::CLASS_CALENDAR,
         'T' => Horde_ActiveSync::CLASS_TASKS,
-        'N' => Horde_ActiveSync::CLASS_NOTES
-    );
+        'N' => Horde_ActiveSync::CLASS_NOTES,
+    ];
 
     /**
      * Const'r
@@ -107,18 +108,18 @@ abstract class Horde_ActiveSync_Driver_Base
      *
      * @return Horde_ActiveSync_Driver
      */
-    public function __construct($params = array())
+    public function __construct($params = [])
     {
         $this->_params = $params;
-        if (empty($params['state']) ||
-            !($params['state'] instanceof Horde_ActiveSync_State_Base)) {
+        if (empty($params['state'])
+            || !($params['state'] instanceof Horde_ActiveSync_State_Base)) {
 
             throw new InvalidArgumentException('Missing required state object');
         }
 
         /* Create a stub if we don't have a useable logger. */
         if (isset($params['logger'])
-            && is_callable(array($params['logger'], 'log'))) {
+            && is_callable([$params['logger'], 'log'])) {
             $this->_logger = Horde_ActiveSync::_wrapLogger($params['logger']);
             unset($params['logger']);
         } else {
@@ -405,10 +406,12 @@ abstract class Horde_ActiveSync_Driver_Base
 
         // None found, generate a new UID.
         $this->_tempMap[$id] = sprintf('%s%04x%04x', $prefix, mt_rand(0, 0xffff), mt_rand(0, 0xffff));
-        $this->_logger->meta(sprintf(
-            'Creating new folder uuid for %s: %s',
-            $id,
-            $this->_tempMap[$id])
+        $this->_logger->meta(
+            sprintf(
+                'Creating new folder uuid for %s: %s',
+                $id,
+                $this->_tempMap[$id]
+            )
         );
 
         return $this->_tempMap[$id];
@@ -430,29 +433,29 @@ abstract class Horde_ActiveSync_Driver_Base
         }
 
         switch ($type) {
-        case Horde_ActiveSync::FOLDER_TYPE_APPOINTMENT:
-        case Horde_ActiveSync::FOLDER_TYPE_USER_APPOINTMENT:
-            return Horde_ActiveSync::CLASS_CALENDAR;
+            case Horde_ActiveSync::FOLDER_TYPE_APPOINTMENT:
+            case Horde_ActiveSync::FOLDER_TYPE_USER_APPOINTMENT:
+                return Horde_ActiveSync::CLASS_CALENDAR;
 
-        case Horde_ActiveSync::FOLDER_TYPE_CONTACT:
-        case Horde_ActiveSync::FOLDER_TYPE_USER_CONTACT:
-            return Horde_ActiveSync::CLASS_CONTACTS;
+            case Horde_ActiveSync::FOLDER_TYPE_CONTACT:
+            case Horde_ActiveSync::FOLDER_TYPE_USER_CONTACT:
+                return Horde_ActiveSync::CLASS_CONTACTS;
 
-        case Horde_ActiveSync::FOLDER_TYPE_TASK:
-        case Horde_ActiveSync::FOLDER_TYPE_USER_TASK:
-            return Horde_ActiveSync::CLASS_TASKS;
+            case Horde_ActiveSync::FOLDER_TYPE_TASK:
+            case Horde_ActiveSync::FOLDER_TYPE_USER_TASK:
+                return Horde_ActiveSync::CLASS_TASKS;
 
-        case Horde_ActiveSync::FOLDER_TYPE_NOTE:
-        case Horde_ActiveSync::FOLDER_TYPE_USER_NOTE:
-            return Horde_ActiveSync::CLASS_NOTES;
+            case Horde_ActiveSync::FOLDER_TYPE_NOTE:
+            case Horde_ActiveSync::FOLDER_TYPE_USER_NOTE:
+                return Horde_ActiveSync::CLASS_NOTES;
 
-        case Horde_ActiveSync::FOLDER_TYPE_INBOX:
-        case Horde_ActiveSync::FOLDER_TYPE_DRAFTS:
-        case Horde_ActiveSync::FOLDER_TYPE_WASTEBASKET:
-        case Horde_ActiveSync::FOLDER_TYPE_SENTMAIL:
-        case Horde_ActiveSync::FOLDER_TYPE_OUTBOX:
-        case Horde_ActiveSync::FOLDER_TYPE_USER_MAIL:
-            return Horde_ActiveSync::CLASS_EMAIL;
+            case Horde_ActiveSync::FOLDER_TYPE_INBOX:
+            case Horde_ActiveSync::FOLDER_TYPE_DRAFTS:
+            case Horde_ActiveSync::FOLDER_TYPE_WASTEBASKET:
+            case Horde_ActiveSync::FOLDER_TYPE_SENTMAIL:
+            case Horde_ActiveSync::FOLDER_TYPE_OUTBOX:
+            case Horde_ActiveSync::FOLDER_TYPE_USER_MAIL:
+                return Horde_ActiveSync::CLASS_EMAIL;
 
         }
     }
@@ -467,12 +470,12 @@ abstract class Horde_ActiveSync_Driver_Base
     protected function _isSpecialMailbox($server_id)
     {
         $folder = $this->getFolder($server_id);
-        return in_array($folder->type, array(
-                Horde_ActiveSync::FOLDER_TYPE_INBOX,
-                Horde_ActiveSync::FOLDER_TYPE_DRAFTS,
-                Horde_ActiveSync::FOLDER_TYPE_WASTEBASKET,
-                Horde_ActiveSync::FOLDER_TYPE_SENTMAIL,
-                Horde_ActiveSync::FOLDER_TYPE_OUTBOX));
+        return in_array($folder->type, [
+            Horde_ActiveSync::FOLDER_TYPE_INBOX,
+            Horde_ActiveSync::FOLDER_TYPE_DRAFTS,
+            Horde_ActiveSync::FOLDER_TYPE_WASTEBASKET,
+            Horde_ActiveSync::FOLDER_TYPE_SENTMAIL,
+            Horde_ActiveSync::FOLDER_TYPE_OUTBOX]);
     }
 
     /**
@@ -606,7 +609,12 @@ abstract class Horde_ActiveSync_Driver_Base
      *   sent.
      */
     abstract public function getServerChanges(
-        $folder, $from_ts, $to_ts, $cutoffdate, $ping);
+        $folder,
+        $from_ts,
+        $to_ts,
+        $cutoffdate,
+        $ping
+    );
 
     /**
      * Get a message stat.
@@ -697,7 +705,12 @@ abstract class Horde_ActiveSync_Driver_Base
      * @return boolean
      */
     abstract public function sendMail(
-        $rfc822, $forward = null, $reply = null, $parent = null, $save = true);
+        $rfc822,
+        $forward = null,
+        $reply = null,
+        $parent = null,
+        $save = true
+    );
 
     /**
      * Return the specified attachment.
@@ -713,7 +726,7 @@ abstract class Horde_ActiveSync_Driver_Base
      * array('content-type' => {the content-type of the attachement},
      *       'data'         => {the raw attachment data})
      */
-    abstract public function getAttachment($name, array $options = array());
+    abstract public function getAttachment($name, array $options = []);
 
     /**
      * Return the specified attachement data for an ITEMOPERATIONS request.
@@ -851,7 +864,7 @@ abstract class Horde_ActiveSync_Driver_Base
      *   - availability: (string)  A EAS style FB string.
      *   - picture: (Horde_ActiveSync_Message_ResolveRecipientsPicture)
      */
-    abstract public function resolveRecipient($type, $search, array $options = array());
+    abstract public function resolveRecipient($type, $search, array $options = []);
 
     /**
      * Returns the provisioning support for the current request.
@@ -886,6 +899,6 @@ abstract class Horde_ActiveSync_Driver_Base
      *                              false.
      * @deprecated Will be removed in 3.0 - this is provided by resolveRecipients
      */
-    abstract public function getFreebusy($user, array $options = array());
+    abstract public function getFreebusy($user, array $options = []);
 
 }

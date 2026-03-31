@@ -1,4 +1,5 @@
 <?php
+
 class HordeActiveSyncBinarystatefield extends Horde_Db_Migration_Base
 {
     public function up()
@@ -6,7 +7,8 @@ class HordeActiveSyncBinarystatefield extends Horde_Db_Migration_Base
         $this->changeColumn(
             'horde_activesync_state',
             'sync_data',
-            'binary');
+            'binary'
+        );
     }
 
     public function down()
@@ -14,7 +16,8 @@ class HordeActiveSyncBinarystatefield extends Horde_Db_Migration_Base
         $this->changeColumn(
             'horde_activesync_state',
             'sync_data',
-            'mediumtext');
+            'mediumtext'
+        );
     }
 
 }

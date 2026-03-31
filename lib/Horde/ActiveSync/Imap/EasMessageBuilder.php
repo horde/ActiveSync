@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
@@ -70,8 +71,10 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
      * @param Horde_Log_Logger $logger                     The logger.
      */
     public function __construct(
-        Horde_ActiveSync_Imap_Message $imap_message, array $options, $logger)
-    {
+        Horde_ActiveSync_Imap_Message $imap_message,
+        array $options,
+        $logger
+    ) {
         $this->_imapMessage = $imap_message;
         $this->_mbd = $this->_imapMessage->getMessageBodyDataObject($options);
         $this->_easMessage = Horde_ActiveSync::messageFactory('Mail');
@@ -98,7 +101,7 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
      *
      * @return Horde_ActiveSync_Message_Base
      */
-    public function getMessageObject($params = array())
+    public function getMessageObject($params = [])
     {
         // Perform the bulk of the work.
         $this->_populateObject();
@@ -112,17 +115,17 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
         $this->_buildBody();
 
         // It's legal to have both a BODY and a BODYPART
-        if ($this->_version > Horde_ActiveSync::VERSION_FOURTEEN &&
-            !empty($options['bodypartprefs'])) {
+        if ($this->_version > Horde_ActiveSync::VERSION_FOURTEEN
+            && !empty($options['bodypartprefs'])) {
             $this->_easMessage->airsyncbasebodypart = $this->_buildBodyPart();
         }
 
         // Body Preview. Note that this is different than the BodyPart preview.
-        if ($this->_version >= Horde_ActiveSync::VERSION_FOURTEEN &&
-            !empty($this->_options['bodyprefs']['preview'])) {
+        if ($this->_version >= Horde_ActiveSync::VERSION_FOURTEEN
+            && !empty($this->_options['bodyprefs']['preview'])) {
             $this->_mbd->plain['body']->rewind();
-            $this->_easMessage->airsyncbasebody->preview =
-                $this->_mbd->plain['body']->substring(0, $this->_options['bodyprefs']['preview']);
+            $this->_easMessage->airsyncbasebody->preview
+                = $this->_mbd->plain['body']->substring(0, $this->_options['bodyprefs']['preview']);
         }
 
         return $this->_easMessage;
@@ -227,7 +230,7 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
     protected function _setFlags($msgFlags)
     {
         // Flags
-        $flags = array();
+        $flags = [];
         foreach ($this->_imapMessage->getFlags() as $flag) {
             if (!empty($msgFlags[Horde_String::lower($flag)])) {
                 $flags[] = $msgFlags[Horde_String::lower($flag)];
@@ -251,40 +254,40 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
         $part1_id = next($ids);
         $part2_id = Horde_Mime::mimeIdArithmetic($part1_id, 'next');
         try {
-            $lines = explode(chr(13), $this->_imapMessage->getBodyPart($part2_id, array('decode' => true)));
+            $lines = explode(chr(13), $this->_imapMessage->getBodyPart($part2_id, ['decode' => true]));
         } catch (Horde_ActiveSync_Exception $e) {
             return;
         }
 
         switch ($part->getContentTypeParameter('report-type')) {
-        case 'delivery-status':
-            foreach ($lines as $line) {
-                if (strpos(trim($line), 'Action:') === 0) {
-                    switch (trim(substr(trim($line), 7))) {
-                    case 'failed':
-                        $this->_easMessage->messageclass = 'REPORT.IPM.NOTE.NDR';
-                        break 2;
-                    case 'delayed':
-                        $this->_easMessage->messageclass = 'REPORT.IPM.NOTE.DELAYED';
-                        break 2;
-                    case 'delivered':
-                        $this->_easMessage->messageclass = 'REPORT.IPM.NOTE.DR';
-                        break 2;
+            case 'delivery-status':
+                foreach ($lines as $line) {
+                    if (strpos(trim($line), 'Action:') === 0) {
+                        switch (trim(substr(trim($line), 7))) {
+                            case 'failed':
+                                $this->_easMessage->messageclass = 'REPORT.IPM.NOTE.NDR';
+                                break 2;
+                            case 'delayed':
+                                $this->_easMessage->messageclass = 'REPORT.IPM.NOTE.DELAYED';
+                                break 2;
+                            case 'delivered':
+                                $this->_easMessage->messageclass = 'REPORT.IPM.NOTE.DR';
+                                break 2;
+                        }
                     }
                 }
-            }
-            break;
-        case 'disposition-notification':
-            foreach ($lines as $line) {
-                if (strpos(trim($line), 'Disposition:') === 0) {
-                    if (strpos($line, 'displayed') !== false) {
-                        $this->_easMessage->messageclass = 'REPORT.IPM.NOTE.IPNRN';
-                    } elseif (strpos($line, 'deleted') !== false) {
-                        $this->_easMessage->messageclass = 'REPORT.IPM.NOTE.IPNNRN';
+                break;
+            case 'disposition-notification':
+                foreach ($lines as $line) {
+                    if (strpos(trim($line), 'Disposition:') === 0) {
+                        if (strpos($line, 'displayed') !== false) {
+                            $this->_easMessage->messageclass = 'REPORT.IPM.NOTE.IPNRN';
+                        } elseif (strpos($line, 'deleted') !== false) {
+                            $this->_easMessage->messageclass = 'REPORT.IPM.NOTE.IPNNRN';
+                        }
+                        break;
                     }
-                    break;
                 }
-            }
         }
     }
 
@@ -294,8 +297,8 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
     protected function _meetingRequest()
     {
         // Exit if we don't support or don't have an iTip.
-        if ($this->_version < Horde_ActiveSync::VERSION_TWELVE ||
-            !($mime_part = $this->_imapMessage->hasiCalendar())) {
+        if ($this->_version < Horde_ActiveSync::VERSION_TWELVE
+            || !($mime_part = $this->_imapMessage->hasiCalendar())) {
             return;
         }
 
@@ -311,7 +314,7 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
             if ($vCal->parsevCalendar($data, 'VCALENDAR', $mime_part->getCharset())) {
                 $classes = $vCal->getComponentClasses();
             } else {
-                $classes = array();
+                $classes = [];
             }
         } catch (Horde_Icalendar_Exception $e) {
             $this->_logger->err($e->getMessage());
@@ -332,32 +335,32 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
         }
 
         switch ($method) {
-        case 'REQUEST':
-        case 'PUBLISH':
-            $this->_easMessage->messageclass = 'IPM.Schedule.Meeting.Request';
-            $mtg = Horde_ActiveSync::messageFactory('MeetingRequest');
-            $mtg->fromvEvent($vCal);
-            $this->_easMessage->meetingrequest = $mtg;
-            break;
-        case 'REPLY':
-            try {
-                $reply_status = $this->_getiTipStatus($vCal);
-                switch ($reply_status) {
-                case 'ACCEPTED':
-                    $this->_easMessage->messageclass = 'IPM.Schedule.Meeting.Resp.Pos';
-                    break;
-                case 'DECLINED':
-                    $this->_easMessage->messageclass = 'IPM.Schedule.Meeting.Resp.Neg';
-                    break;
-                case 'TENTATIVE':
-                    $this->_easMessage->messageclass = 'IPM.Schedule.Meeting.Resp.Tent';
-                }
+            case 'REQUEST':
+            case 'PUBLISH':
+                $this->_easMessage->messageclass = 'IPM.Schedule.Meeting.Request';
                 $mtg = Horde_ActiveSync::messageFactory('MeetingRequest');
                 $mtg->fromvEvent($vCal);
                 $this->_easMessage->meetingrequest = $mtg;
-            } catch (Horde_ActiveSync_Exception $e) {
-                $this->_logger->err($e->getMessage());
-            }
+                break;
+            case 'REPLY':
+                try {
+                    $reply_status = $this->_getiTipStatus($vCal);
+                    switch ($reply_status) {
+                        case 'ACCEPTED':
+                            $this->_easMessage->messageclass = 'IPM.Schedule.Meeting.Resp.Pos';
+                            break;
+                        case 'DECLINED':
+                            $this->_easMessage->messageclass = 'IPM.Schedule.Meeting.Resp.Neg';
+                            break;
+                        case 'TENTATIVE':
+                            $this->_easMessage->messageclass = 'IPM.Schedule.Meeting.Resp.Tent';
+                    }
+                    $mtg = Horde_ActiveSync::messageFactory('MeetingRequest');
+                    $mtg->fromvEvent($vCal);
+                    $this->_easMessage->meetingrequest = $mtg;
+                } catch (Horde_ActiveSync_Exception $e) {
+                    $this->_logger->err($e->getMessage());
+                }
         }
     }
 
@@ -438,16 +441,16 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
     protected function _getEASImportance($importance)
     {
         switch (Horde_String::lower($importance)) {
-        case '1':
-        case 'high':
-            return 2;
-        case '5':
-        case 'low':
-            return 0;
-        case 'normal':
-        case '3':
-        default:
-            return 1;
+            case '1':
+            case 'high':
+                return 2;
+            case '5':
+            case 'low':
+                return 0;
+            case 'normal':
+            case '3':
+            default:
+                return 1;
         }
     }
 
@@ -463,18 +466,18 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
     {
         foreach ($vCal->getComponents() as $component) {
             switch ($component->getType()) {
-            case 'vEvent':
-                try {
-                    $atparams = $component->getAttribute('ATTENDEE', true);
-                } catch (Horde_Icalendar_Exception $e) {
-                    throw new Horde_ActiveSync_Exception($e);
-                }
+                case 'vEvent':
+                    try {
+                        $atparams = $component->getAttribute('ATTENDEE', true);
+                    } catch (Horde_Icalendar_Exception $e) {
+                        throw new Horde_ActiveSync_Exception($e);
+                    }
 
-                if (!is_array($atparams)) {
-                    throw new Horde_Icalendar_Exception('Unexpected value');
-                }
+                    if (!is_array($atparams)) {
+                        throw new Horde_Icalendar_Exception('Unexpected value');
+                    }
 
-                return $atparams[0]['PARTSTAT'];
+                    return $atparams[0]['PARTSTAT'];
             }
         }
     }
@@ -510,9 +513,11 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
      *
      * @return Horde_ActiveSync_Imap_EasMessageType
      */
-    static public function create(
-        Horde_ActiveSync_Imap_Message $imap_message, array $options, $logger)
-    {
+    public static function create(
+        Horde_ActiveSync_Imap_Message $imap_message,
+        array $options,
+        $logger
+    ) {
         $mbd = $imap_message->getMessageBodyDataObject($options);
 
         // First, see if we are EAS 2.5
@@ -521,14 +526,14 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
         }
 
         switch ($mbd->getBodyTypePreference()) {
-        case Horde_ActiveSync::BODYPREF_TYPE_MIME:
-            $class = 'Mime';
-            break;
-        case Horde_ActiveSync::BODYPREF_TYPE_HTML:
-            $class = 'Html';
-            break;
-        case Horde_ActiveSync::BODYPREF_TYPE_PLAIN:
-            $class = 'Plain';
+            case Horde_ActiveSync::BODYPREF_TYPE_MIME:
+                $class = 'Mime';
+                break;
+            case Horde_ActiveSync::BODYPREF_TYPE_HTML:
+                $class = 'Html';
+                break;
+            case Horde_ActiveSync::BODYPREF_TYPE_PLAIN:
+                $class = 'Plain';
         }
         $class_name = 'Horde_ActiveSync_Imap_EasMessageBuilder_' . $class;
 
