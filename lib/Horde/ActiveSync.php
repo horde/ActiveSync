@@ -896,9 +896,16 @@ class Horde_ActiveSync
     {
         $get = $this->getGetVars();
         $version = $this->getProtocolVersion();
+        $resolvedUser = $this->_driver->getUser();
+        if (empty($resolvedUser) && !empty($get['User'])) {
+            $resolvedUser = $get['User'];
+        }
+        if (empty($resolvedUser) && !empty($GLOBALS['registry']->getAuth())) {
+            $resolvedUser = $GLOBALS['registry']->getAuth();
+        }
 
         // Does device exist AND does the user have an account on the device?
-        if (!$this->_state->deviceExists($devId, $this->_driver->getUser())) {
+        if (!$this->_state->deviceExists($devId, $resolvedUser)) {
             // Device might exist, but with a new (additional) user account
             if ($this->_state->deviceExists($devId)) {
                 self::$_device = $this->_state->loadDeviceInfo($devId);
@@ -909,7 +916,7 @@ class Horde_ActiveSync
             self::$_device->userAgent = $this->_request->getHeader('User-Agent');
             self::$_device->deviceType = !empty($get['DeviceType']) ? $get['DeviceType'] : '';
             self::$_device->rwstatus = self::RWSTATUS_NA;
-            self::$_device->user = $this->_driver->getUser();
+            self::$_device->user = $resolvedUser;
             self::$_device->id = $devId;
             self::$_device->needsVersionUpdate($this->getSupportedVersions());
             self::$_device->version = $version;
@@ -935,7 +942,7 @@ class Horde_ActiveSync
                 }
             }
         } else {
-            self::$_device = $this->_state->loadDeviceInfo($devId, $this->_driver->getUser());
+            self::$_device = $this->_state->loadDeviceInfo($devId, $resolvedUser);
 
             // If the device state was removed from storage, we may lose the
             // device properties, so try to repopulate what we can. userAgent
@@ -943,7 +950,7 @@ class Horde_ActiveSync
             if (empty(self::$_device->userAgent)) {
                 self::$_device->userAgent = $this->_request->getHeader('User-Agent');
                 self::$_device->deviceType = !empty($get['DeviceType']) ? $get['DeviceType'] : '';
-                self::$_device->user = $this->_driver->getUser();
+                self::$_device->user = $resolvedUser;
             }
 
             if (empty(self::$_device->version)) {
@@ -958,6 +965,10 @@ class Horde_ActiveSync
             if (is_callable(array($this->_driver, 'modifyDeviceCallback'))) {
                 self::$_device = $this->_driver->modifyDeviceCallback(self::$_device);
             }
+        }
+
+        if (empty(self::$_device->user)) {
+            throw new Horde_ActiveSync_Exception_InvalidRequest('Unable to resolve device user for this request.');
         }
 
         // Save the device now that we know it is at least allowed to connect,
