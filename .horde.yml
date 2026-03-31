@@ -56,3 +56,9 @@ autoload-dev:
   files:
     - test/Horde/ActiveSync/Helpers/ControllerRequestStub.php
 vendor: horde
+keywords:
+  - contacts
+  - outlook
+  - sync
+  - eas
+  - exchange
