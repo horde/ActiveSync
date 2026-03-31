@@ -896,13 +896,6 @@ class Horde_ActiveSync
     {
         $get = $this->getGetVars();
         $version = $this->getProtocolVersion();
-        $resolvedUser = $this->_driver->getUser();
-        if (empty($resolvedUser) && !empty($get['User'])) {
-            $resolvedUser = $get['User'];
-        }
-        if (empty($resolvedUser) && !empty($GLOBALS['registry']->getAuth())) {
-            $resolvedUser = $GLOBALS['registry']->getAuth();
-        }
 
         // Resolve user once via driver (may use auth, GET params, or fallbacks)
         $resolvedUser = $this->_driver->getUser();
