@@ -7,7 +7,7 @@
  * @package ActiveSync
  */
 namespace Horde\ActiveSync;
-use Horde_Test_Case as TestCase;
+use PHPUnit\Framework\TestCase;
 use \Horde_ActiveSync_Wbxml_Encoder;
 use \Horde_Mime_Headers;
 use \Horde_ActiveSync_Policies;

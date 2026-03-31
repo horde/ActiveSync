@@ -8,6 +8,7 @@
  */
 namespace Horde\ActiveSync\StateTest\Mongo;
 use Horde\ActiveSync\StateTest\TestBase;
+use PHPUnit\Framework\Attributes\Depends;
 
 class BaseTest extends TestBase
 {
@@ -19,25 +20,19 @@ class BaseTest extends TestBase
         $this->_testGetDeviceInfo();
     }
 
-    /**
-     * @depends testGetDeviceInfo
-     */
+    #[Depends('testGetDeviceInfo')]
     public function testListDevices()
     {
         $this->_testListDevices();
     }
 
-    /**
-     * @depends testListDevices
-     */
+    #[Depends('testListDevices')]
     public function testPolicyKeys()
     {
         $this->_testPolicyKeys();
     }
 
-    /**
-     * @depends testListDevices
-     */
+    #[Depends('testListDevices')]
     public function testDuplicatePIMAddition()
     {
         // @TODO. For now, cheat and add the data directly to the db.
@@ -52,153 +47,115 @@ class BaseTest extends TestBase
         $this->assertEquals('def', self::$state->isDuplicatePIMAddition('abc'));
     }
 
-    /**
-     * @depends testGetDeviceInfo
-     */
+    #[Depends('testGetDeviceInfo')]
     public function testCacheInitialState()
     {
         $this->_testCacheInitialState();
     }
 
-    /**
-     * @depends testCacheInitialState
-     */
+    #[Depends('testCacheInitialState')]
     public function testCacheFolders()
     {
         $this->_testCacheFolders();
     }
 
-    /**
-     * @depends testCacheFolders
-     */
+    #[Depends('testCacheFolders')]
     public function testCacheDataRestrictFields()
     {
         $this->_testCacheDataRestrictFields();
     }
 
-    /**
-     * @depends testCacheFolders
-     */
+    #[Depends('testCacheFolders')]
     public function testCacheFoldersPersistence()
     {
         $this->_testCacheFoldersPersistence();
     }
 
-    /**
-     * @depends testCacheFolders
-     */
+    #[Depends('testCacheFolders')]
     public function testCacheUniqueness()
     {
         $this->_testCacheUniqueness();
     }
 
-    /**
-     * @depends testCacheFolders
-     */
+    #[Depends('testCacheFolders')]
     public function testCacheCollections()
     {
         $this->_testCacheCollections();
     }
 
-    /**
-     * @depends testCacheCollections
-     */
+    #[Depends('testCacheCollections')]
     public function testLoadCollectionsFromCache()
     {
         return $this->_testLoadCollectionsFromCache();
     }
 
-    /**
-     * @depends testCacheCollections
-     */
+    #[Depends('testCacheCollections')]
     public function testGettingImapId()
     {
         $this->_testGettingImapId();
     }
 
-    /**
-     * @depends testCacheCollections
-     */
+    #[Depends('testCacheCollections')]
     public function testCacheRefreshCollections()
     {
         $this->_testCacheRefreshCollections();
     }
 
-    /**
-     * @depends testCacheCollections
-     */
+    #[Depends('testCacheCollections')]
     public function testCollectionsFromCache()
     {
         $this->_testCollectionsFromCache();
     }
 
-    /**
-     * @depends testCacheFolders
-     */
+    #[Depends('testCacheFolders')]
     public function testGetStateWithNoState()
     {
         $this->_testGetStateWithNoState();
     }
 
-    /**
-     * @depends testCollectionsFromCache
-     */
+    #[Depends('testCollectionsFromCache')]
     public function testCollectionHandler()
     {
         $this->_testCollectionHandler();
     }
 
-    /**
-     * @depends testCollectionHandler
-     */
+    #[Depends('testCollectionHandler')]
     public function testPartialSyncWithChangedCollections()
     {
         $this->_testPartialSyncWithChangedCollections();
     }
 
-    /**
-     * @depends testCollectionHandler
-     */
+    #[Depends('testCollectionHandler')]
     public function testPartialSyncWithUnchangedCollections()
     {
         $this->_testPartialSyncWithUnchangedCollections();
     }
 
-    /**
-     * @depends testCollectionHandler
-     */
+    #[Depends('testCollectionHandler')]
     public function testMissingCollections()
     {
         $this->_testMissingCollections();
     }
 
-    /**
-     * @depends testCollectionHandler
-     */
+    #[Depends('testCollectionHandler')]
     public function testChangingFilterType()
     {
         $this->_testChangingFilterType();
     }
 
-    /**
-     * @depends testCollectionHandler
-     */
+    #[Depends('testCollectionHandler')]
     public function testEmptyResponse()
     {
         $this->_testEmptyResponse();
     }
 
-    /**
-     * @depends testGetDeviceInfo
-     */
+    #[Depends('testGetDeviceInfo')]
     public function testHierarchy()
     {
         $this->_testHierarchy();
     }
 
-    /**
-     * @depends testCollectionHandler
-     */
+    #[Depends('testCollectionHandler')]
     public function testPartialSyncWithOnlyChangedHbInterval()
     {
         $this->_testPartialSyncWithOnlyChangedHbInterval();
@@ -213,18 +170,17 @@ class BaseTest extends TestBase
         }
         if (($config = self::getConfig('ACTIVESYNC_MONGO_TEST_CONFIG', __DIR__ . '/../..')) &&
             isset($config['activesync']['mongo']['hostspec'])) {
-            $factory = new Horde_Test_Factory_Mongo();
-            self::$mongo = $factory->create(array(
+            self::$mongo = \Horde\ActiveSync\Test\Helpers\MongoHelper::createMongoClient([
                 'config' => $config['activesync']['mongo']['hostspec'],
                 'dbname' => 'horde_activesync_test'
-            ));
+            ]);
         }
         if (empty(self::$mongo)) {
             self::$reason = 'Mongo connection failed.';
             return;
         }
         self::$state = new Horde_ActiveSync_State_Mongo(array('connection' => self::$mongo));
-        self::$logger = new Horde_Test_Log();
+        self::$logger = \Horde\ActiveSync\Test\Helpers\LogHelper::createMockLogger();
     }
 
     public function setUp(): void
@@ -232,7 +188,9 @@ class BaseTest extends TestBase
         if (empty(self::$mongo)) {
             $this->markTestSkipped(self::$reason);
         }
-        $backend = $this->getMockSkipConstructor('Horde_ActiveSync_Driver_Base');
+        $backend = $this->getMockBuilder(\Horde_ActiveSync_Driver_Base::class)
+            ->disableOriginalConstructor()
+            ->getMock();
         $backend->expects($this->any())->method('getUser')->will($this->returnValue('mike'));
         self::$state->setBackend($backend);
     }
@@ -244,11 +202,10 @@ class BaseTest extends TestBase
             ($config = self::getConfig('ACTIVESYNC_MONGO_TEST_CONFIG', __DIR__ . '/../..')) &&
             isset($config['activesync']['mongo']['hostspec'])) {
             try {
-                $factory = new Horde_Test_Factory_Mongo();
-                $mongo = $factory->create(array(
+                $mongo = \Horde\ActiveSync\Test\Helpers\MongoHelper::createMongoClient([
                     'config' => $config['activesync']['mongo']['hostspec'],
                     'dbname' => 'horde_activesync_test'
-                ));
+                ]);
                 $mongo->activesync_test->drop();
             } catch (MongoConnectionException $e) {
             }

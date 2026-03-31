@@ -7,8 +7,8 @@
  * @package ActiveSync
  */
 namespace Horde\ActiveSync;
-use Horde_Test_Case as TestCase;
-use \Horde_ActiveSync_SyncCache;
+use PHPUnit\Framework\TestCase;
+use Horde_ActiveSync_SyncCache;
 
 class CacheTest extends TestCase
 {
@@ -22,7 +22,7 @@ class CacheTest extends TestCase
         );
 
         $this->_state = $this->getMockBuilder('Horde_ActiveSync_State_Sql')->disableOriginalConstructor()->getMock();
-        $this->_state->expects($this->any())->method('getSyncCache')->will($this->returnValue($this->_fixture));
+        $this->_state->expects($this->any())->method('getSyncCache')->willReturn($this->_fixture);
     }
 
     public function testPropertyAccess()

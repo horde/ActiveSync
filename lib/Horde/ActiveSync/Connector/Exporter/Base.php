@@ -56,6 +56,20 @@ abstract class Horde_ActiveSync_Connector_Exporter_Base
     protected $_procid;
 
     /**
+     * Logger instance.
+     *
+     * @var Horde_Log_Logger
+     */
+    protected $_logger;
+
+    /**
+     * Array of seen objects during sync.
+     *
+     * @var array
+     */
+    protected $_seenObjects = array();
+
+    /**
      * Const'r
      *
      * @param Horde_ActiveSync $as                    The ActiveSync server.

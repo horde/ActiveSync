@@ -45,11 +45,17 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Horde\\ActiveSync\\Test\\": "test/"
-        }
+            "Horde\\ActiveSync\\": "test/Horde/ActiveSync/",
+            "Horde\\ActiveSync\\Test\\Helpers\\": "test/Horde/ActiveSync/Helpers/"
+        },
+        "files": [
+            "test/Horde/ActiveSync/Helpers/ControllerRequestStub.php"
+        ]
     },
     "config": {
-        "allow-plugins": {}
+        "allow-plugins": {
+            "horde/horde-installer-plugin": true
+        }
     },
     "extra": {
         "branch-alias": {

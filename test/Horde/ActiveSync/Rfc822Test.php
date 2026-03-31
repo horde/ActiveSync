@@ -7,15 +7,14 @@
  * @package ActiveSync
  */
 namespace Horde\ActiveSync;
-use Horde_Test_Case as TestCase;
+use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use \Horde_ActiveSync_Rfc822;
 use \Horde_Mime_Headers;
 
 class Rfc822Test extends TestCase
 {
-    /**
-     * @dataProvider headersMultipartAlternativeProvider
-     */
+    #[DataProvider('headersMultipartAlternativeProvider')]
     public function testHeadersMultipartAlternative($fixture, $expected)
     {
         $rfc822 = new Horde_ActiveSync_Rfc822($fixture);
@@ -36,7 +35,7 @@ class Rfc822Test extends TestCase
         }
     }
 
-    public function headersMultipartAlternativeProvider()
+    public static function headersMultipartAlternativeProvider()
     {
         $expected = array_change_key_case(array(
             'Subject' => 'Testing',

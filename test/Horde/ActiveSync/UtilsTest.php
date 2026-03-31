@@ -7,7 +7,7 @@
  * @package ActiveSync
  */
 namespace Horde\ActiveSync;
-use Horde_Test_Case as TestCase;
+use PHPUnit\Framework\TestCase;
 use \Horde_ActiveSync_Utils;
 
 class UtilsTest extends TestCase

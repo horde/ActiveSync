@@ -46,5 +46,13 @@ dependencies:
       horde/mail: ^3
       horde/mongo: ^2
       horde/text_filter: ^3
-      horde/test: ^3
+autoload:
+  psr-0:
+    Horde_ActiveSync: lib/
+autoload-dev:
+  psr-4:
+    Horde\ActiveSync\: test/Horde/ActiveSync/
+    Horde\ActiveSync\Test\Helpers\: test/Horde/ActiveSync/Helpers/
+  files:
+    - test/Horde/ActiveSync/Helpers/ControllerRequestStub.php
 vendor: horde

@@ -7,7 +7,7 @@
  * @package ActiveSync
  */
 namespace Horde\ActiveSync;
-use Horde_Test_Case as TestCase;
+use PHPUnit\Framework\TestCase;
 use \Horde_ActiveSync_Log_Logger;
 use \Horde_Log_Handler_Null;
 use \Horde_ActiveSync_Wbxml_Decoder;

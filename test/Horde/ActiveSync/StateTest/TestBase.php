@@ -7,12 +7,30 @@
  * @subpackage UnitTests
  */
 namespace Horde\ActiveSync\StateTest;
-use Horde_Test_Case as TestCase;
+use PHPUnit\Framework\TestCase;
+use Horde\ActiveSync\Test\Helpers\LogHelper;
 
 class TestBase extends TestCase
 {
     protected static $state;
     protected static $logger;
+
+    /**
+     * Load test configuration from conf.php if it exists.
+     *
+     * @param string $varname  Environment variable name
+     * @param string $path     Path to search for conf.php
+     * @return array|false     Configuration array or false
+     */
+    public static function getConfig($varname, $path)
+    {
+        $config_file = $path . '/conf.php';
+        if (file_exists($config_file)) {
+            require $config_file;
+            return $config ?? false;
+        }
+        return false;
+    }
 
     protected function _testGetDeviceInfo()
     {
@@ -124,11 +142,11 @@ class TestBase extends TestCase
 
     protected function _testCacheFolders()
     {
-        $log = new Horde_Test_Log();
+        $log = LogHelper::createMockLogger();
         $cache = new Horde_ActiveSync_SyncCache(self::$state, 'dev123', 'mike', self::$logger->getLogger());
 
         // First Fixture
-        $folder = new Horde_ActiveSync_Message_Folder((array('logger' => $log->getLogger(), 'protocolversion' => Horde_ActiveSync::VERSION_TWELVEONE)));
+        $folder = new Horde_ActiveSync_Message_Folder((array('logger' => $log, 'protocolversion' => Horde_ActiveSync::VERSION_TWELVEONE)));
         $folder->type = Horde_ActiveSync::FOLDER_TYPE_CONTACT;
         $folder->serverid = '@Contacts@';
         $folder->_serverid = '@Contacts@';

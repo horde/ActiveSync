@@ -2,11 +2,9 @@
 /**
  * Horde_ActiveSync_Folder_Imap::
  *
- * PHP Version 5
- *
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
- * @copyright 2012-2020 Horde LLC (http://www.horde.org)
+ * @copyright 2012-2026 Horde LLC (http://www.horde.org)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */
@@ -16,7 +14,7 @@
  *
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
- * @copyright 2012-2020 Horde LLC (http://www.horde.org)
+ * @copyright 2012-2026 Horde LLC (http://www.horde.org)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */
@@ -425,11 +423,12 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
     }
 
     /**
-     * Serialize this object.
+     * Serialize this object using modern PHP serialization.
      *
-     * @return string  The serialized data.
+     * @return array  The data to serialize.
+     * @since 3.0.0-beta2
      */
-    public function serialize()
+    public function __serialize(): array
     {
         if (!empty($this->_status[self::HIGHESTMODSEQ])) {
              $msgs = (count($this->_messages) > self::COMPRESSION_LIMIT) ?
@@ -439,7 +438,7 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
             $msgs = $this->_messages;
         }
 
-        return json_encode(array(
+        return array(
             's' => $this->_status,
             'm' => $msgs,
             'f' => $this->_serverid,
@@ -447,37 +446,81 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
             'lsd' => $this->_lastSinceDate,
             'sd' => $this->_softDelete,
             'hi' => $this->haveInitialSync,
-            'v' => self::VERSION)
+            'v' => self::VERSION
         );
     }
 
     /**
-     * Reconstruct the object from serialized data.
+     * Reconstruct the object from serialized data using modern PHP serialization.
+     *
+     * @param array $data  The serialized data.
+     * @throws Horde_ActiveSync_Exception_StaleState
+     * @since 3.0.0-beta2
+     */
+    public function __unserialize(array $data): void
+    {
+        if (empty($data['v']) || $data['v'] != self::VERSION) {
+            throw new Horde_ActiveSync_Exception_StaleState('Cache version change');
+        }
+        $this->_status = $data['s'];
+        $this->_messages = $data['m'];
+        $this->_serverid = $data['f'];
+        $this->_class = $data['c'];
+        $this->_lastSinceDate = $data['lsd'];
+        $this->_softDelete = $data['sd'];
+        $this->haveInitialSync = empty($data['hi']) ? !empty($this->_messages) : $data['hi'];
+
+        if (!empty($this->_status[self::HIGHESTMODSEQ]) && is_string($this->_messages)) {
+            $this->_messages = $this->_fromSequenceString($this->_messages);
+        }
+    }
+
+    /**
+     * Serialize this object (legacy Serializable interface).
+     *
+     * Delegates to __serialize() and JSON-encodes for backward compatibility
+     * with old "C" format data storage. Also supports fallback to old
+     * serialization format for expensive email collection resyncs.
+     *
+     * @return string  The serialized data.
+     */
+    public function serialize()
+    {
+        return json_encode($this->__serialize());
+    }
+
+    /**
+     * Reconstruct the object from serialized data (legacy Serializable interface).
+     *
+     * Supports both old "C" format (JSON-encoded or PHP-serialized) data and
+     * delegates to __unserialize() for processing. Falls back to old
+     * serialization strategy to avoid expensive email collection resyncs.
      *
      * @param string $data  The serialized data.
      * @throws Horde_ActiveSync_Exception_StaleState
      */
     public function unserialize($data)
-    {   $d_data = json_decode($data, true);
-        if (!is_array($d_data) || empty($d_data['v']) || $d_data['v'] != self::VERSION) {
+    {
+        $decoded = json_decode($data, true);
+        if (!is_array($decoded) || empty($decoded['v']) || $decoded['v'] != self::VERSION) {
             // Try using the old serialization strategy, since this would save
             // an expensive resync of email collections.
-            $d_data = @unserialize($data);
-            if (!is_array($d_data) || empty($d_data['v']) || $d_data['v'] != 1) {
+            $decoded = @unserialize($data);
+            if (!is_array($decoded) || empty($decoded['v']) || $decoded['v'] != 1) {
                 throw new Horde_ActiveSync_Exception_StaleState('Cache version change');
             }
-        }
-        $this->_status = $d_data['s'];
-        $this->_messages = $d_data['m'];
-        $this->_serverid = $d_data['f'];
-        $this->_class = $d_data['c'];
-        $this->_lastSinceDate = $d_data['lsd'];
-        $this->_softDelete = $d_data['sd'];
-        $this->haveInitialSync = empty($d_data['hi']) ? !empty($this->_messages) : $d_data['hi'];
+            // Upgrade version 1 data to current VERSION
+            $decoded['v'] = self::VERSION;
 
-        if (!empty($this->_status[self::HIGHESTMODSEQ]) && is_string($this->_messages)) {
-            $this->_messages = $this->_fromSequenceString($this->_messages);
+            // Version 1 had messages as indexed array, but version 2 needs
+            // associative array (uid => flags) for non-MODSEQ servers
+            if (is_array($decoded['m']) && !empty($decoded['m']) &&
+                empty($decoded['s'][self::HIGHESTMODSEQ])) {
+                // Convert indexed array to associative: [100, 101] -> [100 => [], 101 => []]
+                $decoded['m'] = array_fill_keys($decoded['m'], []);
+            }
         }
+        $this->__unserialize($decoded);
     }
 
     /**
