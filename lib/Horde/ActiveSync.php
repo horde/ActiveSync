@@ -904,6 +904,9 @@ class Horde_ActiveSync
             $resolvedUser = $GLOBALS['registry']->getAuth();
         }
 
+        // Resolve user once via driver (may use auth, GET params, or fallbacks)
+        $resolvedUser = $this->_driver->getUser();
+
         // Does device exist AND does the user have an account on the device?
         if (!$this->_state->deviceExists($devId, $resolvedUser)) {
             // Device might exist, but with a new (additional) user account
