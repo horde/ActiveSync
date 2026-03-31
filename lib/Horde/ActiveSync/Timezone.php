@@ -308,7 +308,7 @@ class Horde_ActiveSync_Timezone
      *
      * @param array $offsets  Offsets may be avaluated for a given start year
      */
-    protected function _setDefaultStartDate(array $offsets = null)
+    protected function _setDefaultStartDate(?array $offsets = null)
     {
         if (!empty($this->_startDate)) {
             return;
