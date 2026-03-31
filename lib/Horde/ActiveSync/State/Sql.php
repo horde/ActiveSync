@@ -147,6 +147,33 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     }
 
     /**
+     * Unserialize stored PHP data without emitting E_WARNING on failure.
+     *
+     * Stale or PHP-version-mismatched blobs (e.g. after Horde/PHP upgrades)
+     * cause unserialize() to warn; callers already treat false as empty state.
+     *
+     * @param string|null $data  Raw serialized string.
+     *
+     * @return mixed|false  The value, or false on failure.
+     */
+    protected function _unserializeState($data)
+    {
+        if ($data === '' || $data === null) {
+            return false;
+        }
+        set_error_handler(static function () {
+            return true;
+        });
+        try {
+            return unserialize($data);
+        } catch (Throwable $e) {
+            return false;
+        } finally {
+            restore_error_handler();
+        }
+    }
+
+    /**
      * Update the serverid for a given folder uid in the folder's state object.
      * Needed when a folder is renamed on a client, but the UID must remain the
      * same.
@@ -189,7 +216,12 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             . 'sync_devid = ? AND sync_user = ? AND sync_folderid = ? AND sync_key = ?';
 
         foreach ($results as $result) {
-            $folder = unserialize($columns['sync_data']->binaryToString($result['sync_data']));
+            $folder = $this->_unserializeState(
+                $columns['sync_data']->binaryToString($result['sync_data'])
+            );
+            if ($folder === false) {
+                continue;
+            }
             $folder->setServerId($serverid);
             $folder = serialize($folder);
             try {
@@ -268,8 +300,10 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             $this->_logger->err($e->getMessage());
             throw new Horde_ActiveSync_Exception($e);
         }
-        $data = unserialize($columns['sync_data']->binaryToString($results['sync_data']));
-        $pending = unserialize($results['sync_pending']);
+        $data = $this->_unserializeState(
+            $columns['sync_data']->binaryToString($results['sync_data'])
+        );
+        $pending = $this->_unserializeState($results['sync_pending']);
 
         if ($this->_type == Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC) {
             $this->_folder = ($data !== false) ? $data : [];
@@ -660,7 +694,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
         $this->_deviceInfo->userAgent = $device['device_agent'];
         $this->_deviceInfo->id = $devId;
         $this->_deviceInfo->user = $user;
-        $this->_deviceInfo->supported = unserialize($device['device_supported']);
+        $this->_deviceInfo->supported = $this->_unserializeState($device['device_supported']) ?: [];
         if (empty($duser)) {
             $this->_deviceInfo->policykey = 0;
         } else {
@@ -668,7 +702,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                 ? 0
                 : $duser['device_policykey'];
         }
-        $this->_deviceInfo->properties = unserialize($device['device_properties']);
+        $this->_deviceInfo->properties = $this->_unserializeState($device['device_properties']) ?: [];
 
         return $this->_deviceInfo;
     }
@@ -1165,7 +1199,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
         } catch (Horde_Db_Exception $e) {
             throw new Horde_ActiveSync_Exception($e);
         }
-        if (!$data = unserialize($data)) {
+        if (!$data = $this->_unserializeState($data)) {
             $data = [
                 'confirmed_synckeys' => [],
                 'lasthbsyncstarted' => false,
