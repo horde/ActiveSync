@@ -4,14 +4,15 @@ declare(strict_types=1);
 error_reporting(E_ALL);
 
 /**
- * IntRangeSet v0.5
+ * IntRangeSet v0.6
  *
  * Maintains an ordered, compact set of integer ranges.
  * Ranges are stored as a flat array [start1, end1, start2, end2, ...]
  * in ascending order.
  *
  * String representation uses IMAP-style syntax: "1:5,7,10:15"
- * Note: fromString() only supports non-negative integers.
+ * Note: fromString() only supports non-negative integers and does not
+ * accept whitespace in the input string.
  *
  * @author: Dmitry Petrov <dpetrov67@gmail.com>
  */
@@ -19,41 +20,88 @@ class IntRangeSet implements \IteratorAggregate
 {
     /**
      * Flat array of alternating start/end values: [start1, end1, start2, end2, ...]
+     * Even indices are range starts, odd indices are range ends.
      * @var int[]
      */
-    private array $ranges;
+    private array $ranges = [];
 
     /** @var int Cached total count of integers in the set */
-    private int $count;
+    private int $count = 0;
 
-    public function __construct(array $ranges = [], int $count = 0)
+    /** @var int Cached last result of lowerBound to speed up repeated/sequential lookups */
+    private int $lastLowerBound = 0;
+
+    /**
+     * @param string $s Optional IMAP-style UID set string to initialize from.
+     * @throws \InvalidArgumentException on malformed input
+     */
+    public function __construct(string $s = '')
+    {
+        if ($s === '') return;
+        foreach (explode(',', $s) as $part) {
+            if (!preg_match('/^(\d+)(?::(\d+))?$/', $part, $m)) {
+                throw new \InvalidArgumentException("Invalid range part: '$part'");
+            }
+            $start = (int)$m[1];
+            $end   = isset($m[2]) ? (int)$m[2] : $start;
+            $this->addRange($start, $end);
+        }
+    }
+
+    /**
+     * Set ranges and count directly. For internal use only.
+     */
+    private function init(array $ranges, int $count): self
     {
         $this->ranges = $ranges;
         $this->count  = $count;
+        return $this;
+    }
+
+    /**
+     * Create a new instance with pre-validated ranges and count.
+     * For internal use only.
+     */
+    private static function create(array $ranges, int $count): self
+    {
+        return (new self())->init($ranges, $count);
     }
 
     /**
      * Return the flat index of the first range whose end >= $n,
      * or count($this->ranges) if no such range exists.
-     * Search starts at flat index $lo.
+     * Search starts at flat index $lo (trusted lower bound).
+     *
+     * Uses a cached last result to short-circuit repeated or sequential lookups.
+     * The cache check uses $lastLowerBound === 0 to safely avoid out-of-bounds
+     * access on the preceding range's end value.
      */
     private function lowerBound(int $n, int $lo = 0): int
     {
         $hi = count($this->ranges) - 2;
 
-        if ($hi < $lo || $this->ranges[$hi + 1] < $n) return $hi + 2;
-        if ($this->ranges[$lo + 1] >= $n) return $lo;
+        if ($hi < $lo || $this->ranges[$hi + 1] < $n) {
+            return $hi + 2;
+        }
 
-        do {
-            // Round down to even index
-            $mid = (($lo + $hi) >> 1) & ~1;
-            $midEnd = $this->ranges[$mid + 1];
-            if ($midEnd < $n)       $lo = $mid + 2;
-            elseif ($midEnd === $n) return $mid;
-            else                    $hi = $mid - 2;
-        } while ($lo <= $hi);
+        if ($this->lastLowerBound >= $lo &&
+            $this->lastLowerBound <= $hi &&
+            $this->ranges[$this->lastLowerBound + 1] >= $n &&
+            ($this->lastLowerBound === 0 || $this->ranges[$this->lastLowerBound - 1] < $n)) {
+            return $this->lastLowerBound;
+        }
 
-        return $lo;
+        if ($this->ranges[$lo + 1] < $n) {
+            do {
+                $mid    = (($lo + $hi) >> 1) & -2;
+                $midEnd = $this->ranges[$mid + 1];
+                if ($midEnd < $n)       $lo = $mid + 2;
+                elseif ($midEnd === $n) { $lo = $mid; break; }
+                else                    $hi = $mid - 2;
+            } while ($lo <= $hi);
+        }
+
+        return $this->lastLowerBound = $lo;
     }
 
     /**
@@ -69,14 +117,24 @@ class IntRangeSet implements \IteratorAggregate
      * merging adjacent or overlapping ranges.
      * If start > end the values are swapped.
      *
-     * @param int $lo Internal hint for lowerBound start index; do not use externally.
+     * Fast-appends when the new range is strictly after all existing ranges,
+     * avoiding binary search entirely for sorted input.
      */
-    public function addRange(int $start, int $end, int $lo = 0): self
+    public function addRange(int $start, int $end): self
     {
         if ($start > $end) [$start, $end] = [$end, $start];
 
-        $c     = count($this->ranges);
-        $first = $this->lowerBound($start, $lo);
+        $c = count($this->ranges);
+
+        // Fast append if new range starts after the last end value (odd index $c-1)
+        if ($c === 0 || $this->ranges[$c - 1] < $start - 1) {
+            $this->ranges[] = $start;
+            $this->ranges[] = $end;
+            $this->count   += $end - $start + 1;
+            return $this;
+        }
+
+        $first = $this->lowerBound($start);
         $last  = $start === $end ? $first : $this->lowerBound($end, $first);
 
         // Absorb right neighbor if adjacent or overlapping
@@ -88,7 +146,7 @@ class IntRangeSet implements \IteratorAggregate
             }
         }
 
-        // Check left neighbor for adjacency ($first - 1 is the end value of previous range)
+        // Check left neighbor for adjacency (index $first-1 is the end value of the previous range)
         if ($first > 0 && $this->ranges[$first - 1] + 1 >= $start) {
             $first -= 2;
         }
@@ -157,6 +215,7 @@ class IntRangeSet implements \IteratorAggregate
         $this->count -= $delta;
 
         if ($last - $first === 2 && $rc === 2) {
+            // Single range trimmed — update in place
             $this->ranges[$first]     = $replacement[0];
             $this->ranges[$first + 1] = $replacement[1];
         } else {
@@ -186,8 +245,8 @@ class IntRangeSet implements \IteratorAggregate
         $aHasMore = $ac >= 0;
         $bHasMore = $bc >= 0;
         $aIdx = $bIdx = -2;
-        if ($aHasMore) { $aStart = $this->ranges[$aIdx  = 0]; $aEnd = $this->ranges[1]; }
-        if ($bHasMore) { $bStart = $other->ranges[$bIdx = 0]; $bEnd = $other->ranges[1]; }
+        if ($aHasMore) { $aIdx = 0; $aStart = $this->ranges[0]; $aEnd = $this->ranges[1]; }
+        if ($bHasMore) { $bIdx = 0; $bStart = $other->ranges[0]; $bEnd = $other->ranges[1]; }
 
         while ($aHasMore || $bHasMore) {
             if (!$bHasMore || ($aHasMore && $aStart <= $bStart)) {
@@ -217,9 +276,7 @@ class IntRangeSet implements \IteratorAggregate
             $count   += $curEnd - $curStart + 1;
         }
 
-        $this->ranges = $ranges;
-        $this->count  = $count;
-        return $this;
+        return $this->init($ranges, $count);
     }
 
     /**
@@ -235,8 +292,8 @@ class IntRangeSet implements \IteratorAggregate
         $aHasMore = $ac >= 0;
         $bHasMore = $bc >= 0;
         $aIdx = $bIdx = -2;
-        if ($aHasMore) { $aStart = $this->ranges[$aIdx  = 0]; $aEnd = $this->ranges[1]; }
-        if ($bHasMore) { $bStart = $other->ranges[$bIdx = 0]; $bEnd = $other->ranges[1]; }
+        if ($aHasMore) { $aIdx = 0; $aStart = $this->ranges[0]; $aEnd = $this->ranges[1]; }
+        if ($bHasMore) { $bIdx = 0; $bStart = $other->ranges[0]; $bEnd = $other->ranges[1]; }
 
         while ($aHasMore) {
             if (!$bHasMore || $aEnd < $bStart) {
@@ -259,9 +316,7 @@ class IntRangeSet implements \IteratorAggregate
             }
         }
 
-        $this->ranges = $ranges;
-        $this->count  = $count;
-        return $this;
+        return $this->init($ranges, $count);
     }
 
     /**
@@ -277,8 +332,8 @@ class IntRangeSet implements \IteratorAggregate
         $aHasMore = $ac >= 0;
         $bHasMore = $bc >= 0;
         $aIdx = $bIdx = -2;
-        if ($aHasMore) { $aStart = $this->ranges[$aIdx  = 0]; $aEnd = $this->ranges[1]; }
-        if ($bHasMore) { $bStart = $other->ranges[$bIdx = 0]; $bEnd = $other->ranges[1]; }
+        if ($aHasMore) { $aIdx = 0; $aStart = $this->ranges[0]; $aEnd = $this->ranges[1]; }
+        if ($bHasMore) { $bIdx = 0; $bStart = $other->ranges[0]; $bEnd = $other->ranges[1]; }
 
         while ($aHasMore && $bHasMore) {
             if ($aEnd < $bStart) {
@@ -302,9 +357,7 @@ class IntRangeSet implements \IteratorAggregate
             }
         }
 
-        $this->ranges = $ranges;
-        $this->count  = $count;
-        return $this;
+        return $this->init($ranges, $count);
     }
 
     /**
@@ -328,8 +381,8 @@ class IntRangeSet implements \IteratorAggregate
         $aHasMore = $ac >= 0;
         $bHasMore = $bc >= 0;
         $aIdx = $bIdx = -2;
-        if ($aHasMore) { $aStart = $a->ranges[$aIdx  = 0]; $aEnd = $a->ranges[1]; }
-        if ($bHasMore) { $bStart = $b->ranges[$bIdx  = 0]; $bEnd = $b->ranges[1]; }
+        if ($aHasMore) { $aIdx = 0; $aStart = $a->ranges[0]; $aEnd = $a->ranges[1]; }
+        if ($bHasMore) { $bIdx = 0; $bStart = $b->ranges[0]; $bEnd = $b->ranges[1]; }
 
         while ($aHasMore || $bHasMore) {
             if (!$bHasMore || ($aHasMore && $aEnd < $bStart)) {
@@ -357,11 +410,11 @@ class IntRangeSet implements \IteratorAggregate
                 $unchangedRanges[] = $uStart; $unchangedRanges[] = $uEnd;
                 $unchangedCount   += $uEnd - $uStart + 1;
 
-                $aConsumed = false;
-                $bConsumed = false;
+                // Determine which sides are consumed by the overlap
+                $aConsumed = $bConsumed = false;
                 if ($aEnd < $bEnd)     { $bStart = $aEnd + 1; $aConsumed = true; }
                 elseif ($bEnd < $aEnd) { $aStart = $bEnd + 1; $bConsumed = true; }
-                else                   { $aConsumed = true; $bConsumed = true;   }
+                else                   { $aConsumed = $bConsumed = true; }
 
                 if ($aConsumed) {
                     if ($aHasMore = $aIdx < $ac) { $aStart = $a->ranges[$aIdx += 2]; $aEnd = $a->ranges[$aIdx + 1]; }
@@ -373,9 +426,9 @@ class IntRangeSet implements \IteratorAggregate
         }
 
         return [
-            new self($removedRanges,   $removedCount),
-            new self($unchangedRanges, $unchangedCount),
-            new self($addedRanges,     $addedCount),
+            self::create($removedRanges,   $removedCount),
+            self::create($unchangedRanges, $unchangedCount),
+            self::create($addedRanges,     $addedCount),
         ];
     }
 
@@ -389,41 +442,6 @@ class IntRangeSet implements \IteratorAggregate
                 yield $n;
             }
         }
-    }
-
-    /**
-     * Parse an IMAP-style UID set string, e.g. "1:5,7,10:15"
-     * and return a new IntRangeSet.
-     * Only non-negative integers are supported in string format.
-     * Input may be unsorted or contain overlapping/adjacent ranges.
-     *
-     * @throws \InvalidArgumentException on malformed input
-     */
-    public static function fromString(string $s): self
-    {
-        $set = new self();
-        if ($s === '') return $set;
-
-        $c = 0;
-        foreach (explode(',', $s) as $part) {
-            if (!preg_match('/^(\d+)(?::(\d+))?$/', $part, $m)) {
-                throw new \InvalidArgumentException("Invalid range part: '$part'");
-            }
-            $start = (int)$m[1];
-            $end   = isset($m[2]) ? (int)$m[2] : $start;
-            if ($start > $end) [$start, $end] = [$end, $start];
-            if ($c === 0 || $set->ranges[$c - 1] < $start - 1) {
-                $set->ranges[] = $start;
-                $set->ranges[] = $end;
-                $set->count   += $end - $start + 1;
-                $c += 2;
-            } else {
-                $set->addRange($start, $end, $c - 2);
-                $c = count($set->ranges);
-            }
-        }
-
-        return $set;
     }
 
     /**

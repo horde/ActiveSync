@@ -1,5 +1,5 @@
 <?php
-require 'int_range_set.php';
+require 'IntRangeSet.php';
 
 $pass = 0;
 $fail = 0;
@@ -43,7 +43,23 @@ function checkBool(string $label, bool $got, bool $expected): void {
     }
 }
 
-
+function checkDiff(string $label, array $diff, string $removed, string $unchanged, string $added): void {
+    global $pass, $fail;
+    [$r, $u, $a] = $diff;
+    $ok = (string)$r === $removed
+       && (string)$u === $unchanged
+       && (string)$a === $added;
+    if ($ok) {
+        echo "  PASS  $label\n";
+        $pass++;
+    } else {
+        echo "  FAIL  $label\n";
+        if ((string)$r !== $removed)   echo "        removed   expected: $removed   got: $r\n";
+        if ((string)$u !== $unchanged) echo "        unchanged expected: $unchanged got: $u\n";
+        if ((string)$a !== $added)     echo "        added     expected: $added     got: $a\n";
+        $fail++;
+    }
+}
 
 // -------------------------------------------------------------------------
 echo "=== add() / addRange() ===\n";
@@ -102,27 +118,25 @@ check('addRange before all', (string)$s, '1:3,10:20');
 $s->addRange(25, 30);
 check('addRange after all', (string)$s, '1:3,10:20,25:30');
 
-// addRange reversed
 $s = new IntRangeSet();
 $s->addRange(10, 5);
 check('addRange reversed', (string)$s, '5:10');
 
-// removeRange reversed
 $s = new IntRangeSet();
 $s->addRange(1, 20);
 $s->removeRange(15, 5);
 check('removeRange reversed', (string)$s, '1:4,16:20');
 
-// fromString reversed range is accepted and normalized
-$s = IntRangeSet::fromString('10:5');
-check('fromString reversed accepted', (string)$s, '5:10');
+// constructor accepts reversed range
+$s = new IntRangeSet('10:5');
+check('constructor reversed accepted', (string)$s, '5:10');
 
-// fromString invalid input throws
+// constructor invalid input throws
 try {
-    IntRangeSet::fromString('abc');
-    check('fromString invalid throws', 'no exception', 'exception');
+    new IntRangeSet('abc');
+    check('constructor invalid throws', 'no exception', 'exception');
 } catch (\InvalidArgumentException $e) {
-    check('fromString invalid throws', 'exception', 'exception');
+    check('constructor invalid throws', 'exception', 'exception');
 }
 
 // -------------------------------------------------------------------------
@@ -193,7 +207,11 @@ $s->addRange(1, 10);
 $s->removeRange(5, 5);
 check('removeRange single value', (string)$s, '1:4,6:10');
 
-// diff() partial remainder after B exhausted mid-overlap
+$a = new IntRangeSet();
+$a->addRange(1, 10);
+$a->subtract(new IntRangeSet());
+check('diff partial remainder a after b exhausted (setup)', (string)$a, '1:10');
+
 $a = new IntRangeSet();
 $a->addRange(1, 20);
 $b = new IntRangeSet();
@@ -202,18 +220,15 @@ checkDiff('diff partial remainder a after b exhausted',
     IntRangeSet::diff($a, $b),
     '11:20', '1:10', '');
 
-// diff() single values disjoint
 checkDiff('diff single values disjoint',
-    IntRangeSet::diff(IntRangeSet::fromString('1,3,5'), IntRangeSet::fromString('2,4,6')),
+    IntRangeSet::diff(new IntRangeSet('1,3,5'), new IntRangeSet('2,4,6')),
     '1,3,5', '', '2,4,6');
 
-// subtract self
 $a = new IntRangeSet();
 $a->addRange(1, 10);
 $a->subtract($a);
 check('subtract self', (string)$a, '');
 
-// count after subtract
 $a = new IntRangeSet();
 $a->addRange(1, 10);
 $b = new IntRangeSet();
@@ -222,63 +237,58 @@ $a->subtract($b);
 checkInt('count after subtract', $a->count(), 5);
 
 // -------------------------------------------------------------------------
-echo "\n=== fromString() / __toString() ===\n";
+echo "\n=== constructor / __toString() ===\n";
 
-$s = IntRangeSet::fromString('');
-check('fromString empty', (string)$s, '');
+$s = new IntRangeSet('');
+check('constructor empty', (string)$s, '');
 
-$s = IntRangeSet::fromString('7');
-check('fromString single value', (string)$s, '7');
+$s = new IntRangeSet('7');
+check('constructor single value', (string)$s, '7');
 
-$s = IntRangeSet::fromString('1:5');
-check('fromString single range', (string)$s, '1:5');
+$s = new IntRangeSet('1:5');
+check('constructor single range', (string)$s, '1:5');
 
-$s = IntRangeSet::fromString('1:5,7,10:15');
-check('fromString mixed', (string)$s, '1:5,7,10:15');
+$s = new IntRangeSet('1:5,7,10:15');
+check('constructor mixed', (string)$s, '1:5,7,10:15');
 
 $original = '1:5,7,10:15';
-$s = IntRangeSet::fromString($original);
+$s = new IntRangeSet($original);
 check('round-trip simple', (string)$s, $original);
 
-$s = IntRangeSet::fromString('1:5,3:8');
-check('fromString merges overlapping', (string)$s, '1:8');
+$s = new IntRangeSet('1:5,3:8');
+check('constructor merges overlapping', (string)$s, '1:8');
 
-$s = IntRangeSet::fromString('1:5,6:10');
-check('fromString merges adjacent', (string)$s, '1:10');
+$s = new IntRangeSet('1:5,6:10');
+check('constructor merges adjacent', (string)$s, '1:10');
 
-// fromString colon only throws
 try {
-    IntRangeSet::fromString(':');
-    check('fromString colon only throws', 'no exception', 'exception');
+    new IntRangeSet(':');
+    check('constructor colon only throws', 'no exception', 'exception');
 } catch (\InvalidArgumentException $e) {
-    check('fromString colon only throws', 'exception', 'exception');
+    check('constructor colon only throws', 'exception', 'exception');
 }
 
-// fromString empty part throws
 try {
-    IntRangeSet::fromString('1,,3');
-    check('fromString empty part throws', 'no exception', 'exception');
+    new IntRangeSet('1,,3');
+    check('constructor empty part throws', 'no exception', 'exception');
 } catch (\InvalidArgumentException $e) {
-    check('fromString empty part throws', 'exception', 'exception');
+    check('constructor empty part throws', 'exception', 'exception');
 }
 
 // -------------------------------------------------------------------------
 echo "\n=== union() ===\n";
 
-// Union with empty set
 $a = new IntRangeSet();
 $a->addRange(1, 10);
 $a->union(new IntRangeSet());
 check('union with empty', (string)$a, '1:10');
 
-// Union from empty set
 $a = new IntRangeSet();
 $b = new IntRangeSet();
 $b->addRange(1, 10);
 $a->union($b);
 check('union from empty', (string)$a, '1:10');
 
-// Union non-overlapping
 $a = new IntRangeSet();
 $a->addRange(1, 5);
 $b = new IntRangeSet();
@@ -286,7 +296,6 @@ $b->addRange(10, 15);
 $a->union($b);
 check('union non-overlapping', (string)$a, '1:5,10:15');
 
-// Union overlapping
 $a = new IntRangeSet();
 $a->addRange(1, 10);
 $b = new IntRangeSet();
@@ -294,7 +303,6 @@ $b->addRange(5, 15);
 $a->union($b);
 check('union overlapping', (string)$a, '1:15');
 
-// Union adjacent
 $a = new IntRangeSet();
 $a->addRange(1, 5);
 $b = new IntRangeSet();
@@ -302,13 +310,11 @@ $b->addRange(6, 10);
 $a->union($b);
 check('union adjacent', (string)$a, '1:10');
 
-// Union with self
 $a = new IntRangeSet();
 $a->addRange(1, 10);
 $a->union($a);
 check('union with self', (string)$a, '1:10');
 
-// union() cross-side merge bug check
 $a = new IntRangeSet();
 $a->addRange(1, 5)->addRange(8, 12);
 $b = new IntRangeSet();
@@ -319,20 +325,17 @@ check('union cross-side merge', (string)$a, '1:12');
 // -------------------------------------------------------------------------
 echo "\n=== intersect() ===\n";
 
-// Intersect with empty
 $a = new IntRangeSet();
 $a->addRange(1, 10);
 $a->intersect(new IntRangeSet());
 check('intersect with empty', (string)$a, '');
 
-// Intersect from empty
 $a = new IntRangeSet();
 $b = new IntRangeSet();
 $b->addRange(1, 10);
 $a->intersect($b);
 check('intersect from empty', (string)$a, '');
 
-// Intersect identical
 $a = new IntRangeSet();
 $a->addRange(1, 10);
 $b = new IntRangeSet();
@@ -340,7 +343,6 @@ $b->addRange(1, 10);
 $a->intersect($b);
 check('intersect identical', (string)$a, '1:10');
 
-// Intersect non-overlapping
 $a = new IntRangeSet();
 $a->addRange(1, 5);
 $b = new IntRangeSet();
@@ -348,7 +350,6 @@ $b->addRange(10, 15);
 $a->intersect($b);
 check('intersect non-overlapping', (string)$a, '');
 
-// Intersect partial overlap
 $a = new IntRangeSet();
 $a->addRange(1, 10);
 $b = new IntRangeSet();
@@ -356,7 +357,6 @@ $b->addRange(5, 15);
 $a->intersect($b);
 check('intersect partial overlap', (string)$a, '5:10');
 
-// A contains B
 $a = new IntRangeSet();
 $a->addRange(1, 20);
 $b = new IntRangeSet();
@@ -364,7 +364,6 @@ $b->addRange(5, 10);
 $a->intersect($b);
 check('intersect a contains b', (string)$a, '5:10');
 
-// Multiple ranges
 $a = new IntRangeSet();
 $a->addRange(1, 5)->addRange(10, 15)->addRange(20, 25);
 $b = new IntRangeSet();
@@ -438,131 +437,97 @@ check('other set unchanged', (string)$b, '3:7');
 // -------------------------------------------------------------------------
 echo "\n=== diff() ===\n";
 
-function checkDiff(string $label, array $diff, string $removed, string $unchanged, string $added): void {
-    global $pass, $fail;
-    [$r, $u, $a] = $diff;
-    $ok = (string)$r === $removed
-       && (string)$u === $unchanged
-       && (string)$a === $added;
-    if ($ok) {
-        echo "  PASS  $label\n";
-        $pass++;
-    } else {
-        echo "  FAIL  $label\n";
-        if ((string)$r !== $removed)   echo "        removed   expected: $removed   got: $r\n";
-        if ((string)$u !== $unchanged) echo "        unchanged expected: $unchanged got: $u\n";
-        if ((string)$a !== $added)     echo "        added     expected: $added     got: $a\n";
-        $fail++;
-    }
-}
-
-// Both empty
 checkDiff('both empty',
     IntRangeSet::diff(new IntRangeSet(), new IntRangeSet()),
     '', '', '');
 
-// A empty, B non-empty
 checkDiff('a empty',
-    IntRangeSet::diff(new IntRangeSet(), IntRangeSet::fromString('1:5')),
+    IntRangeSet::diff(new IntRangeSet(), new IntRangeSet('1:5')),
     '', '', '1:5');
 
-// B empty, A non-empty
 checkDiff('b empty',
-    IntRangeSet::diff(IntRangeSet::fromString('1:5'), new IntRangeSet()),
+    IntRangeSet::diff(new IntRangeSet('1:5'), new IntRangeSet()),
     '1:5', '', '');
 
-// Identical sets
 checkDiff('identical sets',
-    IntRangeSet::diff(IntRangeSet::fromString('1:5,10:15'), IntRangeSet::fromString('1:5,10:15')),
+    IntRangeSet::diff(new IntRangeSet('1:5,10:15'), new IntRangeSet('1:5,10:15')),
     '', '1:5,10:15', '');
 
-// Completely disjoint — A entirely before B
 checkDiff('disjoint a before b',
-    IntRangeSet::diff(IntRangeSet::fromString('1:5'), IntRangeSet::fromString('10:15')),
+    IntRangeSet::diff(new IntRangeSet('1:5'), new IntRangeSet('10:15')),
     '1:5', '', '10:15');
 
-// Completely disjoint — B entirely before A
 checkDiff('disjoint b before a',
-    IntRangeSet::diff(IntRangeSet::fromString('10:15'), IntRangeSet::fromString('1:5')),
+    IntRangeSet::diff(new IntRangeSet('10:15'), new IntRangeSet('1:5')),
     '10:15', '', '1:5');
 
-// Partial overlap — A extends left
 checkDiff('partial overlap a extends left',
-    IntRangeSet::diff(IntRangeSet::fromString('1:10'), IntRangeSet::fromString('5:15')),
+    IntRangeSet::diff(new IntRangeSet('1:10'), new IntRangeSet('5:15')),
     '1:4', '5:10', '11:15');
 
-// Partial overlap — B extends left
 checkDiff('partial overlap b extends left',
-    IntRangeSet::diff(IntRangeSet::fromString('5:15'), IntRangeSet::fromString('1:10')),
+    IntRangeSet::diff(new IntRangeSet('5:15'), new IntRangeSet('1:10')),
     '11:15', '5:10', '1:4');
 
-// A contains B
 checkDiff('a contains b',
-    IntRangeSet::diff(IntRangeSet::fromString('1:20'), IntRangeSet::fromString('5:10')),
+    IntRangeSet::diff(new IntRangeSet('1:20'), new IntRangeSet('5:10')),
     '1:4,11:20', '5:10', '');
 
-// B contains A
 checkDiff('b contains a',
-    IntRangeSet::diff(IntRangeSet::fromString('5:10'), IntRangeSet::fromString('1:20')),
+    IntRangeSet::diff(new IntRangeSet('5:10'), new IntRangeSet('1:20')),
     '', '5:10', '1:4,11:20');
 
-// Multiple ranges each side, interleaved
 checkDiff('interleaved ranges',
-    IntRangeSet::diff(IntRangeSet::fromString('1:5,11:15,21:25'), IntRangeSet::fromString('3:13,23:30')),
+    IntRangeSet::diff(new IntRangeSet('1:5,11:15,21:25'), new IntRangeSet('3:13,23:30')),
     '1:2,14:15,21:22', '3:5,11:13,23:25', '6:10,26:30');
 
-// Single values
 checkDiff('single values overlap',
-    IntRangeSet::diff(IntRangeSet::fromString('1,2,3'), IntRangeSet::fromString('2,3,4')),
+    IntRangeSet::diff(new IntRangeSet('1,2,3'), new IntRangeSet('2,3,4')),
     '1', '2:3', '4');
+
+checkDiff('diff partial remainder carried across iterations',
+    IntRangeSet::diff(new IntRangeSet('1:30'), new IntRangeSet('5:10,15:20,25:30')),
+    '1:4,11:14,21:24', '5:10,15:20,25:30', '');
 
 // -------------------------------------------------------------------------
 echo "\n=== getIterator() ===\n";
 
-// Empty set
 $result = [];
 foreach (new IntRangeSet() as $v) $result[] = $v;
 check('iterate empty', implode(',', $result), '');
 
-// Single value
 $result = [];
-foreach (IntRangeSet::fromString('5') as $v) $result[] = $v;
+foreach (new IntRangeSet('5') as $v) $result[] = $v;
 check('iterate single value', implode(',', $result), '5');
 
-// Single range
 $result = [];
-foreach (IntRangeSet::fromString('1:5') as $v) $result[] = $v;
+foreach (new IntRangeSet('1:5') as $v) $result[] = $v;
 check('iterate single range', implode(',', $result), '1,2,3,4,5');
 
-// Multiple ranges
 $result = [];
-foreach (IntRangeSet::fromString('1:3,7,10:12') as $v) $result[] = $v;
+foreach (new IntRangeSet('1:3,7,10:12') as $v) $result[] = $v;
 check('iterate multiple ranges', implode(',', $result), '1,2,3,7,10,11,12');
 
-// Ranges are always stored in ascending order
 $s = new IntRangeSet();
 $s->addRange(5, 7)->addRange(1, 3);
 $result = [];
 foreach ($s as $v) $result[] = $v;
 check('iterate ascending order', implode(',', $result), '1,2,3,5,6,7');
 
-// Iterate over negative numbers
 $s = new IntRangeSet();
 $s->addRange(-3, -1);
 $result = [];
 foreach ($s as $v) $result[] = $v;
 check('iterate negative numbers', implode(',', $result), '-3,-2,-1');
 
-// diff() partial remainder carried across multiple iterations
 checkDiff('diff partial remainder carried across iterations',
-    IntRangeSet::diff(IntRangeSet::fromString('1:30'), IntRangeSet::fromString('5:10,15:20,25:30')),
+    IntRangeSet::diff(new IntRangeSet('1:30'), new IntRangeSet('5:10,15:20,25:30')),
     '1:4,11:14,21:24', '5:10,15:20,25:30', '');
 
 // -------------------------------------------------------------------------
 echo "\n=== contains() ===\n";
 
-$s = new IntRangeSet();
-$s->addRange(1, 5)->addRange(10, 15);
+$s = new IntRangeSet('1:5,10:15');
 checkBool('contains inside first range',  $s->contains(3),  true);
 checkBool('contains start of range',      $s->contains(1),  true);
 checkBool('contains end of range',        $s->contains(5),  true);

@@ -1,7 +1,7 @@
 <?php
 
 declare(strict_types=1);
-require 'int_range_set.php';
+require 'IntRangeSet.php';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -91,7 +91,7 @@ function makeUidString(array $ranges): string
 }
 
 // ---------------------------------------------------------------------------
-// Standard test data
+// Scenarios
 // ---------------------------------------------------------------------------
 
 $ranges      = makeRanges(500, 10, 100_000);    // ~500 ranges, ~5000 integers
@@ -263,7 +263,7 @@ benchmark('IntRangeSet::addRange() forward', fn() => null, function() use ($rang
 
 section('Large number of tiny ranges (10000 single-element ranges)');
 
-$singleRanges = array_map(fn($i) => [$i * 2, $i * 2], range(1, 10_000)); // all odd gaps
+$singleRanges = array_map(fn($i) => [$i * 2, $i * 2], range(1, 10_000));
 
 benchmark('IntRangeSet build 10000 singles', fn() => null, function() use ($singleRanges) {
     makeIntRangeSet($singleRanges);
@@ -291,6 +291,22 @@ benchmark('array_filter equivalent', fn() => makeIntArray($ranges), function($ar
 // 10. subtract()
 // ---------------------------------------------------------------------------
 
+section('subtract() vs array_diff()');
+
+benchmark('IntRangeSet::subtract()', fn() => [makeIntRangeSet($rangesA), makeIntRangeSet($rangesB)], function($data) {
+    [$a, $b] = $data;
+    $a->subtract($b);
+});
+
+benchmark('array_diff()', fn() => [makeIntArray($rangesA), makeIntArray($rangesB)], function($data) {
+    [$a, $b] = $data;
+    array_diff($a, $b);
+});
+
+// ---------------------------------------------------------------------------
+// 11. union() / intersect()
+// ---------------------------------------------------------------------------
+
 section('union() vs array_merge+sort+unique');
 
 benchmark('IntRangeSet::union()', fn() => [makeIntRangeSet($rangesA), makeIntRangeSet($rangesB)], function($data) {
@@ -316,22 +332,8 @@ benchmark('array_intersect()', fn() => [makeIntArray($rangesA), makeIntArray($ra
     array_intersect($a, $b);
 });
 
-
-$rangesA = makeRanges(500, 100, 1_000_000);
-$rangesB = makeRanges(500, 100, 1_000_000);
-
-benchmark('IntRangeSet::subtract()', fn() => [makeIntRangeSet($rangesA), makeIntRangeSet($rangesB)], function($data) {
-    [$a, $b] = $data;
-    $a->subtract($b);
-});
-
-benchmark('array_diff()', fn() => [makeIntArray($rangesA), makeIntArray($rangesB)], function($data) {
-    [$a, $b] = $data;
-    array_diff($a, $b);
-});
-
 // ---------------------------------------------------------------------------
-// 11. diff() variants
+// 12. diff()
 // ---------------------------------------------------------------------------
 
 section('diff() — identical sets');
@@ -344,9 +346,7 @@ benchmark('IntRangeSet::diff() identical', fn() => [makeIntRangeSet($rangesA), m
 section('diff() — completely disjoint sets');
 
 $rangesC = makeRanges(500, 10, 50_000);
-$rangesD = makeRanges(500, 10, 50_000);
-// Force disjoint by offsetting D
-$rangesD = array_map(fn($r) => [$r[0] + 60_000, $r[1] + 60_000], $rangesD);
+$rangesD = array_map(fn($r) => [$r[0] + 60_000, $r[1] + 60_000], makeRanges(500, 10, 50_000));
 
 benchmark('IntRangeSet::diff() disjoint', fn() => [makeIntRangeSet($rangesC), makeIntRangeSet($rangesD)], function($data) {
     [$a, $b] = $data;
@@ -375,23 +375,20 @@ benchmark('array_diff() on int arrays', fn() => [makeIntArray($rangesLarge), mak
 });
 
 // ---------------------------------------------------------------------------
-// 12. fromString()
+// 13. constructor string parsing
 // ---------------------------------------------------------------------------
 
-section('fromString() parsing');
+section('constructor string parsing');
 
-$uidString      = makeUidString($ranges);
-$uidStringLarge = makeUidString($rangesLarge);
-
-
+$uidString        = makeUidString($ranges);
 $uidStringUnsorted = makeUidString(array_reverse($ranges));
 
-benchmark('IntRangeSet::fromString() ~500 ranges', fn() => null, function() use ($uidString) {
-    IntRangeSet::fromString($uidString);
+benchmark('new IntRangeSet() ~500 ranges sorted', fn() => null, function() use ($uidString) {
+    new IntRangeSet($uidString);
 });
 
-benchmark('IntRangeSet::fromString() ~500 ranges unsorted', fn() => null, function() use ($uidStringUnsorted) {
-    IntRangeSet::fromString($uidStringUnsorted);
+benchmark('new IntRangeSet() ~500 ranges unsorted', fn() => null, function() use ($uidStringUnsorted) {
+    new IntRangeSet($uidStringUnsorted);
 });
 
 benchmark('explode+array build ~500 ranges sorted', fn() => null, function() use ($uidString) {
@@ -415,7 +412,7 @@ benchmark('explode+array build ~500 ranges unsorted+dedup', fn() => null, functi
 });
 
 // ---------------------------------------------------------------------------
-// 13. Simulated IMAP sync
+// 14. Simulated IMAP sync
 // ---------------------------------------------------------------------------
 
 section('Simulated IMAP sync (parse, diff, add, remove)');
@@ -426,8 +423,8 @@ $prevString = makeUidString($prevRanges);
 $newString  = makeUidString($newRanges);
 
 benchmark('IntRangeSet IMAP sync', fn() => null, function() use ($prevString, $newString) {
-    $prev = IntRangeSet::fromString($prevString);
-    $curr = IntRangeSet::fromString($newString);
+    $prev = new IntRangeSet($prevString);
+    $curr = new IntRangeSet($newString);
     [$removed, $unchanged, $added] = IntRangeSet::diff($prev, $curr);
     $result = clone $prev;
     $result->subtract($removed)->union($added);
