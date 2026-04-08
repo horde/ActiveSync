@@ -39,6 +39,35 @@
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
   notes: |+
+3.0.0-beta2:
+  api: 3.0.0-beta2
+  state:
+    release: beta
+    api: beta
+  date: 2026-04-08
+  license:
+    identifier: GPL-2.0-only
+    uri: https://spdx.org/licenses/GPL-2.0-only.html
+  notes: |-
+    fix: Replace deprecated call with explicit factory call.
+    Refactor unserialize calls to use _unserializeState
+    Add VERSION_SIXTEENONE constant for version 16.1
+    Merge pull request #22 from horde/feat/EAS_version_handling_per_user_or_device
+    refactor: Remove the extra logic - this is now handled in Horde_Core_ActiveSync_Driver->getUser() directly.
+    refactor: See also horde/core#75 - Keep the horde specific stuff in core and apps
+    chore(hordeyml): Add keywords for packagist
+    style: php-cs-fixer
+    fix: #23 PHP 8.4 deprecation of implicit nullable type
+    Resolve user for device handling in ActiveSync
+    Merge pull request #21 from horde/feat/issue-core-67-modern-serialization
+    chore(hordeyml): Update autoloader rules
+    test: Modernize test suite (2 remaining test failures)
+    fix: serialization version upgrade
+    test: cover serialization issues
+    fix: Same version bug mentioned by @amulet1, probably fixed in his commits I cannot read.
+    fix: Version bug mentioned by @amulet1 in review
+    fix(activesync): Missing property declarations to Exporter/Base
+    feat(activesync): add modern __serialize()/__unserialize() methods to Folder classes
 3.0.0-beta1:
   api: 3.0.0-beta1
   state:

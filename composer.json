@@ -11,7 +11,14 @@
             "role": "lead"
         }
     ],
-    "time": "2026-03-21",
+    "keywords": [
+        "contacts",
+        "outlook",
+        "sync",
+        "eas",
+        "exchange"
+    ],
+    "time": "2026-04-08",
     "repositories": [],
     "require": {
         "horde/horde-installer-plugin": "dev-FRAMEWORK_6_0 || ^3 || ^2",
@@ -35,8 +42,7 @@
         "horde/imap_client": "^3 || dev-FRAMEWORK_6_0",
         "horde/mail": "^3 || dev-FRAMEWORK_6_0",
         "horde/mongo": "^2 || dev-FRAMEWORK_6_0",
-        "horde/text_filter": "^3 || dev-FRAMEWORK_6_0",
-        "horde/test": "^3 || dev-FRAMEWORK_6_0"
+        "horde/text_filter": "^3 || dev-FRAMEWORK_6_0"
     },
     "autoload": {
         "psr-0": {
@@ -47,10 +53,7 @@
         "psr-4": {
             "Horde\\ActiveSync\\": "test/Horde/ActiveSync/",
             "Horde\\ActiveSync\\Test\\Helpers\\": "test/Horde/ActiveSync/Helpers/"
-        },
-        "files": [
-            "test/Horde/ActiveSync/Helpers/ControllerRequestStub.php"
-        ]
+        }
     },
     "config": {
         "allow-plugins": {
