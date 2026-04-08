@@ -171,11 +171,11 @@ class Horde_ActiveSync_Rfc822
         $updated = false;
         // Check for required headers.
         if (!$headers->getValue('Message-ID')) {
-            $headers->addMessageIdHeader();
+            $headers->addHeaderOb(Horde_Mime_Headers_MessageId::create());
             $updated = true;
         }
         if (!$headers->getValue('User-Agent')) {
-            $headers->addUserAgentHeader();
+            $headers->addHeaderOb(Horde_Mime_Headers_UserAgent::create());
             $updated = true;
         }
         if (!$headers->getValue('Date')) {
