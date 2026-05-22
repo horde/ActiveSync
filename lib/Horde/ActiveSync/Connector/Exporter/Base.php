@@ -68,7 +68,7 @@ abstract class Horde_ActiveSync_Connector_Exporter_Base
      *
      * @var array
      */
-    protected $_seenObjects = array();
+    protected $_seenObjects = [];
 
     /**
      * Const'r

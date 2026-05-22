@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Test helper for creating test databases.
  *
@@ -13,6 +14,7 @@ namespace Horde\ActiveSync\Test\Helpers;
 
 use Horde_Db_Adapter_Pdo_Sqlite;
 use Horde_Db_Migration_Migrator;
+use Exception;
 
 class DbHelper
 {
@@ -27,12 +29,12 @@ class DbHelper
     public static function createSqliteDb(array $params = []): Horde_Db_Adapter_Pdo_Sqlite
     {
         if (!extension_loaded('pdo_sqlite')) {
-            throw new \Exception('PDO SQLite extension is not loaded');
+            throw new Exception('PDO SQLite extension is not loaded');
         }
 
         $db = new Horde_Db_Adapter_Pdo_Sqlite([
             'dbname' => ':memory:',
-            'charset' => 'utf-8'
+            'charset' => 'utf-8',
         ]);
 
         // Run migrations if specified
@@ -45,7 +47,7 @@ class DbHelper
                     $logger,
                     [
                         'migrationsPath' => $migration['migrationsPath'],
-                        'schemaTableName' => $migration['schemaTableName']
+                        'schemaTableName' => $migration['schemaTableName'],
                     ]
                 );
                 $migrator->up();

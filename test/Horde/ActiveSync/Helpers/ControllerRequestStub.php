@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Stub for Horde_Controller_Request_Http to allow tests to run without horde/controller.
  *
