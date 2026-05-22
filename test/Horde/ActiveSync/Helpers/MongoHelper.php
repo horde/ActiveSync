@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Test helper for creating MongoDB test instances.
  *
@@ -12,10 +13,11 @@
 namespace Horde\ActiveSync\Test\Helpers;
 
 use Horde_Mongo_Client;
+use Exception;
 
 class MongoHelper
 {
-    const DEFAULT_DB = 'horde_mongo_testdb';
+    public const DEFAULT_DB = 'horde_mongo_testdb';
 
     /**
      * Create a connector to a temporary MongoDB instance.
@@ -28,9 +30,9 @@ class MongoHelper
      */
     public static function createMongoClient(array $params = []): ?Horde_Mongo_Client
     {
-        if (!(extension_loaded('mongo') || extension_loaded('mongodb')) ||
-            !class_exists('Horde_Mongo_Client') ||
-            empty($params['config'])) {
+        if (!(extension_loaded('mongo') || extension_loaded('mongodb'))
+            || !class_exists('Horde_Mongo_Client')
+            || empty($params['config'])) {
             return null;
         }
 
@@ -42,7 +44,7 @@ class MongoHelper
             $mongo->selectDB($mongo->dbname);
 
             return $mongo;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return null;
         }
     }

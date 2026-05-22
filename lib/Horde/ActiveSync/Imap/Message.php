@@ -397,10 +397,10 @@ class Horde_ActiveSync_Imap_Message
         $wrapper->setName($mime_part->getName());
         $wrapper->setMimeId($mime_part->getMimeId());
 
-        $tnef_parser = Horde_Compress::factory('Tnef');
+        $tnef_parser = (new Horde\Compress\CompressFactory())->create('tnef');
         try {
             $tnef_data = $tnef_parser->decompress($mime_part->getContents());
-        } catch (Horde_Compress_Exception $e) {
+        } catch (Horde\Compress\Exception $e) {
             return false;
         }
         if (!count($tnef_data)) {

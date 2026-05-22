@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Test helper for creating test server instances.
  *
@@ -31,7 +32,7 @@ class TestServerHelper
     public static function createTestServer(TestCase $testCase, array $params = [])
     {
         $headerValue = $params['headerValue'] ?? '14.1';
-        $serverVars = $params['serverVars'] ?? array('PHP_AUTH_USER' => 'mike', 'PHP_AUTH_PW' => 'password');
+        $serverVars = $params['serverVars'] ?? ['PHP_AUTH_USER' => 'mike', 'PHP_AUTH_PW' => 'password'];
 
         $driver = $testCase->getMockBuilder('Horde_ActiveSync_Driver_Base')
                             ->disableOriginalConstructor()
@@ -58,12 +59,12 @@ class TestServerHelper
 
         $server = new Horde_ActiveSync($driver, $decoder, $encoder, $state, $request);
 
-        return (object)[
+        return (object) [
             'server' => $server,
             'driver' => $driver,
             'input' => $input,
             '_output' => $output,
-            'request' => $request
+            'request' => $request,
         ];
     }
 }

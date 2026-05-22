@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Test helper for creating mock loggers.
  *
@@ -13,6 +14,7 @@ namespace Horde\ActiveSync\Test\Helpers;
 
 use Horde_Log_Logger;
 use Horde_Log_Handler_Mock;
+use Exception;
 
 class LogHelper
 {
@@ -26,7 +28,7 @@ class LogHelper
     public static function createMockLogger(): Horde_Log_Logger
     {
         if (!class_exists('Horde_Log_Logger')) {
-            throw new \Exception('The "Horde_Log" package is missing!');
+            throw new Exception('The "Horde_Log" package is missing!');
         }
         self::$logHandler = new Horde_Log_Handler_Mock();
         return new Horde_Log_Logger(self::$logHandler);
