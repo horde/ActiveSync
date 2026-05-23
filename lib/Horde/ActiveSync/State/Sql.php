@@ -417,31 +417,95 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                     time()])
             )
         );
-        try {
-            $this->_db->insertBlob($this->_syncStateTable, $params, 'sync_key', $params['sync_key']);
-        } catch (Horde_Db_Exception $e) {
-            // Might exist already if the last sync attempt failed.
-            $this->_logger->notice(
-                sprintf(
-                    'STATE: Error saving state, checking if this is due to previous synckey %s not being accepted by client.',
-                    $this->_syncKey
-                )
-            );
+        $this->_saveSyncStateRow($params);
+    }
+
+    /**
+     * Persist sync state using Horde_Db (update, else insert).
+     *
+     * Avoids DELETE+INSERT and database-specific UPSERT syntax. Concurrent
+     * PING/SYNC requests for the same sync_key may race; a failed insert is
+     * retried as an update when the row already exists.
+     *
+     * @param array $params  Column data for horde_activesync_state.
+     *
+     * @throws Horde_ActiveSync_Exception
+     */
+    protected function _saveSyncStateRow(array $params)
+    {
+        $where = ['sync_key = ?', [$params['sync_key']]];
+        $started = false;
+
+        if (!$this->_db->transactionStarted()) {
+            $this->_db->beginDbTransaction();
+            $started = true;
         }
 
         try {
-            $this->_db->delete('DELETE FROM ' . $this->_syncStateTable . ' WHERE sync_key = ?', [$this->_syncKey]);
-            $this->_db->insertBlob($this->_syncStateTable, $params, 'sync_key', $params['sync_key']);
+            if ($this->_db->updateBlob($this->_syncStateTable, $params, $where)) {
+                if ($started) {
+                    $this->_db->commitDbTransaction();
+                }
+                return;
+            }
+
+            try {
+                $this->_db->insertBlob(
+                    $this->_syncStateTable,
+                    $params,
+                    'sync_key',
+                    $params['sync_key']
+                );
+            } catch (Horde_Db_Exception $e) {
+                if (!$this->_syncStateExists($params['sync_key'])) {
+                    throw $e;
+                }
+
+                Horde::log(
+                    'STATE: Concurrent insert for synckey '
+                    . $params['sync_key']
+                    . '; updating existing row.',
+                    'DEBUG'
+                );
+
+                if (!$this->_db->updateBlob($this->_syncStateTable, $params, $where)) {
+                    throw $e;
+                }
+            }
+
+            if ($started) {
+                $this->_db->commitDbTransaction();
+            }
         } catch (Horde_Db_Exception $e) {
-            $this->_logger->err(
-                sprintf(
-                    'STATE: Unrecoverable error while saving state for synckey %s: %s',
-                    $this->_syncKey,
-                    $e->getMessage()
-                )
-            );
+            if ($started) {
+                try {
+                    $this->_db->rollbackDbTransaction();
+                } catch (Horde_Db_Exception $e2) {
+                }
+            }
+
+            Horde::log($e, 'ERR');
             throw new Horde_ActiveSync_Exception($e);
         }
+    }
+
+    /**
+     * Check if a sync state row exists for the given sync key.
+     *
+     * @param string $syncKey  The sync key.
+     *
+     * @return boolean
+     * @throws Horde_Db_Exception
+     */
+    protected function _syncStateExists($syncKey)
+    {
+        return (bool) $this->_db->selectValue(
+            sprintf(
+                'SELECT 1 FROM %s WHERE sync_key = ?',
+                $this->_db->quoteTableName($this->_syncStateTable)
+            ),
+            [$syncKey]
+        );
     }
 
     /**
