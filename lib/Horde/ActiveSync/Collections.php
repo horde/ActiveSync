@@ -1226,9 +1226,22 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                 try {
                     $this->initCollectionState($collection, true);
                 } catch (Horde_ActiveSync_Exception_StateGone $e) {
+                    if (!empty($options['pingable'])) {
+                        $this->_logger->notice(
+                            sprintf(
+                                'COLLECTIONS: State not found for %s during PING; dropping orphan collection from cache.',
+                                $id
+                            )
+                        );
+                        $this->_cache->removePingableCollection($id);
+                        $this->_cache->removeCollection($id, true);
+                        unset($this->_collections[$id]);
+                        $this->save();
+                        continue;
+                    }
                     $this->_logger->notice(
                         sprintf(
-                            'COLLECTIONS: State not found for %s. Continuing by rquesting a SYNC.',
+                            'COLLECTIONS: State not found for %s. Continuing by requesting a SYNC.',
                             $id
                         )
                     );
