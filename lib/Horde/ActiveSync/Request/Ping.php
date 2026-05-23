@@ -143,10 +143,22 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
             $this->_logger->info('Handling empty PING request.');
             $isEmpty = true;
             $collections->loadCollectionsFromCache();
+            $collections->restorePingableCollectionsFromCache();
             if ($collections->collectionCount() == 0
                 || !$collections->havePingableCollections()) {
-                $this->_logger->warn('Empty PING request with no cached collections. Request full PING.');
-                $this->_statusCode = self::STATUS_MISSING;
+                if ($collections->collectionsNeedFolderResync()
+                    || ($this->_device->version >= Horde_ActiveSync::VERSION_TWELVEONE
+                        && !$collections->haveHierarchy())) {
+                    $this->_logger->info(
+                        'Empty PING with stale folder or hierarchy state; requesting FolderSync.'
+                    );
+                    $this->_statusCode = self::STATUS_FOLDERSYNCREQD;
+                } else {
+                    $this->_logger->warn(
+                        'Empty PING request with no cached collections. Request full PING.'
+                    );
+                    $this->_statusCode = self::STATUS_MISSING;
+                }
                 $this->_handleGlobalError();
                 return true;
             }
@@ -162,6 +174,7 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
             }
             $this->_logger->meta(sprintf('Actual heartbeat value in use is %s.', $heartbeat));
             if ($this->_decoder->getElementStartTag(self::FOLDERS)) {
+                $pingCollectionsLoaded = false;
                 while ($this->_decoder->getElementStartTag(self::FOLDER)) {
                     $collection = [];
                     if ($this->_decoder->getElementStartTag(self::SERVERENTRYID)) {
@@ -181,14 +194,43 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
                         // iOS clients that request collections in PING before
                         // they issue an initial SYNC for them.
                         $collections->addCollection($collection, true);
+                        $pingCollectionsLoaded = true;
                     } catch (Horde_ActiveSync_Exception_StateGone $e) {
                     }
                 }
 
                 // Since PING sends all or none (no PARTIAL) we update the
                 // pingable flags so we have it for an empty PING.
-                $collections->validateFromCache();
-                $collections->updatePingableFlag();
+                if ($pingCollectionsLoaded) {
+                    $collections->validateFromCache();
+                    $collections->updatePingableFlag();
+                } else {
+                    // Outlook and others may list folders in PING before a
+                    // synckey exists; do not clear pingable flags on cached
+                    // collections. Fall back to the last known PING set.
+                    $this->_logger->info(
+                        'No collections loaded from explicit PING folder list; using cached collections.'
+                    );
+                    $collections->loadCollectionsFromCache();
+                    $collections->restorePingableCollectionsFromCache();
+                    if ($collections->collectionCount() == 0) {
+                        if ($collections->collectionsNeedFolderResync()
+                            || ($this->_device->version >= Horde_ActiveSync::VERSION_TWELVEONE
+                                && !$collections->haveHierarchy())) {
+                            $this->_logger->info(
+                                'Explicit PING with stale folder or hierarchy state; requesting FolderSync.'
+                            );
+                            $this->_statusCode = self::STATUS_FOLDERSYNCREQD;
+                        } else {
+                            $this->_logger->warn(
+                                'Explicit PING request with no loadable collections.'
+                            );
+                            $this->_statusCode = self::STATUS_MISSING;
+                        }
+                        $this->_handleGlobalError();
+                        return true;
+                    }
+                }
 
                 if (!$this->_decoder->getElementEndTag()) {
                     throw new Horde_ActiveSync_Exception('Protocol Error');
@@ -246,12 +288,14 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
                         if ($this->_device->version < Horde_ActiveSync::VERSION_FOURTEEN) {
                             $this->_logger->warn('Version is < 14.0, returning false since we have no PINGABLE collections.');
                             return false;
-                        } else {
-                            $this->_logger->warn('Version is >= 14.0 returning status code 132 since we have no PINGABLE collections.');
-                            $this->_statusCode = Horde_ActiveSync_Status::STATEFILE_NOT_FOUND;
-                            $this->_handleGlobalError();
-                            return true;
                         }
+
+                        $this->_logger->warn(
+                            'No PINGABLE collections; requesting FolderSync instead of status 132.'
+                        );
+                        $this->_statusCode = self::STATUS_FOLDERSYNCREQD;
+                        $this->_handleGlobalError();
+                        return true;
                 }
             } elseif ($changes) {
                 $collections->save(true);
