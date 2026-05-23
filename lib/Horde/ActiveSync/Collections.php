@@ -1171,7 +1171,8 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
             return self::COLLECTION_ERR_SERVER;
         }
 
-        if (!$this->haveHierarchy()) {
+        if ($this->_as->device->version >= Horde_ActiveSync::VERSION_TWELVEONE
+            && !$this->haveHierarchy()) {
             $this->_logger->info(
                 'COLLECTIONS: Hierarchy sync required, terminating pollForChanges.'
             );
