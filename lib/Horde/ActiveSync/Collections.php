@@ -666,7 +666,8 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
      */
     public function haveHierarchy()
     {
-        return isset($this->_cache->hierarchy);
+        return !empty($this->_cache->hierarchy)
+            && $this->_cache->hierarchy !== '0';
     }
 
     /**
@@ -1163,12 +1164,25 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
             )
         );
 
-        // If pinging, make sure we have pingable collections. Note we can't
-        // filter on them here because the collections might change during the
-        // loop below.
-        if (!empty($options['pingable']) && !$this->havePingableCollections()) {
-            $this->_logger->err('COLLECTIONS: No pingable collections.');
-            return self::COLLECTION_ERR_SERVER;
+        if (!empty($options['pingable'])) {
+            if ($this->collectionsNeedFolderResync()) {
+                return self::COLLECTION_ERR_FOLDERSYNC_REQUIRED;
+            }
+
+            $this->restorePingableCollectionsFromCache();
+
+            // If pinging, make sure we have pingable collections. Note we can't
+            // filter on them here because the collections might change during the
+            // loop below.
+            if (!$this->havePingableCollections()) {
+                $this->_logger->err('COLLECTIONS: No pingable collections.');
+                if ($this->_as->device->version >= Horde_ActiveSync::VERSION_TWELVEONE
+                    && !$this->haveHierarchy()) {
+                    return self::COLLECTION_ERR_FOLDERSYNC_REQUIRED;
+                }
+
+                return self::COLLECTION_ERR_SERVER;
+            }
         }
 
         if ($this->_as->device->version >= Horde_ActiveSync::VERSION_TWELVEONE
@@ -1408,12 +1422,108 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
     }
 
     /**
+     * True if a collection has item sync state but no folder cache entry.
+     *
+     * The client must run FolderSync to remap folder ids (common after a
+     * partial cache reset or hierarchy invalidation).
+     *
+     * @return boolean
+     */
+    public function collectionsNeedFolderResync()
+    {
+        foreach ($this->_cache->getCollections(false) as $id => $collection) {
+            $synckey = $collection['synckey'] ?? '';
+            if ($synckey === '' && !empty($collection['lastsynckey'])) {
+                $synckey = $collection['lastsynckey'];
+            }
+            if ($synckey === '' || $synckey === '0') {
+                continue;
+            }
+            if (!$this->_cache->getFolder($id)) {
+                $this->_logger->info(
+                    sprintf(
+                        'COLLECTIONS: Collection %s has sync state but no folder cache entry; FolderSync required.',
+                        $id
+                    )
+                );
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Re-mark collections that have synckeys as PINGable.
+     *
+     * Outlook and similar clients may send explicit PING folder lists before
+     * synckeys exist; a previous request must not leave the device with no
+     * pingable collections until the user resets the account.
+     *
+     * @return boolean  True if the sync cache was updated.
+     */
+    public function restorePingableCollectionsFromCache()
+    {
+        $updated = false;
+
+        foreach ($this->_cache->getCollections(false) as $id => $collection) {
+            $synckey = $collection['synckey'] ?? '';
+            if ($synckey === '' && !empty($collection['lastsynckey'])) {
+                $synckey = $collection['lastsynckey'];
+            }
+            if ($synckey === '' || $synckey === '0' || !$this->_cache->getFolder($id)) {
+                continue;
+            }
+
+            if (!$this->_cache->collectionIsPingable($id)) {
+                $this->_cache->setPingableCollection($id);
+                $updated = true;
+            }
+
+            if (!isset($this->_collections[$id])) {
+                if (empty($collection['class'])) {
+                    try {
+                        $collection['class'] = $this->getCollectionClass($id);
+                    } catch (Horde_ActiveSync_Exception $e) {
+                        continue;
+                    }
+                }
+                if (empty($collection['serverid'])) {
+                    try {
+                        $collection['serverid'] = $this->getBackendIdForFolderUid($id);
+                    } catch (Horde_ActiveSync_Exception $e) {
+                        continue;
+                    }
+                }
+                if (empty($collection['synckey']) && !empty($collection['lastsynckey'])) {
+                    $collection['synckey'] = $collection['lastsynckey'];
+                }
+                $this->_collections[$id] = $collection;
+            }
+        }
+
+        if ($updated) {
+            $this->save();
+        }
+
+        return $updated;
+    }
+
+    /**
      * Marks all loaded collections with a synckey as pingable.
      */
     public function updatePingableFlag()
     {
+        if (!count($this->_collections)) {
+            return;
+        }
+
         $collections = $this->_cache->getCollections(false);
         foreach ($collections as $id => $collection) {
+            if (!isset($this->_collections[$id])) {
+                continue;
+            }
             if (!empty($this->_collections[$id]['synckey'])) {
                 $this->_logger->meta(
                     sprintf(
