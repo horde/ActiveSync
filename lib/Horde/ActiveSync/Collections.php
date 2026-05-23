@@ -1171,6 +1171,13 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
             return self::COLLECTION_ERR_SERVER;
         }
 
+        if (!$this->haveHierarchy()) {
+            $this->_logger->info(
+                'COLLECTIONS: Hierarchy sync required, terminating pollForChanges.'
+            );
+            return self::COLLECTION_ERR_FOLDERSYNC_REQUIRED;
+        }
+
         // Need to update AND SAVE the timestamp for race conditions to be
         // detected.
         $this->lasthbsyncstarted = $started;
