@@ -210,6 +210,16 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
 
         // Start waiting for changes, but only if we don't have any errors
         if ($this->_statusCode == self::STATUS_NOCHANGES) {
+            if ($this->_device->version >= Horde_ActiveSync::VERSION_TWELVEONE
+                && !$collections->haveHierarchy()) {
+                $this->_logger->info(
+                    'No HIERARCHY SYNCKEY in sync_cache during PING, requesting FolderSync.'
+                );
+                $this->_statusCode = self::STATUS_FOLDERSYNCREQD;
+                $this->_handleGlobalError();
+                return true;
+            }
+
             $changes = $collections->pollForChanges($heartbeat, $interval, ['pingable' => true]);
             if ($changes !== true && $changes !== false) {
                 switch ($changes) {
