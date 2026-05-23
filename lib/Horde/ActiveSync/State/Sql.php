@@ -461,6 +461,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                     throw $e;
                 }
 
+                // TODO: Switch to DI PSR-3 Logger
                 Horde::log(
                     'STATE: Concurrent insert for synckey '
                     . $params['sync_key']
