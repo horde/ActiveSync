@@ -218,35 +218,45 @@ class Horde_ActiveSync_Utils
      */
     public static function ensureUtf8($data, $from_charset)
     {
-        $text = Horde_String::convertCharset($data, $from_charset, 'UTF-8');
-        if (!Horde_String::validUtf8($text)) {
-            $test_charsets = [
-                'windows-1252',
-                'UTF-8',
-            ];
-            foreach ($test_charsets as $charset) {
-                if ($charset != $from_charset) {
+        try {
+            $text = Horde_String::convertCharset($data, $from_charset, 'UTF-8');
+            if (Horde_String::validUtf8($text)) {
+                return $text;
+            }
+        } catch (RuntimeException $e) {
+            // Fall through to alternate charsets below.
+        }
+
+        $test_charsets = [
+            'windows-1252',
+            'UTF-8',
+        ];
+        foreach ($test_charsets as $charset) {
+            if ($charset != $from_charset) {
+                try {
                     $text = Horde_String::convertCharset($data, $charset, 'UTF-8');
                     if (Horde_String::validUtf8($text)) {
                         return $text;
                     }
+                } catch (RuntimeException $e) {
                 }
             }
-            // Invalid UTF-8 still found. Strip out non 7-bit characters, or if
-            // that fails, force a conversion to UTF-8 as a last resort. Need
-            // to break string into smaller chunks to avoid hitting
-            // https://bugs.php.net/bug.php?id=37793
-            $chunk_size = 4000;
-            $text = '';
-            while ($data !== false && strlen($data)) {
-                $test = self::_stripNon7BitChars(substr($data, 0, $chunk_size));
-                if ($test !== false) {
-                    $text .= $test;
-                } else {
-                    return Horde_String::convertCharset($data, $from_charset, 'UTF-8', true);
-                }
-                $data = substr($data, $chunk_size);
+        }
+
+        // Invalid UTF-8 still found. Strip out non 7-bit characters, or if
+        // that fails, force a conversion to UTF-8 as a last resort. Need
+        // to break string into smaller chunks to avoid hitting
+        // https://bugs.php.net/bug.php?id=37793
+        $chunk_size = 4000;
+        $text = '';
+        while ($data !== false && strlen($data)) {
+            $test = self::_stripNon7BitChars(substr($data, 0, $chunk_size));
+            if ($test !== false) {
+                $text .= $test;
+            } else {
+                return Horde_String::convertCharset($data, $from_charset, 'UTF-8', true);
             }
+            $data = substr($data, $chunk_size);
         }
 
         return $text;
