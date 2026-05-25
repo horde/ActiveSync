@@ -33,7 +33,18 @@ class DeviceTest extends TestCase
         $this->assertEquals(7, $device->getMajorVersion());
         $this->assertEquals(0, $device->getMinorVersion());
         $this->assertEquals(Horde_ActiveSync_Device::TYPE_IPOD, Horde_String::lower($device->deviceType));
-        $this->assertEquals(Horde_ActiveSync_Device::MULTIPLEX_NOTES, $device->multiplex);
+        $this->assertEquals(0, $device->multiplex);
+
+        $fixture = [
+            'deviceType' => 'iPhone',
+            'userAgent' => 'Apple-iPhone6C1/1104.201',
+            'properties' => [
+                Horde_ActiveSync_Device::OS => 'iOS 26.0',
+                Horde_ActiveSync_Device::MULTIPLEX => Horde_ActiveSync_Device::MULTIPLEX_NOTES,
+            ],
+        ];
+        $device = new Horde_ActiveSync_Device($state, $fixture);
+        $this->assertEquals(0, $device->multiplex);
 
         $fixture = [
             'deviceType' => 'iPhone',
@@ -43,7 +54,7 @@ class DeviceTest extends TestCase
         $this->assertEquals(6, $device->getMajorVersion());
         $this->assertEquals(1, $device->getMinorVersion());
         $this->assertEquals(Horde_ActiveSync_Device::TYPE_IPHONE, Horde_String::lower($device->deviceType));
-        $this->assertEquals(Horde_ActiveSync_Device::MULTIPLEX_NOTES, $device->multiplex);
+        $this->assertEquals(0, $device->multiplex);
         $this->assertEquals(false, $device->hasQuirk(Horde_ActiveSync_Device::QUIRK_NEEDS_SUPPORTED_PICTURE_TAG));
 
         $fixture = [
@@ -64,7 +75,7 @@ class DeviceTest extends TestCase
         $this->assertEquals(8, $device->getMajorVersion());
         $this->assertEquals(1, $device->getMinorVersion());
         $this->assertEquals(Horde_ActiveSync_Device::TYPE_IPAD, Horde_String::lower($device->deviceType));
-        $this->assertEquals(Horde_ActiveSync_Device::MULTIPLEX_NOTES, $device->multiplex);
+        $this->assertEquals(0, $device->multiplex);
 
         $fixture = [
             'deviceType' => 'iPad',
@@ -75,7 +86,7 @@ class DeviceTest extends TestCase
         $this->assertEquals(8, $device->getMajorVersion());
         $this->assertEquals(3, $device->getMinorVersion());
         $this->assertEquals(Horde_ActiveSync_Device::TYPE_IPAD, Horde_String::lower($device->deviceType));
-        $this->assertEquals(Horde_ActiveSync_Device::MULTIPLEX_NOTES, $device->multiplex);
+        $this->assertEquals(0, $device->multiplex);
 
         $fixture = [
             'deviceType' => 'iPhone',
@@ -86,7 +97,7 @@ class DeviceTest extends TestCase
         $this->assertEquals(9, $device->getMajorVersion());
         $this->assertEquals(0, $device->getMinorVersion());
         $this->assertEquals(Horde_ActiveSync_Device::TYPE_IPHONE, Horde_String::lower($device->deviceType));
-        $this->assertEquals(Horde_ActiveSync_Device::MULTIPLEX_NOTES, $device->multiplex);
+        $this->assertEquals(0, $device->multiplex);
 
 
         // Old Android.
