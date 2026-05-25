@@ -488,7 +488,7 @@ class Horde_ActiveSync_Connector_Importer
         $this->_state->updateState(
             Horde_ActiveSync::CHANGE_TYPE_DELETE,
             $change,
-            Horde_ActiveSync::CHANGE_ORIGIN_NA
+            Horde_ActiveSync::CHANGE_ORIGIN_PIM
         );
     }
 
