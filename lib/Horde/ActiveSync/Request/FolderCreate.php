@@ -220,8 +220,6 @@ class Horde_ActiveSync_Request_FolderCreate extends Horde_ActiveSync_Request_Bas
             $this->_encoder->endTag();
         }
 
-        $this->_encoder->endTag();
-
         if ($status == self::STATUS_SUCCESS) {
             $this->_state->setNewSyncKey($newsynckey);
             $this->_state->save();
