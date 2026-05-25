@@ -161,6 +161,11 @@ class Horde_ActiveSync_Device
                     $this->_sniffMultiplex();
                     $this->multiplex = $this->_properties['properties'][self::MULTIPLEX];
                     $this->save();
+                } elseif (!$this->_multiplexSet
+                    && $this->_isIos()
+                    && ($this->_properties['properties'][self::MULTIPLEX] & self::MULTIPLEX_NOTES)) {
+                    $this->multiplex = $this->_properties['properties'][self::MULTIPLEX] & ~self::MULTIPLEX_NOTES;
+                    $this->save(false);
                 }
                 // no break
             case self::ANNOUNCED_VERSION:
@@ -765,8 +770,8 @@ class Horde_ActiveSync_Device
     {
         $clientType = Horde_String::lower($this->clientType);
         if ($this->_isIos()) {
-            // iOS seems to support multiple collections for everything except Notes.
-            $this->_properties['properties'][self::MULTIPLEX] = Horde_ActiveSync_Device::MULTIPLEX_NOTES;
+            // Modern iOS versions support multiple Notes collections, however the collection managment is better done via web (app offers no functionbality)
+            $this->_properties['properties'][self::MULTIPLEX] = 0;
         } elseif ($clientType == self::TYPE_ANDROID) {
             // Special cases: These clients don't support non-multiplexed
             // collections. Samsung's native client and HTCOnemini2.
