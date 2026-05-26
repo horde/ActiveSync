@@ -401,7 +401,9 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
                 $atc = $this->_as->messageFactory('AirSyncBaseAttachment');
                 $atc->clientid = $clientid;
                 $atc->attname = $filereference;
-                $msg->airsyncbaseattachments[] = $atc;
+                $attachments = $msg->airsyncbaseattachments;
+                $attachments[] = $atc;
+                $msg->airsyncbaseattachments = $attachments;
             }
             $this->_encoder->startTag(Horde_ActiveSync::SYNC_DATA);
             $msg->encodeStream($this->_encoder);
