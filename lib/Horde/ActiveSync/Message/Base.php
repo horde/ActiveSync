@@ -482,11 +482,15 @@ class Horde_ActiveSync_Message_Base
                     }
 
                     // Assign the parsed value to the mapped attribute.
-                    if (!isset($this->{$map[self::KEY_ATTRIBUTE]})) {
-                        $this->{$map[self::KEY_ATTRIBUTE]} = [$decoded];
-                    } else {
-                        $this->{$map[self::KEY_ATTRIBUTE]}[] = $decoded;
+                    $attribute = $map[self::KEY_ATTRIBUTE];
+                    $values = isset($this->{$attribute})
+                        ? $this->{$attribute}
+                        : [];
+                    if (!is_array($values)) {
+                        $values = [];
                     }
+                    $values[] = $decoded;
+                    $this->{$attribute} = $values;
 
                     // Get the end tag of this attribute node.
                     if (!$decoder->getElementEndTag()) {
