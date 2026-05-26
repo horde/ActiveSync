@@ -362,6 +362,10 @@ class Horde_ActiveSync_Connector_Importer
             }
         );
         $collections = $this->_as->getCollectionsObject();
+        $collectionClass = $class ?: $collections->getCollectionClass($this->_folderUid);
+        if (empty($collectionClass) || $collectionClass == 'RI') {
+            $collectionClass = Horde_ActiveSync::CLASS_EMAIL;
+        }
         $dst = $collections->getBackendIdForFolderUid($dst);
         $results = $this->_as->driver->moveMessage($this->_folderId, $uids, $dst);
 
@@ -383,7 +387,7 @@ class Horde_ActiveSync_Connector_Importer
             $change['id'] = $results[$uid];
             $change['mod'] = $mod;
             $change['serverid'] = $dst;
-            $change['class'] = Horde_ActiveSync::CLASS_EMAIL;
+            $change['class'] = $collectionClass;
             $change['folderuid'] = $this->_folderUid;
             $this->_state->updateState(
                 Horde_ActiveSync::CHANGE_TYPE_CHANGE,
