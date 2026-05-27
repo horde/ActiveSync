@@ -628,7 +628,7 @@ class Horde_ActiveSync_Wbxml
                 0x1e => 'ClientId',
                 0x1f => 'Content',
                 0x20 => 'Location',
-                0x21 => 'Annontation',
+                0x21 => 'Annotation',
                 0x22 => 'Street',
                 0x23 => 'City',
                 0x24 => 'State',
