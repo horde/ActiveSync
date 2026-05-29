@@ -746,13 +746,32 @@ class Horde_ActiveSync_Imap_Message
     {
         $date = $this->envelope->date;
 
-        // Newer IMAP envelope handling may provide a Unix timestamp as string.
-        // Horde_Date accepts int timestamps but not numeric timestamp strings.
-        if (is_string($date) && ctype_digit($date)) {
-            return new Horde_Date((int) $date);
+        if ($date instanceof Horde_Imap_Client_DateTime) {
+            if (!$date->error()) {
+                return new Horde_Date($date->getTimestamp());
+            }
+
+            // Unparseable envelope date (__toString() is "0"); try Date header.
+            $date = $this->getHeaders()->getValue('date') ?: null;
         }
 
-        return new Horde_Date((string) $date);
+        // Unix timestamp as string (see horde/ActiveSync#15).
+        if (is_string($date) && ctype_digit($date)) {
+            $ts = (int) $date;
+            if ($ts) {
+                return new Horde_Date($ts);
+            }
+            $date = null;
+        }
+
+        if ($date) {
+            try {
+                return new Horde_Date($date);
+            } catch (Horde_Date_Exception $e) {
+            }
+        }
+
+        return new Horde_Date();
     }
 
     /**
