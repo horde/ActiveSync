@@ -473,11 +473,12 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
                         throw new Horde_ActiveSync_Exception($e);
                     }
 
-                    if (!is_array($atparams)) {
+                    if (!is_array($atparams) || !isset($atparams[0])) {
                         throw new Horde_Icalendar_Exception('Unexpected value');
                     }
 
-                    return $atparams[0]['PARTSTAT'];
+                    // PARTSTAT is optional on ATTENDEE (RFC 5545 default: NEEDS-ACTION).
+                    return $atparams[0]['PARTSTAT'] ?? 'NEEDS-ACTION';
             }
         }
     }
