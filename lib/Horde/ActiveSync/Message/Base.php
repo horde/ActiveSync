@@ -483,9 +483,8 @@ class Horde_ActiveSync_Message_Base
 
                     // Assign the parsed value to the mapped attribute.
                     $attribute = $map[self::KEY_ATTRIBUTE];
-                    $values = isset($this->{$attribute})
-                        ? $this->{$attribute}
-                        : [];
+                    $values = $this->{$attribute}
+                        ?? [];
                     if (!is_array($values)) {
                         $values = [];
                     }
