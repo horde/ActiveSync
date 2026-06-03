@@ -126,11 +126,7 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
      */
     public function fromvEvent($vCal)
     {
-        try {
-            $method = $vCal->getAttribute('METHOD');
-        } catch (Horde_Icalendar_Exception $e) {
-            throw new Horde_ActiveSync_Exception('Unable to parse vEvent');
-        }
+        $method = Horde_String::upper($vCal->getAttributeDefault('METHOD', 'REQUEST'));
         foreach ($vCal->getComponents() as $component) {
             switch ($component->getType()) {
                 case 'vEvent':
