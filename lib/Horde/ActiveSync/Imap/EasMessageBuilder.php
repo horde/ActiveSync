@@ -326,13 +326,9 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
             return;
         }
 
-        try {
-            $method = $vCal->getAttribute('METHOD');
-            $this->_easMessage->contentclass = 'urn:content-classes:calendarmessage';
-        } catch (Horde_Icalendar_Exception $e) {
-            $this->_logger->err($e->getMessage());
-            return;
-        }
+        // Many senders omit METHOD on text/calendar parts; treat as REQUEST (Bug #12083).
+        $method = Horde_String::upper($vCal->getAttributeDefault('METHOD', 'REQUEST'));
+        $this->_easMessage->contentclass = 'urn:content-classes:calendarmessage';
 
         switch ($method) {
             case 'REQUEST':
