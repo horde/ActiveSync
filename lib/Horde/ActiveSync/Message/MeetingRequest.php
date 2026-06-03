@@ -262,7 +262,6 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
                 $this->reminder = -intval($trigger);
             }
         }
-
     }
 
     /**
