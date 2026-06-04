@@ -9,12 +9,14 @@
  */
 
 namespace Horde\ActiveSync\StateTest\Sql;
+use PHPUnit\Framework\Attributes\CoversNothing;
 
 use Horde\ActiveSync\StateTest\Sql\TestBase;
 
 /**
  * @coversNothing
  */
+#[CoversNothing]
 class MysqliTest extends TestBase
 {
     public static function setUpBeforeClass(): void

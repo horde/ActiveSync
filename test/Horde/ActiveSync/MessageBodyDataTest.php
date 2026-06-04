@@ -9,6 +9,7 @@
  */
 
 namespace Horde\ActiveSync;
+use PHPUnit\Framework\Attributes\CoversNothing;
 
 use Horde_Test_Case as TestCase;
 use Horde\ActiveSync\Factory\TestServer;
@@ -16,6 +17,7 @@ use Horde\ActiveSync\Factory\TestServer;
 /**
  * @coversNothing
  */
+#[CoversNothing]
 class MessageBodyDataTest extends TestCase
 {
     public function testReturnProperlyTruncatedHtml()

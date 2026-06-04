@@ -65,7 +65,7 @@ class Horde_ActiveSync_Mime_Iterator implements Countable, Iterator
      *
      * @return integer  Number of message parts.
      */
-    public function count()
+    public function count() : int
     {
         return count(iterator_to_array($this));
     }
@@ -125,7 +125,7 @@ class Horde_ActiveSync_Mime_Iterator implements Countable, Iterator
 
     /**
      */
-    public function current()
+    public function current() : mixed
     {
         return $this->valid()
             ? $this->_state->current
@@ -134,7 +134,7 @@ class Horde_ActiveSync_Mime_Iterator implements Countable, Iterator
 
     /**
      */
-    public function key()
+    public function key() : mixed
     {
         return ($curr = $this->current())
             ? $curr->getMimeId()
@@ -143,10 +143,11 @@ class Horde_ActiveSync_Mime_Iterator implements Countable, Iterator
 
     /**
      */
-    public function next()
+    #[\ReturnTypeWillChange]
+    public function next() 
     {
         if (!isset($this->_state)) {
-            return;
+            return null;
         }
 
         $out = $this->_state->current->getPartByIndex($this->_state->index++);
@@ -173,7 +174,7 @@ class Horde_ActiveSync_Mime_Iterator implements Countable, Iterator
 
     /**
      */
-    public function rewind()
+    public function rewind() : void
     {
         $this->_state = new stdClass();
         $this->_state->current = $this->_part;
@@ -183,7 +184,7 @@ class Horde_ActiveSync_Mime_Iterator implements Countable, Iterator
 
     /**
      */
-    public function valid()
+    public function valid() : bool
     {
         return !empty($this->_state);
     }

@@ -9,12 +9,14 @@
  */
 
 namespace Horde\ActiveSync;
+use PHPUnit\Framework\Attributes\CoversNothing;
 
 use Horde_Test_Case as TestCase;
 
 /**
  * @coversNothing
  */
+#[CoversNothing]
 class InviteTest extends TestCase
 {
     protected $_oldtz;

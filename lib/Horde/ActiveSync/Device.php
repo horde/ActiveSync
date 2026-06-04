@@ -182,9 +182,7 @@ class Horde_ActiveSync_Device
                 }
                 break;
             case self::OS:
-                if (isset($this->_properties['properties'][self::OS])) {
-                    return $this->_properties['properties'][self::OS];
-                }
+                return $this->_properties['properties'][self::OS] ? $this->_properties['properties'][self::OS] : '';
                 break;
             case 'properties':
                 if (!isset($this->_properties['properties'])) {
@@ -755,7 +753,7 @@ class Horde_ActiveSync_Device
      */
     protected function _isNine()
     {
-        if (!ctype_xdigit($this->id)) {
+        if (!ctype_xdigit($this->id ?? '')) {
             return false;
         }
         return stripos(pack('H*', $this->id), 'nine') === 0;
@@ -776,7 +774,7 @@ class Horde_ActiveSync_Device
             // Special cases: These clients don't support non-multiplexed
             // collections. Samsung's native client and HTCOnemini2.
             if (stripos($this->deviceType, 'samsung') === 0
-                || stripos($this->model, 'HTCOnemini2') === 0
+                || stripos(($this->model ?? ''), 'HTCOnemini2') === 0
                 || $this->deviceType == 'HTCOnemini2') {
                 $this->_properties['properties'][self::MULTIPLEX]
                     = Horde_ActiveSync_Device::MULTIPLEX_CONTACTS

@@ -9,6 +9,7 @@
  */
 
 namespace Horde\ActiveSync;
+use PHPUnit\Framework\Attributes\CoversNothing;
 
 use Horde_Test_Case as TestCase;
 use Horde_ActiveSync_Device;
@@ -18,6 +19,7 @@ use Horde_String;
 /**
  * @coversNothing
  */
+#[CoversNothing]
 class DeviceTest extends TestCase
 {
     public function testDeviceDetection()
