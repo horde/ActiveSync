@@ -9,12 +9,12 @@
  */
 
 namespace Horde\ActiveSync\StateTest\Mongo;
+use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\Depends;
 
 use Horde\ActiveSync\StateTest\TestBase;
 
-/**
- * @coversNothing
- */
+#[CoversNothing]
 class BaseTest extends TestBase
 {
     protected static $mongo;
@@ -28,6 +28,7 @@ class BaseTest extends TestBase
     /**
      * @depends testGetDeviceInfo
      */
+    #[Depends('testGetDeviceInfo')]
     public function testListDevices()
     {
         $this->_testListDevices();
@@ -36,6 +37,7 @@ class BaseTest extends TestBase
     /**
      * @depends testListDevices
      */
+    #[Depends('testListDevices')]
     public function testPolicyKeys()
     {
         $this->_testPolicyKeys();
@@ -44,6 +46,7 @@ class BaseTest extends TestBase
     /**
      * @depends testListDevices
      */
+    #[Depends('testListDevices')]
     public function testDuplicatePIMAddition()
     {
         // @TODO. For now, cheat and add the data directly to the db.
@@ -61,6 +64,7 @@ class BaseTest extends TestBase
     /**
      * @depends testGetDeviceInfo
      */
+    #[Depends('testGetDeviceInfo')]
     public function testCacheInitialState()
     {
         $this->_testCacheInitialState();
@@ -69,6 +73,7 @@ class BaseTest extends TestBase
     /**
      * @depends testCacheInitialState
      */
+    #[Depends('testCacheInitialState')]
     public function testCacheFolders()
     {
         $this->_testCacheFolders();
@@ -77,6 +82,7 @@ class BaseTest extends TestBase
     /**
      * @depends testCacheFolders
      */
+    #[Depends('testCacheFolders')]
     public function testCacheDataRestrictFields()
     {
         $this->_testCacheDataRestrictFields();
@@ -85,6 +91,7 @@ class BaseTest extends TestBase
     /**
      * @depends testCacheFolders
      */
+    #[Depends('testCacheFolders')]
     public function testCacheFoldersPersistence()
     {
         $this->_testCacheFoldersPersistence();
@@ -93,6 +100,7 @@ class BaseTest extends TestBase
     /**
      * @depends testCacheFolders
      */
+    #[Depends('testCacheFolders')]
     public function testCacheUniqueness()
     {
         $this->_testCacheUniqueness();
@@ -101,6 +109,7 @@ class BaseTest extends TestBase
     /**
      * @depends testCacheFolders
      */
+    #[Depends('testCacheFolders')]
     public function testCacheCollections()
     {
         $this->_testCacheCollections();
@@ -109,6 +118,7 @@ class BaseTest extends TestBase
     /**
      * @depends testCacheCollections
      */
+    #[Depends('testCacheCollections')]
     public function testLoadCollectionsFromCache()
     {
         return $this->_testLoadCollectionsFromCache();
@@ -117,6 +127,7 @@ class BaseTest extends TestBase
     /**
      * @depends testCacheCollections
      */
+    #[Depends('testCacheCollections')]
     public function testGettingImapId()
     {
         $this->_testGettingImapId();
@@ -125,6 +136,7 @@ class BaseTest extends TestBase
     /**
      * @depends testCacheCollections
      */
+    #[Depends('testCacheCollections')]
     public function testCacheRefreshCollections()
     {
         $this->_testCacheRefreshCollections();
@@ -133,6 +145,7 @@ class BaseTest extends TestBase
     /**
      * @depends testCacheCollections
      */
+    #[Depends('testCacheCollections')]
     public function testCollectionsFromCache()
     {
         $this->_testCollectionsFromCache();
@@ -141,6 +154,7 @@ class BaseTest extends TestBase
     /**
      * @depends testCacheFolders
      */
+    #[Depends('testCacheFolders')]
     public function testGetStateWithNoState()
     {
         $this->_testGetStateWithNoState();
@@ -149,6 +163,7 @@ class BaseTest extends TestBase
     /**
      * @depends testCollectionsFromCache
      */
+    #[Depends('testCollectionsFromCache')]
     public function testCollectionHandler()
     {
         $this->_testCollectionHandler();
@@ -157,6 +172,7 @@ class BaseTest extends TestBase
     /**
      * @depends testCollectionHandler
      */
+    #[Depends('testCollectionHandler')]
     public function testPartialSyncWithChangedCollections()
     {
         $this->_testPartialSyncWithChangedCollections();
@@ -165,6 +181,7 @@ class BaseTest extends TestBase
     /**
      * @depends testCollectionHandler
      */
+    #[Depends('testCollectionHandler')]
     public function testPartialSyncWithUnchangedCollections()
     {
         $this->_testPartialSyncWithUnchangedCollections();
@@ -173,6 +190,7 @@ class BaseTest extends TestBase
     /**
      * @depends testCollectionHandler
      */
+    #[Depends('testCollectionHandler')]
     public function testMissingCollections()
     {
         $this->_testMissingCollections();
@@ -181,6 +199,7 @@ class BaseTest extends TestBase
     /**
      * @depends testCollectionHandler
      */
+    #[Depends('testCollectionHandler')]
     public function testChangingFilterType()
     {
         $this->_testChangingFilterType();
@@ -189,6 +208,7 @@ class BaseTest extends TestBase
     /**
      * @depends testCollectionHandler
      */
+    #[Depends('testCollectionHandler')]
     public function testEmptyResponse()
     {
         $this->_testEmptyResponse();
@@ -197,6 +217,7 @@ class BaseTest extends TestBase
     /**
      * @depends testGetDeviceInfo
      */
+    #[Depends('testGetDeviceInfo')]
     public function testHierarchy()
     {
         $this->_testHierarchy();
@@ -205,6 +226,7 @@ class BaseTest extends TestBase
     /**
      * @depends testCollectionHandler
      */
+    #[Depends('testCollectionHandler')]
     public function testPartialSyncWithOnlyChangedHbInterval()
     {
         $this->_testPartialSyncWithOnlyChangedHbInterval();

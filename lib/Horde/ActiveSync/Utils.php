@@ -84,8 +84,10 @@ class Horde_ActiveSync_Utils
 
         // Remaining properties
         while (!feof($stream)) {
-            $tag = ord(fread($stream, 1));
-            $length = ord(fread($stream, 1));
+            $byte = fread($stream, 1);
+            $tag = ($byte !== '' && $byte !== false) ? ord($byte) : 0;
+            $byte = fread($stream, 1);
+            $length = ($byte !== '' && $byte !== false) ? ord($byte) : 0;
             if ($length > 0 || $tag == 7) {
                 switch ($tag) {
                     case 0:

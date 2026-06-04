@@ -9,6 +9,7 @@
  */
 
 namespace Horde\ActiveSync\StateTest\Sql\Pdo;
+use PHPUnit\Framework\Attributes\CoversNothing;
 
 use Horde\ActiveSync\StateTest\Sql\TestBase;
 use Horde_Test_Factory_Db;
@@ -16,6 +17,7 @@ use Horde_Test_Factory_Db;
 /**
  * @coversNothing
  */
+#[CoversNothing]
 class SqliteTest extends TestBase
 {
     public static function setUpBeforeClass(): void

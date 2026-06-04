@@ -9,6 +9,7 @@
  */
 
 namespace Horde\ActiveSync;
+use PHPUnit\Framework\Attributes\CoversNothing;
 
 use Horde_Test_Case as TestCase;
 use Horde\ActiveSync\Factory\TestServer;
@@ -17,6 +18,7 @@ use Horde_ActiveSync;
 /**
  * @coversNothing
  */
+#[CoversNothing]
 class ServerTest extends TestCase
 {
     public function testSupportedVersions()

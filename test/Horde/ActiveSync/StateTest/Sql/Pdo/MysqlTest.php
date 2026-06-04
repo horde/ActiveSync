@@ -9,6 +9,7 @@
  */
 
 namespace Horde\ActiveSync\StateTest\Sql\Pdo;
+use PHPUnit\Framework\Attributes\CoversNothing;
 
 use Horde\ActiveSync\StateTest\Sql\TestBase;
 use PDO;
@@ -16,6 +17,7 @@ use PDO;
 /**
  * @coversNothing
  */
+#[CoversNothing]
 class MysqlTest extends TestBase
 {
     public static function setUpBeforeClass(): void

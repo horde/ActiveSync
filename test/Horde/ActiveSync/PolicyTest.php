@@ -9,6 +9,7 @@
  */
 
 namespace Horde\ActiveSync;
+use PHPUnit\Framework\Attributes\CoversNothing;
 
 use Horde_Test_Case as TestCase;
 use Horde_ActiveSync_Wbxml_Encoder;
@@ -18,6 +19,7 @@ use Horde_ActiveSync_Policies;
 /**
  * @coversNothing
  */
+#[CoversNothing]
 class PolicyTest extends TestCase
 {
     public function testDefaultWbxml()

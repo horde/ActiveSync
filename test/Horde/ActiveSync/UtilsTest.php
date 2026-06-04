@@ -9,13 +9,14 @@
  */
 
 namespace Horde\ActiveSync;
-
+use PHPUnit\Framework\Attributes\CoversNothing;
 use Horde_Test_Case as TestCase;
 use Horde_ActiveSync_Utils;
 
 /**
  * @coversNothing
  */
+#[CoversNothing]
 class UtilsTest extends TestCase
 {
     public function testBase64Uri()

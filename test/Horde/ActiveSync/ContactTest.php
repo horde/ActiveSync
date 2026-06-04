@@ -9,6 +9,7 @@
  */
 
 namespace Horde\ActiveSync;
+use PHPUnit\Framework\Attributes\CoversNothing;
 
 use Horde_Test_Case as TestCase;
 use Horde_ActiveSync_Message_Contact;
@@ -19,6 +20,7 @@ use Horde_ActiveSync_SyncCache;
 /**
  * @coversNothing
  */
+#[CoversNothing]
 class ContactTest extends TestCase
 {
     /**
@@ -40,9 +42,12 @@ class ContactTest extends TestCase
     {
         $contact = new Horde_ActiveSync_Message_Contact();
         $this->assertEquals(0, count($contact->children));
-        $contact->children[] = 'blah';
+        $currentChildren = $contact->children ?? [];
+        $currentChildren[] =  'blah';
+        $contact->children = $currentChildren;
         $this->assertEquals(1, count($contact->children));
         $this->assertEquals('blah', array_pop($contact->children));
+
     }
 
     public function testPictureGhosted()

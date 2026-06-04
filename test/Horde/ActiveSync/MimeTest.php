@@ -9,6 +9,7 @@
  */
 
 namespace Horde\ActiveSync;
+use PHPUnit\Framework\Attributes\CoversNothing;
 
 use Horde_Test_Case as TestCase;
 use Horde_ActiveSync_Mime;
@@ -20,6 +21,7 @@ use Horde_ActiveSync_Mime_Iterator;
 /**
  * @coversNothing
  */
+#[CoversNothing]
 class MimeTest extends TestCase
 {
     public function testHasAttachmentsWithNoAttachment()

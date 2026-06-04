@@ -9,6 +9,7 @@
  */
 
 namespace Horde\ActiveSync;
+use PHPUnit\Framework\Attributes\CoversNothing;
 
 use Horde_Test_Case as TestCase;
 use Horde_ActiveSync_Log_Logger;
@@ -24,6 +25,7 @@ use Horde_Date_Recurrence;
 /**
  * @coversNothing
  */
+#[CoversNothing]
 class AppointmentTest extends TestCase
 {
     protected $_oldtz;
