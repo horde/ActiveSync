@@ -149,6 +149,90 @@ abstract class Horde_ActiveSync_State_Base
     }
 
     /**
+     * Validate deserialized sync_data for a collection SYNC request.
+     *
+     * Corrupt or FOLDERSYNC-shaped blobs (e.g. a:0:{}) must not be used as a
+     * Horde_ActiveSync_Folder_* object. Treat them as missing state so a fresh
+     * folder object is created instead of breaking PING/SYNC.
+     *
+     * @param mixed $data  Result of unserialize() on sync_data.
+     *
+     * @return mixed  The folder object, or false to create a new one.
+     */
+    protected function _normalizeSyncFolderData($data)
+    {
+        if ($this->_type != Horde_ActiveSync::REQUEST_TYPE_SYNC) {
+            return $data;
+        }
+
+        if ($data === false) {
+            return false;
+        }
+
+        if ($data instanceof Horde_ActiveSync_Folder_Base) {
+            return $data;
+        }
+
+        $this->_logger->warn(
+            sprintf(
+                'STATE: Invalid sync_data for collection %s (synckey %s); reinitializing folder state.',
+                !empty($this->_collection['id']) ? $this->_collection['id'] : 'unknown',
+                $this->_syncKey
+            )
+        );
+
+        return false;
+    }
+
+    /**
+     * Create an empty folder object for the current collection.
+     *
+     * @return Horde_ActiveSync_Folder_Base
+     */
+    protected function _createEmptySyncFolder()
+    {
+        if (!empty($this->_collection['class'])
+            && $this->_collection['class'] == Horde_ActiveSync::CLASS_EMAIL) {
+            return new Horde_ActiveSync_Folder_Imap(
+                $this->_collection['serverid'],
+                Horde_ActiveSync::CLASS_EMAIL
+            );
+        }
+
+        if (!empty($this->_collection['serverid'])
+            && $this->_collection['serverid'] == 'RI') {
+            return new Horde_ActiveSync_Folder_RI('RI', 'RI');
+        }
+
+        return new Horde_ActiveSync_Folder_Collection(
+            $this->_collection['serverid'],
+            $this->_collection['class']
+        );
+    }
+
+    /**
+     * Refuse to persist corrupt collection sync_data.
+     *
+     * @throws Horde_ActiveSync_Exception_StaleState
+     */
+    protected function _assertValidSyncFolderBeforeSave()
+    {
+        if ($this->_type != Horde_ActiveSync::REQUEST_TYPE_SYNC) {
+            return;
+        }
+
+        if (!isset($this->_folder) || !($this->_folder instanceof Horde_ActiveSync_Folder_Base)) {
+            throw new Horde_ActiveSync_Exception_StaleState(
+                sprintf(
+                    'Refusing to save invalid sync_data for collection %s (synckey %s).',
+                    !empty($this->_collection['id']) ? $this->_collection['id'] : 'unknown',
+                    $this->_syncKey
+                )
+            );
+        }
+    }
+
+    /**
      * Update the $oldKey syncState to $newKey.
      *
      * @param string $newKey

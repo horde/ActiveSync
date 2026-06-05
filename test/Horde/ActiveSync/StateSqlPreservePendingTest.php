@@ -52,6 +52,70 @@ class StateSqlPreservePendingTest extends TestCase
         $state->save(['preservePending' => true]);
     }
 
+    public function testLoadReinitializesCorruptEmptyArraySyncData()
+    {
+        $db = $this->getMockBuilder('Horde_Db_Adapter')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $state = new Horde_ActiveSync_State_Sql(['db' => $db]);
+        $ref = new \ReflectionClass($state);
+        foreach ([
+            '_type' => Horde_ActiveSync::REQUEST_TYPE_SYNC,
+            '_syncKey' => '{test}99',
+            '_collection' => [
+                'id' => 'Fea62ac31',
+                'class' => Horde_ActiveSync::CLASS_EMAIL,
+                'serverid' => 'INBOX',
+            ],
+        ] as $prop => $value) {
+            $p = $ref->getProperty($prop);
+            $p->setAccessible(true);
+            $p->setValue($state, $value);
+        }
+
+        $logger = $ref->getProperty('_logger');
+        $logger->setAccessible(true);
+        $logger->setValue(
+            $state,
+            new \Horde_ActiveSync_Log_Logger(new \Horde_Log_Handler_Null())
+        );
+
+        $normalize = $ref->getMethod('_normalizeSyncFolderData');
+        $normalize->setAccessible(true);
+        $this->assertFalse($normalize->invoke($state, []));
+
+        $create = $ref->getMethod('_createEmptySyncFolder');
+        $create->setAccessible(true);
+        $folderObj = $create->invoke($state);
+
+        $this->assertInstanceOf('Horde_ActiveSync_Folder_Imap', $folderObj);
+        $this->assertSame('INBOX', $folderObj->serverid());
+    }
+
+    public function testSaveRejectsInvalidEmailFolderState()
+    {
+        $db = $this->getMockBuilder('Horde_Db_Adapter')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $db->expects($this->never())->method('updateBlob');
+
+        $state = new Horde_ActiveSync_State_Sql(['db' => $db]);
+        $this->_primeSyncState(
+            $state,
+            new Horde_ActiveSync_Folder_Imap('INBOX', Horde_ActiveSync::CLASS_EMAIL),
+            ''
+        );
+
+        $ref = new \ReflectionClass($state);
+        $folder = $ref->getProperty('_folder');
+        $folder->setAccessible(true);
+        $folder->setValue($state, []);
+
+        $this->expectException('Horde_ActiveSync_Exception_StaleState');
+        $state->save();
+    }
+
     public function testSaveWithoutPreservePendingClearsSyncPending()
     {
         $folder = new Horde_ActiveSync_Folder_Imap('INBOX', Horde_ActiveSync::CLASS_EMAIL);

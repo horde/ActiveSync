@@ -316,14 +316,11 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                 )
             );
         } elseif ($this->_type == Horde_ActiveSync::REQUEST_TYPE_SYNC) {
-            // @TODO: This shouldn't default to an empty folder object,
-            // if we don't have the data, it's an exception.
+            $data = $this->_normalizeSyncFolderData($data);
             $this->_folder = (
                 $data !== false
                 ? $data
-                : ($this->_collection['class'] == Horde_ActiveSync::CLASS_EMAIL
-                    ? new Horde_ActiveSync_Folder_Imap($this->_collection['serverid'], Horde_ActiveSync::CLASS_EMAIL)
-                    : new Horde_ActiveSync_Folder_Collection($this->_collection['serverid'], $this->_collection['class']))
+                : $this->_createEmptySyncFolder()
             );
             $this->_changes = ($pending !== false) ? $pending : null;
             if ($this->_changes) {
@@ -383,6 +380,8 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
      */
     public function save(array $options = [])
     {
+        $this->_assertValidSyncFolderBeforeSave();
+
         // Prepare state and pending data
         if ($this->_type == Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC) {
             $data = (isset($this->_folder) ? serialize($this->_folder) : '');
