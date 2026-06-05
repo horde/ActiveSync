@@ -182,7 +182,9 @@ class Horde_ActiveSync_Device
                 }
                 break;
             case self::OS:
-                return $this->_properties['properties'][self::OS] ? $this->_properties['properties'][self::OS] : '';
+                if (isset($this->_properties['properties'][self::OS])) {
+                    return $this->_properties['properties'][self::OS];
+                }
                 break;
             case 'properties':
                 if (!isset($this->_properties['properties'])) {
