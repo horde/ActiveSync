@@ -12,6 +12,9 @@ namespace Horde\ActiveSync;
 use PHPUnit\Framework\Attributes\CoversNothing;
 
 use Horde_Test_Case as TestCase;
+use Horde_ActiveSync;
+use Horde_ActiveSync_Folder_Imap;
+use Horde_ActiveSync_Imap_Adapter;
 
 /**
  * @coversNothing
@@ -19,6 +22,43 @@ use Horde_Test_Case as TestCase;
 #[CoversNothing]
 class ImapAdapterTest extends TestCase
 {
+    /**
+     * BigFamily-style: stale SYNC modseq must not re-trigger PING once the
+     * PING watermark has caught up.
+     */
+    public function testPingUsesPingWatermarkNotSyncModseq()
+    {
+        $imap_client = $this->getMockBuilder('Horde_Imap_Client_Socket')
+            ->disableOriginalConstructor()
+            ->onlyMethods(['status'])
+            ->getMock();
+        $serverStatus = [
+            Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ => 6000,
+            'uidnext' => 8200,
+            'messages' => 7932,
+        ];
+        $imap_client->expects($this->once())
+            ->method('status')
+            ->willReturn($serverStatus);
+
+        $imap_factory = $this->_imapFactoryFixture($imap_client);
+        $adapter = new Horde_ActiveSync_Imap_Adapter(['factory' => $imap_factory]);
+
+        $folder = new Horde_ActiveSync_Folder_Imap('INBOX/BigFamily', Horde_ActiveSync::CLASS_EMAIL);
+        $folder->setStatus([
+            Horde_ActiveSync_Folder_Imap::UIDVALIDITY => 1267430887,
+            Horde_ActiveSync_Folder_Imap::UIDNEXT => 8200,
+            Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ => 5864,
+            Horde_ActiveSync_Folder_Imap::MESSAGES => 7932,
+        ]);
+        $folder->updateState();
+        $folder->acknowledgePingStatus($serverStatus);
+
+        $this->assertFalse($adapter->ping($folder));
+        $this->assertEquals(5864, $folder->modseq());
+        $this->assertEquals(6000, $folder->pingModseq());
+    }
+
     public function testBug13711()
     {
         $this->markTestIncomplete("Useless test without all the fixtures.");
@@ -28,8 +68,7 @@ class ImapAdapterTest extends TestCase
             ->method('fetch')
             ->will($this->_getFixturesFor13711());
 
-        $imap_factory = new Horde_ActiveSync_Stub_ImapFactory();
-        $imap_factory->fixture = $imap_client;
+        $imap_factory = $this->_imapFactoryFixture($imap_client);
         $adapter = new Horde_ActiveSync_Imap_Adapter(['factory' => $imap_factory]);
 
         $adapter->getMessages(
@@ -46,6 +85,38 @@ class ImapAdapterTest extends TestCase
                 'mimesupport' => Horde_ActiveSync::MIME_SUPPORT_ALL,
             ]
         );
+    }
+
+    protected function _imapFactoryFixture($imap_client)
+    {
+        return new class($imap_client) implements \Horde_ActiveSync_Interface_ImapFactory {
+            private $_imap;
+
+            public function __construct($imap)
+            {
+                $this->_imap = $imap;
+            }
+
+            public function getImapOb()
+            {
+                return $this->_imap;
+            }
+
+            public function getMailboxes($force = false)
+            {
+                return [];
+            }
+
+            public function getSpecialMailboxes()
+            {
+                return [];
+            }
+
+            public function getMsgFlags()
+            {
+                return [];
+            }
+        };
     }
 
     protected function _getFixturesFor13711()

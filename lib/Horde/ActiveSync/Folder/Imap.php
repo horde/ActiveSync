@@ -103,6 +103,20 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
     protected $_primed = false;
 
     /**
+     * PING watermark (IMAP STATUS last acknowledged to the client).
+     *
+     * Part of the three-state email sync model:
+     *   - $_status / modseq()     — SYNC watermark (CHANGEDSINCE)
+     *   - $_pingStatus            — PING watermark (this property)
+     *   - horde_activesync_state.sync_pending — MOREAVAILABLE batch (SYNC only)
+     *
+     * @see Horde_ActiveSync_State_Base::getChanges() for the PING vs SYNC paths.
+     *
+     * @var array
+     */
+    protected $_pingStatus = [];
+
+    /**
      * Set message changes.
      *
      * @param array $messages       An array of message UIDs.
@@ -294,6 +308,100 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
         $this->_flags = [];
         $this->_softDeleted = [];
         $this->haveInitialSync = true;
+        $this->_syncPingStatus();
+    }
+
+    /**
+     * Return the MODSEQ value used for PING change detection.
+     *
+     * @return integer
+     */
+    public function pingModseq()
+    {
+        if (!empty($this->_pingStatus[self::HIGHESTMODSEQ])) {
+            return $this->_pingStatus[self::HIGHESTMODSEQ];
+        }
+
+        return $this->modseq();
+    }
+
+    /**
+     * Return the UIDNEXT value used for PING change detection.
+     *
+     * @return integer
+     */
+    public function pingUidnext()
+    {
+        if (array_key_exists(self::UIDNEXT, $this->_pingStatus)) {
+            return $this->_pingStatus[self::UIDNEXT];
+        }
+
+        return $this->uidnext();
+    }
+
+    /**
+     * Return the message count used for PING change detection.
+     *
+     * @return integer
+     */
+    public function pingTotalMessages()
+    {
+        if (array_key_exists(self::MESSAGES, $this->_pingStatus)) {
+            return $this->_pingStatus[self::MESSAGES];
+        }
+
+        return $this->total_messages();
+    }
+
+    /**
+     * Advance the PING checkpoint to the current IMAP STATUS.
+     *
+     * @param array $status  An IMAP STATUS result.
+     */
+    public function acknowledgePingStatus(array $status)
+    {
+        $this->_pingStatus = [
+            self::UIDVALIDITY => $status[self::UIDVALIDITY] ?? $this->uidvalidity(),
+            self::UIDNEXT => $status[self::UIDNEXT] ?? $this->uidnext(),
+            self::HIGHESTMODSEQ => $status[self::HIGHESTMODSEQ] ?? 0,
+            self::MESSAGES => $status[self::MESSAGES] ?? 0,
+        ];
+    }
+
+    /**
+     * Align the PING checkpoint with the current SYNC state.
+     */
+    protected function _syncPingStatus()
+    {
+        $synced = [
+            self::UIDVALIDITY => $this->uidvalidity(),
+            self::UIDNEXT => $this->uidnext(),
+            self::HIGHESTMODSEQ => $this->modseq(),
+            self::MESSAGES => $this->total_messages(),
+        ];
+
+        // Never move the PING checkpoint backward. Partial SYNC responses can
+        // leave the SYNC modseq behind the server while the PING checkpoint was
+        // already advanced during PING.
+        if (empty($this->_pingStatus)) {
+            $this->_pingStatus = $synced;
+            return;
+        }
+
+        if (!empty($synced[self::HIGHESTMODSEQ])
+            && (empty($this->_pingStatus[self::HIGHESTMODSEQ])
+                || $synced[self::HIGHESTMODSEQ] > $this->_pingStatus[self::HIGHESTMODSEQ])) {
+            $this->_pingStatus[self::HIGHESTMODSEQ] = $synced[self::HIGHESTMODSEQ];
+        }
+        if ($synced[self::UIDNEXT] > ($this->_pingStatus[self::UIDNEXT] ?? 0)) {
+            $this->_pingStatus[self::UIDNEXT] = $synced[self::UIDNEXT];
+        }
+        if ($synced[self::MESSAGES] != ($this->_pingStatus[self::MESSAGES] ?? null)) {
+            $this->_pingStatus[self::MESSAGES] = $synced[self::MESSAGES];
+        }
+        if (!empty($synced[self::UIDVALIDITY])) {
+            $this->_pingStatus[self::UIDVALIDITY] = $synced[self::UIDVALIDITY];
+        }
     }
 
     /**
@@ -441,17 +549,21 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
             $msgs = $this->_messages;
         }
 
-        return json_encode(
-            [
-                's' => $this->_status,
-                'm' => $msgs,
-                'f' => $this->_serverid,
-                'c' => $this->_class,
-                'lsd' => $this->_lastSinceDate,
-                'sd' => $this->_softDelete,
-                'hi' => $this->haveInitialSync,
-                'v' => self::VERSION]
-        );
+        $data = [
+            's' => $this->_status,
+            'm' => $msgs,
+            'f' => $this->_serverid,
+            'c' => $this->_class,
+            'lsd' => $this->_lastSinceDate,
+            'sd' => $this->_softDelete,
+            'hi' => $this->haveInitialSync,
+            'v' => self::VERSION,
+        ];
+        if (!empty($this->_pingStatus)) {
+            $data['ps'] = $this->_pingStatus;
+        }
+
+        return json_encode($data);
     }
 
     /**
@@ -478,6 +590,7 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
         $this->_lastSinceDate = $d_data['lsd'];
         $this->_softDelete = $d_data['sd'];
         $this->haveInitialSync = empty($d_data['hi']) ? !empty($this->_messages) : $d_data['hi'];
+        $this->_pingStatus = !empty($d_data['ps']) ? $d_data['ps'] : [];
 
         if (!empty($this->_status[self::HIGHESTMODSEQ]) && is_string($this->_messages)) {
             $this->_messages = $this->_fromSequenceString($this->_messages);

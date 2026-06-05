@@ -20,7 +20,8 @@
  *        sync_key:     - The syncKey for the last sync
  *        sync_pending: - If the last sync resulted in a MOREAVAILABLE, this
  *                        contains a list of UIDs that still need to be sent to
- *                        the client.
+ *                        the client. Used by SYNC only; PING must ignore this
+ *                        column and poll IMAP STATUS instead (see getChanges()).
  *        sync_data:    - Any state data that we need to track for the specific
  *                        syncKey. Data such as current folder list on the client
  *                        (for a FOLDERSYNC) and IMAP email UIDs (for Email
@@ -303,6 +304,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
         $data = $this->_unserializeState(
             $columns['sync_data']->binaryToString($results['sync_data'])
         );
+        $this->_syncPendingBlob = $results['sync_pending'];
         $pending = $this->_unserializeState($results['sync_pending']);
 
         if ($this->_type == Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC) {
@@ -375,17 +377,28 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     /**
      * Save the current state to storage
      *
+     * @param array $options  @see Horde_ActiveSync_State_Base::save()
+     *
      * @throws Horde_ActiveSync_Exception
      */
-    public function save()
+    public function save(array $options = [])
     {
         // Prepare state and pending data
         if ($this->_type == Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC) {
             $data = (isset($this->_folder) ? serialize($this->_folder) : '');
             $pending = '';
         } elseif ($this->_type == Horde_ActiveSync::REQUEST_TYPE_SYNC) {
-            $pending = (isset($this->_changes) ? serialize(array_values($this->_changes)) : '');
             $data = (isset($this->_folder) ? serialize($this->_folder) : '');
+            if (!empty($options['preservePending']) && $this->_syncPendingBlob !== null) {
+                $pending = $this->_syncPendingBlob instanceof Horde_Db_Value_Binary
+                    ? $this->_syncPendingBlob
+                    : new Horde_Db_Value_Binary($this->_syncPendingBlob);
+            } else {
+                $pending = (isset($this->_changes) ? serialize(array_values($this->_changes)) : '');
+                if ($pending !== '') {
+                    $this->_syncPendingBlob = new Horde_Db_Value_Binary($pending);
+                }
+            }
         } else {
             $pending = '';
             $data = '';

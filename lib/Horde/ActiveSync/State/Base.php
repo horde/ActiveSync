@@ -108,6 +108,17 @@ abstract class Horde_ActiveSync_State_Base
     protected $_changes;
 
     /**
+     * Raw sync_pending payload last read from storage.
+     *
+     * Used when persisting a PING checkpoint: PING may update sync_data
+     * (folder + PING watermark) but must not clear an in-flight MOREAVAILABLE
+     * batch in sync_pending.
+     *
+     * @var mixed
+     */
+    protected $_syncPendingBlob;
+
+    /**
      * The type of request we are handling.
      *
      * @var string
@@ -363,7 +374,27 @@ abstract class Horde_ActiveSync_State_Base
     }
 
     /**
-     * Get all items that have changed since the last sync time
+     * Get all items that have changed since the last sync time.
+     *
+     * Email collections use two deliberately separate paths (do not merge):
+     *
+     * SYNC ($options['ping'] === false):
+     *   - Uses Horde_ActiveSync_Folder_Imap::$_status / modseq() for
+     *     CHANGEDSINCE against the IMAP server.
+     *   - May resume from sync_pending (a MOREAVAILABLE batch not yet sent).
+     *   - Calls updateState() after changes are exported.
+     *
+     * PING ($options['ping'] === true):
+     *   - MUST NOT treat sync_pending as a change signal (it is an in-flight
+     *     SYNC batch; reusing it causes infinite PING loops — see BigFamily).
+     *   - Uses $_pingStatus via Horde_ActiveSync_Imap_Adapter::ping() for a
+     *     lightweight IMAP STATUS comparison.
+     *   - Advances $_pingStatus on detection and persists via save() without
+     *     touching sync_pending or calling updateState() (SYNC modseq must
+     *     stay behind until the client completes SYNC).
+     *
+     * @see Horde_ActiveSync_Folder_Imap::$_pingStatus
+     * @see Horde_ActiveSync_State_Sql — sync_pending column
      *
      * @param array $options  An options array:
      *      - ping: (boolean)  Only detect if there is a change, do not build
@@ -403,8 +434,11 @@ abstract class Horde_ActiveSync_State_Base
                 )
             );
 
-            // Check for previously found changes first.
-            if (!empty($this->_changes)) {
+            // SYNC may resume a MOREAVAILABLE batch from sync_pending. PING must
+            // always poll IMAP STATUS instead — pending is not a PING signal.
+            if (!empty($options['ping'])) {
+                $this->_changes = null;
+            } elseif (!empty($this->_changes)) {
                 $this->_logger->meta('STATE: Returning previously found changes.');
                 return $this->_changes;
             }
@@ -457,6 +491,13 @@ abstract class Horde_ActiveSync_State_Base
             // Only update the folderstate if we are not PINGing.
             if (empty($options['ping'])) {
                 $this->_folder->updateState();
+            } elseif ($this->_folder instanceof Horde_ActiveSync_Folder_Imap
+                && !empty($this->_collection['class'])
+                && $this->_collection['class'] == Horde_ActiveSync::CLASS_EMAIL
+                && count($changes)) {
+                // Persist sync_data (folder + PING watermark) only. sync_pending
+                // must survive for the client's in-flight MOREAVAILABLE batch.
+                $this->save(['preservePending' => true]);
             }
 
             $this->_logger->meta(
@@ -876,6 +917,7 @@ abstract class Horde_ActiveSync_State_Base
         // Initialize the local members.
         $this->_collection = $collection;
         $this->_changes = null;
+        $this->_syncPendingBlob = null;
         $this->_type = $type;
 
         // If this is a FOLDERSYNC, mock the device id.
@@ -992,9 +1034,14 @@ abstract class Horde_ActiveSync_State_Base
     }
 
     /**
-     * Save the current syncstate to storage
+     * Save the current syncstate to storage.
+     *
+     * @param array $options  Options array:
+     *   - preservePending: (boolean) Write sync_data but keep the sync_pending
+     *                      column as loaded from storage. Used when persisting
+     *                      a PING checkpoint. DEFAULT: false.
      */
-    abstract public function save();
+    abstract public function save(array $options = []);
 
     /**
      * Update the state to reflect changes

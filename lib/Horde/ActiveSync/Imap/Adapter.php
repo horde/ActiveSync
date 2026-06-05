@@ -568,19 +568,24 @@ class Horde_ActiveSync_Imap_Adapter
             )
         );
 
-        // If we have per mailbox MODSEQ then we can pick up flag changes too.
+        // PING path: compare against $_pingStatus, not SYNC modseq() in
+        // $_status. See Horde_ActiveSync_State_Base::getChanges() and
+        // Horde_ActiveSync_Folder_Imap::$_pingStatus.
         $modseq = $status[Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ];
-        if ($modseq && $folder->modseq() > 0 && $folder->modseq() < $modseq) {
+        if ($modseq && $folder->pingModseq() > 0 && $folder->pingModseq() < $modseq) {
+            $folder->acknowledgePingStatus($status);
             return true;
         }
 
         // Increase in UIDNEXT is always a positive PING.
-        if ($folder->uidnext() < $status['uidnext']) {
+        if ($folder->pingUidnext() < $status['uidnext']) {
+            $folder->acknowledgePingStatus($status);
             return true;
         }
 
         // If the message count changes, something certainly changed.
-        if ($folder->total_messages() != $status['messages']) {
+        if ($folder->pingTotalMessages() != $status['messages']) {
+            $folder->acknowledgePingStatus($status);
             return true;
         }
 

@@ -166,5 +166,114 @@ class ImapFolderTest extends TestCase
 
     }
 
+    public function testPingCheckpointPreservesSyncModseq()
+    {
+        $folder = new Horde_ActiveSync_Folder_Imap('INBOX/Junk', Horde_ActiveSync::CLASS_EMAIL);
+        $status = [
+            Horde_ActiveSync_Folder_Imap::UIDVALIDITY => 100,
+            Horde_ActiveSync_Folder_Imap::UIDNEXT => 105,
+            Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ => 200,
+            Horde_ActiveSync_Folder_Imap::MESSAGES => 5,
+        ];
+        $folder->setStatus($status);
+        $folder->updateState();
+
+        $serverStatus = $status;
+        $serverStatus[Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ] = 250;
+        $folder->acknowledgePingStatus($serverStatus);
+
+        $this->assertEquals(200, $folder->modseq());
+        $this->assertEquals(250, $folder->pingModseq());
+    }
+
+    public function testPingCheckpointSerialization()
+    {
+        $folder = new Horde_ActiveSync_Folder_Imap('INBOX/Junk', Horde_ActiveSync::CLASS_EMAIL);
+        $status = [
+            Horde_ActiveSync_Folder_Imap::UIDVALIDITY => 100,
+            Horde_ActiveSync_Folder_Imap::UIDNEXT => 105,
+            Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ => 200,
+            Horde_ActiveSync_Folder_Imap::MESSAGES => 5,
+        ];
+        $folder->setStatus($status);
+        $folder->updateState();
+
+        $serverStatus = $status;
+        $serverStatus[Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ] = 250;
+        $folder->acknowledgePingStatus($serverStatus);
+
+        $restored = unserialize(serialize($folder));
+        $this->assertEquals(200, $restored->modseq());
+        $this->assertEquals(250, $restored->pingModseq());
+    }
+
+    public function testPingCheckpointSyncedAfterSuccessfulSync()
+    {
+        $folder = new Horde_ActiveSync_Folder_Imap('INBOX', Horde_ActiveSync::CLASS_EMAIL);
+        $status = [
+            Horde_ActiveSync_Folder_Imap::UIDVALIDITY => 100,
+            Horde_ActiveSync_Folder_Imap::UIDNEXT => 105,
+            Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ => 200,
+            Horde_ActiveSync_Folder_Imap::MESSAGES => 5,
+        ];
+        $folder->setStatus($status);
+        $folder->updateState();
+
+        $serverStatus = $status;
+        $serverStatus[Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ] = 250;
+        $folder->acknowledgePingStatus($serverStatus);
+        $this->assertEquals(250, $folder->pingModseq());
+        $this->assertEquals(200, $folder->modseq());
+
+        $status[Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ] = 250;
+        $folder->setStatus($status);
+        $folder->updateState();
+
+        $this->assertEquals(250, $folder->modseq());
+        $this->assertEquals(250, $folder->pingModseq());
+
+        // Partial SYNC must not move the PING checkpoint backward.
+        $folder->acknowledgePingStatus([
+            Horde_ActiveSync_Folder_Imap::UIDVALIDITY => 100,
+            Horde_ActiveSync_Folder_Imap::UIDNEXT => 110,
+            Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ => 300,
+            Horde_ActiveSync_Folder_Imap::MESSAGES => 8,
+        ]);
+        $status[Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ] = 260;
+        $status[Horde_ActiveSync_Folder_Imap::UIDNEXT] = 106;
+        $folder->setStatus($status);
+        $folder->updateState();
+
+        $this->assertEquals(260, $folder->modseq());
+        $this->assertEquals(300, $folder->pingModseq());
+    }
+
+    /**
+     * BigFamily-style case: SYNC modseq lags while PING watermark is current.
+     *
+     * After Option A, PING uses pingModseq() so a stale SYNC modseq alone must
+     * not re-trigger change detection once the PING checkpoint caught up.
+     */
+    public function testPingWatermarkCanExceedSyncModseq()
+    {
+        $folder = new Horde_ActiveSync_Folder_Imap('INBOX/BigFamily', Horde_ActiveSync::CLASS_EMAIL);
+        $status = [
+            Horde_ActiveSync_Folder_Imap::UIDVALIDITY => 1267430887,
+            Horde_ActiveSync_Folder_Imap::UIDNEXT => 8200,
+            Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ => 5864,
+            Horde_ActiveSync_Folder_Imap::MESSAGES => 7932,
+        ];
+        $folder->setStatus($status);
+        $folder->updateState();
+
+        $serverStatus = $status;
+        $serverStatus[Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ] = 6000;
+        $folder->acknowledgePingStatus($serverStatus);
+
+        $this->assertEquals(5864, $folder->modseq());
+        $this->assertEquals(6000, $folder->pingModseq());
+        $this->assertFalse($folder->pingModseq() < $serverStatus[Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ]);
+    }
+
 
 }
