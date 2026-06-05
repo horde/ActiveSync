@@ -143,18 +143,18 @@ class Horde_ActiveSync_Mime_Iterator implements Countable, Iterator
 
     /**
      */
-    #[\ReturnTypeWillChange]
-    public function next() 
+    public function next(): void
     {
         if (!isset($this->_state)) {
-            return null;
+            return;
         }
 
         $out = $this->_state->current->getPartByIndex($this->_state->index++);
         if ($out) {
             if (($this->_ignoreAttachments && $this->_isAttachment($out))
                 || !$this->_allowRecursion($this->_state->current)) {
-                return $this->next();
+                $this->next();
+                return;
             }
             $this->_state->recurse[] = [
                 $this->_state->current,
