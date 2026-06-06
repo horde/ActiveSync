@@ -471,18 +471,19 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                         $this->_encoder->startTag(Horde_ActiveSync::SYNC_COMMANDS);
                         $cnt_collection = 0;
                         while ($cnt_collection < $max_windowsize
-                               && $cnt_global < $this->_collections->getDefaultWindowSize()
-                               && $progress = $exporter->sendNextChange()) {
+                               && $cnt_global < $this->_collections->getDefaultWindowSize()) {
+                            $progress = $exporter->sendNextChange();
+                            if ($progress !== true) {
+                                break;
+                            }
                             $this->_logger->meta(
                                 sprintf(
                                     'Peak memory usage after message: %d',
                                     memory_get_peak_usage(true)
                                 )
                             );
-                            if ($progress === true) {
-                                ++$cnt_collection;
-                                ++$cnt_global;
-                            }
+                            ++$cnt_collection;
+                            ++$cnt_global;
                         }
                         $this->_encoder->endTag();
                     }

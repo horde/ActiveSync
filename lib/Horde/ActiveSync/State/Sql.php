@@ -387,6 +387,9 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             $data = (isset($this->_folder) ? serialize($this->_folder) : '');
             $pending = '';
         } elseif ($this->_type == Horde_ActiveSync::REQUEST_TYPE_SYNC) {
+            if (empty($options['preservePending'])) {
+                $this->_finalizeInitialSyncIfComplete();
+            }
             $data = (isset($this->_folder) ? serialize($this->_folder) : '');
             if (!empty($options['preservePending']) && $this->_syncPendingBlob !== null) {
                 $pending = $this->_syncPendingBlob instanceof Horde_Db_Value_Binary
@@ -707,6 +710,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                         }
                     }
                     unset($this->_changes[$key]);
+                    $this->_acknowledgeExportedChange($type, $change);
                     break;
                 }
             }

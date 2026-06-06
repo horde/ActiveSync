@@ -1128,6 +1128,43 @@ abstract class Horde_ActiveSync_State_Base
     abstract public function save(array $options = []);
 
     /**
+     * Track a successfully exported message in the folder cache.
+     *
+     * During CONDSTORE initial sync the folder's _messages list must reflect
+     * only mail the client has actually received.
+     *
+     * @param string $type   A Horde_ActiveSync::CHANGE_TYPE_* constant.
+     * @param array $change  The change hash being exported.
+     */
+    protected function _acknowledgeExportedChange($type, array $change)
+    {
+        if (!$this->_folder instanceof Horde_ActiveSync_Folder_Imap) {
+            return;
+        }
+
+        switch ($type) {
+            case Horde_ActiveSync::CHANGE_TYPE_CHANGE:
+            case Horde_ActiveSync::CHANGE_TYPE_DRAFT:
+                if (!empty($change['id'])) {
+                    $this->_folder->acknowledgeExportedMessage($change['id']);
+                }
+                break;
+        }
+    }
+
+    /**
+     * Mark initial folder sync complete once sync_pending is drained.
+     */
+    protected function _finalizeInitialSyncIfComplete()
+    {
+        if (empty($this->_changes)
+            && $this->_folder instanceof Horde_ActiveSync_Folder_Imap
+            && !$this->_folder->haveInitialSync) {
+            $this->_folder->markInitialSyncComplete();
+        }
+    }
+
+    /**
      * Update the state to reflect changes
      *
      * @param string $type      The type of change (change, delete, flags or

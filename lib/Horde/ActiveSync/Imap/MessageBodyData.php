@@ -377,31 +377,40 @@ class Horde_ActiveSync_Imap_MessageBodyData
      */
     protected function _fetchData(array $params)
     {
-        $query = new Horde_Imap_Client_Fetch_Query();
-        $query_opts = [
-            'decode' => true,
-            'peek' => true,
-        ];
-
-        // Get body information
-        if ($this->_version >= Horde_ActiveSync::VERSION_TWELVE) {
-            if (!empty($params['html_id'])) {
-                $query->bodyPartSize($params['html_id']);
-                $query->bodyPart($params['html_id'], $query_opts);
-            }
-            if (!empty($params['text_id'])) {
-                $query->bodyPart($params['text_id'], $query_opts);
-                $query->bodyPartSize($params['text_id']);
-            }
-        } else {
-            // EAS 2.5 Plaintext body
-            $query->bodyPart($params['text_id'], $query_opts);
-            $query->bodyPartSize($params['text_id']);
+        $data = $this->_tryFetchBodyData($params, true);
+        if (!$data) {
+            // Some IMAP servers (notably Dovecot) return no data when
+            // BODY[x.y.z] and BODY[x.y.z].SIZE are requested together for
+            // deeply nested MIME parts. Fall back to fetching content only.
+            $data = $this->_tryFetchBodyData($params, false);
         }
+        if (!$data) {
+            throw new Horde_Exception_NotFound(
+                sprintf('Could not load message %s from server.', $this->_uid)
+            );
+        }
+
+        return $data;
+    }
+
+    /**
+     * Attempt to fetch body part data from the IMAP server.
+     *
+     * @param  array   $params    Parameter array.
+     *     - html_id (string)  The MIME id of the HTML part, if any.
+     *     - text_id (string)  The MIME id of the plain part, if any.
+     * @param  boolean $withSize  If true, also request RFC822.SIZE for parts.
+     *
+     * @return Horde_Imap_Client_Data_Fetch|null  The results, or null.
+     * @throws Horde_ActiveSync_Exception,
+     *         Horde_ActiveSync_Exception_TemporaryFailure
+     */
+    protected function _tryFetchBodyData(array $params, $withSize)
+    {
         try {
             $fetch_ret = $this->_imap->fetch(
                 $this->_mbox,
-                $query,
+                $this->_buildBodyFetchQuery($params, $withSize),
                 ['ids' => new Horde_Imap_Client_Ids([$this->_uid])]
             );
         } catch (Horde_Imap_Client_Exception $e) {
@@ -411,13 +420,51 @@ class Horde_ActiveSync_Imap_MessageBodyData
             }
             throw new Horde_ActiveSync_Exception($e);
         }
-        if (!$data = $fetch_ret->first()) {
-            throw new Horde_Exception_NotFound(
-                sprintf('Could not load message %s from server.', $this->_uid)
-            );
+
+        return $fetch_ret->first() ?: null;
+    }
+
+    /**
+     * Build a FETCH query for message body part data.
+     *
+     * @param  array   $params    Parameter array.
+     *     - html_id (string)  The MIME id of the HTML part, if any.
+     *     - text_id (string)  The MIME id of the plain part, if any.
+     * @param  boolean $withSize  If true, also request RFC822.SIZE for parts.
+     *
+     * @return Horde_Imap_Client_Fetch_Query
+     */
+    protected function _buildBodyFetchQuery(array $params, $withSize)
+    {
+        $query = new Horde_Imap_Client_Fetch_Query();
+        $query_opts = [
+            'decode' => true,
+            'peek' => true,
+        ];
+
+        // Get body information
+        if ($this->_version >= Horde_ActiveSync::VERSION_TWELVE) {
+            if (!empty($params['html_id'])) {
+                if ($withSize) {
+                    $query->bodyPartSize($params['html_id']);
+                }
+                $query->bodyPart($params['html_id'], $query_opts);
+            }
+            if (!empty($params['text_id'])) {
+                $query->bodyPart($params['text_id'], $query_opts);
+                if ($withSize) {
+                    $query->bodyPartSize($params['text_id']);
+                }
+            }
+        } else {
+            // EAS 2.5 Plaintext body
+            $query->bodyPart($params['text_id'], $query_opts);
+            if ($withSize) {
+                $query->bodyPartSize($params['text_id']);
+            }
         }
 
-        return $data;
+        return $query;
     }
 
     /**

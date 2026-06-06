@@ -283,6 +283,7 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
      */
     public function updateState()
     {
+        $deferInitialComplete = false;
         if (empty($this->_status[self::HIGHESTMODSEQ])) {
             $this->_messages = array_diff(array_keys($this->_messages), $this->_removed);
             foreach ($this->_added as $add) {
@@ -291,8 +292,11 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
             $this->_messages = $this->_flags + array_flip($this->_messages);
         } else {
             if ($this->_primed) {
-                $this->_messages = $this->_added;
+                // CONDSTORE initial priming: the full UID list is exported via
+                // sync_pending. Only add UIDs to _messages as they are actually
+                // sent to the client (acknowledgeExportedMessage()).
                 $this->_primed = false;
+                $deferInitialComplete = true;
             } else {
                 foreach ($this->_added as $add) {
                     $this->_messages[] = $add;
@@ -307,8 +311,43 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
         $this->_changed = [];
         $this->_flags = [];
         $this->_softDeleted = [];
-        $this->haveInitialSync = true;
+        if (!$deferInitialComplete) {
+            $this->haveInitialSync = true;
+        }
         $this->_syncPingStatus();
+    }
+
+    /**
+     * Track a message UID successfully exported to the client.
+     *
+     * During CONDSTORE initial sync the server's _messages cache must reflect
+     * only mail the client has actually received, not the full primed UID
+     * list polled from IMAP.
+     *
+     * @param integer|string $uid  The IMAP UID.
+     */
+    public function acknowledgeExportedMessage($uid)
+    {
+        if ($uid === '' || $uid === null) {
+            return;
+        }
+
+        if (empty($this->_status[self::HIGHESTMODSEQ])) {
+            $this->_messages[$uid] = $uid;
+        } else {
+            $this->_messages[] = $uid;
+        }
+    }
+
+    /**
+     * Mark an initial folder sync as complete.
+     *
+     * Called once sync_pending is empty and all MOREAVAILABLE batches have
+     * been delivered to the client.
+     */
+    public function markInitialSyncComplete()
+    {
+        $this->haveInitialSync = true;
     }
 
     /**
@@ -589,7 +628,9 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
         $this->_class = $d_data['c'];
         $this->_lastSinceDate = $d_data['lsd'];
         $this->_softDelete = $d_data['sd'];
-        $this->haveInitialSync = empty($d_data['hi']) ? !empty($this->_messages) : $d_data['hi'];
+        $this->haveInitialSync = array_key_exists('hi', $d_data)
+            ? (bool) $d_data['hi']
+            : !empty($this->_messages);
         $this->_pingStatus = !empty($d_data['ps']) ? $d_data['ps'] : [];
 
         if (!empty($this->_status[self::HIGHESTMODSEQ]) && is_string($this->_messages)) {

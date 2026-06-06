@@ -437,6 +437,12 @@ class Horde_ActiveSync_Imap_Adapter
                 try {
                     $ret[] = $this->_buildMailMessage($mbox, $data, $options);
                 } catch (Horde_Exception_NotFound $e) {
+                    $this->_logger->notice(sprintf(
+                        'Unable to build message UID %s in %s: %s',
+                        $data->getUid(),
+                        $folderid,
+                        $e->getMessage()
+                    ));
                 }
             }
         }

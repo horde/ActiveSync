@@ -360,6 +360,9 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
             $data = (isset($this->_folder) ? serialize($this->_folder) : '');
             $pending = '';
         } elseif ($this->_type == Horde_ActiveSync::REQUEST_TYPE_SYNC) {
+            if (empty($options['preservePending'])) {
+                $this->_finalizeInitialSyncIfComplete();
+            }
             $data = (isset($this->_folder) ? serialize($this->_folder) : '');
             if (!empty($options['preservePending']) && $this->_syncPendingBlob !== null) {
                 $pending = $this->_syncPendingBlob;
@@ -549,7 +552,7 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
             // may be sent. We need to store the leftovers for sending next
             // request.
             foreach ($this->_changes as $key => $value) {
-                if ($value['id'] == $change['id']) {
+                if ((is_array($value) && $value['id'] == $change['id']) || $value == $change['id']) {
                     if ($this->_type == Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC) {
                         foreach ($this->_folder as $fi => $state) {
                             if ($state['id'] == $value['id']) {
@@ -574,6 +577,7 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
                         }
                     }
                     unset($this->_changes[$key]);
+                    $this->_acknowledgeExportedChange($type, $change);
                     break;
                 }
             }

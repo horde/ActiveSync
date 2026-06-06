@@ -493,9 +493,12 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
                             'Message gone or error reading message from server: %s',
                             $e->getMessage()
                         ));
+                        // Permanently unavailable on the mail server (expunged,
+                        // corrupt, or otherwise unreadable). Drop from pending
+                        // and continue exporting the rest of the batch.
                         $this->_as->state->updateState($change['type'], $change);
                         $this->_step++;
-                        return $e;
+                        return true;
                     } catch (Horde_ActiveSync_Exception_TemporaryFailure $e) {
                         $this->_logger->err(
                             sprintf(
@@ -511,9 +514,8 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
                                 $e->getMessage()
                             )
                         );
-                        $this->_as->state->updateState($change['type'], $change);
-                        $this->_step++;
-                        return $e;
+                        // Do not drop pending changes on export failure.
+                        return false;
                     }
                     break;
 

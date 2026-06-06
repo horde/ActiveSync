@@ -88,6 +88,7 @@ class Horde_ActiveSync_Mime_Iterator implements Countable, Iterator
                     return true;
                 }
                 return false;
+            case 'application/pgp-keys':
             case 'application/pkcs7-signature':
             case 'application/x-pkcs7-signature':
                 return false;
