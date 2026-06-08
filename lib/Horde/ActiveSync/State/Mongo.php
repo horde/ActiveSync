@@ -76,6 +76,7 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
     public const COLLECTION_MAP     = 'HAS_map';
     public const COLLECTION_DEVICE  = 'HAS_device';
     public const COLLECTION_STATE   = 'HAS_state';
+    public const COLLECTION_LOCK    = 'HAS_collection_lock';
 
     /** Field names **/
     public const MONGO_ID               = '_id';
@@ -98,6 +99,8 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
     public const SYNC_PENDING           = 'sync_pending';
     public const SYNC_TIMESTAMP         = 'sync_timestamp';
     public const SYNC_LOCK              = 'sync_lock';
+    public const LOCK_TOKEN             = 'lock_token';
+    public const LOCK_TIME              = 'lock_time';
     public const DEVICE_ID              = 'device_id';
     public const DEVICE_TYPE            = 'device_type';
     public const DEVICE_AGENT           = 'device_agent';
@@ -213,6 +216,27 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
     protected $_stateLockToken = null;
 
     /**
+     * True while a collection lock document is held.
+     *
+     * @var boolean
+     */
+    protected $_collectionLockHeld = false;
+
+    /**
+     * lock_token value set when this instance acquired the collection lock.
+     *
+     * @var integer|null
+     */
+    protected $_collectionLockToken = null;
+
+    /**
+     * Folder id used for the active collection lock, if any.
+     *
+     * @var string|null
+     */
+    protected $_collectionLockFolderId = null;
+
+    /**
      * Const'r
      *
      * @param array  $params   Must contain:
@@ -239,6 +263,19 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
         if ($this->_stateRowLockHeld) {
             $this->_releaseStateRowLock(false);
         }
+        if ($this->_collectionLockHeld) {
+            $this->_releaseCollectionLock(false);
+        }
+    }
+
+    /**
+     * HAS_collection_lock collection for per-collection serialization.
+     *
+     * @return MongoCollection
+     */
+    protected function _collectionLockCollection()
+    {
+        return $this->_db->selectCollection(self::COLLECTION_LOCK);
     }
 
     /**
@@ -372,6 +409,193 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
     }
 
     /**
+     * Return the folder id used for collection locking.
+     *
+     * @param string|null $folderId  Optional folder id override.
+     *
+     * @return string
+     */
+    protected function _collectionLockFolderId($folderId = null)
+    {
+        if ($folderId !== null) {
+            return $folderId;
+        }
+
+        if ($this->_type == Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC) {
+            return Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC;
+        }
+
+        return !empty($this->_collection['id'])
+            ? $this->_collection['id']
+            : Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC;
+    }
+
+    /**
+     * Build the lock document _id for a collection.
+     *
+     * @param string $user
+     * @param string $devid
+     * @param string $folderid
+     *
+     * @return string
+     */
+    protected function _collectionLockDocumentId($user, $devid, $folderid)
+    {
+        return $user . "\0" . $devid . "\0" . $folderid;
+    }
+
+    /**
+     * Return [sync_user, sync_devid, sync_folderid] for collection locking.
+     *
+     * @param string|null $folderId  Optional folder id override.
+     *
+     * @return array
+     */
+    protected function _collectionLockIdentity($folderId = null)
+    {
+        if ($folderId === null && $this->_collectionLockFolderId !== null) {
+            $folderId = $this->_collectionLockFolderId;
+        }
+
+        return [
+            $this->_deviceInfo->user,
+            $this->_deviceInfo->id,
+            $this->_collectionLockFolderId($folderId),
+        ];
+    }
+
+    /**
+     * Ensure a collection lock document exists.
+     *
+     * @param string $user
+     * @param string $devid
+     * @param string $folderid
+     *
+     * @throws Horde_ActiveSync_Exception
+     */
+    protected function _ensureCollectionLockDocument($user, $devid, $folderid)
+    {
+        $collection = $this->_collectionLockCollection();
+        $id = $this->_collectionLockDocumentId($user, $devid, $folderid);
+
+        try {
+            if ($collection->count([self::MONGO_ID => $id])) {
+                return;
+            }
+
+            $collection->insert([
+                self::MONGO_ID => $id,
+                self::SYNC_USER => $user,
+                self::SYNC_DEVID => $devid,
+                self::SYNC_FOLDERID => $folderid,
+            ]);
+        } catch (Exception $e) {
+            if (!$collection->count([self::MONGO_ID => $id])) {
+                $this->_logger->err($e->getMessage());
+                throw new Horde_ActiveSync_Exception($e);
+            }
+        }
+    }
+
+    /**
+     * Acquire an exclusive collection lock.
+     *
+     * @param string|null $folderId  Optional folder id override.
+     *
+     * @throws Horde_ActiveSync_Exception
+     */
+    protected function _acquireCollectionLock($folderId = null)
+    {
+        if ($this->_collectionLockHeld) {
+            return;
+        }
+
+        [$user, $devid, $lockFolderid] = $this->_collectionLockIdentity($folderId);
+        $this->_ensureCollectionLockDocument($user, $devid, $lockFolderid);
+
+        $collection = $this->_collectionLockCollection();
+        $id = $this->_collectionLockDocumentId($user, $devid, $lockFolderid);
+        $maxWait = 100;
+        $forceStale = false;
+        $token = null;
+
+        for ($i = 0; $i < $maxWait * 2; ++$i) {
+            $token = random_int(1, PHP_INT_MAX);
+            $query = [self::MONGO_ID => $id];
+            if ($forceStale) {
+                $query[self::LOCK_TOKEN] = ['$exists' => true];
+            } else {
+                $query['$or'] = [
+                    [self::LOCK_TOKEN => ['$exists' => false]],
+                    [self::LOCK_TIME => ['$lt' => $token - self::STATE_ROW_LOCK_STALE_SECONDS]],
+                ];
+            }
+
+            try {
+                $results = $collection->findAndModify(
+                    $query,
+                    ['$set' => [
+                        self::LOCK_TOKEN => $token,
+                        self::LOCK_TIME => time(),
+                    ]]
+                );
+            } catch (Exception $e) {
+                $this->_logger->err($e->getMessage());
+                throw new Horde_ActiveSync_Exception($e);
+            }
+
+            if (!empty($results)) {
+                $this->_collectionLockHeld = true;
+                $this->_collectionLockToken = $token;
+                $this->_collectionLockFolderId = $lockFolderid;
+                return;
+            }
+
+            if ($i >= $maxWait) {
+                $forceStale = true;
+            } else {
+                usleep(100000);
+            }
+        }
+
+        throw new Horde_ActiveSync_Exception('Could not acquire collection lock.');
+    }
+
+    /**
+     * Release a collection lock acquired by _acquireCollectionLock().
+     *
+     * @param boolean $commit  Unused for Mongo; kept for parity with Sql.
+     */
+    protected function _releaseCollectionLock($commit = false)
+    {
+        if (!$this->_collectionLockHeld) {
+            return;
+        }
+
+        [$user, $devid, $lockFolderid] = $this->_collectionLockIdentity();
+        $id = $this->_collectionLockDocumentId($user, $devid, $lockFolderid);
+
+        try {
+            $this->_collectionLockCollection()->update(
+                [
+                    self::MONGO_ID => $id,
+                    self::LOCK_TOKEN => $this->_collectionLockToken,
+                ],
+                ['$unset' => [
+                    self::LOCK_TOKEN => '',
+                    self::LOCK_TIME => '',
+                ]]
+            );
+        } catch (Exception $e) {
+            $this->_logger->err($e->getMessage());
+        }
+
+        $this->_collectionLockHeld = false;
+        $this->_collectionLockToken = null;
+        $this->_collectionLockFolderId = null;
+    }
+
+    /**
      * Update the serverid for a given folder uid in the folder's state object.
      * Needed when a folder is renamed on a client, but the UID must remain the
      * same.
@@ -392,34 +616,42 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
             )
         );
 
-        $query = [
-            self::SYNC_DEVID => $this->_deviceInfo->id,
-            self::SYNC_USER => $this->_deviceInfo->user,
-            self::SYNC_FOLDERID => $uid,
-        ];
-
+        $this->_acquireCollectionLock($uid);
         try {
-            $cursor = $this->_db->selectCollection(self::COLLECTION_STATE)
-                ->find($query, [self::SYNC_DATA => true]);
-        } catch (Exception $e) {
-            $this->_logger->err($e->getMessage());
-            throw new Horde_ActiveSync_Exception($e);
-        }
+            $query = [
+                self::SYNC_DEVID => $this->_deviceInfo->id,
+                self::SYNC_USER => $this->_deviceInfo->user,
+                self::SYNC_FOLDERID => $uid,
+            ];
 
-        foreach ($cursor as $folder) {
-            $folder = unserialize($folder[self::SYNC_DATA]);
-            $folder->setServerId($serverid);
-            $folder = serialize($folder);
             try {
-                $this->_db->selectCollection(self::COLLECTION_STATE)->update(
-                    $query,
-                    ['$set' => [self::SYNC_DATA => $folder]],
-                    ['multiple' => true]
-                );
+                $cursor = $this->_db->selectCollection(self::COLLECTION_STATE)
+                    ->find($query, [self::SYNC_DATA => true]);
             } catch (Exception $e) {
                 $this->_logger->err($e->getMessage());
                 throw new Horde_ActiveSync_Exception($e);
             }
+
+            foreach ($cursor as $folder) {
+                $folder = unserialize($folder[self::SYNC_DATA]);
+                $folder->setServerId($serverid);
+                $folder = serialize($folder);
+                try {
+                    $this->_db->selectCollection(self::COLLECTION_STATE)->update(
+                        $query,
+                        ['$set' => [self::SYNC_DATA => $folder]],
+                        ['multiple' => true]
+                    );
+                } catch (Exception $e) {
+                    $this->_logger->err($e->getMessage());
+                    throw new Horde_ActiveSync_Exception($e);
+                }
+            }
+
+            $this->_releaseCollectionLock(true);
+        } catch (Throwable $e) {
+            $this->_releaseCollectionLock(false);
+            throw $e;
         }
     }
 
@@ -538,7 +770,17 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
             )
         );
 
-        $this->_saveSyncStateRow($document);
+        try {
+            $this->_saveSyncStateRow($document);
+            if ($this->_collectionLockHeld) {
+                $this->_releaseCollectionLock(true);
+            }
+        } catch (Throwable $e) {
+            if ($this->_collectionLockHeld) {
+                $this->_releaseCollectionLock(false);
+            }
+            throw $e;
+        }
     }
 
     /**
@@ -653,12 +895,18 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
                 if ($this->_stateRowLockHeld) {
                     $this->_releaseStateRowLock(false);
                 }
+                if ($this->_collectionLockHeld) {
+                    $this->_releaseCollectionLock(false);
+                }
                 throw new Horde_ActiveSync_Exception($e);
             }
         }
 
         if ($this->_stateRowLockHeld) {
             $this->_releaseStateRowLock($updated);
+        }
+        if ($this->_collectionLockHeld) {
+            $this->_releaseCollectionLock($updated);
         }
     }
 

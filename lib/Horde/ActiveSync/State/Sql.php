@@ -123,6 +123,11 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     public const SYNCSTAMP_UPDATE_THRESHOLD = 30000;
 
     /**
+     * Table used to serialize state access per device/user/folder collection.
+     */
+    protected const COLLECTION_LOCK_TABLE = 'horde_activesync_collection_lock';
+
+    /**
      * True while a SELECT ... FOR UPDATE row lock is held for the loaded
      * sync_key (released on save() or updateSyncStamp()).
      *
@@ -136,6 +141,36 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
      * @var boolean
      */
     protected $_stateRowLockTxnOwner = false;
+
+    /**
+     * True while a collection lock is held (released on save(),
+     * updateSyncStamp(), or updateServerIdInState()).
+     *
+     * @var boolean
+     */
+    protected $_collectionLockHeld = false;
+
+    /**
+     * Token set when this instance acquired the collection lock.
+     *
+     * @var integer|null
+     */
+    protected $_collectionLockToken = null;
+
+    /**
+     * True if this instance started the transaction that holds the collection
+     * lock.
+     *
+     * @var boolean
+     */
+    protected $_collectionLockTxnOwner = false;
+
+    /**
+     * Folder id used for the active collection lock, if any.
+     *
+     * @var string|null
+     */
+    protected $_collectionLockFolderId = null;
 
     /**
      * Const'r
@@ -169,6 +204,9 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     {
         if ($this->_stateRowLockHeld) {
             $this->_releaseStateRowLock(false);
+        }
+        if ($this->_collectionLockHeld) {
+            $this->_releaseCollectionLock(false);
         }
     }
 
@@ -261,6 +299,230 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     }
 
     /**
+     * Return the folder id used for collection locking.
+     *
+     * @param string|null $folderId  Optional folder id override.
+     *
+     * @return string
+     */
+    protected function _collectionLockFolderId($folderId = null)
+    {
+        if ($folderId !== null) {
+            return $folderId;
+        }
+
+        if ($this->_type == Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC) {
+            return Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC;
+        }
+
+        return !empty($this->_collection['id'])
+            ? $this->_collection['id']
+            : Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC;
+    }
+
+    /**
+     * Return [sync_user, sync_devid, sync_folderid] for collection locking.
+     *
+     * @param string|null $folderId  Optional folder id override.
+     *
+     * @return array
+     */
+    protected function _collectionLockIdentity($folderId = null)
+    {
+        if ($folderId === null && $this->_collectionLockFolderId !== null) {
+            $folderId = $this->_collectionLockFolderId;
+        }
+
+        return [
+            $this->_deviceInfo->user,
+            $this->_deviceInfo->id,
+            $this->_collectionLockFolderId($folderId),
+        ];
+    }
+
+    /**
+     * True when collection locking should not fail the request (SQLite).
+     *
+     * @return boolean
+     */
+    protected function _collectionLockIsBestEffort()
+    {
+        return $this->_db instanceof Horde_Db_Adapter_Pdo_Sqlite;
+    }
+
+    /**
+     * Ensure a collection lock row exists.
+     *
+     * @param string $user
+     * @param string $devid
+     * @param string $folderid
+     *
+     * @throws Horde_Db_Exception
+     */
+    protected function _ensureCollectionLockRow($user, $devid, $folderid)
+    {
+        if ($this->_db->selectValue(
+            'SELECT 1 FROM ' . self::COLLECTION_LOCK_TABLE
+            . ' WHERE sync_user = ? AND sync_devid = ? AND sync_folderid = ?',
+            [$user, $devid, $folderid]
+        )) {
+            return;
+        }
+
+        try {
+            $this->_db->insert(
+                'INSERT INTO ' . self::COLLECTION_LOCK_TABLE
+                . ' (sync_user, sync_devid, sync_folderid, lock_token, lock_time)'
+                . ' VALUES (?, ?, ?, NULL, NULL)',
+                [$user, $devid, $folderid]
+            );
+        } catch (Horde_Db_Exception $e) {
+            if ($this->_db->selectValue(
+                'SELECT 1 FROM ' . self::COLLECTION_LOCK_TABLE
+                . ' WHERE sync_user = ? AND sync_devid = ? AND sync_folderid = ?',
+                [$user, $devid, $folderid]
+            )) {
+                return;
+            }
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Acquire an exclusive collection lock using portable SQL only.
+     *
+     * @param string|null $folderId  Optional folder id override.
+     *
+     * @throws Horde_ActiveSync_Exception
+     */
+    protected function _acquireCollectionLock($folderId = null)
+    {
+        if ($this->_collectionLockHeld) {
+            return;
+        }
+
+        if (!in_array(self::COLLECTION_LOCK_TABLE, $this->_db->tables())) {
+            return;
+        }
+
+        $started = false;
+        try {
+            [$user, $devid, $lockFolderid] = $this->_collectionLockIdentity($folderId);
+            if (!$this->_db->transactionStarted()) {
+                $this->_db->beginDbTransaction();
+                $started = true;
+            }
+
+            $this->_ensureCollectionLockRow($user, $devid, $lockFolderid);
+
+            $sql = 'SELECT lock_token, lock_time FROM ' . self::COLLECTION_LOCK_TABLE
+                . ' WHERE sync_user = ? AND sync_devid = ? AND sync_folderid = ?';
+            $values = [$user, $devid, $lockFolderid];
+            $this->_db->addLock($sql);
+
+            $row = $this->_db->selectOne($sql, $values);
+            if (empty($row)) {
+                if ($started) {
+                    $this->_db->rollbackDbTransaction();
+                }
+                throw new Horde_ActiveSync_Exception('Collection lock row missing.');
+            }
+
+            $now = time();
+            $staleBefore = $now - self::STATE_ROW_LOCK_STALE_SECONDS;
+            $held = ($row['lock_token'] !== null && $row['lock_token'] !== '');
+            $stale = $held && ((int) $row['lock_time'] < $staleBefore);
+
+            if ($held && !$stale) {
+                if ($started) {
+                    $this->_db->rollbackDbTransaction();
+                }
+                throw new Horde_ActiveSync_Exception('Collection lock held.');
+            }
+
+            $token = random_int(1, PHP_INT_MAX);
+            $this->_db->update(
+                'UPDATE ' . self::COLLECTION_LOCK_TABLE
+                . ' SET lock_token = ?, lock_time = ?'
+                . ' WHERE sync_user = ? AND sync_devid = ? AND sync_folderid = ?',
+                [$token, $now, $user, $devid, $lockFolderid]
+            );
+
+            $this->_collectionLockHeld = true;
+            $this->_collectionLockToken = $token;
+            $this->_collectionLockTxnOwner = $started;
+            $this->_collectionLockFolderId = $lockFolderid;
+        } catch (Throwable $e) {
+            if ($started) {
+                try {
+                    $this->_db->rollbackDbTransaction();
+                } catch (Horde_Db_Exception $e2) {
+                }
+                $this->_collectionLockTxnOwner = false;
+            }
+
+            if ($this->_collectionLockIsBestEffort()) {
+                $this->_collectionLockHeld = false;
+                $this->_collectionLockToken = null;
+                $this->_collectionLockFolderId = null;
+                $this->_logger->meta(
+                    'STATE: Collection lock skipped on SQLite: ' . $e->getMessage()
+                );
+                return;
+            }
+
+            throw ($e instanceof Horde_ActiveSync_Exception)
+                ? $e
+                : new Horde_ActiveSync_Exception($e);
+        }
+    }
+
+    /**
+     * Release a collection lock acquired by _acquireCollectionLock().
+     *
+     * @param boolean $commit  Commit (true) or roll back (false) the lock
+     *                         transaction when this instance owns it.
+     */
+    protected function _releaseCollectionLock($commit = false)
+    {
+        if (!$this->_collectionLockHeld) {
+            return;
+        }
+
+        [$user, $devid, $lockFolderid] = $this->_collectionLockIdentity();
+
+        try {
+            $this->_db->update(
+                'UPDATE ' . self::COLLECTION_LOCK_TABLE
+                . ' SET lock_token = NULL, lock_time = NULL'
+                . ' WHERE sync_user = ? AND sync_devid = ? AND sync_folderid = ?'
+                . ' AND lock_token = ?',
+                [$user, $devid, $lockFolderid, $this->_collectionLockToken]
+            );
+        } catch (Horde_Db_Exception $e) {
+            $this->_logger->err($e->getMessage());
+        }
+
+        $this->_collectionLockHeld = false;
+        $this->_collectionLockToken = null;
+        $this->_collectionLockFolderId = null;
+
+        if ($this->_collectionLockTxnOwner) {
+            try {
+                if ($commit) {
+                    $this->_db->commitDbTransaction();
+                } else {
+                    $this->_db->rollbackDbTransaction();
+                }
+            } catch (Horde_Db_Exception $e) {
+                $this->_logger->err($e->getMessage());
+            }
+            $this->_collectionLockTxnOwner = false;
+        }
+    }
+
+    /**
      * Unserialize stored PHP data without emitting E_WARNING on failure.
      *
      * Stale or PHP-version-mismatched blobs (e.g. after Horde/PHP upgrades)
@@ -305,54 +567,62 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                 $uid
             )
         );
-        $sql = 'SELECT sync_key, sync_data FROM ' . $this->_syncStateTable . ' WHERE '
-            . 'sync_devid = ? AND sync_user = ? AND sync_folderid = ?';
 
+        $this->_acquireCollectionLock($uid);
         try {
-            $results = $this->_db->select(
-                $sql,
-                [$this->_deviceInfo->id, $this->_deviceInfo->user, $uid]
-            );
-        } catch (Horde_Db_Exception $e) {
-            $this->_logger->err($e->getMessage());
-            throw new Horde_ActiveSync_Exception($e);
-        }
+            $sql = 'SELECT sync_key, sync_data FROM ' . $this->_syncStateTable . ' WHERE '
+                . 'sync_devid = ? AND sync_user = ? AND sync_folderid = ?';
 
-        try {
-            $columns = $this->_db->columns($this->_syncStateTable);
-        } catch (Horde_Db_Exception $e) {
-            $this->_logger->err($e->getMessage());
-            throw new Horde_ActiveSync_Exception($e);
-        }
-
-
-        $update = 'UPDATE ' . $this->_syncStateTable . ' SET sync_data = ? WHERE '
-            . 'sync_devid = ? AND sync_user = ? AND sync_folderid = ? AND sync_key = ?';
-
-        foreach ($results as $result) {
-            $folder = $this->_unserializeState(
-                $columns['sync_data']->binaryToString($result['sync_data'])
-            );
-            if ($folder === false) {
-                continue;
-            }
-            $folder->setServerId($serverid);
-            $folder = serialize($folder);
             try {
-                $this->_db->update(
-                    $update,
-                    [
-                        new Horde_Db_Value_Binary($folder),
-                        $this->_deviceInfo->id,
-                        $this->_deviceInfo->user,
-                        $uid,
-                        $result['sync_key'],
-                    ]
+                $results = $this->_db->select(
+                    $sql,
+                    [$this->_deviceInfo->id, $this->_deviceInfo->user, $uid]
                 );
             } catch (Horde_Db_Exception $e) {
                 $this->_logger->err($e->getMessage());
                 throw new Horde_ActiveSync_Exception($e);
             }
+
+            try {
+                $columns = $this->_db->columns($this->_syncStateTable);
+            } catch (Horde_Db_Exception $e) {
+                $this->_logger->err($e->getMessage());
+                throw new Horde_ActiveSync_Exception($e);
+            }
+
+            $update = 'UPDATE ' . $this->_syncStateTable . ' SET sync_data = ? WHERE '
+                . 'sync_devid = ? AND sync_user = ? AND sync_folderid = ? AND sync_key = ?';
+
+            foreach ($results as $result) {
+                $folder = $this->_unserializeState(
+                    $columns['sync_data']->binaryToString($result['sync_data'])
+                );
+                if ($folder === false) {
+                    continue;
+                }
+                $folder->setServerId($serverid);
+                $folder = serialize($folder);
+                try {
+                    $this->_db->update(
+                        $update,
+                        [
+                            new Horde_Db_Value_Binary($folder),
+                            $this->_deviceInfo->id,
+                            $this->_deviceInfo->user,
+                            $uid,
+                            $result['sync_key'],
+                        ]
+                    );
+                } catch (Horde_Db_Exception $e) {
+                    $this->_logger->err($e->getMessage());
+                    throw new Horde_ActiveSync_Exception($e);
+                }
+            }
+
+            $this->_releaseCollectionLock(true);
+        } catch (Throwable $e) {
+            $this->_releaseCollectionLock(false);
+            throw $e;
         }
     }
 
@@ -392,11 +662,13 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             $this->_logger->err($e->getMessage());
             throw new Horde_ActiveSync_Exception($e);
         }
-        $data = $this->_unserializeState(
-            $columns['sync_data']->binaryToString($results['sync_data'])
-        );
-        $this->_syncPendingBlob = $results['sync_pending'];
-        $pending = $this->_unserializeState($results['sync_pending']);
+        $rawSyncData = $columns['sync_data']->binaryToString($results['sync_data']);
+        $data = $this->_unserializeState($rawSyncData);
+        $rawSyncPending = !empty($results['sync_pending'])
+            ? $columns['sync_pending']->binaryToString($results['sync_pending'])
+            : '';
+        $this->_syncPendingBlob = ($rawSyncPending !== '') ? $rawSyncPending : null;
+        $pending = $this->_unserializeState($rawSyncPending);
 
         if ($this->_type == Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC) {
             $this->_folder = ($data !== false) ? $data : [];
@@ -407,7 +679,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                 )
             );
         } elseif ($this->_type == Horde_ActiveSync::REQUEST_TYPE_SYNC) {
-            $data = $this->_normalizeSyncFolderData($data);
+            $data = $this->_normalizeSyncFolderData($data, $rawSyncData);
             $this->_folder = (
                 $data !== false
                 ? $data
@@ -459,12 +731,16 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                 );
             } catch (Horde_Db_Exception $e) {
                 $this->_releaseStateRowLock(false);
+                $this->_releaseCollectionLock(false);
                 throw new Horde_ActiveSync_Exception($e);
             }
         }
 
         if ($this->_stateRowLockHeld) {
             $this->_releaseStateRowLock($updated);
+        }
+        if ($this->_collectionLockHeld) {
+            $this->_releaseCollectionLock($updated);
         }
     }
 
@@ -476,6 +752,26 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
      * @throws Horde_ActiveSync_Exception
      */
     public function save(array $options = [])
+    {
+        try {
+            $this->_saveState($options);
+            if ($this->_collectionLockHeld) {
+                $this->_releaseCollectionLock(true);
+            }
+        } catch (Throwable $e) {
+            if ($this->_collectionLockHeld) {
+                $this->_releaseCollectionLock(false);
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * @param array $options  @see Horde_ActiveSync_State_Base::save()
+     *
+     * @throws Horde_ActiveSync_Exception
+     */
+    protected function _saveState(array $options = [])
     {
         $this->_assertValidSyncFolderBeforeSave();
 
@@ -489,13 +785,13 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             }
             $data = (isset($this->_folder) ? serialize($this->_folder) : '');
             if (!empty($options['preservePending']) && $this->_syncPendingBlob !== null) {
-                $pending = $this->_syncPendingBlob instanceof Horde_Db_Value_Binary
-                    ? $this->_syncPendingBlob
-                    : new Horde_Db_Value_Binary($this->_syncPendingBlob);
+                $pendingString = (string) $this->_syncPendingBlob;
             } else {
-                $pending = (isset($this->_changes) ? serialize(array_values($this->_changes)) : '');
-                if ($pending !== '') {
-                    $this->_syncPendingBlob = new Horde_Db_Value_Binary($pending);
+                $pendingString = (isset($this->_changes)
+                    ? serialize(array_values($this->_changes))
+                    : '');
+                if ($pendingString !== '') {
+                    $this->_syncPendingBlob = $pendingString;
                 }
             }
         } else {
@@ -503,16 +799,21 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             $data = '';
         }
 
+        if ($this->_type == Horde_ActiveSync::REQUEST_TYPE_SYNC) {
+            $this->_assertSyncDataBlob($data);
+        }
+
         // If we are setting the first synckey iteration, do not save the
         // syncstamp/mod, otherwise we will never get the initial set of data.
+        $pendingString = isset($pendingString) ? $pendingString : '';
         $params = [
             'sync_key' => $this->_syncKey,
-            'sync_data' => new Horde_Db_Value_Binary($data),
+            'sync_data' => new Horde_Db_Value_Binary((string) $data),
             'sync_devid' => $this->_deviceInfo->id,
             'sync_mod' => (self::getSyncKeyCounter($this->_syncKey) == 1 ? 0 : $this->_thisSyncStamp),
             'sync_folderid' => (!empty($this->_collection['id']) ? $this->_collection['id'] : Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC),
             'sync_user' => $this->_deviceInfo->user,
-            'sync_pending' => $pending,
+            'sync_pending' => $pendingString,
             'sync_timestamp' => time(),
         ];
         $this->_logger->meta(
@@ -520,12 +821,13 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                 'STATE: Saving state: %s',
                 serialize([
                     $params['sync_key'],
-                    $params['sync_data'],
+                    strlen($data),
                     $params['sync_devid'],
                     $params['sync_mod'],
                     $params['sync_folderid'],
                     $params['sync_user'],
                     $this->_changes ? count($this->_changes) : 0,
+                    strlen($pendingString),
                     time()])
             )
         );
@@ -545,7 +847,15 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
      */
     protected function _saveSyncStateRow(array $params)
     {
-        $where = ['sync_key = ?', [$params['sync_key']]];
+        $where = [
+            'sync_key = ? AND sync_folderid = ? AND sync_devid = ? AND sync_user = ?',
+            [
+                $params['sync_key'],
+                $params['sync_folderid'],
+                $params['sync_devid'],
+                $params['sync_user'],
+            ],
+        ];
         $started = false;
         $lockHeld = $this->_stateRowLockHeld;
 
@@ -555,7 +865,8 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
         }
 
         try {
-            if ($this->_db->updateBlob($this->_syncStateTable, $params, $where)) {
+            $updated = $this->_db->updateBlob($this->_syncStateTable, $params, $where);
+            if ($updated) {
                 if ($lockHeld) {
                     $this->_releaseStateRowLock(true);
                 } elseif ($started) {
@@ -573,18 +884,25 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                 );
             } catch (Horde_Db_Exception $e) {
                 if (!$this->_syncStateExists($params['sync_key'])) {
+                    $this->_logger->err(
+                        sprintf(
+                            'STATE: Persist INSERT failed for synckey %s folder %s: %s',
+                            $params['sync_key'],
+                            $params['sync_folderid'],
+                            $e->getMessage()
+                        )
+                    );
                     throw $e;
                 }
 
-                // TODO: Switch to DI PSR-3 Logger
-                Horde::log(
-                    'STATE: Concurrent insert for synckey '
+                $message = 'STATE: Concurrent insert for synckey '
                     . $params['sync_key']
-                    . '; updating existing row.',
-                    'DEBUG'
-                );
+                    . '; updating existing row.';
+                Horde::log($message, 'DEBUG');
+                $this->_logger->meta($message);
 
-                if (!$this->_db->updateBlob($this->_syncStateTable, $params, $where)) {
+                $updated = $this->_db->updateBlob($this->_syncStateTable, $params, $where);
+                if (!$updated) {
                     throw $e;
                 }
             }

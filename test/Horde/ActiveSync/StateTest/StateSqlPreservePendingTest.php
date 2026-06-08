@@ -39,11 +39,8 @@ class StateSqlPreservePendingTest extends TestCase
         ]);
 
         $db = $this->_mockDbForSave(function ($params) use ($pendingBlob) {
-            $pending = $params['sync_pending'];
-            if ($pending instanceof Horde_Db_Value_Binary) {
-                return $pending->value === $pendingBlob;
-            }
-            return $pending === $pendingBlob;
+            return $params['sync_pending'] === $pendingBlob
+                && $params['sync_data'] instanceof Horde_Db_Value_Binary;
         });
 
         $state = new Horde_ActiveSync_State_Sql(['db' => $db]);
@@ -121,11 +118,8 @@ class StateSqlPreservePendingTest extends TestCase
         $folder = new Horde_ActiveSync_Folder_Imap('INBOX', Horde_ActiveSync::CLASS_EMAIL);
 
         $db = $this->_mockDbForSave(function ($params) {
-            $pending = $params['sync_pending'];
-            if ($pending instanceof Horde_Db_Value_Binary) {
-                return $pending->value === '';
-            }
-            return $pending === '';
+            return $params['sync_pending'] === ''
+                && $params['sync_data'] instanceof Horde_Db_Value_Binary;
         });
 
         $state = new Horde_ActiveSync_State_Sql(['db' => $db]);
@@ -174,7 +168,7 @@ class StateSqlPreservePendingTest extends TestCase
             '_collection' => ['id' => 'Fea62ac31', 'class' => Horde_ActiveSync::CLASS_EMAIL],
             '_thisSyncStamp' => 100,
             '_changes' => null,
-            '_syncPendingBlob' => new Horde_Db_Value_Binary($pendingBlob),
+            '_syncPendingBlob' => $pendingBlob,
         ] as $prop => $value) {
             $p = $ref->getProperty($prop);
             $p->setAccessible(true);

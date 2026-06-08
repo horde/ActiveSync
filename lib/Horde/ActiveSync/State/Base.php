@@ -21,6 +21,11 @@
 abstract class Horde_ActiveSync_State_Base
 {
     /**
+     * Treat committed collection lock tokens older than this as stale (seconds).
+     */
+    public const STATE_ROW_LOCK_STALE_SECONDS = 300;
+
+    /**
      * Configuration parameters
      *
      * @var array
@@ -108,13 +113,13 @@ abstract class Horde_ActiveSync_State_Base
     protected $_changes;
 
     /**
-     * Raw sync_pending payload last read from storage.
+     * Serialized sync_pending payload last read from storage.
      *
      * Used when persisting a PING checkpoint: PING may update sync_data
      * (folder + PING watermark) but must not clear an in-flight MOREAVAILABLE
      * batch in sync_pending.
      *
-     * @var mixed
+     * @var string|Horde_Db_Value_Binary|null
      */
     protected $_syncPendingBlob;
 
@@ -159,7 +164,7 @@ abstract class Horde_ActiveSync_State_Base
      *
      * @return mixed  The folder object, or false to create a new one.
      */
-    protected function _normalizeSyncFolderData($data)
+    protected function _normalizeSyncFolderData($data, $rawBlob = null)
     {
         if ($this->_type != Horde_ActiveSync::REQUEST_TYPE_SYNC) {
             return $data;
@@ -180,8 +185,42 @@ abstract class Horde_ActiveSync_State_Base
                 $this->_syncKey
             )
         );
+        if ($rawBlob !== null && $rawBlob !== '') {
+            $this->_logger->meta(
+                sprintf(
+                    'STATE: Invalid sync_data details: type=%s, head=%s',
+                    is_object($data) ? get_class($data) : gettype($data),
+                    substr($rawBlob, 0, 60)
+                )
+            );
+        }
 
         return false;
+    }
+
+    /**
+     * Refuse to persist FOLDERSYNC-shaped or empty collection sync_data blobs.
+     *
+     * @param string $data  Serialized sync_data about to be written.
+     *
+     * @throws Horde_ActiveSync_Exception_StaleState
+     */
+    protected function _assertSyncDataBlob($data)
+    {
+        if ($this->_type != Horde_ActiveSync::REQUEST_TYPE_SYNC) {
+            return;
+        }
+
+        if ($data === '' || $data === 'a:0:{}' || preg_match('/^a:\d+:\{/', $data)) {
+            throw new Horde_ActiveSync_Exception_StaleState(
+                sprintf(
+                    'Refusing to persist corrupt sync_data blob for collection %s (synckey %s, head=%s).',
+                    !empty($this->_collection['id']) ? $this->_collection['id'] : 'unknown',
+                    $this->_syncKey,
+                    substr($data, 0, 40)
+                )
+            );
+        }
     }
 
     /**
@@ -1026,7 +1065,17 @@ abstract class Horde_ActiveSync_State_Base
                     : ($this->_collection['serverid'] == 'RI' ? new Horde_ActiveSync_Folder_RI('RI', 'RI') : new Horde_ActiveSync_Folder_Collection($this->_collection['serverid'], $this->_collection['class']));
             }
             $this->_syncKey = '0';
-            $this->_resetDeviceState($id);
+            $lockFolderId = ($type == Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC)
+                ? Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC
+                : $id;
+            $this->_acquireCollectionLock($lockFolderId);
+            try {
+                $this->_resetDeviceState($id);
+                $this->_releaseCollectionLock(true);
+            } catch (Throwable $e) {
+                $this->_releaseCollectionLock(false);
+                throw $e;
+            }
             return;
         }
 
@@ -1040,11 +1089,17 @@ abstract class Horde_ActiveSync_State_Base
         }
         $this->_syncKey = $syncKey;
 
-        // Cleanup older syncstates
-        $this->_gc($syncKey);
+        $this->_acquireCollectionLock();
+        try {
+            // Cleanup older syncstates
+            $this->_gc($syncKey);
 
-        // Load the state
-        $this->_loadState();
+            // Load the state
+            $this->_loadState();
+        } catch (Throwable $e) {
+            $this->_releaseCollectionLock(false);
+            throw $e;
+        }
     }
 
     /**
@@ -1073,6 +1128,28 @@ abstract class Horde_ActiveSync_State_Base
     protected function _loadState()
     {
         throw new Horde_ActiveSync_Exception('Must be implemented in concrete class.');
+    }
+
+    /**
+     * Acquire an exclusive lock for the current collection.
+     *
+     * Serializes SYNC/PING workers across sync_key rows for the same folder.
+     * No-op in drivers that do not implement collection locking.
+     *
+     * @param string|null $folderId  Optional folder id override.
+     */
+    protected function _acquireCollectionLock($folderId = null)
+    {
+    }
+
+    /**
+     * Release a collection lock acquired by _acquireCollectionLock().
+     *
+     * @param boolean $commit  Commit (true) or roll back (false) the lock
+     *                         transaction when this instance owns it.
+     */
+    protected function _releaseCollectionLock($commit = false)
+    {
     }
 
     /**
