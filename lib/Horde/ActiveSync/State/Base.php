@@ -156,13 +156,18 @@ abstract class Horde_ActiveSync_State_Base
     /**
      * Validate deserialized sync_data for a collection SYNC request.
      *
-     * Corrupt or FOLDERSYNC-shaped blobs (e.g. a:0:{}) must not be used as a
-     * Horde_ActiveSync_Folder_* object. Treat them as missing state so a fresh
-     * folder object is created instead of breaking PING/SYNC.
+     * Missing or unparseable blobs (unserialize() === false) are treated as
+     * absent state and rebuilt on load. Clearly corrupt payloads (arrays,
+     * FOLDERSYNC-shaped blobs, sync_pending-shaped data) raise StaleState so
+     * callers can force a collection resync via STATUS_KEYMISMATCH.
      *
-     * @param mixed $data  Result of unserialize() on sync_data.
+     * @param mixed       $data     Result of unserialize() on sync_data.
+     * @param string|null $rawBlob  Raw sync_data string for logging.
      *
-     * @return mixed  The folder object, or false to create a new one.
+     * @return Horde_ActiveSync_Folder_Base|false  Folder object, or false when
+     *                                             state is simply missing.
+     *
+     * @throws Horde_ActiveSync_Exception_StaleState
      */
     protected function _normalizeSyncFolderData($data, $rawBlob = null)
     {
@@ -178,24 +183,36 @@ abstract class Horde_ActiveSync_State_Base
             return $data;
         }
 
+        $collectionId = !empty($this->_collection['id'])
+            ? $this->_collection['id']
+            : 'unknown';
+        $head = ($rawBlob !== null && $rawBlob !== '')
+            ? substr($rawBlob, 0, 60)
+            : (is_object($data) ? get_class($data) : gettype($data));
+
         $this->_logger->warn(
             sprintf(
-                'STATE: Invalid sync_data for collection %s (synckey %s); reinitializing folder state.',
-                !empty($this->_collection['id']) ? $this->_collection['id'] : 'unknown',
+                'STATE: Invalid sync_data for collection %s (synckey %s); forcing collection resync.',
+                $collectionId,
                 $this->_syncKey
             )
         );
-        if ($rawBlob !== null && $rawBlob !== '') {
-            $this->_logger->meta(
-                sprintf(
-                    'STATE: Invalid sync_data details: type=%s, head=%s',
-                    is_object($data) ? get_class($data) : gettype($data),
-                    substr($rawBlob, 0, 60)
-                )
-            );
-        }
+        $this->_logger->meta(
+            sprintf(
+                'STATE: Invalid sync_data details: type=%s, head=%s',
+                is_object($data) ? get_class($data) : gettype($data),
+                $head
+            )
+        );
 
-        return false;
+        throw new Horde_ActiveSync_Exception_StaleState(
+            sprintf(
+                'Corrupt sync_data for collection %s (synckey %s, head=%s).',
+                $collectionId,
+                $this->_syncKey,
+                $head
+            )
+        );
     }
 
     /**
@@ -1033,7 +1050,9 @@ abstract class Horde_ActiveSync_State_Base
      * @param string $id         The folder id this state represents. If empty
      *                           assumed to be a foldersync state.
      *
-     * @throws Horde_ActiveSync_Exception, Horde_ActiveSync_Exception_StateGone
+     * @throws Horde_ActiveSync_Exception
+     * @throws Horde_ActiveSync_Exception_StateGone
+     * @throws Horde_ActiveSync_Exception_StaleState
      */
     public function loadState(array $collection, $syncKey, $type = null, $id = null)
     {

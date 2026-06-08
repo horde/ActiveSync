@@ -49,45 +49,31 @@ class StateSqlPreservePendingTest extends TestCase
         $state->save(['preservePending' => true]);
     }
 
-    public function testLoadReinitializesCorruptEmptyArraySyncData()
+    public function testLoadRejectsCorruptEmptyArraySyncData()
     {
-        $db = $this->getMockBuilder('Horde_Db_Adapter')
-            ->disableOriginalConstructor()
-            ->getMock();
+        $state = $this->_stateForNormalizeTest();
 
-        $state = new Horde_ActiveSync_State_Sql(['db' => $db]);
-        $ref = new \ReflectionClass($state);
-        foreach ([
-            '_type' => Horde_ActiveSync::REQUEST_TYPE_SYNC,
-            '_syncKey' => '{test}99',
-            '_collection' => [
-                'id' => 'Fea62ac31',
-                'class' => Horde_ActiveSync::CLASS_EMAIL,
-                'serverid' => 'INBOX',
-            ],
-        ] as $prop => $value) {
-            $p = $ref->getProperty($prop);
-            $p->setAccessible(true);
-            $p->setValue($state, $value);
-        }
+        $normalize = $this->_method($state, '_normalizeSyncFolderData');
+        $this->expectException('Horde_ActiveSync_Exception_StaleState');
+        $normalize->invoke($state, [], 'a:0:{}');
+    }
 
-        $logger = $ref->getProperty('_logger');
-        $logger->setAccessible(true);
-        $logger->setValue(
-            $state,
-            new \Horde_ActiveSync_Log_Logger(new \Horde_Log_Handler_Null())
-        );
+    public function testLoadRejectsSyncPendingShapedSyncData()
+    {
+        $state = $this->_stateForNormalizeTest();
+        $pending = serialize([['id' => 100, 'type' => 1]]);
 
-        $normalize = $ref->getMethod('_normalizeSyncFolderData');
-        $normalize->setAccessible(true);
-        $this->assertFalse($normalize->invoke($state, []));
+        $normalize = $this->_method($state, '_normalizeSyncFolderData');
+        $this->expectException('Horde_ActiveSync_Exception_StaleState');
+        $normalize->invoke($state, unserialize($pending), $pending);
+    }
 
-        $create = $ref->getMethod('_createEmptySyncFolder');
-        $create->setAccessible(true);
-        $folderObj = $create->invoke($state);
+    public function testLoadAllowsMissingSyncDataBlob()
+    {
+        $state = $this->_stateForNormalizeTest();
 
-        $this->assertInstanceOf('Horde_ActiveSync_Folder_Imap', $folderObj);
-        $this->assertSame('INBOX', $folderObj->serverid());
+        $normalize = $this->_method($state, '_normalizeSyncFolderData');
+        $this->assertFalse($normalize->invoke($state, false, ''));
     }
 
     public function testSaveRejectsInvalidEmailFolderState()
@@ -126,6 +112,47 @@ class StateSqlPreservePendingTest extends TestCase
         $this->_primeSyncState($state, $folder, serialize([['id' => 1, 'type' => 1]]));
 
         $state->save();
+    }
+
+    protected function _stateForNormalizeTest()
+    {
+        $db = $this->getMockBuilder('Horde_Db_Adapter')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $state = new Horde_ActiveSync_State_Sql(['db' => $db]);
+        $ref = new \ReflectionClass($state);
+        foreach ([
+            '_type' => Horde_ActiveSync::REQUEST_TYPE_SYNC,
+            '_syncKey' => '{test}99',
+            '_collection' => [
+                'id' => 'Fea62ac31',
+                'class' => Horde_ActiveSync::CLASS_EMAIL,
+                'serverid' => 'INBOX',
+            ],
+        ] as $prop => $value) {
+            $p = $ref->getProperty($prop);
+            $p->setAccessible(true);
+            $p->setValue($state, $value);
+        }
+
+        $logger = $ref->getProperty('_logger');
+        $logger->setAccessible(true);
+        $logger->setValue(
+            $state,
+            new \Horde_ActiveSync_Log_Logger(new \Horde_Log_Handler_Null())
+        );
+
+        return $state;
+    }
+
+    protected function _method($state, $name)
+    {
+        $ref = new \ReflectionClass($state);
+        $method = $ref->getMethod($name);
+        $method->setAccessible(true);
+
+        return $method;
     }
 
     protected function _mockDbForSave(callable $pendingCheck)

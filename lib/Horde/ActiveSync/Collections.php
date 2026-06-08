@@ -1089,6 +1089,7 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
      *
      * @throws Horde_ActiveSync_Exception_InvalidRequest
      * @throws Horde_ActiveSync_Exception_FolderGone
+     * @throws Horde_ActiveSync_Exception_StaleState
      */
     public function initCollectionState(array &$collection, $requireSyncKey = false)
     {
@@ -1239,6 +1240,23 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                 // Initialize the collection's state data in the state handler.
                 try {
                     $this->initCollectionState($collection, true);
+                } catch (Horde_ActiveSync_Exception_StaleState $e) {
+                    $this->_logger->notice(
+                        sprintf(
+                            'COLLECTIONS: Corrupt state for %s; forcing collection resync: %s',
+                            $id,
+                            $e->getMessage()
+                        )
+                    );
+                    $this->_as->state->loadState(
+                        [],
+                        null,
+                        Horde_ActiveSync::REQUEST_TYPE_SYNC,
+                        $id
+                    );
+                    $this->setGetChangesFlag($id);
+                    $dataavailable = true;
+                    continue;
                 } catch (Horde_ActiveSync_Exception_StateGone $e) {
                     if (!empty($options['pingable'])) {
                         $this->_logger->notice(
