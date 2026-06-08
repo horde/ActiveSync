@@ -1,5 +1,7 @@
 <?php
 
+use Horde\Util\HordeString;
+
 /**
  * Portions of this class were ported from the Z-Push project:
  *   File      :   wbxml.php
@@ -126,7 +128,7 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
      */
     public function fromvEvent($vCal)
     {
-        $method = Horde_String::upper($vCal->getAttributeDefault('METHOD', 'REQUEST'));
+        $method = HordeString::upper($vCal->getAttributeDefault('METHOD', 'REQUEST'));
         foreach ($vCal->getComponents() as $component) {
             switch ($component->getType()) {
                 case 'vEvent':
@@ -203,7 +205,7 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
 
         try {
             $this->endtime = new Horde_Date($vevent->getAttribute('DTEND'));
-            $this->location = Horde_String::truncate($vevent->getAttribute('LOCATION'), 255);
+            $this->location = HordeString::truncate($vevent->getAttribute('LOCATION'), 255);
         } catch (Horde_Icalendar_Exception $e) {
         }
 
@@ -222,7 +224,7 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
         try {
             $status = $vevent->getAttribute('STATUS');
             if (!is_array($status)) {
-                $status = Horde_String::upper($status);
+                $status = HordeString::upper($status);
                 $this->busystatus = $status == 'TENTATIVE' ? Horde_ActiveSync_Message_Appointment::BUSYSTATUS_TENTATIVE
                     : ($status == 'CONFIRMED' ? Horde_ActiveSync_Message_Appointment::BUSYSTATUS_BUSY
                         : Horde_ActiveSync_Message_Appointment::BUSYSTATUS_FREE);
