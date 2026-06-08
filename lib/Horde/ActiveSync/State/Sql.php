@@ -123,6 +123,21 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     public const SYNCSTAMP_UPDATE_THRESHOLD = 30000;
 
     /**
+     * True while a SELECT ... FOR UPDATE row lock is held for the loaded
+     * sync_key (released on save() or updateSyncStamp()).
+     *
+     * @var boolean
+     */
+    protected $_stateRowLockHeld = false;
+
+    /**
+     * True if this instance started the transaction that holds the row lock.
+     *
+     * @var boolean
+     */
+    protected $_stateRowLockTxnOwner = false;
+
+    /**
      * Const'r
      *
      * @param array  $params   Must contain:
@@ -145,6 +160,101 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
         $this->_syncCacheTable   = 'horde_activesync_cache';
 
         $this->_db = $params['db'];
+    }
+
+    /**
+     * Roll back any row lock left open when the request ends without save().
+     */
+    public function __destruct()
+    {
+        if ($this->_stateRowLockHeld) {
+            $this->_releaseStateRowLock(false);
+        }
+    }
+
+    /**
+     * Release a row lock opened by _loadState().
+     *
+     * @param boolean $commit  Commit (true) or roll back (false) the lock
+     *                         transaction when this instance owns it.
+     */
+    protected function _releaseStateRowLock($commit = false)
+    {
+        if (!$this->_stateRowLockHeld) {
+            return;
+        }
+
+        if ($this->_stateRowLockTxnOwner) {
+            try {
+                if ($commit) {
+                    $this->_db->commitDbTransaction();
+                } else {
+                    $this->_db->rollbackDbTransaction();
+                }
+            } catch (Horde_Db_Exception $e) {
+                $this->_logger->err($e->getMessage());
+            }
+        }
+
+        $this->_stateRowLockHeld = false;
+        $this->_stateRowLockTxnOwner = false;
+    }
+
+    /**
+     * Begin a transaction and lock the current sync state row for update.
+     *
+     * @throws Horde_ActiveSync_Exception
+     */
+    protected function _acquireStateRowLock()
+    {
+        $started = false;
+        if (!$this->_db->transactionStarted()) {
+            $this->_db->beginDbTransaction();
+            $started = true;
+        }
+
+        $sql = 'SELECT sync_data, sync_devid, sync_mod, sync_pending FROM '
+            . $this->_syncStateTable . ' WHERE sync_key = ?';
+        $values = [$this->_syncKey];
+        if (!empty($this->_collection['id'])) {
+            $sql .= ' AND sync_folderid = ?';
+            $values[] = $this->_collection['id'];
+        }
+        $this->_db->addLock($sql);
+
+        try {
+            $results = $this->_db->selectOne($sql, $values);
+        } catch (Horde_Db_Exception $e) {
+            if ($started) {
+                try {
+                    $this->_db->rollbackDbTransaction();
+                } catch (Horde_Db_Exception $e2) {
+                }
+            }
+            $this->_logger->err($e->getMessage());
+            throw new Horde_ActiveSync_Exception($e);
+        }
+
+        if (empty($results)) {
+            if ($started) {
+                try {
+                    $this->_db->rollbackDbTransaction();
+                } catch (Horde_Db_Exception $e2) {
+                }
+            }
+            $this->_logger->warn(
+                sprintf(
+                    'STATE: Could not find state for synckey %s.',
+                    $this->_syncKey
+                )
+            );
+            throw new Horde_ActiveSync_Exception_StateGone();
+        }
+
+        $this->_stateRowLockHeld = true;
+        $this->_stateRowLockTxnOwner = $started;
+
+        return $results;
     }
 
     /**
@@ -250,31 +360,9 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
      */
     protected function _loadState()
     {
-        // Load the previous syncState from storage
-        $sql = 'SELECT sync_data, sync_devid, sync_mod, sync_pending FROM '
-            . $this->_syncStateTable . ' WHERE sync_key = ?';
-        $values = [$this->_syncKey];
-        if (!empty($this->_collection['id'])) {
-            $sql .= ' AND sync_folderid = ?';
-            $values[] = $this->_collection['id'];
-        }
-        try {
-            $results = $this->_db->selectOne($sql, $values);
-        } catch (Horde_Db_Exception $e) {
-            $this->_logger->err($e->getMessage());
-            throw new Horde_ActiveSync_Exception($e);
-        }
+        $this->_releaseStateRowLock(false);
 
-        if (empty($results)) {
-            $this->_logger->warn(
-                sprintf(
-                    'STATE: Could not find state for synckey %s.',
-                    $this->_syncKey
-                )
-            );
-            throw new Horde_ActiveSync_Exception_StateGone();
-        }
-
+        $results = $this->_acquireStateRowLock();
         $this->_loadStateFromResults($results);
     }
 
@@ -344,6 +432,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
      */
     public function updateSyncStamp()
     {
+        $updated = false;
         if (($this->_thisSyncStamp - $this->_lastSyncStamp) >= self::SYNCSTAMP_UPDATE_THRESHOLD) {
             $this->_logger->meta(
                 sprintf(
@@ -355,7 +444,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             $sql = 'UPDATE ' . $this->_syncStateTable . ' SET sync_mod = ?'
                 . ' WHERE sync_mod = ? AND sync_key = ? AND sync_user = ? AND sync_folderid = ?';
             try {
-                $this->_db->update(
+                $updated = (bool) $this->_db->update(
                     $sql,
                     [
                         $this->_thisSyncStamp,
@@ -366,8 +455,13 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                     ]
                 );
             } catch (Horde_Db_Exception $e) {
+                $this->_releaseStateRowLock(false);
                 throw new Horde_ActiveSync_Exception($e);
             }
+        }
+
+        if ($this->_stateRowLockHeld) {
+            $this->_releaseStateRowLock($updated);
         }
     }
 
@@ -438,9 +532,9 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     /**
      * Persist sync state using Horde_Db (update, else insert).
      *
-     * Avoids DELETE+INSERT and database-specific UPSERT syntax. Concurrent
-     * PING/SYNC requests for the same sync_key may race; a failed insert is
-     * retried as an update when the row already exists.
+     * When _loadState() has acquired a row lock, the save runs in that same
+     * transaction so concurrent PING/SYNC workers cannot interleave writes to
+     * sync_data or sync_pending for the same sync_key.
      *
      * @param array $params  Column data for horde_activesync_state.
      *
@@ -450,15 +544,18 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     {
         $where = ['sync_key = ?', [$params['sync_key']]];
         $started = false;
+        $lockHeld = $this->_stateRowLockHeld;
 
-        if (!$this->_db->transactionStarted()) {
+        if (!$lockHeld && !$this->_db->transactionStarted()) {
             $this->_db->beginDbTransaction();
             $started = true;
         }
 
         try {
             if ($this->_db->updateBlob($this->_syncStateTable, $params, $where)) {
-                if ($started) {
+                if ($lockHeld) {
+                    $this->_releaseStateRowLock(true);
+                } elseif ($started) {
                     $this->_db->commitDbTransaction();
                 }
                 return;
@@ -489,11 +586,15 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                 }
             }
 
-            if ($started) {
+            if ($lockHeld) {
+                $this->_releaseStateRowLock(true);
+            } elseif ($started) {
                 $this->_db->commitDbTransaction();
             }
         } catch (Horde_Db_Exception $e) {
-            if ($started) {
+            if ($lockHeld) {
+                $this->_releaseStateRowLock(false);
+            } elseif ($started) {
                 try {
                     $this->_db->rollbackDbTransaction();
                 } catch (Horde_Db_Exception $e2) {

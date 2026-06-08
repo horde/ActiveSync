@@ -97,6 +97,7 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
     public const SYNC_MOD               = 'sync_mod';
     public const SYNC_PENDING           = 'sync_pending';
     public const SYNC_TIMESTAMP         = 'sync_timestamp';
+    public const SYNC_LOCK              = 'sync_lock';
     public const DEVICE_ID              = 'device_id';
     public const DEVICE_TYPE            = 'device_type';
     public const DEVICE_AGENT           = 'device_agent';
@@ -187,6 +188,31 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
     ];
 
     /**
+     * Minimum sync_mod delta before updateSyncStamp() persists a new value.
+     */
+    public const SYNCSTAMP_UPDATE_THRESHOLD = 30000;
+
+    /**
+     * Treat sync_lock values older than this as stale (seconds).
+     */
+    public const STATE_ROW_LOCK_STALE_SECONDS = 300;
+
+    /**
+     * True while a document lock is held for the loaded sync_key (released on
+     * save() or updateSyncStamp()).
+     *
+     * @var boolean
+     */
+    protected $_stateRowLockHeld = false;
+
+    /**
+     * sync_lock value set when this instance acquired the document lock.
+     *
+     * @var integer|null
+     */
+    protected $_stateLockToken = null;
+
+    /**
      * Const'r
      *
      * @param array  $params   Must contain:
@@ -203,6 +229,142 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
 
         $this->_mongo = $params['connection'];
         $this->_db = $this->_mongo->selectDb(null);
+    }
+
+    /**
+     * Release any document lock left open when the request ends without save().
+     */
+    public function __destruct()
+    {
+        if ($this->_stateRowLockHeld) {
+            $this->_releaseStateRowLock(false);
+        }
+    }
+
+    /**
+     * HAS_state collection for the current sync key.
+     *
+     * @return MongoCollection
+     */
+    protected function _stateCollection()
+    {
+        return $this->_db->selectCollection(self::COLLECTION_STATE);
+    }
+
+    /**
+     * Base query for the sync state document being loaded or saved.
+     *
+     * @return array
+     */
+    protected function _stateRowLockQuery()
+    {
+        return [
+            self::MONGO_ID => $this->_syncKey,
+            self::SYNC_FOLDERID => $this->_collection['id'],
+        ];
+    }
+
+    /**
+     * Release a document lock opened by _loadState().
+     *
+     * @param boolean $commit  Unused for Mongo; kept for parity with Sql.
+     */
+    protected function _releaseStateRowLock($commit = false)
+    {
+        if (!$this->_stateRowLockHeld) {
+            return;
+        }
+
+        try {
+            $this->_stateCollection()->update(
+                array_merge(
+                    $this->_stateRowLockQuery(),
+                    [self::SYNC_LOCK => $this->_stateLockToken]
+                ),
+                ['$unset' => [self::SYNC_LOCK => '']]
+            );
+        } catch (Exception $e) {
+            $this->_logger->err($e->getMessage());
+        }
+
+        $this->_stateRowLockHeld = false;
+        $this->_stateLockToken = null;
+    }
+
+    /**
+     * Atomically lock the current sync state document and return its fields.
+     *
+     * @return array
+     *
+     * @throws Horde_ActiveSync_Exception
+     * @throws Horde_ActiveSync_Exception_StateGone
+     */
+    protected function _acquireStateRowLock()
+    {
+        $collection = $this->_stateCollection();
+        $baseQuery = $this->_stateRowLockQuery();
+
+        try {
+            $exists = $collection->count($baseQuery);
+        } catch (Exception $e) {
+            $this->_logger->err($e->getMessage());
+            throw new Horde_ActiveSync_Exception($e);
+        }
+
+        if (!$exists) {
+            $this->_logger->warn(sprintf(
+                'Could not find state for synckey %s.',
+                $this->_syncKey
+            ));
+            throw new Horde_ActiveSync_Exception_StateGone();
+        }
+
+        $maxWait = 100;
+        $forceStale = false;
+        $token = null;
+
+        for ($i = 0; $i < $maxWait * 2; ++$i) {
+            $token = time();
+            $query = $baseQuery;
+            if ($forceStale) {
+                $query[self::SYNC_LOCK] = ['$exists' => true];
+            } else {
+                $query['$or'] = [
+                    [self::SYNC_LOCK => ['$exists' => false]],
+                    [self::SYNC_LOCK => ['$lt' => $token - self::STATE_ROW_LOCK_STALE_SECONDS]],
+                ];
+            }
+
+            try {
+                $results = $collection->findAndModify(
+                    $query,
+                    ['$set' => [self::SYNC_LOCK => $token]],
+                    [
+                        self::SYNC_DATA => true,
+                        self::SYNC_DEVID => true,
+                        self::SYNC_MOD => true,
+                        self::SYNC_PENDING => true,
+                    ]
+                );
+            } catch (Exception $e) {
+                $this->_logger->err($e->getMessage());
+                throw new Horde_ActiveSync_Exception($e);
+            }
+
+            if (!empty($results)) {
+                $this->_stateRowLockHeld = true;
+                $this->_stateLockToken = $token;
+                return $results;
+            }
+
+            if ($i >= $maxWait) {
+                $forceStale = true;
+            } else {
+                usleep(100000);
+            }
+        }
+
+        throw new Horde_ActiveSync_Exception('Could not acquire state row lock.');
     }
 
     /**
@@ -264,33 +426,9 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
      */
     protected function _loadState()
     {
-        try {
-            $results = $this->_db->selectCollection(self::COLLECTION_STATE)
-                ->findOne(
-                    [
-                        self::MONGO_ID => $this->_syncKey,
-                        self::SYNC_FOLDERID => $this->_collection['id'],
-                    ],
-                    [
-                        self::SYNC_DATA => true,
-                        self::SYNC_DEVID => true,
-                        self::SYNC_MOD => true,
-                        self::SYNC_PENDING => true,
-                    ]
-                );
-        } catch (Exception $e) {
-            $this->_logger->err('Error in loading state from DB: ' . $e->getMessage());
-            throw new Horde_ActiveSync_Exception($e);
-        }
+        $this->_releaseStateRowLock(false);
 
-        if (empty($results)) {
-            $this->_logger->warn(sprintf(
-                'Could not find state for synckey %s.',
-                $this->_syncKey
-            ));
-            throw new Horde_ActiveSync_Exception_StateGone();
-        }
-
+        $results = $this->_acquireStateRowLock();
         $this->_loadStateFromResults($results);
     }
 
@@ -396,22 +534,127 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
             )
         );
 
+        $this->_saveSyncStateRow($document);
+    }
+
+    /**
+     * Persist sync state to HAS_state (update, else insert).
+     *
+     * When _loadState() has acquired a document lock, the save runs as a single
+     * conditional update so concurrent PING/SYNC workers cannot interleave writes
+     * to sync_data or sync_pending for the same sync_key.
+     *
+     * @param array $document  State document fields.
+     *
+     * @throws Horde_ActiveSync_Exception
+     */
+    protected function _saveSyncStateRow(array $document)
+    {
+        $collection = $this->_stateCollection();
+        $lockHeld = $this->_stateRowLockHeld;
+
         try {
-            $this->_db->selectCollection(self::COLLECTION_STATE)->insert($document);
+            if ($lockHeld) {
+                $query = array_merge(
+                    $this->_stateRowLockQuery(),
+                    [self::SYNC_LOCK => $this->_stateLockToken]
+                );
+                $set = $document;
+                unset($set[self::MONGO_ID]);
+                unset($set[self::SYNC_LOCK]);
+
+                $result = $collection->update(
+                    $query,
+                    [
+                        '$set' => $set,
+                        '$unset' => [self::SYNC_LOCK => ''],
+                    ]
+                );
+
+                if (empty($result['ok']) || empty($result['n'])) {
+                    throw new Horde_ActiveSync_Exception('Error saving state.');
+                }
+
+                $this->_stateRowLockHeld = false;
+                $this->_stateLockToken = null;
+                return;
+            }
+
+            try {
+                $collection->insert($document);
+            } catch (Exception $e) {
+                // Might exist already if the last sync attempt failed.
+                $this->_logger->notice(
+                    sprintf(
+                        'Previous request processing for synckey %s failed to be accepted by the client, removing previous state and trying again.',
+                        $this->_syncKey
+                    )
+                );
+                try {
+                    $collection->remove([self::MONGO_ID => $this->_syncKey]);
+                    $collection->insert($document);
+                } catch (Exception $e2) {
+                    throw new Horde_ActiveSync_Exception('Error saving state.');
+                }
+            }
+        } catch (Horde_ActiveSync_Exception $e) {
+            if ($lockHeld) {
+                $this->_releaseStateRowLock(false);
+            }
+            throw $e;
         } catch (Exception $e) {
-            // Might exist already if the last sync attempt failed.
-            $this->_logger->notice(
+            if ($lockHeld) {
+                $this->_releaseStateRowLock(false);
+            }
+            throw new Horde_ActiveSync_Exception('Error saving state.');
+        }
+    }
+
+    /**
+     * Update the syncStamp in the collection state, outside of any other changes.
+     * Used to prevent extremely large differences in syncStamps for clients
+     * and collections that don't often have changes.
+     *
+     * @throws Horde_ActiveSync_Exception
+     */
+    public function updateSyncStamp()
+    {
+        $updated = false;
+        if (($this->_thisSyncStamp - $this->_lastSyncStamp) >= self::SYNCSTAMP_UPDATE_THRESHOLD) {
+            $this->_logger->meta(
                 sprintf(
-                    'Previous request processing for synckey %s failed to be accepted by the client, removing previous state and trying again.',
-                    $this->_syncKey
+                    'Updating sync_mod value from %s to %s without changes.',
+                    $this->_lastSyncStamp,
+                    $this->_thisSyncStamp
                 )
             );
-            try {
-                $this->_db->selectCollection(self::COLLECTION_STATE)->remove([self::MONGO_ID => $this->_syncKey]);
-                $this->_db->selectCollection(self::COLLECTION_STATE)->insert($document);
-            } catch (Exception $e) {
-                throw new Horde_ActiveSync_Exception('Error saving state.');
+
+            $query = array_merge(
+                $this->_stateRowLockQuery(),
+                [
+                    self::SYNC_MOD => $this->_lastSyncStamp,
+                ]
+            );
+            if ($this->_stateRowLockHeld) {
+                $query[self::SYNC_LOCK] = $this->_stateLockToken;
             }
+
+            try {
+                $result = $this->_stateCollection()->update(
+                    $query,
+                    ['$set' => [self::SYNC_MOD => $this->_thisSyncStamp]]
+                );
+                $updated = !empty($result['ok']) && !empty($result['n']);
+            } catch (Exception $e) {
+                if ($this->_stateRowLockHeld) {
+                    $this->_releaseStateRowLock(false);
+                }
+                throw new Horde_ActiveSync_Exception($e);
+            }
+        }
+
+        if ($this->_stateRowLockHeld) {
+            $this->_releaseStateRowLock($updated);
         }
     }
 

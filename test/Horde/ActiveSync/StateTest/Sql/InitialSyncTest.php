@@ -3,11 +3,14 @@
 /**
  * Unit tests for CONDSTORE initial sync state handling.
  *
+ * @author Torben Dannhauer <torben@dannhauer.de>
+ * @license http://www.horde.org/licenses/gpl GPLv2
  * @category Horde
- * @package ActiveSync
+ * @package Horde_ActiveSync
+ * @subpackage UnitTests
  */
 
-namespace Horde\ActiveSync;
+namespace Horde\ActiveSync\StateTest\Sql;
 
 use Horde_Test_Case as TestCase;
 use Horde_ActiveSync;
@@ -18,7 +21,7 @@ use Horde_Db_Value_Binary;
 /**
  * @coversNothing
  */
-class StateSqlInitialSyncTest extends TestCase
+class InitialSyncTest extends TestCase
 {
     public function testUpdateStateAcknowledgesExportedMessage()
     {
