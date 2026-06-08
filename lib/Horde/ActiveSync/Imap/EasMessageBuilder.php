@@ -1,5 +1,7 @@
 <?php
 
+use Horde\Util\HordeString;
+
 /**
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
@@ -232,8 +234,8 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
         // Flags
         $flags = [];
         foreach ($this->_imapMessage->getFlags() as $flag) {
-            if (!empty($msgFlags[Horde_String::lower($flag)])) {
-                $flags[] = $msgFlags[Horde_String::lower($flag)];
+            if (!empty($msgFlags[HordeString::lower($flag)])) {
+                $flags[] = $msgFlags[HordeString::lower($flag)];
             }
         }
         $this->_easMessage->categories = $flags;
@@ -327,7 +329,7 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
         }
 
         // Many senders omit METHOD on text/calendar parts; treat as REQUEST (Bug #12083).
-        $method = Horde_String::upper($vCal->getAttributeDefault('METHOD', 'REQUEST'));
+        $method = HordeString::upper($vCal->getAttributeDefault('METHOD', 'REQUEST'));
         $this->_easMessage->contentclass = 'urn:content-classes:calendarmessage';
 
         switch ($method) {
@@ -436,7 +438,7 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
      */
     protected function _getEASImportance($importance)
     {
-        switch (Horde_String::lower($importance)) {
+        switch (HordeString::lower($importance)) {
             case '1':
             case 'high':
                 return 2;
