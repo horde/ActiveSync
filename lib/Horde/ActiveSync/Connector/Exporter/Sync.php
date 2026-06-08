@@ -52,10 +52,13 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
 
     /**
      * Sends the next change in the set to the client.
+     * Send the next change to the client.
      *
-     * @return boolean|Horde_Exception True if more changes can be sent false if
-     *                                 all changes were sent, Horde_Exception if
-     *                                 there was an error sending an item.
+     * @return boolean  True if a change was exported successfully. False if
+     *                  there are no more changes or the export must stop
+     *                  (caller should break out of the send loop).
+     *                  Throws on temporary/fatal failures instead of returning
+     *                  an exception object.
      */
     public function sendNextChange()
     {
@@ -452,7 +455,9 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
     /**
      * Sends the next message change to the client.
      *
-     * @return @see self::sendNextChange()
+     * @return boolean  True on successful export, false to stop the loop.
+     *
+     * @throws Horde_ActiveSync_Exception_TemporaryFailure
      */
     protected function _sendNextChange()
     {
@@ -514,7 +519,10 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
                                 $e->getMessage()
                             )
                         );
-                        // Do not drop pending changes on export failure.
+                        /* Do not drop pending changes on export failure.
+                         * Return false to break the caller's send loop; the
+                         * remaining batch stays in sync_pending for the next
+                         * SYNC request. */
                         return false;
                     }
                     break;

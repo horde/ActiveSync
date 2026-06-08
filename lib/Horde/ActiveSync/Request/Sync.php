@@ -470,6 +470,9 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                         $exporter->setChanges($this->_collections->getCollectionChanges(false), $collection);
                         $this->_encoder->startTag(Horde_ActiveSync::SYNC_COMMANDS);
                         $cnt_collection = 0;
+                        /* sendNextChange() returns true on successful export,
+                         * false when no more changes remain or on non-fatal
+                         * error (remaining batch preserved in sync_pending). */
                         while ($cnt_collection < $max_windowsize
                                && $cnt_global < $this->_collections->getDefaultWindowSize()) {
                             $progress = $exporter->sendNextChange();

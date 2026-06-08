@@ -220,6 +220,9 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             $sql .= ' AND sync_folderid = ?';
             $values[] = $this->_collection['id'];
         }
+        /* addLock() appends FOR UPDATE on MySQL/PostgreSQL but is a no-op on
+         * SQLite (Horde_Db_Adapter_Pdo_Sqlite). SQLite's file-level locking
+         * serializes writes anyway, so the row lock is advisory only there. */
         $this->_db->addLock($sql);
 
         try {

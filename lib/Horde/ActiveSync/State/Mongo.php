@@ -323,6 +323,10 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
         $forceStale = false;
         $token = null;
 
+        /* Spin up to ~10s (100 iterations * 100ms) waiting for an unlocked or
+         * stale document. After $maxWait iterations, force-steal the lock from
+         * any holder to prevent indefinite blocking. Total worst-case wait is
+         * ~20s (200 iterations). */
         for ($i = 0; $i < $maxWait * 2; ++$i) {
             $token = time();
             $query = $baseQuery;
