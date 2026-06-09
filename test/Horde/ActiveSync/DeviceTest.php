@@ -9,8 +9,8 @@
  */
 
 namespace Horde\ActiveSync;
-use PHPUnit\Framework\Attributes\CoversNothing;
 
+use PHPUnit\Framework\Attributes\CoversNothing;
 use Horde_Test_Case as TestCase;
 use Horde_ActiveSync_Device;
 use Horde_Date;

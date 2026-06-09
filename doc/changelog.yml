@@ -367,6 +367,33 @@
     Fix Travis tests.
     Add Travis configuration and .gitignore files.
     Development mode for Horde_ActiveSync-2.38.9
+3.0.0-RC1:
+  api: 3.0.0-RC1
+  state:
+    release: RC
+    api: RC
+  date: 2026-06-09
+  license:
+    identifier: GPL-2.0-only
+    uri: https://spdx.org/licenses/GPL-2.0-only.html
+  notes: |-
+    Merge pull request #41 from horde/fix/ActiveSync_loops
+    fix(activesync): consolidate state constants and document initial-sync ACK
+    fix(ActiveSync): force KEYMISMATCH when loading corrupt sync_data
+    Fix: Filename typo
+    fix(ActiveSync): harden state persist against races and sync_data corruption
+    docs(ActiveSync): clarify row lock behavior and sendNextChange contract
+    fix(activesync): serialize parallel state access with SQL and Mongo row locks
+    fix(activesync): repair initial sync, corrupt state, and nested MIME export
+    fix(activesync): reject corrupt collection sync_data on load and save
+    fix(activesync): separate PING watermark from SYNC modseq to stop iOS mail loops
+    refactor(ActiveSync): use HordeString instead of Horde_String in METHOD handling
+    Update MeetingRequest.php
+    Simplify method retrieval in fromvEvent
+    Refactor METHOD handling in EasMessageBuilder
+    fix(Iterator): use void return type for next() instead of ReturnTypeWillChange
+    fix(Device): restore isset guard for OS property access
+    Fix php and phpunit deprecations
 2.41.9:
   api: 2.41.0
   state:

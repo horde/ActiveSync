@@ -15,6 +15,10 @@ namespace Horde\ActiveSync\StateTest\Sql;
 use Horde_Test_Case as TestCase;
 use Horde_ActiveSync;
 use Horde_ActiveSync_State_Sql;
+use Horde_ActiveSync_Folder_Imap;
+use Horde_ActiveSync_Log_Logger;
+use Horde_Log_Handler_Null;
+use ReflectionClass;
 
 /**
  * @coversNothing
@@ -99,7 +103,7 @@ class RowLockTest extends TestCase
         $this->_setProperty(
             $state,
             '_logger',
-            new \Horde_ActiveSync_Log_Logger(new \Horde_Log_Handler_Null())
+            new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null())
         );
         $this->_setProperty($state, '_deviceInfo', $device);
 
@@ -108,7 +112,7 @@ class RowLockTest extends TestCase
 
     protected function _primeForSave(Horde_ActiveSync_State_Sql $state)
     {
-        $folder = new \Horde_ActiveSync_Folder_Imap('INBOX', Horde_ActiveSync::CLASS_EMAIL);
+        $folder = new Horde_ActiveSync_Folder_Imap('INBOX', Horde_ActiveSync::CLASS_EMAIL);
         $this->_setProperty($state, '_type', Horde_ActiveSync::REQUEST_TYPE_SYNC);
         $this->_setProperty($state, '_folder', $folder);
         $this->_setProperty($state, '_syncKey', '{test-lock}2');
@@ -124,7 +128,7 @@ class RowLockTest extends TestCase
 
     protected function _setProperty($object, $name, $value)
     {
-        $ref = new \ReflectionClass($object);
+        $ref = new ReflectionClass($object);
         $prop = $ref->getProperty($name);
         $prop->setAccessible(true);
         $prop->setValue($object, $value);
@@ -132,7 +136,7 @@ class RowLockTest extends TestCase
 
     protected function _getProperty($object, $name)
     {
-        $ref = new \ReflectionClass($object);
+        $ref = new ReflectionClass($object);
         $prop = $ref->getProperty($name);
         $prop->setAccessible(true);
         return $prop->getValue($object);
@@ -140,7 +144,7 @@ class RowLockTest extends TestCase
 
     protected function _method($object, $name)
     {
-        $ref = new \ReflectionClass($object);
+        $ref = new ReflectionClass($object);
         $method = $ref->getMethod($name);
         $method->setAccessible(true);
         return $method;

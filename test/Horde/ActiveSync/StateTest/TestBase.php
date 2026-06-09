@@ -9,8 +9,8 @@
  */
 
 namespace Horde\ActiveSync\StateTest;
-use PHPUnit\Framework\Attributes\CoversNothing;
 
+use PHPUnit\Framework\Attributes\CoversNothing;
 use Horde_Test_Case as TestCase;
 
 #[CoversNothing]

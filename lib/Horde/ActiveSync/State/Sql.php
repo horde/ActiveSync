@@ -797,7 +797,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
 
         // If we are setting the first synckey iteration, do not save the
         // syncstamp/mod, otherwise we will never get the initial set of data.
-        $pendingString = isset($pendingString) ? $pendingString : '';
+        $pendingString ??= '';
         $params = [
             'sync_key' => $this->_syncKey,
             'sync_data' => new Horde_Db_Value_Binary((string) $data),

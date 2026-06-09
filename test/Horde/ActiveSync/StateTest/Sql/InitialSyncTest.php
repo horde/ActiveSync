@@ -17,6 +17,9 @@ use Horde_ActiveSync;
 use Horde_ActiveSync_Folder_Imap;
 use Horde_ActiveSync_State_Sql;
 use Horde_Db_Value_Binary;
+use Horde_ActiveSync_Log_Logger;
+use Horde_Log_Handler_Null;
+use ReflectionClass;
 
 /**
  * @coversNothing
@@ -122,7 +125,7 @@ class InitialSyncTest extends TestCase
 
     protected function _createState(
         Horde_ActiveSync_Folder_Imap $folder,
-        array $changes = null,
+        ?array $changes = null,
         $db = null
     ) {
         if ($db === null) {
@@ -138,7 +141,7 @@ class InitialSyncTest extends TestCase
         $device->user = 'user@example.com';
 
         $state = new Horde_ActiveSync_State_Sql(['db' => $db]);
-        $ref = new \ReflectionClass($state);
+        $ref = new ReflectionClass($state);
         foreach ([
             '_type' => Horde_ActiveSync::REQUEST_TYPE_SYNC,
             '_folder' => $folder,
@@ -162,7 +165,7 @@ class InitialSyncTest extends TestCase
         $logger->setAccessible(true);
         $logger->setValue(
             $state,
-            new \Horde_ActiveSync_Log_Logger(new \Horde_Log_Handler_Null())
+            new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null())
         );
 
         return $state;
@@ -170,7 +173,7 @@ class InitialSyncTest extends TestCase
 
     protected function _getChanges(Horde_ActiveSync_State_Sql $state)
     {
-        $ref = new \ReflectionClass($state);
+        $ref = new ReflectionClass($state);
         $p = $ref->getProperty('_changes');
         $p->setAccessible(true);
 

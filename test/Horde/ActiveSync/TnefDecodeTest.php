@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-
 namespace Horde\ActiveSync;
-use PHPUnit\Framework\Attributes\CoversNothing;
 
+use PHPUnit\Framework\Attributes\CoversNothing;
 use Horde_ActiveSync_Imap_Message;
 use Horde_Mime_Part;
 use PHPUnit\Framework\TestCase;

@@ -1164,9 +1164,7 @@ abstract class Horde_ActiveSync_State_Base
      *
      * @param string|null $folderId  Optional folder id override.
      */
-    protected function _acquireCollectionLock($folderId = null)
-    {
-    }
+    protected function _acquireCollectionLock($folderId = null) {}
 
     /**
      * Release a collection lock acquired by _acquireCollectionLock().
@@ -1174,9 +1172,7 @@ abstract class Horde_ActiveSync_State_Base
      * @param boolean $commit  Commit (true) or roll back (false) the lock
      *                         transaction when this instance owns it.
      */
-    protected function _releaseCollectionLock($commit = false)
-    {
-    }
+    protected function _releaseCollectionLock($commit = false) {}
 
     /**
      * Check for the existence of ANY entries in the map table for this device

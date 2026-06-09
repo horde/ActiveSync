@@ -9,8 +9,8 @@
  */
 
 namespace Horde\ActiveSync\StateTest\Sql;
-use PHPUnit\Framework\Attributes\Depends;
 
+use PHPUnit\Framework\Attributes\Depends;
 use Horde\ActiveSync\StateTest\TestBase as ExtTestBase;
 
 class TestBase extends ExtTestBase

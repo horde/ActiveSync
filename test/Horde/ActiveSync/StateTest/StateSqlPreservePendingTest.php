@@ -14,6 +14,9 @@ use Horde_ActiveSync;
 use Horde_ActiveSync_Folder_Imap;
 use Horde_ActiveSync_State_Sql;
 use Horde_Db_Value_Binary;
+use Horde_ActiveSync_Log_Logger;
+use Horde_Log_Handler_Null;
+use ReflectionClass;
 
 /**
  * @coversNothing
@@ -90,7 +93,7 @@ class StateSqlPreservePendingTest extends TestCase
             ''
         );
 
-        $ref = new \ReflectionClass($state);
+        $ref = new ReflectionClass($state);
         $folder = $ref->getProperty('_folder');
         $folder->setAccessible(true);
         $folder->setValue($state, []);
@@ -121,7 +124,7 @@ class StateSqlPreservePendingTest extends TestCase
             ->getMock();
 
         $state = new Horde_ActiveSync_State_Sql(['db' => $db]);
-        $ref = new \ReflectionClass($state);
+        $ref = new ReflectionClass($state);
         foreach ([
             '_type' => Horde_ActiveSync::REQUEST_TYPE_SYNC,
             '_syncKey' => '{test}99',
@@ -140,7 +143,7 @@ class StateSqlPreservePendingTest extends TestCase
         $logger->setAccessible(true);
         $logger->setValue(
             $state,
-            new \Horde_ActiveSync_Log_Logger(new \Horde_Log_Handler_Null())
+            new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null())
         );
 
         return $state;
@@ -148,7 +151,7 @@ class StateSqlPreservePendingTest extends TestCase
 
     protected function _method($state, $name)
     {
-        $ref = new \ReflectionClass($state);
+        $ref = new ReflectionClass($state);
         $method = $ref->getMethod($name);
         $method->setAccessible(true);
 
@@ -186,7 +189,7 @@ class StateSqlPreservePendingTest extends TestCase
         $device->id = 'device';
         $device->user = 'user@example.com';
 
-        $ref = new \ReflectionClass($state);
+        $ref = new ReflectionClass($state);
         foreach ([
             '_type' => Horde_ActiveSync::REQUEST_TYPE_SYNC,
             '_folder' => $folder,
@@ -206,7 +209,7 @@ class StateSqlPreservePendingTest extends TestCase
         $logger->setAccessible(true);
         $logger->setValue(
             $state,
-            new \Horde_ActiveSync_Log_Logger(new \Horde_Log_Handler_Null())
+            new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null())
         );
     }
 }

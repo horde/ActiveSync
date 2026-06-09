@@ -9,9 +9,9 @@
  */
 
 namespace Horde\ActiveSync\StateTest\Mongo;
+
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Depends;
-
 use Horde\ActiveSync\StateTest\TestBase;
 
 #[CoversNothing]

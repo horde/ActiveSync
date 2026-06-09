@@ -9,8 +9,8 @@
  */
 
 namespace Horde\ActiveSync\StateTest\Sql\Pdo;
-use PHPUnit\Framework\Attributes\CoversNothing;
 
+use PHPUnit\Framework\Attributes\CoversNothing;
 use Horde\ActiveSync\StateTest\Sql\TestBase;
 use PDO;
 

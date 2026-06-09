@@ -9,10 +9,15 @@
  */
 
 namespace Horde\ActiveSync;
-use PHPUnit\Framework\Attributes\CoversNothing;
 
+use PHPUnit\Framework\Attributes\CoversNothing;
 use Horde_Test_Case as TestCase;
 use Horde\ActiveSync\Factory\TestServer;
+use Horde_ActiveSync_Mime;
+use Horde_Imap_Client_Data_Fetch;
+use Horde_Imap_Client_Fetch_Results;
+use Horde_Imap_Client_Socket;
+use Horde_Mime_Part;
 
 /**
  * @coversNothing
@@ -26,14 +31,14 @@ class MessageBodyDataTest extends TestCase
      */
     public function testFetchFallbackWithoutBodyPartSize()
     {
-        $empty = new \Horde_Imap_Client_Fetch_Results();
-        $fetch_data = new \Horde_Imap_Client_Data_Fetch();
+        $empty = new Horde_Imap_Client_Fetch_Results();
+        $fetch_data = new Horde_Imap_Client_Data_Fetch();
         $fetch_data->setUid(1576);
         $fetch_data->setBodyPart('1', 'plain text body', '8bit');
-        $populated = new \Horde_Imap_Client_Fetch_Results();
+        $populated = new Horde_Imap_Client_Fetch_Results();
         $populated[$fetch_data->getUid()] = $fetch_data;
 
-        $imap_client = $this->getMockBuilder(\Horde_Imap_Client_Socket::class)
+        $imap_client = $this->getMockBuilder(Horde_Imap_Client_Socket::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['fetch'])
             ->getMock();
@@ -41,10 +46,10 @@ class MessageBodyDataTest extends TestCase
             ->method('fetch')
             ->willReturnOnConsecutiveCalls($empty, $populated);
 
-        $plain = new \Horde_Mime_Part();
+        $plain = new Horde_Mime_Part();
         $plain->setType('text/plain');
         $plain->setContents('plain text body');
-        $mime = new \Horde_ActiveSync_Mime($plain);
+        $mime = new Horde_ActiveSync_Mime($plain);
 
         $mbd = new \Horde_ActiveSync_Imap_MessageBodyData(
             [

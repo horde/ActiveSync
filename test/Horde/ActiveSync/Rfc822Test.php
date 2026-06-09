@@ -9,9 +9,9 @@
  */
 
 namespace Horde\ActiveSync;
+
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
-
 use Horde_Test_Case as TestCase;
 use Horde_ActiveSync_Rfc822;
 use Horde_Mime_Headers;
@@ -46,7 +46,7 @@ class Rfc822Test extends TestCase
         }
     }
 
-    static public function headersMultipartAlternativeProvider()
+    public static function headersMultipartAlternativeProvider()
     {
         $expected = array_change_key_case([
             'Subject' => 'Testing',

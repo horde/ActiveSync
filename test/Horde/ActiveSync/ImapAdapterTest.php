@@ -9,12 +9,13 @@
  */
 
 namespace Horde\ActiveSync;
-use PHPUnit\Framework\Attributes\CoversNothing;
 
+use PHPUnit\Framework\Attributes\CoversNothing;
 use Horde_Test_Case as TestCase;
 use Horde_ActiveSync;
 use Horde_ActiveSync_Folder_Imap;
 use Horde_ActiveSync_Imap_Adapter;
+use Horde_ActiveSync_Interface_ImapFactory;
 
 /**
  * @coversNothing
@@ -89,7 +90,7 @@ class ImapAdapterTest extends TestCase
 
     protected function _imapFactoryFixture($imap_client)
     {
-        return new class($imap_client) implements \Horde_ActiveSync_Interface_ImapFactory {
+        return new class ($imap_client) implements Horde_ActiveSync_Interface_ImapFactory {
             private $_imap;
 
             public function __construct($imap)
