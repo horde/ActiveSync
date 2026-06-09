@@ -21,9 +21,16 @@
 abstract class Horde_ActiveSync_State_Base
 {
     /**
-     * Treat committed collection lock tokens older than this as stale (seconds).
+     * Treat committed collection/row lock tokens older than this as stale (seconds).
      */
     public const STATE_ROW_LOCK_STALE_SECONDS = 300;
+
+    /**
+     * When there are no changes found in a collection, but the difference in
+     * syncStamp values is more than this threshold, the syncStamp is updated
+     * in the collection state without modifying the synckey or any other state.
+     */
+    public const SYNCSTAMP_UPDATE_THRESHOLD = 30000;
 
     /**
      * Configuration parameters
@@ -1228,6 +1235,11 @@ abstract class Horde_ActiveSync_State_Base
      *
      * During CONDSTORE initial sync the folder's _messages list must reflect
      * only mail the client has actually received.
+     *
+     * Wire-format SYNC Add is not a separate internal type: initial
+     * sync returns bare UIDs from the driver and
+     * Horde_ActiveSync_Connector_Exporter_Sync::_getNextChange() normalizes
+     * them to CHANGE_TYPE_CHANGE before updateState() calls this method.
      *
      * @param string $type   A Horde_ActiveSync::CHANGE_TYPE_* constant.
      * @param array $change  The change hash being exported.

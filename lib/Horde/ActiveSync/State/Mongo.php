@@ -191,16 +191,6 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
     ];
 
     /**
-     * Minimum sync_mod delta before updateSyncStamp() persists a new value.
-     */
-    public const SYNCSTAMP_UPDATE_THRESHOLD = 30000;
-
-    /**
-     * Treat sync_lock values older than this as stale (seconds).
-     */
-    public const STATE_ROW_LOCK_STALE_SECONDS = 300;
-
-    /**
      * True while a document lock is held for the loaded sync_key (released on
      * save() or updateSyncStamp()).
      *

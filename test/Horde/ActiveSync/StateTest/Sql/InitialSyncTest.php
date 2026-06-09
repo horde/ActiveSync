@@ -48,6 +48,36 @@ class InitialSyncTest extends TestCase
         $this->assertCount(1, $this->_getChanges($state));
     }
 
+    /**
+     * Initial sync stores bare UIDs in sync_pending (driver short-circuit).
+     * The exporter normalizes to CHANGE_TYPE_CHANGE before updateState().
+     */
+    public function testInitialSyncBareUidAcknowledgesExportedMessage()
+    {
+        $folder = new Horde_ActiveSync_Folder_Imap('INBOX/Horde', Horde_ActiveSync::CLASS_EMAIL);
+        $folder->primeFolder(range(1, 10));
+        $folder->setStatus([
+            Horde_ActiveSync_Folder_Imap::UIDVALIDITY => 100,
+            Horde_ActiveSync_Folder_Imap::UIDNEXT => 11,
+            Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ => 200,
+        ]);
+        $folder->updateState();
+
+        $state = $this->_createState($folder, [506, 507]);
+
+        $state->updateState(
+            Horde_ActiveSync::CHANGE_TYPE_CHANGE,
+            [
+                'id' => 506,
+                'type' => Horde_ActiveSync::CHANGE_TYPE_CHANGE,
+                'flags' => Horde_ActiveSync::FLAG_NEWMESSAGE,
+            ]
+        );
+
+        $this->assertEquals([506], $folder->messages());
+        $this->assertEquals([507], array_values($this->_getChanges($state)));
+    }
+
     public function testSaveMarksInitialSyncCompleteWhenPendingEmpty()
     {
         $folder = new Horde_ActiveSync_Folder_Imap('INBOX/Horde', Horde_ActiveSync::CLASS_EMAIL);

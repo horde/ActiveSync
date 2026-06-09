@@ -115,14 +115,6 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     protected $_syncCacheTable;
 
     /**
-     * When there are no changes found in a collection, but the difference in
-     * syncStamp values is more than this threshold, the syncStamp is updated
-     * in the collection state without modifying the synckey or anyother
-     * state.
-     */
-    public const SYNCSTAMP_UPDATE_THRESHOLD = 30000;
-
-    /**
      * Table used to serialize state access per device/user/folder collection.
      */
     protected const COLLECTION_LOCK_TABLE = 'horde_activesync_collection_lock';
