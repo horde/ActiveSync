@@ -334,6 +334,19 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
             // Initialize this collection's state.
             try {
                 $this->_collections->initCollectionState($collection);
+            } catch (Horde_ActiveSync_Exception_StaleState $e) {
+                $this->_logger->err(sprintf(
+                    'Force resetting state for %s: %s',
+                    $id,
+                    $e->getMessage()
+                ));
+                $this->_state->loadState(
+                    [],
+                    null,
+                    Horde_ActiveSync::REQUEST_TYPE_SYNC,
+                    $id
+                );
+                $statusCode = self::STATUS_KEYMISM;
             } catch (Horde_ActiveSync_Exception_StateGone $e) {
                 $this->_logger->warn('SYNC terminating, state not found');
                 $statusCode = self::STATUS_KEYMISM;
@@ -470,19 +483,23 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                         $exporter->setChanges($this->_collections->getCollectionChanges(false), $collection);
                         $this->_encoder->startTag(Horde_ActiveSync::SYNC_COMMANDS);
                         $cnt_collection = 0;
+                        /* sendNextChange() returns true on successful export,
+                         * false when no more changes remain or on non-fatal
+                         * error (remaining batch preserved in sync_pending). */
                         while ($cnt_collection < $max_windowsize
-                               && $cnt_global < $this->_collections->getDefaultWindowSize()
-                               && $progress = $exporter->sendNextChange()) {
+                               && $cnt_global < $this->_collections->getDefaultWindowSize()) {
+                            $progress = $exporter->sendNextChange();
+                            if ($progress !== true) {
+                                break;
+                            }
                             $this->_logger->meta(
                                 sprintf(
                                     'Peak memory usage after message: %d',
                                     memory_get_peak_usage(true)
                                 )
                             );
-                            if ($progress === true) {
-                                ++$cnt_collection;
-                                ++$cnt_global;
-                            }
+                            ++$cnt_collection;
+                            ++$cnt_global;
                         }
                         $this->_encoder->endTag();
                     }
@@ -836,8 +853,14 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
             return false;
         } catch (Horde_ActiveSync_Exception_StaleState $e) {
             $this->_logger->notice($e->getMessage());
-            $this->_statusCode = self::STATUS_SERVERERROR;
-            $this->_handleGlobalSyncError();
+            $this->_state->loadState(
+                [],
+                null,
+                Horde_ActiveSync::REQUEST_TYPE_SYNC,
+                $collection['id']
+            );
+            $this->_statusCode = self::STATUS_KEYMISM;
+            $this->_handleError($collection);
             return false;
         } catch (Horde_ActiveSync_Exception_FolderGone $e) {
             $this->_logger->notice($e->getMessage());

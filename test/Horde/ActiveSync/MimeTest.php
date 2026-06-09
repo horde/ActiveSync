@@ -72,6 +72,52 @@ class MimeTest extends TestCase
         $this->assertEquals(false, $mime->hasiCalendar());
     }
 
+    public function testSignedMultipartWithPgpKeysFindsBody()
+    {
+        $plain = new Horde_Mime_Part();
+        $plain->setType('text/plain');
+        $plain->setContents('Main body text');
+        $plain->setDisposition('inline');
+
+        $pgp = new Horde_Mime_Part();
+        $pgp->setType('application/pgp-keys');
+        $pgp->setDescription('PGP Public Key');
+        $pgp->setContents('-----BEGIN PGP PUBLIC KEY BLOCK-----');
+
+        $inner = new Horde_Mime_Part();
+        $inner->setType('multipart/mixed');
+        $inner->addPart($plain);
+        $inner->addPart($pgp);
+
+        $sig = new Horde_Mime_Part();
+        $sig->setType('application/pkcs7-signature');
+        $sig->setName('smime.p7s');
+        $sig->setDisposition('attachment');
+        $sig->setContents('signature');
+
+        $signed = new Horde_Mime_Part();
+        $signed->setType('multipart/signed');
+        $signed->setContentTypeParameter('protocol', 'application/pkcs7-signature');
+        $signed->addPart($inner);
+        $signed->addPart($sig);
+
+        $footer = new Horde_Mime_Part();
+        $footer->setType('text/plain');
+        $footer->setContents('footer');
+
+        $root = new Horde_Mime_Part();
+        $root->setType('multipart/mixed');
+        $root->addPart($signed);
+        $root->addPart($footer);
+        $root->buildMimeIds();
+
+        $mime = new Horde_ActiveSync_Mime($root);
+        $this->assertEquals('1.1.1', $mime->findBody('plain'));
+        $this->assertEquals(true, $mime->isSigned());
+        $this->assertEquals(false, $mime->isAttachment('1.1.2', 'application/pgp-keys'));
+        $this->assertEquals(true, $mime->isAttachment('2', 'text/plain'));
+    }
+
     public function testReplaceMime()
     {
         $fixture = file_get_contents(__DIR__ . '/fixtures/signed_attachment.eml');

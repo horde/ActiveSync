@@ -132,6 +132,7 @@ class Horde_ActiveSync_Mime
                     return true;
                 }
                 return false;
+            case 'application/pgp-keys':
             case 'application/pkcs7-signature':
             case 'application/x-pkcs7-signature':
                 return false;

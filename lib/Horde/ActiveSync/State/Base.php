@@ -21,6 +21,18 @@
 abstract class Horde_ActiveSync_State_Base
 {
     /**
+     * Treat committed collection/row lock tokens older than this as stale (seconds).
+     */
+    public const STATE_ROW_LOCK_STALE_SECONDS = 300;
+
+    /**
+     * When there are no changes found in a collection, but the difference in
+     * syncStamp values is more than this threshold, the syncStamp is updated
+     * in the collection state without modifying the synckey or any other state.
+     */
+    public const SYNCSTAMP_UPDATE_THRESHOLD = 30000;
+
+    /**
      * Configuration parameters
      *
      * @var array
@@ -108,6 +120,17 @@ abstract class Horde_ActiveSync_State_Base
     protected $_changes;
 
     /**
+     * Serialized sync_pending payload last read from storage.
+     *
+     * Used when persisting a PING checkpoint: PING may update sync_data
+     * (folder + PING watermark) but must not clear an in-flight MOREAVAILABLE
+     * batch in sync_pending.
+     *
+     * @var string|Horde_Db_Value_Binary|null
+     */
+    protected $_syncPendingBlob;
+
+    /**
      * The type of request we are handling.
      *
      * @var string
@@ -135,6 +158,141 @@ abstract class Horde_ActiveSync_State_Base
             $this->_logger = Horde_ActiveSync::_wrapLogger($params['logger']);
         }
         $this->_procid = getmypid();
+    }
+
+    /**
+     * Validate deserialized sync_data for a collection SYNC request.
+     *
+     * Missing or unparseable blobs (unserialize() === false) are treated as
+     * absent state and rebuilt on load. Clearly corrupt payloads (arrays,
+     * FOLDERSYNC-shaped blobs, sync_pending-shaped data) raise StaleState so
+     * callers can force a collection resync via STATUS_KEYMISMATCH.
+     *
+     * @param mixed       $data     Result of unserialize() on sync_data.
+     * @param string|null $rawBlob  Raw sync_data string for logging.
+     *
+     * @return Horde_ActiveSync_Folder_Base|false  Folder object, or false when
+     *                                             state is simply missing.
+     *
+     * @throws Horde_ActiveSync_Exception_StaleState
+     */
+    protected function _normalizeSyncFolderData($data, $rawBlob = null)
+    {
+        if ($this->_type != Horde_ActiveSync::REQUEST_TYPE_SYNC) {
+            return $data;
+        }
+
+        if ($data === false) {
+            return false;
+        }
+
+        if ($data instanceof Horde_ActiveSync_Folder_Base) {
+            return $data;
+        }
+
+        $collectionId = !empty($this->_collection['id'])
+            ? $this->_collection['id']
+            : 'unknown';
+        $head = ($rawBlob !== null && $rawBlob !== '')
+            ? substr($rawBlob, 0, 60)
+            : (is_object($data) ? get_class($data) : gettype($data));
+
+        $this->_logger->warn(
+            sprintf(
+                'STATE: Invalid sync_data for collection %s (synckey %s); forcing collection resync.',
+                $collectionId,
+                $this->_syncKey
+            )
+        );
+        $this->_logger->meta(
+            sprintf(
+                'STATE: Invalid sync_data details: type=%s, head=%s',
+                is_object($data) ? get_class($data) : gettype($data),
+                $head
+            )
+        );
+
+        throw new Horde_ActiveSync_Exception_StaleState(
+            sprintf(
+                'Corrupt sync_data for collection %s (synckey %s, head=%s).',
+                $collectionId,
+                $this->_syncKey,
+                $head
+            )
+        );
+    }
+
+    /**
+     * Refuse to persist FOLDERSYNC-shaped or empty collection sync_data blobs.
+     *
+     * @param string $data  Serialized sync_data about to be written.
+     *
+     * @throws Horde_ActiveSync_Exception_StaleState
+     */
+    protected function _assertSyncDataBlob($data)
+    {
+        if ($this->_type != Horde_ActiveSync::REQUEST_TYPE_SYNC) {
+            return;
+        }
+
+        if ($data === '' || $data === 'a:0:{}' || preg_match('/^a:\d+:\{/', $data)) {
+            throw new Horde_ActiveSync_Exception_StaleState(
+                sprintf(
+                    'Refusing to persist corrupt sync_data blob for collection %s (synckey %s, head=%s).',
+                    !empty($this->_collection['id']) ? $this->_collection['id'] : 'unknown',
+                    $this->_syncKey,
+                    substr($data, 0, 40)
+                )
+            );
+        }
+    }
+
+    /**
+     * Create an empty folder object for the current collection.
+     *
+     * @return Horde_ActiveSync_Folder_Base
+     */
+    protected function _createEmptySyncFolder()
+    {
+        if (!empty($this->_collection['class'])
+            && $this->_collection['class'] == Horde_ActiveSync::CLASS_EMAIL) {
+            return new Horde_ActiveSync_Folder_Imap(
+                $this->_collection['serverid'],
+                Horde_ActiveSync::CLASS_EMAIL
+            );
+        }
+
+        if (!empty($this->_collection['serverid'])
+            && $this->_collection['serverid'] == 'RI') {
+            return new Horde_ActiveSync_Folder_RI('RI', 'RI');
+        }
+
+        return new Horde_ActiveSync_Folder_Collection(
+            $this->_collection['serverid'],
+            $this->_collection['class']
+        );
+    }
+
+    /**
+     * Refuse to persist corrupt collection sync_data.
+     *
+     * @throws Horde_ActiveSync_Exception_StaleState
+     */
+    protected function _assertValidSyncFolderBeforeSave()
+    {
+        if ($this->_type != Horde_ActiveSync::REQUEST_TYPE_SYNC) {
+            return;
+        }
+
+        if (!isset($this->_folder) || !($this->_folder instanceof Horde_ActiveSync_Folder_Base)) {
+            throw new Horde_ActiveSync_Exception_StaleState(
+                sprintf(
+                    'Refusing to save invalid sync_data for collection %s (synckey %s).',
+                    !empty($this->_collection['id']) ? $this->_collection['id'] : 'unknown',
+                    $this->_syncKey
+                )
+            );
+        }
     }
 
     /**
@@ -363,7 +521,27 @@ abstract class Horde_ActiveSync_State_Base
     }
 
     /**
-     * Get all items that have changed since the last sync time
+     * Get all items that have changed since the last sync time.
+     *
+     * Email collections use two deliberately separate paths (do not merge):
+     *
+     * SYNC ($options['ping'] === false):
+     *   - Uses Horde_ActiveSync_Folder_Imap::$_status / modseq() for
+     *     CHANGEDSINCE against the IMAP server.
+     *   - May resume from sync_pending (a MOREAVAILABLE batch not yet sent).
+     *   - Calls updateState() after changes are exported.
+     *
+     * PING ($options['ping'] === true):
+     *   - MUST NOT treat sync_pending as a change signal (it is an in-flight
+     *     SYNC batch; reusing it causes infinite PING loops — see BigFamily).
+     *   - Uses $_pingStatus via Horde_ActiveSync_Imap_Adapter::ping() for a
+     *     lightweight IMAP STATUS comparison.
+     *   - Advances $_pingStatus on detection and persists via save() without
+     *     touching sync_pending or calling updateState() (SYNC modseq must
+     *     stay behind until the client completes SYNC).
+     *
+     * @see Horde_ActiveSync_Folder_Imap::$_pingStatus
+     * @see Horde_ActiveSync_State_Sql — sync_pending column
      *
      * @param array $options  An options array:
      *      - ping: (boolean)  Only detect if there is a change, do not build
@@ -403,8 +581,11 @@ abstract class Horde_ActiveSync_State_Base
                 )
             );
 
-            // Check for previously found changes first.
-            if (!empty($this->_changes)) {
+            // SYNC may resume a MOREAVAILABLE batch from sync_pending. PING must
+            // always poll IMAP STATUS instead — pending is not a PING signal.
+            if (!empty($options['ping'])) {
+                $this->_changes = null;
+            } elseif (!empty($this->_changes)) {
                 $this->_logger->meta('STATE: Returning previously found changes.');
                 return $this->_changes;
             }
@@ -457,6 +638,13 @@ abstract class Horde_ActiveSync_State_Base
             // Only update the folderstate if we are not PINGing.
             if (empty($options['ping'])) {
                 $this->_folder->updateState();
+            } elseif ($this->_folder instanceof Horde_ActiveSync_Folder_Imap
+                && !empty($this->_collection['class'])
+                && $this->_collection['class'] == Horde_ActiveSync::CLASS_EMAIL
+                && count($changes)) {
+                // Persist sync_data (folder + PING watermark) only. sync_pending
+                // must survive for the client's in-flight MOREAVAILABLE batch.
+                $this->save(['preservePending' => true]);
             }
 
             $this->_logger->meta(
@@ -869,13 +1057,16 @@ abstract class Horde_ActiveSync_State_Base
      * @param string $id         The folder id this state represents. If empty
      *                           assumed to be a foldersync state.
      *
-     * @throws Horde_ActiveSync_Exception, Horde_ActiveSync_Exception_StateGone
+     * @throws Horde_ActiveSync_Exception
+     * @throws Horde_ActiveSync_Exception_StateGone
+     * @throws Horde_ActiveSync_Exception_StaleState
      */
     public function loadState(array $collection, $syncKey, $type = null, $id = null)
     {
         // Initialize the local members.
         $this->_collection = $collection;
         $this->_changes = null;
+        $this->_syncPendingBlob = null;
         $this->_type = $type;
 
         // If this is a FOLDERSYNC, mock the device id.
@@ -900,7 +1091,17 @@ abstract class Horde_ActiveSync_State_Base
                     : ($this->_collection['serverid'] == 'RI' ? new Horde_ActiveSync_Folder_RI('RI', 'RI') : new Horde_ActiveSync_Folder_Collection($this->_collection['serverid'], $this->_collection['class']));
             }
             $this->_syncKey = '0';
-            $this->_resetDeviceState($id);
+            $lockFolderId = ($type == Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC)
+                ? Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC
+                : $id;
+            $this->_acquireCollectionLock($lockFolderId);
+            try {
+                $this->_resetDeviceState($id);
+                $this->_releaseCollectionLock(true);
+            } catch (Throwable $e) {
+                $this->_releaseCollectionLock(false);
+                throw $e;
+            }
             return;
         }
 
@@ -914,11 +1115,17 @@ abstract class Horde_ActiveSync_State_Base
         }
         $this->_syncKey = $syncKey;
 
-        // Cleanup older syncstates
-        $this->_gc($syncKey);
+        $this->_acquireCollectionLock();
+        try {
+            // Cleanup older syncstates
+            $this->_gc($syncKey);
 
-        // Load the state
-        $this->_loadState();
+            // Load the state
+            $this->_loadState();
+        } catch (Throwable $e) {
+            $this->_releaseCollectionLock(false);
+            throw $e;
+        }
     }
 
     /**
@@ -947,6 +1154,28 @@ abstract class Horde_ActiveSync_State_Base
     protected function _loadState()
     {
         throw new Horde_ActiveSync_Exception('Must be implemented in concrete class.');
+    }
+
+    /**
+     * Acquire an exclusive lock for the current collection.
+     *
+     * Serializes SYNC/PING workers across sync_key rows for the same folder.
+     * No-op in drivers that do not implement collection locking.
+     *
+     * @param string|null $folderId  Optional folder id override.
+     */
+    protected function _acquireCollectionLock($folderId = null)
+    {
+    }
+
+    /**
+     * Release a collection lock acquired by _acquireCollectionLock().
+     *
+     * @param boolean $commit  Commit (true) or roll back (false) the lock
+     *                         transaction when this instance owns it.
+     */
+    protected function _releaseCollectionLock($commit = false)
+    {
     }
 
     /**
@@ -992,9 +1221,56 @@ abstract class Horde_ActiveSync_State_Base
     }
 
     /**
-     * Save the current syncstate to storage
+     * Save the current syncstate to storage.
+     *
+     * @param array $options  Options array:
+     *   - preservePending: (boolean) Write sync_data but keep the sync_pending
+     *                      column as loaded from storage. Used when persisting
+     *                      a PING checkpoint. DEFAULT: false.
      */
-    abstract public function save();
+    abstract public function save(array $options = []);
+
+    /**
+     * Track a successfully exported message in the folder cache.
+     *
+     * During CONDSTORE initial sync the folder's _messages list must reflect
+     * only mail the client has actually received.
+     *
+     * Wire-format SYNC Add is not a separate internal type: initial
+     * sync returns bare UIDs from the driver and
+     * Horde_ActiveSync_Connector_Exporter_Sync::_getNextChange() normalizes
+     * them to CHANGE_TYPE_CHANGE before updateState() calls this method.
+     *
+     * @param string $type   A Horde_ActiveSync::CHANGE_TYPE_* constant.
+     * @param array $change  The change hash being exported.
+     */
+    protected function _acknowledgeExportedChange($type, array $change)
+    {
+        if (!$this->_folder instanceof Horde_ActiveSync_Folder_Imap) {
+            return;
+        }
+
+        switch ($type) {
+            case Horde_ActiveSync::CHANGE_TYPE_CHANGE:
+            case Horde_ActiveSync::CHANGE_TYPE_DRAFT:
+                if (!empty($change['id'])) {
+                    $this->_folder->acknowledgeExportedMessage($change['id']);
+                }
+                break;
+        }
+    }
+
+    /**
+     * Mark initial folder sync complete once sync_pending is drained.
+     */
+    protected function _finalizeInitialSyncIfComplete()
+    {
+        if (empty($this->_changes)
+            && $this->_folder instanceof Horde_ActiveSync_Folder_Imap
+            && !$this->_folder->haveInitialSync) {
+            $this->_folder->markInitialSyncComplete();
+        }
+    }
 
     /**
      * Update the state to reflect changes
