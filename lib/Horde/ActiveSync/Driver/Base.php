@@ -538,6 +538,23 @@ abstract class Horde_ActiveSync_Driver_Base
     abstract public function getSearchResults(Horde_ActiveSync_Search_Params $params): Horde_ActiveSync_Search_Results;
 
     /**
+     * Returns Find command results for the given parameters.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param Horde_ActiveSync_Find_Params $params     The find parameters.
+     * @param array                        $bodyprefs    Body preference options.
+     * @param integer                      $mimesupport  MIME support flag.
+     *
+     * @return Horde_ActiveSync_Find_Results
+     */
+    abstract public function getFindResults(
+        Horde_ActiveSync_Find_Params $params,
+        array $bodyprefs = [],
+        $mimesupport = 0
+    ): Horde_ActiveSync_Find_Results;
+
+    /**
      * Stat folder. Note that since the only thing that can ever change for a
      * folder is the name, we use that as the 'mod' value.
      *

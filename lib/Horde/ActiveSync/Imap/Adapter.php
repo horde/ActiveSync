@@ -604,13 +604,170 @@ class Horde_ActiveSync_Imap_Adapter
      *
      * @param array $query          The search query.
      * @param array $options        The search options.
-     * @param bool  $deepTraversal  Not currently supported.
+     * @param bool  $deepTraversal  If true, include sub-mailboxes of the target folder.
      *
      * @return array  An array of 'uniqueid', 'searchfolderid' hashes.
      */
     public function queryMailbox(array $query, array $options, bool $deepTraversal): array|int
     {
         return $this->_doQuery($query, $options, $deepTraversal);
+    }
+
+    /**
+     * Resolve a message long id (mailbox:uid) when the client uses a virtual
+     * folder id (e.g. iOS All Mailboxes "M&lt;uid&gt;" from Find search).
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param integer $uid  IMAP message UID.
+     *
+     * @return string|null  Long id or null if not found.
+     */
+    public function resolveLongIdForUid(int $uid): ?string
+    {
+        if ($uid <= 0) {
+            return null;
+        }
+
+        $imap_query = new Horde_Imap_Client_Search_Query();
+        $imap_query->ids(new Horde_Imap_Client_Ids([$uid], false));
+
+        $matches = [];
+        foreach ($this->getMailboxes() as $mailbox) {
+            try {
+                $search_res = $this->_getImapOb()->search(
+                    $mailbox['ob'],
+                    $imap_query,
+                    [
+                        'results' => [Horde_Imap_Client::SEARCH_RESULTS_MATCH],
+                    ]
+                );
+            } catch (Horde_Imap_Client_Exception $e) {
+                continue;
+            }
+
+            if ($search_res['count'] > 0) {
+                $matches[] = $mailbox['ob']->utf8;
+            }
+        }
+
+        if (!$matches) {
+            return null;
+        }
+
+        if (count($matches) > 1) {
+            $this->_logger->info(sprintf(
+                'UID %d exists in %d mailboxes; using %s for ItemOperations fetch.',
+                $uid,
+                count($matches),
+                $matches[0]
+            ));
+        }
+
+        return $matches[0] . ':' . $uid;
+    }
+
+    /**
+     * Perform a Find mailbox search.
+     *
+     * @deprecated Use queryMailbox() via getSearchResults() instead.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param array $query          Parsed Find query (freetext, class, serverid).
+     * @param bool  $deepTraversal  If true, include subfolders.
+     *
+     * @return array  Array of uniqueid/searchfolderid hashes.
+     */
+    public function queryFind(array $query, bool $deepTraversal): array
+    {
+        $imap_query = new Horde_Imap_Client_Search_Query();
+        $imap_query->charset('UTF-8', false);
+
+        if (!empty($query['freetext'])) {
+            $imap_query = Horde_ActiveSync_Find_Kql::toImapQuery($query['freetext']);
+        }
+
+        $mboxes = [];
+        if (!empty($query['serverid'])) {
+            $mboxes[] = new Horde_Imap_Client_Mailbox($query['serverid']);
+            if ($deepTraversal) {
+                $mboxes = array_merge($mboxes, $this->_getSubMailboxes($query['serverid']));
+            }
+        } else {
+            foreach ($this->getMailboxes() as $mailbox) {
+                $mboxes[] = $mailbox['ob'];
+            }
+        }
+
+        $results = [];
+        foreach ($mboxes as $mbox) {
+            try {
+                $search_res = $this->_getImapOb()->search(
+                    $mbox,
+                    $imap_query,
+                    [
+                        'results' => [
+                            Horde_Imap_Client::SEARCH_RESULTS_MATCH,
+                            Horde_Imap_Client::SEARCH_RESULTS_COUNT,
+                        ],
+                        'sort' => [
+                            Horde_Imap_Client::SORT_REVERSE,
+                            Horde_Imap_Client::SORT_ARRIVAL,
+                        ],
+                    ]
+                );
+            } catch (Horde_Imap_Client_Exception $e) {
+                throw new Horde_ActiveSync_Exception($e);
+            }
+
+            if ($search_res['count'] == 0) {
+                continue;
+            }
+
+            foreach ($search_res['match']->ids as $id) {
+                $results[] = [
+                    'uniqueid' => $mbox->utf8 . ':' . $id,
+                    'searchfolderid' => $mbox->utf8,
+                ];
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Return all sub-mailboxes for a given mailbox.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param string $mailbox  Parent mailbox name.
+     *
+     * @return Horde_Imap_Client_Mailbox[]
+     */
+    protected function _getSubMailboxes($mailbox)
+    {
+        $mboxes = [];
+        try {
+            $mbox_ob = new Horde_Imap_Client_Mailbox($mailbox);
+            $ns = $this->_getNamespace($mailbox);
+            $delimiter = $ns['delimiter'] ?? '.';
+            $list = $this->_getImapOb()->listMailboxes(
+                $mbox_ob->list_escape . $delimiter . '*',
+                Horde_Imap_Client::MBOX_ALL,
+                ['flat' => true]
+            );
+        } catch (Horde_Imap_Client_Exception $e) {
+            return $mboxes;
+        }
+
+        foreach ($list as $mbox) {
+            if ($mbox->utf8 !== $mailbox) {
+                $mboxes[] = $mbox;
+            }
+        }
+
+        return $mboxes;
     }
 
     /**
@@ -929,9 +1086,8 @@ class Horde_ActiveSync_Imap_Adapter
      *
      * @param array $query          The search query.
      * @param array $options        The search options (currently not used).
-     * @param bool  $deepTraversal  Not currently supported.
+     * @param bool  $deepTraversal  If true, include sub-mailboxes of the target folder.
      *
-     * @todo Implement $deepTraversal support.
      * @todo Implement $options support.
      *
      * @return array  Returns array containing an array of hashes:
@@ -967,6 +1123,12 @@ class Horde_ActiveSync_Imap_Adapter
                         break;
                     case 'serverid':
                         $mboxes[] = new Horde_Imap_Client_Mailbox($value);
+                        if ($deepTraversal) {
+                            $mboxes = array_merge(
+                                $mboxes,
+                                $this->_getSubMailboxes($value)
+                            );
+                        }
                         break;
                     case Horde_ActiveSync_Message_Mail::POOMMAIL_DATERECEIVED:
                         $op = $q['op'] ?? '';
@@ -980,7 +1142,9 @@ class Horde_ActiveSync_Imap_Adapter
                         $imap_query->dateSearch($value, $query_range);
                         break;
                     case Horde_ActiveSync_Request_Search::SEARCH_FREETEXT:
-                        $imap_query->text($value, false);
+                        $imap_query->andSearch([
+                            Horde_ActiveSync_Find_Kql::toImapQuery($value),
+                        ]);
                         break;
                     case 'subquery':
                         $imap_query->andSearch([$this->_buildSubQuery($value)]);
@@ -993,6 +1157,17 @@ class Horde_ActiveSync_Imap_Adapter
             foreach ($this->getMailboxes() as $mailbox) {
                 $mboxes[] = $mailbox['ob'];
             }
+        } else {
+            $seen = [];
+            $unique = [];
+            foreach ($mboxes as $mbox) {
+                $key = $mbox->utf8;
+                if (!isset($seen[$key])) {
+                    $seen[$key] = true;
+                    $unique[] = $mbox;
+                }
+            }
+            $mboxes = $unique;
         }
 
         $results = [];

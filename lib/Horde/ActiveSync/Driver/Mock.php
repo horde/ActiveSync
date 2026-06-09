@@ -103,7 +103,25 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      */
     public function getSearchResults(Horde_ActiveSync_Search_Params $params): Horde_ActiveSync_Search_Results
     {
-        return [];
+        return new Horde_ActiveSync_Search_Results(0, [], 0);
+    }
+
+    /**
+     * Returns Find command results for the given parameters.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     */
+    public function getFindResults(
+        Horde_ActiveSync_Find_Params $params,
+        array $bodyprefs = [],
+        $mimesupport = 0
+    ): Horde_ActiveSync_Find_Results {
+        return new Horde_ActiveSync_Find_Results(
+            Horde_ActiveSync_Request_Find::STATUS_SUCCESS,
+            Horde_ActiveSync_Request_Find::STORE_STATUS_SUCCESS,
+            0,
+            []
+        );
     }
 
     /**
