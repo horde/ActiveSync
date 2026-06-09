@@ -298,6 +298,16 @@ abstract class Horde_ActiveSync_Request_Base
     }
 
     /**
+     * Check whether the HTTP client has closed the connection.
+     *
+     * @return boolean
+     */
+    protected function _clientDisconnected(): bool
+    {
+        return function_exists('connection_aborted') && connection_aborted();
+    }
+
+    /**
      * Implementation method for handling request.
      *
      * @return string|boolean  Content-Type of results if not wbxml, or boolean.

@@ -702,6 +702,13 @@ class Horde_ActiveSync_Imap_Adapter
 
         $results = [];
         foreach ($mboxes as $mbox) {
+            if ($this->_clientDisconnected()) {
+                $this->_logger->meta(
+                    'FIND/Search: Client disconnected during mailbox search.'
+                );
+                break;
+            }
+
             try {
                 $search_res = $this->_getImapOb()->search(
                     $mbox,
@@ -1172,6 +1179,13 @@ class Horde_ActiveSync_Imap_Adapter
 
         $results = [];
         foreach ($mboxes as $mbox) {
+            if ($this->_clientDisconnected()) {
+                $this->_logger->meta(
+                    'FIND/Search: Client disconnected during mailbox search.'
+                );
+                break;
+            }
+
             try {
                 $search_res = $this->_getImapOb()->search(
                     $mbox,
@@ -1305,5 +1319,17 @@ class Horde_ActiveSync_Imap_Adapter
         }
 
         return [];
+    }
+
+    /**
+     * Check whether the HTTP client has closed the connection.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @return boolean
+     */
+    protected function _clientDisconnected(): bool
+    {
+        return function_exists('connection_aborted') && connection_aborted();
     }
 }

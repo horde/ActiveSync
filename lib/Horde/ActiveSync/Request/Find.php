@@ -243,6 +243,13 @@ class Horde_ActiveSync_Request_Find extends Horde_ActiveSync_Request_SyncBase
             }
         }
 
+        if ($this->_clientDisconnected()) {
+            $this->_logger->meta(
+                'FIND: Client disconnected, skipping response encoding.'
+            );
+            return true;
+        }
+
         $this->_encoder->startWBXML();
         $this->_encoder->startTag(self::FIND_FIND);
         $this->_encoder->startTag(self::FIND_STATUS);
@@ -260,17 +267,23 @@ class Horde_ActiveSync_Request_Find extends Horde_ActiveSync_Request_SyncBase
             $this->_encoder->endTag();
 
             if ($storeStatus === self::STORE_STATUS_SUCCESS && $results) {
+                $returned = 0;
                 if ($results->rows) {
                     $bodyPrefs = empty($bodyprefs['bodyprefs']) ? [] : $bodyprefs['bodyprefs'];
                     if (empty($bodyPrefs['preview'])) {
                         $bodyPrefs['preview'] = 255;
                     }
                     foreach ($results->rows as $row) {
+                        if ($this->_clientDisconnected()) {
+                            $this->_logger->meta(
+                                'FIND: Client disconnected during result encoding.'
+                            );
+                            break;
+                        }
                         $this->_encodeResult($row, $type, $bodyPrefs, $mime);
+                        $returned++;
                     }
                 }
-
-                $returned = $results->rows ? count($results->rows) : 0;
                 $searchRange = $returned
                     ? $start . '-' . ($start + $returned - 1)
                     : $start . '-' . $start;
