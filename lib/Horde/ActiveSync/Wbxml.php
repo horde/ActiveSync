@@ -812,6 +812,34 @@ class Horde_ActiveSync_Wbxml
                 0x18 => 'RemoveRightsManagementDistribution',
             ],
 
+            /* Find (16.0) — token order per MS-ASWBXML code page 25 / Z-Push
+             * @author Torben Dannhauer <torben@dannhauer.de>
+             */
+            0x19 => [
+                0x05 => 'Find',
+                0x06 => 'SearchId',
+                0x07 => 'ExecuteSearch',
+                0x08 => 'MailBoxSearchCriterion',
+                0x09 => 'Query',
+                0x0A => 'Status',
+                0x0B => 'FreeText',
+                0x0C => 'Options',
+                0x0D => 'Range',
+                0x0E => 'DeepTraversal',
+                0x11 => 'Response',
+                0x12 => 'Result',
+                0x13 => 'Properties',
+                0x14 => 'Preview',
+                0x15 => 'HasAttachments',
+                0x16 => 'Total',
+                0x17 => 'DisplayCc',
+                0x18 => 'DisplayBcc',
+                0x19 => 'GALSearchCriterion',
+                0x20 => 'MaxPictures',
+                0x21 => 'MaxSize',
+                0x22 => 'Picture',
+            ],
+
             // Windows Live
             0xFE => [
                 0x05 => 'Annotations',
@@ -847,6 +875,8 @@ class Horde_ActiveSync_Wbxml
             0x16 => 'POOMMAIL2',
             0x17 => 'Notes',
             0x18 => 'RightsManagement',
+            // EAS 16.0
+            0x19 => 'Find',
             // Hotmail/Outlook.com WBXML extension.
             0xFE => 'WindowsLive',
         ],

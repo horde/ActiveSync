@@ -246,14 +246,36 @@ class Horde_ActiveSync_Request_ItemOperations extends Horde_ActiveSync_Request_S
                                     $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERTYPE);
                                     $this->_encoder->content('Email');
                                     $this->_encoder->endTag();
-                                    $mailbox = $collections->getBackendIdForFolderUid($value['folderid']);
-                                    $msg = $this->_driver->fetch(
-                                        $mailbox,
-                                        $value['serverentryid'],
-                                        [
-                                            'bodyprefs' => $value['bodyprefs'],
-                                            'mimesupport' => $mimesupport]
-                                    );
+
+                                    $longid = $this->_resolveFetchLongId($value);
+                                    if ($longid) {
+                                        $msg = $this->_driver->itemOperationsFetchMailbox(
+                                            $longid,
+                                            $value['bodyprefs'],
+                                            $mimesupport
+                                        );
+                                    } else {
+                                        try {
+                                            $mailbox = $collections->getBackendIdForFolderUid($value['folderid']);
+                                        } catch (Horde_ActiveSync_Exception_FolderGone $e) {
+                                            $this->_logger->err(sprintf(
+                                                'ItemOperations fetch: folder %s not in cache for UID %s.',
+                                                $value['folderid'],
+                                                $value['serverentryid']
+                                            ));
+                                            $this->_statusCode = self::STATUS_SERVERERR;
+                                            $mailbox = null;
+                                        }
+                                        if ($this->_statusCode == self::STATUS_SUCCESS) {
+                                            $msg = $this->_driver->fetch(
+                                                $mailbox,
+                                                $value['serverentryid'],
+                                                [
+                                                    'bodyprefs' => $value['bodyprefs'],
+                                                    'mimesupport' => $mimesupport]
+                                            );
+                                        }
+                                    }
                                 }
                             }
                             if ($this->_statusCode == self::STATUS_SUCCESS) {
@@ -352,6 +374,45 @@ class Horde_ActiveSync_Request_ItemOperations extends Horde_ActiveSync_Request_S
      *
      * @return integer  The size of the data.
      */
+    /**
+     * Resolve mailbox:uid for ItemOperations when the client uses a virtual
+     * folder id from unified Find search (e.g. iOS All Mailboxes "M&lt;uid&gt;").
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param array $value  Parsed ItemOperations fetch request.
+     *
+     * @return string|null  Long id suitable for itemOperationsFetchMailbox().
+     */
+    protected function _resolveFetchLongId(array $value): ?string
+    {
+        if (!isset($value['serverentryid'])
+            || !method_exists($this->_driver, 'resolveLongIdForUid')) {
+            return null;
+        }
+
+        $folderid = $value['folderid'] ?? '';
+        $needsResolve = ($folderid !== '' && $folderid[0] === 'M');
+
+        if (!$needsResolve) {
+            $collections = $this->_activeSync->getCollectionsObject();
+            try {
+                $collections->getBackendIdForFolderUid($folderid);
+                return null;
+            } catch (Horde_ActiveSync_Exception_FolderGone $e) {
+                $needsResolve = true;
+            }
+        }
+
+        if (!$needsResolve) {
+            return null;
+        }
+
+        $uid = (int) $value['serverentryid'];
+
+        return $uid > 0 ? $this->_driver->resolveLongIdForUid($uid) : null;
+    }
+
     protected function _getDataSize($data)
     {
         if (is_resource($data)) {
