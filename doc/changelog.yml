@@ -367,6 +367,18 @@
     Fix Travis tests.
     Add Travis configuration and .gitignore files.
     Development mode for Horde_ActiveSync-2.38.9
+3.0.0-RC2:
+  api: 3.0.0-RC2
+  state:
+    release: RC
+    api: RC
+  date: 2026-06-10
+  license:
+    identifier: GPL-2.0-only
+    uri: https://spdx.org/licenses/GPL-2.0-only.html
+  notes: |-
+    perf(activesync): abort Find when client disconnects
+    feat(activesync): add EAS 16.0 Find command support
 3.0.0-RC1:
   api: 3.0.0-RC1
   state:
