@@ -280,8 +280,9 @@ class Horde_ActiveSync_Request_Find extends Horde_ActiveSync_Request_SyncBase
                             );
                             break;
                         }
-                        $this->_encodeResult($row, $type, $bodyPrefs, $mime);
-                        $returned++;
+                        if ($this->_encodeResult($row, $type, $bodyPrefs, $mime)) {
+                            $returned++;
+                        }
                     }
                 }
                 $searchRange = $returned
@@ -411,9 +412,28 @@ class Horde_ActiveSync_Request_Find extends Horde_ActiveSync_Request_SyncBase
      * @param string|null $type       Search type.
      * @param array       $bodyprefs  Body preference options.
      * @param integer     $mime       MIME support flag.
+     *
+     * @return boolean  True if the result was encoded.
      */
     protected function _encodeResult(array $row, $type, array $bodyprefs, $mime)
     {
+        if ($type === 'mailbox') {
+            try {
+                $msg = $this->_driver->itemOperationsFetchMailbox(
+                    $row['uniqueid'],
+                    $bodyprefs,
+                    $mime
+                );
+            } catch (Horde_Exception_NotFound $e) {
+                $this->_logger->info(sprintf(
+                    'Find: message %s no longer available (%s), skipping result.',
+                    $row['uniqueid'],
+                    $e->getMessage()
+                ));
+                return false;
+            }
+        }
+
         $this->_encoder->startTag(self::FIND_RESULT);
 
         if ($type === 'mailbox') {
@@ -440,11 +460,6 @@ class Horde_ActiveSync_Request_Find extends Horde_ActiveSync_Request_SyncBase
             $this->_encoder->endTag();
 
             $this->_encoder->startTag(self::FIND_PROPERTIES);
-            $msg = $this->_driver->itemOperationsFetchMailbox(
-                $row['uniqueid'],
-                $bodyprefs,
-                $mime
-            );
             $this->_encodeFindMailProperties($msg);
             $this->_encoder->endTag(); // Properties
         } elseif ($type === 'gal') {
@@ -461,6 +476,8 @@ class Horde_ActiveSync_Request_Find extends Horde_ActiveSync_Request_SyncBase
         }
 
         $this->_encoder->endTag(); // Result
+
+        return true;
     }
 
     /**
