@@ -244,6 +244,10 @@ class Horde_ActiveSync_Request_ItemOperations extends Horde_ActiveSync_Request_S
                                 }
                             } else {
                                 if (isset($value['folderid']) && isset($value['serverentryid'])) {
+                                    $folderType = $this->_getItemOperationsFolderType(
+                                        $collections,
+                                        $value['folderid']
+                                    );
                                     $msg = $this->_fetchMailboxMessage(
                                         $value,
                                         $collections,
@@ -261,7 +265,7 @@ class Horde_ActiveSync_Request_ItemOperations extends Horde_ActiveSync_Request_S
                                         $this->_encoder->endTag();
 
                                         $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERTYPE);
-                                        $this->_encoder->content('Email');
+                                        $this->_encoder->content($folderType);
                                         $this->_encoder->endTag();
                                     }
                                 } else {
@@ -346,6 +350,28 @@ class Horde_ActiveSync_Request_ItemOperations extends Horde_ActiveSync_Request_S
         return $this->_encoder->multipart
             ? 'application/vnd.ms-sync.multipart'
             : 'application/vnd.ms-sync.wbxml';
+    }
+
+    /**
+     * Folder type for an ItemOperations fetch (MS-ASCAL 3.1.4.3).
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param Horde_ActiveSync_Collections $collections
+     * @param string $folderid  Client folder/collection id.
+     *
+     * @return string  A Horde_ActiveSync::CLASS_* value.
+     */
+    protected function _getItemOperationsFolderType(
+        Horde_ActiveSync_Collections $collections,
+        $folderid
+    ) {
+        $class = $collections->getCollectionClass($folderid);
+        if ($class && $class !== 'RI') {
+            return $class;
+        }
+
+        return Horde_ActiveSync::CLASS_EMAIL;
     }
 
     /**
