@@ -18,31 +18,34 @@
         "eas",
         "exchange"
     ],
-    "time": "2026-06-10",
+    "time": "2026-06-11",
     "repositories": [],
     "require": {
-        "horde/horde-installer-plugin": "dev-FRAMEWORK_6_0 || ^3 || ^2",
+        "horde/horde-installer-plugin": "^3 || ^2",
         "php": "^7.4 || ^8",
-        "horde/compress": "^3 || dev-FRAMEWORK_6_0",
-        "horde/date": "^3 || dev-FRAMEWORK_6_0",
-        "horde/exception": "^3 || dev-FRAMEWORK_6_0",
-        "horde/icalendar": "^3 || dev-FRAMEWORK_6_0",
-        "horde/log": "^3 || dev-FRAMEWORK_6_0",
-        "horde/mapi": "^2 || dev-FRAMEWORK_6_0",
-        "horde/mime": "^3 || dev-FRAMEWORK_6_0",
-        "horde/stream": "^2 || dev-FRAMEWORK_6_0",
-        "horde/support": "^3 || dev-FRAMEWORK_6_0",
-        "horde/translation": "^3 || dev-FRAMEWORK_6_0",
-        "horde/util": "^3 || dev-FRAMEWORK_6_0",
+        "horde/compress": "^3",
+        "horde/date": "^3",
+        "horde/exception": "^3",
+        "horde/icalendar": "^3",
+        "horde/log": "^3",
+        "horde/mapi": "^2",
+        "horde/mime": "^3",
+        "horde/stream": "^2",
+        "horde/support": "^3",
+        "horde/translation": "^3",
+        "horde/util": "^3",
         "ext-ctype": "*"
     },
-    "require-dev": {},
+    "require-dev": {
+        "horde/db": "^3",
+        "horde/imap_client": "^3"
+    },
     "suggest": {
-        "horde/db": "^3 || dev-FRAMEWORK_6_0",
-        "horde/imap_client": "^3 || dev-FRAMEWORK_6_0",
-        "horde/mail": "^3 || dev-FRAMEWORK_6_0",
-        "horde/mongo": "^2 || dev-FRAMEWORK_6_0",
-        "horde/text_filter": "^3 || dev-FRAMEWORK_6_0"
+        "horde/db": "^3",
+        "horde/imap_client": "^3",
+        "horde/mail": "^3",
+        "horde/mongo": "^2",
+        "horde/text_filter": "^3"
     },
     "autoload": {
         "psr-0": {
@@ -51,8 +54,11 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Horde\\ActiveSync\\": "test/Horde/ActiveSync/",
-            "Horde\\ActiveSync\\Test\\Helpers\\": "test/Horde/ActiveSync/Helpers/"
+            "Horde\\ActiveSync\\": [
+                "test/unit/Horde/ActiveSync/",
+                "test/integration/Horde/ActiveSync/"
+            ],
+            "Horde\\ActiveSync\\Test\\Helpers\\": "test/unit/Horde/ActiveSync/Helpers/"
         }
     },
     "config": {
@@ -60,9 +66,6 @@
             "horde/horde-installer-plugin": true
         }
     },
-    "extra": {
-        "branch-alias": {
-            "dev-FRAMEWORK_6_0": "3.x-dev"
-        }
-    }
+    "minimum-stability": "dev",
+    "prefer-stable": false
 }

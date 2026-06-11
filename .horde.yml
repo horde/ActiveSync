@@ -46,15 +46,19 @@ dependencies:
       horde/mail: ^3
       horde/mongo: ^2
       horde/text_filter: ^3
+  dev:
+    composer:
+      horde/db: ^3
+      horde/imap_client: ^3
 autoload:
   psr-0:
     Horde_ActiveSync: lib/
 autoload-dev:
   psr-4:
-    Horde\ActiveSync\: test/Horde/ActiveSync/
-    Horde\ActiveSync\Test\Helpers\: test/Horde/ActiveSync/Helpers/
-  files:
-    - test/Horde/ActiveSync/Helpers/ControllerRequestStub.php
+    Horde\ActiveSync\:
+      - test/unit/Horde/ActiveSync/
+      - test/integration/Horde/ActiveSync/
+    Horde\ActiveSync\Test\Helpers\: test/unit/Horde/ActiveSync/Helpers/
 vendor: horde
 keywords:
   - contacts
