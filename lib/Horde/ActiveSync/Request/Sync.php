@@ -974,7 +974,15 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                             // EAS 16.0 sends instanceid/serverid for exceptions.
                             if (!empty($instanceid)
                                 && $commandType == Horde_ActiveSync::SYNC_MODIFY) {
-                                $appdata->instanceid = $instanceid;
+                                try {
+                                    $appdata->instanceid = new Horde_Date($instanceid, 'UTC');
+                                } catch (Horde_Date_Exception $e) {
+                                    $this->_logger->err(sprintf(
+                                        'Invalid calendar InstanceId %s.',
+                                        $instanceid
+                                    ));
+                                    $appdata->instanceid = $instanceid;
+                                }
                             }
                             break;
                         case Horde_ActiveSync::CLASS_TASKS:
