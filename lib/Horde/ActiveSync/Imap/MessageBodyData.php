@@ -40,6 +40,8 @@
  *                            original email on the server, or false if
  *                            not able to be determined.
  */
+use Horde\Util\HordeString;
+
 class Horde_ActiveSync_Imap_MessageBodyData
 {
     /**
@@ -499,7 +501,7 @@ class Horde_ActiveSync_Imap_MessageBodyData
 
         if (!empty($this->_options['bodyprefs'][Horde_ActiveSync::BODYPREF_TYPE_PLAIN]['truncationsize'])) {
             // EAS >= 12.0 truncation
-            $text = Horde_String::substr(
+            $text = HordeString::substr(
                 $text,
                 0,
                 $this->_options['bodyprefs'][Horde_ActiveSync::BODYPREF_TYPE_PLAIN]['truncationsize'],
@@ -573,7 +575,7 @@ class Horde_ActiveSync_Imap_MessageBodyData
         // Truncation
         $html_text_size = strlen($html_text);
         if (!empty($this->_options['bodyprefs'][Horde_ActiveSync::BODYPREF_TYPE_HTML]['truncationsize'])) {
-            $html_text = Horde_String::substr(
+            $html_text = HordeString::substr(
                 $html_text,
                 0,
                 $this->_options['bodyprefs'][Horde_ActiveSync::BODYPREF_TYPE_HTML]['truncationsize'],
@@ -630,7 +632,7 @@ class Horde_ActiveSync_Imap_MessageBodyData
             : strlen($html);
 
         if (!empty($this->_options['bodyprefs'][Horde_ActiveSync::BODYPREF_TYPE_HTML]['truncationsize'])) {
-            $html = Horde_String::substr(
+            $html = HordeString::substr(
                 $html,
                 0,
                 $this->_options['bodyprefs'][Horde_ActiveSync::BODYPREF_TYPE_HTML]['truncationsize'],
@@ -679,7 +681,7 @@ class Horde_ActiveSync_Imap_MessageBodyData
         $html_plain_size = strlen($html_plain);
         if (!empty($this->_options['bodyprefs'][Horde_ActiveSync::BODYPREF_TYPE_PLAIN]['truncationsize'])) {
             // EAS >= 12.0 truncation
-            $html_plain = Horde_String::substr(
+            $html_plain = HordeString::substr(
                 $html_plain,
                 0,
                 $this->_options['bodyprefs'][Horde_ActiveSync::BODYPREF_TYPE_PLAIN]['truncationsize'],
@@ -742,7 +744,7 @@ class Horde_ActiveSync_Imap_MessageBodyData
         }
 
         if (!empty($this->_options['bodypartprefs']['truncationsize'])) {
-            $text = Horde_String::substr(
+            $text = HordeString::substr(
                 $text,
                 0,
                 $this->_options['bodypartprefs']['truncationsize'],

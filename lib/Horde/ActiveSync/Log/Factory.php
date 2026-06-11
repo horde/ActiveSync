@@ -18,6 +18,8 @@
  * @package    ActiveSync
  * @since      2.38.0
  */
+use Horde\Util\HordeString;
+
 class Horde_ActiveSync_Log_Factory implements Horde_ActiveSync_Interface_LoggerFactory
 {
     /**
@@ -70,14 +72,14 @@ class Horde_ActiveSync_Log_Factory implements Horde_ActiveSync_Interface_LoggerF
         switch ($this->_params['type']) {
             case 'onefile':
                 if (!empty($properties['DeviceId'])) {
-                    $device_id = Horde_String::upper($properties['DeviceId']);
+                    $device_id = HordeString::upper($properties['DeviceId']);
                     $stream = @fopen($this->_params['path'], 'a');
                 }
                 break;
             case 'perdevice':
                 if (!empty($properties['DeviceId'])) {
                     $stream = @fopen(
-                        $this->_params['path'] . '/' . Horde_String::upper($properties['DeviceId']) . '.txt',
+                        $this->_params['path'] . '/' . HordeString::upper($properties['DeviceId']) . '.txt',
                         'a'
                     );
                 }
@@ -87,7 +89,7 @@ class Horde_ActiveSync_Log_Factory implements Horde_ActiveSync_Interface_LoggerF
                     $dir = sprintf(
                         '%s/%s',
                         $this->_params['path'],
-                        Horde_String::upper($properties['DeviceId'])
+                        HordeString::upper($properties['DeviceId'])
                     );
                     if (!is_dir($dir)) {
                         mkdir($dir, 0o755, true);

@@ -19,6 +19,8 @@
  * @package    ActiveSync
  * @since      2.38.0
  */
+use Horde\Util\HordeString;
+
 class Horde_ActiveSync_Log_Logger_Deprecated extends Horde_Log_Logger
 {
     /**
@@ -54,7 +56,7 @@ class Horde_ActiveSync_Log_Logger_Deprecated extends Horde_Log_Logger
      */
     public function __call($method, $params)
     {
-        $levelName = Horde_String::upper($method);
+        $levelName = HordeString::upper($method);
         if (!isset($this->_levels[$levelName])) {
             throw new Horde_Log_Exception('Bad log level ' . $levelName);
         }

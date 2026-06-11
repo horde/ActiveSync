@@ -30,6 +30,8 @@
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */
+use Horde\Util\HordeString;
+
 class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
 {
     /**
@@ -304,7 +306,7 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
     {
         if (!is_resource($content)) {
             if ($this->_logLevel == self::LOG_PROTOCOL
-                && ($l = Horde_String::length($content)) > self::LOG_MAXCONTENT) {
+                && ($l = HordeString::length($content)) > self::LOG_MAXCONTENT) {
                 $this->_logContent(sprintf('[%d bytes of content]', $l));
             } else {
                 $this->_logContent($content);

@@ -30,6 +30,8 @@
  * @package   ActiveSync
  * @internal
  */
+use Horde\Util\HordeString;
+
 class Horde_ActiveSync_Request_ItemOperations extends Horde_ActiveSync_Request_SyncBase
 {
     public const ITEMOPERATIONS_ITEMOPERATIONS     = 'ItemOperations:ItemOperations';
@@ -200,7 +202,7 @@ class Horde_ActiveSync_Request_ItemOperations extends Horde_ActiveSync_Request_S
         foreach ($itemoperations as $value) {
             switch ($value['type']) {
                 case 'fetch':
-                    switch (Horde_String::lower($value['store'])) {
+                    switch (HordeString::lower($value['store'])) {
                         case 'mailbox':
                             // Yes, even though this is a "mailbox" store, this is
                             // how EAS identifies calendar attachments too since

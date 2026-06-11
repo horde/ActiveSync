@@ -29,6 +29,8 @@
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */
+use Horde\Util\HordeString;
+
 class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
 {
     /**
@@ -315,7 +317,7 @@ class Horde_ActiveSync_Wbxml_Decoder extends Horde_ActiveSync_Wbxml
             case self::EN_TYPE_CONTENT:
                 $indent = count($this->_logStack) + 1;
                 if ($this->_logLevel == self::LOG_PROTOCOL
-                    && ($l = Horde_String::length($el[self::EN_CONTENT])) > self::LOG_MAXCONTENT) {
+                    && ($l = HordeString::length($el[self::EN_CONTENT])) > self::LOG_MAXCONTENT) {
                     $this->_logger->client(sprintf('[%d bytes of content]', $l), $indent);
                 } else {
                     $this->_logger->client($el[self::EN_CONTENT], $indent);

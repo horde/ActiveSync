@@ -32,6 +32,8 @@
  * @method void server(string $event, integer $indent) Log an event as a SERVER
  *         message, indented by specified number of spaces.
  */
+use Horde\Util\HordeString;
+
 class Horde_ActiveSync_Log_Logger extends Horde_Log_Logger
 {
     public const SERVER = 10;
@@ -64,7 +66,7 @@ class Horde_ActiveSync_Log_Logger extends Horde_Log_Logger
      */
     public function __call($method, $params)
     {
-        $levelName = Horde_String::upper($method);
+        $levelName = HordeString::upper($method);
         if (!isset($this->_levels[$levelName])) {
             throw new Horde_Log_Exception('Bad log level ' . $levelName);
         }

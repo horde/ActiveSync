@@ -11,6 +11,8 @@
  * @package   ActiveSync
  * @internal
  */
+use Horde\Util\HordeString;
+
 class Horde_ActiveSync_Request_Find extends Horde_ActiveSync_Request_SyncBase
 {
     public const FIND_FIND                    = 'Find:Find';
@@ -560,7 +562,7 @@ class Horde_ActiveSync_Request_Find extends Horde_ActiveSync_Request_SyncBase
             }
         }
 
-        return Horde_String::substr((string) $data, 0, 255);
+        return HordeString::substr((string) $data, 0, 255);
     }
 
     /**

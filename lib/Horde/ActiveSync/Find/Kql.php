@@ -19,6 +19,8 @@
  * @author    Torben Dannhauer <torben@dannhauer.de>
  * @package   ActiveSync
  */
+use Horde\Util\HordeString;
+
 class Horde_ActiveSync_Find_Kql
 {
     /**
@@ -75,7 +77,7 @@ class Horde_ActiveSync_Find_Kql
 
         if (preg_match('/^\s*(from|to|cc|bcc|subject)\s*:\s*("([^"]+)"|(\S+))\s*$/i', $text, $m)) {
             $value = !empty($m[3]) ? $m[3] : $m[4];
-            $query->headerText(Horde_String::lower($m[1]), $value, false);
+            $query->headerText(HordeString::lower($m[1]), $value, false);
 
             return $query;
         }

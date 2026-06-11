@@ -18,6 +18,8 @@
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */
+use Horde\Util\HordeString;
+
 class Horde_ActiveSync_Utils
 {
     /**
@@ -221,8 +223,8 @@ class Horde_ActiveSync_Utils
     public static function ensureUtf8($data, $from_charset)
     {
         try {
-            $text = Horde_String::convertCharset($data, $from_charset, 'UTF-8');
-            if (Horde_String::validUtf8($text)) {
+            $text = HordeString::convertCharset($data, $from_charset, 'UTF-8');
+            if (HordeString::validUtf8($text)) {
                 return $text;
             }
         } catch (RuntimeException $e) {
@@ -236,8 +238,8 @@ class Horde_ActiveSync_Utils
         foreach ($test_charsets as $charset) {
             if ($charset != $from_charset) {
                 try {
-                    $text = Horde_String::convertCharset($data, $charset, 'UTF-8');
-                    if (Horde_String::validUtf8($text)) {
+                    $text = HordeString::convertCharset($data, $charset, 'UTF-8');
+                    if (HordeString::validUtf8($text)) {
                         return $text;
                     }
                 } catch (RuntimeException $e) {
@@ -256,7 +258,7 @@ class Horde_ActiveSync_Utils
             if ($test !== false) {
                 $text .= $test;
             } else {
-                return Horde_String::convertCharset($data, $from_charset, 'UTF-8', true);
+                return HordeString::convertCharset($data, $from_charset, 'UTF-8', true);
             }
             $data = substr($data, $chunk_size);
         }
