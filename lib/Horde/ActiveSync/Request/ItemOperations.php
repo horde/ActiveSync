@@ -61,6 +61,7 @@ class Horde_ActiveSync_Request_ItemOperations extends Horde_ActiveSync_Request_S
     public const STATUS_PROTERR         = 2;
     public const STATUS_SERVERERR       = 3;
     // 4 - 13 are Document library related.
+    public const STATUS_OBJECTNOTFOUND  = 6;
     public const STATUS_ATTINVALID      = 15;
     public const STATUS_POLICYERR       = 16;
     public const STATUS_PARTSUCCESS     = 17;
@@ -206,6 +207,8 @@ class Horde_ActiveSync_Request_ItemOperations extends Horde_ActiveSync_Request_S
                             // they are not documentLibrary items. The backend
                             // needs to be able to identify where to get the
                             // item from based solely on the filereference.
+                            $this->_statusCode = self::STATUS_SUCCESS;
+                            $msg = null;
                             $this->_encoder->startTag(self::ITEMOPERATIONS_FETCH);
                             if (isset($value['airsyncbasefilereference'])) {
                                 // filereference is already in the backend serverid format
@@ -224,61 +227,49 @@ class Horde_ActiveSync_Request_ItemOperations extends Horde_ActiveSync_Request_S
                                 $this->_encoder->content($value['airsyncbasefilereference']);
                                 $this->_encoder->endTag();
                             } elseif (isset($value['searchlongid'])) {
+                                $msg = $this->_fetchMailboxMessage(
+                                    $value,
+                                    $collections,
+                                    $mimesupport,
+                                    'searchlongid'
+                                );
                                 $this->_outputStatus();
-                                $this->_encoder->startTag(Horde_ActiveSync_Request_Search::SEARCH_LONGID);
-                                $this->_encoder->content($value['searchlongid']);
-                                $this->_encoder->endTag();
-                                $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERTYPE);
-                                $this->_encoder->content('Email');
-                                $this->_encoder->endTag();
-                                $msg = $this->_driver->itemOperationsFetchMailbox($value['searchlongid'], $value['bodyprefs'], $mimesupport);
-                            } else {
-                                $this->_outputStatus();
-                                if (isset($value['folderid']) && isset($value['serverentryid'])) {
-                                    $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERID);
-                                    $this->_encoder->content($value['folderid']);
+                                if ($this->_statusCode == self::STATUS_SUCCESS && $msg) {
+                                    $this->_encoder->startTag(Horde_ActiveSync_Request_Search::SEARCH_LONGID);
+                                    $this->_encoder->content($value['searchlongid']);
                                     $this->_encoder->endTag();
-
-                                    $this->_encoder->startTag(Horde_ActiveSync::SYNC_SERVERENTRYID);
-                                    $this->_encoder->content($value['serverentryid']);
-                                    $this->_encoder->endTag();
-
                                     $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERTYPE);
                                     $this->_encoder->content('Email');
                                     $this->_encoder->endTag();
+                                }
+                            } else {
+                                if (isset($value['folderid']) && isset($value['serverentryid'])) {
+                                    $msg = $this->_fetchMailboxMessage(
+                                        $value,
+                                        $collections,
+                                        $mimesupport,
+                                        'folder'
+                                    );
+                                    $this->_outputStatus();
+                                    if ($this->_statusCode == self::STATUS_SUCCESS && $msg) {
+                                        $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERID);
+                                        $this->_encoder->content($value['folderid']);
+                                        $this->_encoder->endTag();
 
-                                    $longid = $this->_resolveFetchLongId($value);
-                                    if ($longid) {
-                                        $msg = $this->_driver->itemOperationsFetchMailbox(
-                                            $longid,
-                                            $value['bodyprefs'],
-                                            $mimesupport
-                                        );
-                                    } else {
-                                        try {
-                                            $mailbox = $collections->getBackendIdForFolderUid($value['folderid']);
-                                        } catch (Horde_ActiveSync_Exception_FolderGone $e) {
-                                            $this->_logger->err(sprintf(
-                                                'ItemOperations fetch: folder %s not in cache for UID %s.',
-                                                $value['folderid'],
-                                                $value['serverentryid']
-                                            ));
-                                            $this->_statusCode = self::STATUS_SERVERERR;
-                                            $mailbox = null;
-                                        }
-                                        if ($this->_statusCode == self::STATUS_SUCCESS) {
-                                            $msg = $this->_driver->fetch(
-                                                $mailbox,
-                                                $value['serverentryid'],
-                                                [
-                                                    'bodyprefs' => $value['bodyprefs'],
-                                                    'mimesupport' => $mimesupport]
-                                            );
-                                        }
+                                        $this->_encoder->startTag(Horde_ActiveSync::SYNC_SERVERENTRYID);
+                                        $this->_encoder->content($value['serverentryid']);
+                                        $this->_encoder->endTag();
+
+                                        $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERTYPE);
+                                        $this->_encoder->content('Email');
+                                        $this->_encoder->endTag();
                                     }
+                                } else {
+                                    $this->_statusCode = self::STATUS_PROTERR;
+                                    $this->_outputStatus();
                                 }
                             }
-                            if ($this->_statusCode == self::STATUS_SUCCESS) {
+                            if ($this->_statusCode == self::STATUS_SUCCESS && $msg) {
                                 $this->_encoder->startTag(self::ITEMOPERATIONS_PROPERTIES);
                                 $msg->encodeStream($this->_encoder);
                                 $this->_encoder->endTag();
@@ -355,6 +346,84 @@ class Horde_ActiveSync_Request_ItemOperations extends Horde_ActiveSync_Request_S
         return $this->_encoder->multipart
             ? 'application/vnd.ms-sync.multipart'
             : 'application/vnd.ms-sync.wbxml';
+    }
+
+    /**
+     * Fetch a mailbox message for ItemOperations.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param array  $value        Parsed ItemOperations fetch request.
+     * @param Horde_ActiveSync_Collections $collections  Folder cache.
+     * @param integer $mimesupport MIME support flag.
+     * @param string $mode         Either "searchlongid" or "folder".
+     *
+     * @return Horde_ActiveSync_Message_Base|null  Message or null on failure.
+     */
+    protected function _fetchMailboxMessage(
+        array $value,
+        Horde_ActiveSync_Collections $collections,
+        $mimesupport,
+        string $mode
+    ) {
+        $opts = [
+            'bodyprefs' => $value['bodyprefs'] ?? [],
+            'mimesupport' => $mimesupport,
+        ];
+
+        try {
+            if ($mode === 'searchlongid') {
+                return $this->_driver->itemOperationsFetchMailbox(
+                    $value['searchlongid'],
+                    $opts['bodyprefs'],
+                    $mimesupport
+                );
+            }
+
+            $longid = $this->_resolveFetchLongId($value);
+            if ($longid) {
+                return $this->_driver->itemOperationsFetchMailbox(
+                    $longid,
+                    $opts['bodyprefs'],
+                    $mimesupport
+                );
+            }
+
+            $folderid = $value['folderid'];
+            if ($folderid !== '' && $folderid[0] === 'M') {
+                $this->_logger->info(sprintf(
+                    'ItemOperations fetch: message UID %s not found for virtual folder %s.',
+                    $value['serverentryid'],
+                    $folderid
+                ));
+                $this->_statusCode = self::STATUS_OBJECTNOTFOUND;
+                return null;
+            }
+
+            $mailbox = $collections->getBackendIdForFolderUid($folderid);
+
+            return $this->_driver->fetch(
+                $mailbox,
+                $value['serverentryid'],
+                $opts
+            );
+        } catch (Horde_ActiveSync_Exception_FolderGone $e) {
+            $this->_logger->err(sprintf(
+                'ItemOperations fetch: folder %s not in cache for UID %s.',
+                $value['folderid'] ?? '',
+                $value['serverentryid'] ?? ''
+            ));
+            $this->_statusCode = self::STATUS_SERVERERR;
+            return null;
+        } catch (Horde_Exception_NotFound $e) {
+            $this->_logger->info(sprintf(
+                'ItemOperations fetch: message not found (folder=%s id=%s).',
+                $value['folderid'] ?? '',
+                $value['serverentryid'] ?? ($value['searchlongid'] ?? '')
+            ));
+            $this->_statusCode = self::STATUS_OBJECTNOTFOUND;
+            return null;
+        }
     }
 
     /**
