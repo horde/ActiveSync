@@ -30,6 +30,8 @@
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */
+use Horde\Util\HordeString;
+
 class Horde_ActiveSync_Message_Base
 {
     /* Attribute Keys */
@@ -271,10 +273,10 @@ class Horde_ActiveSync_Message_Base
     {
         /* Support calling set{Property}() */
         if (strpos($method, 'set') === 0) {
-            $property = Horde_String::lower(substr($method, 3));
+            $property = HordeString::lower(substr($method, 3));
             $this->_properties[$property] = $arg;
         } elseif (strpos($method, 'get') === 0) {
-            return $this->_getAttribute(Horde_String::lower(substr($method, 3)));
+            return $this->_getAttribute(HordeString::lower(substr($method, 3)));
         }
 
         throw new BadMethodCallException('Unknown method: ' . $method . ' in class: ' . __CLASS__);
@@ -680,7 +682,7 @@ class Horde_ActiveSync_Message_Base
                         $encoder->content($this->_formatDate($this->{$map[self::KEY_ATTRIBUTE]}, $map[self::KEY_TYPE]));
                     }
                 } elseif (isset($map[self::KEY_TYPE]) && $map[self::KEY_TYPE] == self::TYPE_HEX) {
-                    $encoder->content(Horde_String::upper(bin2hex($this->{$map[self::KEY_ATTRIBUTE]})));
+                    $encoder->content(HordeString::upper(bin2hex($this->{$map[self::KEY_ATTRIBUTE]})));
                 } elseif (isset($map[self::KEY_TYPE]) && $map[self::KEY_TYPE] == self::TYPE_MAPI_STREAM) {
                     $encoder->content($this->{$map[self::KEY_ATTRIBUTE]});
                 } else {

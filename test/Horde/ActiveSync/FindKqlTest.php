@@ -11,6 +11,9 @@
 
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @coversNothing
+ */
 class Horde_ActiveSync_FindKqlTest extends TestCase
 {
     public function testPlainTextQuery()

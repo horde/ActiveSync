@@ -30,6 +30,8 @@
  * @package   ActiveSync
  * @internal
  */
+use Horde\Util\HordeString;
+
 class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
 {
     /** Search code page **/
@@ -124,7 +126,7 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
         $options = [];
         $maxResults = 100;
 
-        switch (Horde_String::lower($search_name)) {
+        switch (HordeString::lower($search_name)) {
             case 'documentlibrary':
                 $maxResults = 1000;
                 // fall through
@@ -323,7 +325,7 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
 
         if ($results && $results->rows) {
             foreach ($results->rows as $u) {
-                switch (Horde_String::lower($search_name)) {
+                switch (HordeString::lower($search_name)) {
                     case 'documentlibrary':
                         $this->_encoder->startTag(self::SEARCH_RESULT);
 

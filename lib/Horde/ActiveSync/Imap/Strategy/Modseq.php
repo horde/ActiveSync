@@ -18,6 +18,8 @@
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */
+use Horde\Util\HordeString;
+
 class Horde_ActiveSync_Imap_Strategy_Modseq extends Horde_ActiveSync_Imap_Strategy_Base
 {
     /**
@@ -270,8 +272,8 @@ class Horde_ActiveSync_Imap_Strategy_Modseq extends Horde_ActiveSync_Imap_Strate
                 if ($options['protocolversion'] > Horde_ActiveSync::VERSION_TWELVEONE) {
                     $categories[$uid] = [];
                     foreach ($data->getFlags() as $flag) {
-                        if (!empty($msgFlags[Horde_String::lower($flag)])) {
-                            $categories[$uid][] = $msgFlags[Horde_String::lower($flag)];
+                        if (!empty($msgFlags[HordeString::lower($flag)])) {
+                            $categories[$uid][] = $msgFlags[HordeString::lower($flag)];
                         }
                     }
                 }

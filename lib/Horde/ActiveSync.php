@@ -29,6 +29,8 @@
  * @property-read Horde_ActiveSync_Device $device  The current device object.
  * @property-read Horde_ActiveSync_Log_Logger $logger   The logger object.
  */
+use Horde\Util\HordeString;
+
 class Horde_ActiveSync
 {
     /* Conflict resolution */
@@ -758,9 +760,9 @@ class Horde_ActiveSync
             $cmd = $get['Cmd'];
         }
         if (empty($devId)) {
-            $devId = !empty($get['DeviceId']) ? Horde_String::upper($get['DeviceId']) : null;
+            $devId = !empty($get['DeviceId']) ? HordeString::upper($get['DeviceId']) : null;
         } else {
-            $devId = Horde_String::upper($devId);
+            $devId = HordeString::upper($devId);
         }
         $this->_setLogger($get);
 
@@ -794,7 +796,7 @@ class Horde_ActiveSync
             sprintf(
                 '%s%s request received for user %s',
                 str_repeat('-', 10),
-                Horde_String::upper($cmd),
+                HordeString::upper($cmd),
                 $this->_driver->getUser()
             )
         );

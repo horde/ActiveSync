@@ -11,6 +11,8 @@
  * @author    Torben Dannhauer <torben@dannhauer.de>
  * @package   ActiveSync
  */
+use Horde\Util\HordeString;
+
 class Horde_ActiveSync_Find_QueryMapper
 {
     /**
@@ -24,7 +26,7 @@ class Horde_ActiveSync_Find_QueryMapper
     public static function toSearchParams(
         Horde_ActiveSync_Find_Params $params
     ): Horde_ActiveSync_Search_Params {
-        $type = Horde_String::lower($params->type);
+        $type = HordeString::lower($params->type);
 
         if ($type === 'gal') {
             $text = $params->query['text']

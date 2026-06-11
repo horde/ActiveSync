@@ -18,6 +18,8 @@
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
  * @package   ActiveSync
  */
+use Horde\Util\HordeString;
+
 class Horde_ActiveSync_Imap_Adapter
 {
     /**
@@ -894,7 +896,7 @@ class Horde_ActiveSync_Imap_Adapter
         foreach ($categories as $category) {
             // Do our best to make sure the imap flag is a RFC 3501 compliant.
             $atom = new Horde_Imap_Client_Data_Format_Atom(strtr(Horde_String_Transliterate::toAscii($category), ' ', '_'));
-            $imapflag = Horde_String::lower($atom->stripNonAtomCharacters());
+            $imapflag = HordeString::lower($atom->stripNonAtomCharacters());
             if (!empty($msgFlags[$imapflag])) {
                 $options['add'][] = $imapflag;
                 unset($msgFlags[$imapflag]);

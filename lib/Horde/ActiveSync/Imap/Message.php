@@ -26,6 +26,8 @@
  * @property-read integer $uid                     The message uid.
  * @property-read Horde_ActiveSync_Mime $basePart  The base message part.
  */
+use Horde\Util\HordeString;
+
 class Horde_ActiveSync_Imap_Message
 {
     public const OPTIONS_DECODE_TNEF = "decode_tnef";
@@ -196,11 +198,11 @@ class Horde_ActiveSync_Imap_Message
             $tmp[Horde_ActiveSync_Translation::t('Cc')] = $ob;
         }
 
-        $max = max(array_map(['Horde_String', 'length'], array_keys($tmp))) + 2;
+        $max = max(array_map(['HordeString', 'length'], array_keys($tmp))) + 2;
         $text = '';
 
         foreach ($tmp as $key => $val) {
-            $text .= Horde_String::pad($key . ': ', $max, ' ', STR_PAD_LEFT) . $val . "\n";
+            $text .= HordeString::pad($key . ': ', $max, ' ', STR_PAD_LEFT) . $val . "\n";
         }
 
         return $text;
@@ -574,7 +576,7 @@ class Horde_ActiveSync_Imap_Message
             default:
                 // Attempt to translate this type, if possible. Odds are that
                 // it won't appear in the dictionary though.
-                return sprintf(Horde_ActiveSync_Translation::t('%s part'), _(Horde_String::ucfirst($ptype)));
+                return sprintf(Horde_ActiveSync_Translation::t('%s part'), _(HordeString::ucfirst($ptype)));
         }
     }
 

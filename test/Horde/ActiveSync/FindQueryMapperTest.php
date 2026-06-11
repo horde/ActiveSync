@@ -11,6 +11,9 @@
 
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @coversNothing
+ */
 class Horde_ActiveSync_FindQueryMapperTest extends TestCase
 {
     public function testMailboxQueryMapsToSearchAndCriterion()
