@@ -48,6 +48,7 @@ dependencies:
       horde/text_filter: ^3
   dev:
     composer:
+      horde/controller: ^3
       horde/db: ^3
       horde/imap_client: ^3
 autoload:

@@ -13,6 +13,8 @@ namespace Horde\ActiveSync\StateTest\Mongo;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Depends;
 use Horde\ActiveSync\StateTest\TestBase;
+use Horde\ActiveSync\Test\Helpers\LogHelper;
+use Horde_ActiveSync_Driver_Base;
 
 #[CoversNothing]
 class BaseTest extends TestBase
@@ -186,7 +188,7 @@ class BaseTest extends TestBase
             return;
         }
         self::$state = new Horde_ActiveSync_State_Mongo(['connection' => self::$mongo]);
-        self::$logger = new Horde_Test_Log();
+        self::$logger = LogHelper::createMockLogger();
     }
 
     public function setUp(): void
@@ -194,7 +196,9 @@ class BaseTest extends TestBase
         if (empty(self::$mongo)) {
             $this->markTestSkipped(self::$reason);
         }
-        $backend = $this->getMockSkipConstructor('Horde_ActiveSync_Driver_Base');
+        $backend = $this->getMockBuilder(Horde_ActiveSync_Driver_Base::class)
+            ->disableOriginalConstructor()
+            ->getMock();
         $backend->expects($this->any())->method('getUser')->willReturn('mike');
         self::$state->setBackend($backend);
     }
