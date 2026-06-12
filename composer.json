@@ -37,6 +37,7 @@
         "ext-ctype": "*"
     },
     "require-dev": {
+        "horde/controller": "^3",
         "horde/db": "^3",
         "horde/imap_client": "^3"
     },

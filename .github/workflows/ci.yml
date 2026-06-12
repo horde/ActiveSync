@@ -27,8 +27,8 @@ jobs:
     strategy:
       matrix:
         operating-system: ['ubuntu-22.04']
-        php-versions: ['8.0', '8.1', '8.2', 'latest']
-        phpunit-versions: ['latest', '9.5']
+        php-versions: ['8.2', '8.3', '8.4', 'latest']
+        phpunit-versions: ['latest']
     steps:
     - name: Setup github ssh key
       run:  mkdir -p ~/.ssh/ && ssh-keyscan -t rsa github.com > ~/.ssh/known_hosts
@@ -45,15 +45,12 @@ jobs:
         tools: php-cs-fixer, phpunit:${{ matrix.phpunit-versions }}, composer:v2
     - name: Setup Github Token as composer credential
       run: composer config -g github-oauth.github.com ${{ secrets.GITHUB_TOKEN }}
-    - name: Install horde/test dependency and other dependencies
-      run: |
-        ## For unclear reasons, github action fails randomly if we do not install before we require.
-        COMPOSER_ROOT_VERSION=dev-FRAMEWORK_6_0 composer install
-        COMPOSER_ROOT_VERSION=dev-FRAMEWORK_6_0 composer require --dev horde/test dev-FRAMEWORK_6_0 horde/log dev-FRAMEWORK_6_0
+    - name: Install dependencies
+      run: COMPOSER_ROOT_VERSION=dev-FRAMEWORK_6_0 composer install
     - name: install horde/xml_wbxml ^3
       run: composer require horde/xml_wbxml ^3
     - name: install horde/http ^3
       run: composer require horde/http ^3
     - name: run phpunit
-      run: phpunit --bootstrap test/Horde/ActiveSync/bootstrap.php test/Horde/ActiveSync/
+      run: phpunit
 

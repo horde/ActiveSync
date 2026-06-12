@@ -16,6 +16,7 @@ use Horde_ActiveSync;
 use Horde_ActiveSync_Folder_Imap;
 use Horde_ActiveSync_Imap_Adapter;
 use Horde_ActiveSync_Interface_ImapFactory;
+use Horde_Imap_Client_Socket;
 
 #[CoversNothing]
 class ImapAdapterTest extends TestCase
@@ -61,7 +62,9 @@ class ImapAdapterTest extends TestCase
     {
         $this->markTestIncomplete("Useless test without all the fixtures.");
         $factory = new Horde_ActiveSync_Factory_TestServer();
-        $imap_client = $this->getMockSkipConstructor('Horde_Imap_Client_Socket');
+        $imap_client = $this->getMockBuilder(Horde_Imap_Client_Socket::class)
+            ->disableOriginalConstructor()
+            ->getMock();
         $imap_client->expects($this->any())
             ->method('fetch')
             ->will($this->_getFixturesFor13711());

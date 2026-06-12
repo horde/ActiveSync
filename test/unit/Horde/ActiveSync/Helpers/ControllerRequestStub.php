@@ -11,18 +11,16 @@ declare(strict_types=1);
 
 namespace Horde\ActiveSync\Test\Helpers;
 
+use Horde_Controller_Request_Http;
+
 /**
  * Test stub standing in for Horde_Controller_Request_Http.
  *
- * Tests use this with PHPUnit's mock builder so the test suite does not have
- * to depend on horde/controller. Only the methods exercised by ActiveSync's
- * server are declared here.
+ * Extends the real request type so PHPUnit-built mocks satisfy the
+ * Horde_ActiveSync constructor signature (which is typed against
+ * Horde_Controller_Request_Http). Declared abstract so it cannot be
+ * instantiated directly. Tests mock this class via getMockBuilder().
  */
-abstract class ControllerRequestStub
+abstract class ControllerRequestStub extends Horde_Controller_Request_Http
 {
-    abstract public function getHeader(string $header): mixed;
-
-    abstract public function getServerVars(?string $var = null): mixed;
-
-    abstract public function getGetVars(?string $var = null): mixed;
 }
