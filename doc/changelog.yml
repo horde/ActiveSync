@@ -1,44 +1,65 @@
 ---
-3.0.0alpha5:
-  api: 3.0.0alpha1
+3.0.0-RC3:
+  api: 3.0.0-RC3
   state:
-    release: alpha
-    api: alpha
-  date: 2022-05-18
+    release: RC
+    api: RC
+  date: 2026-06-12
   license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: |+
-3.0.0alpha4:
-  api: 3.0.0alpha1
+    identifier: GPL-2.0-only
+    uri: https://spdx.org/licenses/GPL-2.0-only.html
+  notes: |-
+    Merge pull request #50 from horde/fix/find_meetinginvitation
+    feat(activesync): add EAS 16 Find and improve meeting invitation RSVP support
+    test: address review feedback on PSR-4 layout
+    chore: metadata
+    test: Modernize test suite to PSR-4 layout and remove dependency on Horde_Test
+    refactor(activesync): use Horde\Util\HordeString PSR-4
+    fix(activesync): emit correct FolderType on ItemOperations fetch
+    fix(activesync): parse calendar InstanceId as Horde_Date on SYNC_MODIFY
+    Merge pull request #47 from horde/fix/find_result_itemOperation
+    Merge pull request #46 from horde/fix/FIND_skip-nonexistent_messages
+    fix(activesync): return object-not-found for deleted ItemOperations fetches
+    fix(activesync): skip missing messages in Find results
+3.0.0-RC2:
+  api: 3.0.0-RC2
   state:
-    release: alpha
-    api: alpha
-  date: 2022-05-18
+    release: RC
+    api: RC
+  date: 2026-06-10
   license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: |+
-3.0.0alpha3:
-  api: 3.0.0alpha1
+    identifier: GPL-2.0-only
+    uri: https://spdx.org/licenses/GPL-2.0-only.html
+  notes: |-
+    perf(activesync): abort Find when client disconnects
+    feat(activesync): add EAS 16.0 Find command support
+3.0.0-RC1:
+  api: 3.0.0-RC1
   state:
-    release: alpha
-    api: alpha
-  date: 2021-03-13
+    release: RC
+    api: RC
+  date: 2026-06-09
   license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: |+
-3.0.0alpha2:
-  api: 3.0.0alpha1
-  state:
-    release: alpha
-    api: alpha
-  date: 2021-02-24
-  license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: |+
+    identifier: GPL-2.0-only
+    uri: https://spdx.org/licenses/GPL-2.0-only.html
+  notes: |-
+    Merge pull request #41 from horde/fix/ActiveSync_loops
+    fix(activesync): consolidate state constants and document initial-sync ACK
+    fix(ActiveSync): force KEYMISMATCH when loading corrupt sync_data
+    Fix: Filename typo
+    fix(ActiveSync): harden state persist against races and sync_data corruption
+    docs(ActiveSync): clarify row lock behavior and sendNextChange contract
+    fix(activesync): serialize parallel state access with SQL and Mongo row locks
+    fix(activesync): repair initial sync, corrupt state, and nested MIME export
+    fix(activesync): reject corrupt collection sync_data on load and save
+    fix(activesync): separate PING watermark from SYNC modseq to stop iOS mail loops
+    refactor(ActiveSync): use HordeString instead of Horde_String in METHOD handling
+    Update MeetingRequest.php
+    Simplify method retrieval in fromvEvent
+    Refactor METHOD handling in EasMessageBuilder
+    fix(Iterator): use void return type for next() instead of ReturnTypeWillChange
+    fix(Device): restore isset guard for OS property access
+    Fix php and phpunit deprecations
 3.0.0-beta3:
   api: 3.0.0-beta3
   state:
@@ -367,45 +388,46 @@
     Fix Travis tests.
     Add Travis configuration and .gitignore files.
     Development mode for Horde_ActiveSync-2.38.9
-3.0.0-RC2:
-  api: 3.0.0-RC2
+3.0.0alpha5:
+  api: 3.0.0alpha1
   state:
-    release: RC
-    api: RC
-  date: 2026-06-10
+    release: alpha
+    api: alpha
+  date: 2022-05-18
   license:
-    identifier: GPL-2.0-only
-    uri: https://spdx.org/licenses/GPL-2.0-only.html
-  notes: |-
-    perf(activesync): abort Find when client disconnects
-    feat(activesync): add EAS 16.0 Find command support
-3.0.0-RC1:
-  api: 3.0.0-RC1
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |+
+3.0.0alpha4:
+  api: 3.0.0alpha1
   state:
-    release: RC
-    api: RC
-  date: 2026-06-09
+    release: alpha
+    api: alpha
+  date: 2022-05-18
   license:
-    identifier: GPL-2.0-only
-    uri: https://spdx.org/licenses/GPL-2.0-only.html
-  notes: |-
-    Merge pull request #41 from horde/fix/ActiveSync_loops
-    fix(activesync): consolidate state constants and document initial-sync ACK
-    fix(ActiveSync): force KEYMISMATCH when loading corrupt sync_data
-    Fix: Filename typo
-    fix(ActiveSync): harden state persist against races and sync_data corruption
-    docs(ActiveSync): clarify row lock behavior and sendNextChange contract
-    fix(activesync): serialize parallel state access with SQL and Mongo row locks
-    fix(activesync): repair initial sync, corrupt state, and nested MIME export
-    fix(activesync): reject corrupt collection sync_data on load and save
-    fix(activesync): separate PING watermark from SYNC modseq to stop iOS mail loops
-    refactor(ActiveSync): use HordeString instead of Horde_String in METHOD handling
-    Update MeetingRequest.php
-    Simplify method retrieval in fromvEvent
-    Refactor METHOD handling in EasMessageBuilder
-    fix(Iterator): use void return type for next() instead of ReturnTypeWillChange
-    fix(Device): restore isset guard for OS property access
-    Fix php and phpunit deprecations
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |+
+3.0.0alpha3:
+  api: 3.0.0alpha1
+  state:
+    release: alpha
+    api: alpha
+  date: 2021-03-13
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |+
+3.0.0alpha2:
+  api: 3.0.0alpha1
+  state:
+    release: alpha
+    api: alpha
+  date: 2021-02-24
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |+
 2.41.9:
   api: 2.41.0
   state:
@@ -2216,6 +2238,46 @@
     [mjr] Fix fetching email messages from search results using ITEMOPERATIONS command (Bug #12212).
     [jan] Add Spanish translation (Manuel P. Ayala <mayala@unex.es>).
     [mjr] Add support for SyncStamps - either timestamps or backend controlled modification sequences.
+2.4.0:
+  api: 2.4.0
+  state:
+    release: stable
+    api: stable
+  date: 2013-06-04
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |
+    [mjr] Fix some issues caused by broken non-mime part truncation.
+    [mjr] Fix handling MIMETRUNCATION for emails with attachments (Bug #12289).
+    [mjr] Fix missing email body data for certain clients (Bug #12203).
+    [mjr] Fix requesting email data via ITEMOPERATION command (Bug #12292).
+    [mjr] Fix a BC break that was causing FOLDERSYNC requests to f fail.
+2.4.0RC2:
+  api: 2.4.0
+  state:
+    release: beta
+    api: stable
+  date: 2013-05-31
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |
+    [mjr] Fixes for broken clients like the S3 that request SMS sync even when told there is no SMS collection.
+2.4.0RC1:
+  api: 2.4.0
+  state:
+    release: beta
+    api: stable
+  date: 2013-05-30
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |
+    [mjr] Fix issue that could cause some emails to be ignored when sending changes if the email has the same UID as another email from another collection synced in the same request.
+    [mjr] Fix issue that caused synching to fail due to COLLECTION_TYPE being sent in OPTIONS node in EAS 14+.
+    [mjr] Fix enforcing forced provisioning.
+    [mjr] Allow Outlook 2013 to connect even when provisioning is forced.
 2.4.0beta5:
   api: 2.4.0
   state:
@@ -2285,46 +2347,6 @@
     [mjr] Add support for EAS 14.0 and 14.1 (see http://wiki.horde.org/ActiveSync/FeatureGrid for complete feature list).
     [mjr] Fix synchronizing certain recurring tasks (Bug #12223,  Thomas Jarosch <thomas.jarosch@intra2net.com>)
     [mjr] Fix issue that could cause some attachments to become corrupt on the client.
-2.4.0RC2:
-  api: 2.4.0
-  state:
-    release: beta
-    api: stable
-  date: 2013-05-31
-  license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: |
-    [mjr] Fixes for broken clients like the S3 that request SMS sync even when told there is no SMS collection.
-2.4.0RC1:
-  api: 2.4.0
-  state:
-    release: beta
-    api: stable
-  date: 2013-05-30
-  license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: |
-    [mjr] Fix issue that could cause some emails to be ignored when sending changes if the email has the same UID as another email from another collection synced in the same request.
-    [mjr] Fix issue that caused synching to fail due to COLLECTION_TYPE being sent in OPTIONS node in EAS 14+.
-    [mjr] Fix enforcing forced provisioning.
-    [mjr] Allow Outlook 2013 to connect even when provisioning is forced.
-2.4.0:
-  api: 2.4.0
-  state:
-    release: stable
-    api: stable
-  date: 2013-06-04
-  license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: |
-    [mjr] Fix some issues caused by broken non-mime part truncation.
-    [mjr] Fix handling MIMETRUNCATION for emails with attachments (Bug #12289).
-    [mjr] Fix missing email body data for certain clients (Bug #12203).
-    [mjr] Fix requesting email data via ITEMOPERATION command (Bug #12292).
-    [mjr] Fix a BC break that was causing FOLDERSYNC requests to f fail.
 2.3.6:
   api: 2.3.0
   state:
@@ -2677,6 +2699,27 @@
     uri: http://www.horde.org/licenses/gpl
   notes: |
     [mjr] Fix moving/deleting messages on some devices.
+2.0.0:
+  api: 2.0.0
+  state:
+    release: stable
+    api: stable
+  date: 2012-10-30
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |
+    First stable release for Horde 5.
+2.0.0RC1:
+  api: 2.0.0beta1
+  state:
+    release: beta
+    api: beta
+  date: 2012-10-26
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: ~
 2.0.0beta4:
   api: 2.0.0beta1
   state:
@@ -2745,27 +2788,6 @@
     [mjr] Add EAS version 12.1 support.
     [mjr] Add EAS version 12.0 support.
     [mjr] Add email support.
-2.0.0RC1:
-  api: 2.0.0beta1
-  state:
-    release: beta
-    api: beta
-  date: 2012-10-26
-  license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: ~
-2.0.0:
-  api: 2.0.0
-  state:
-    release: stable
-    api: stable
-  date: 2012-10-30
-  license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: |
-    First stable release for Horde 5.
 1.2.6:
   api: 1.2.0
   state:
@@ -3004,28 +3026,18 @@
   notes: |
     [mjr] Fix race conditions caused by broken clients sending an inappropriate PING request.
     [mjr] Fix issue with initial Android pairing
-1.0.0beta1:
+1.0.0:
   api: 1.0.0
   state:
-    release: beta
-    api: beta
-  date: 2011-03-16
+    release: stable
+    api: stable
+  date: 2011-04-06
   license:
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
   notes: |
-    First beta release for Horde 4.
-1.0.0alpha1:
-  api: 1.0.0
-  state:
-    release: alpha
-    api: alpha
-  date: 2011-03-08
-  license:
-    identifier: GPL-2.0
-    uri: http://www.horde.org/licenses/gpl
-  notes: |
-    First alpha release for Horde 4.
+    First stable release for Horde 4.
+    [jan] Use Horde_Support_Uuid to generate UUIDs.
 1.0.0RC2:
   api: 1.0.0
   state:
@@ -3048,15 +3060,25 @@
     uri: http://www.horde.org/licenses/gpl
   notes: |
     First release candidate for Horde 4.
-1.0.0:
+1.0.0beta1:
   api: 1.0.0
   state:
-    release: stable
-    api: stable
-  date: 2011-04-06
+    release: beta
+    api: beta
+  date: 2011-03-16
   license:
     identifier: GPL-2.0
     uri: http://www.horde.org/licenses/gpl
   notes: |
-    First stable release for Horde 4.
-    [jan] Use Horde_Support_Uuid to generate UUIDs.
+    First beta release for Horde 4.
+1.0.0alpha1:
+  api: 1.0.0
+  state:
+    release: alpha
+    api: alpha
+  date: 2011-03-08
+  license:
+    identifier: GPL-2.0
+    uri: http://www.horde.org/licenses/gpl
+  notes: |
+    First alpha release for Horde 4.
