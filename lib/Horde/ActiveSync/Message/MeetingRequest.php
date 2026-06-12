@@ -48,6 +48,10 @@ use Horde\Util\HordeString;
  */
 class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_Base
 {
+    /** @see [MS-ASEMAIL] 2.2.2.39 MeetingMessageType */
+    public const MEETING_MESSAGE_INITIAL = '1';
+    public const MEETING_MESSAGE_UPDATE  = '2';
+
     /**
      * Property mapping.
      *
@@ -185,6 +189,23 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
         } else {
             $this->responserequested = '0';
         }
+
+        // EAS 14.1+: iOS only offers RSVP when MeetingMessageType is 1 or 2.
+        if ($this->_version > Horde_ActiveSync::VERSION_FOURTEEN) {
+            if ($method === 'REQUEST') {
+                try {
+                    $sequence = (int) $vevent->getAttributeDefault('SEQUENCE', 0);
+                } catch (Horde_Icalendar_Exception $e) {
+                    $sequence = 0;
+                }
+                $this->meetingmessagetype = $sequence > 0
+                    ? self::MEETING_MESSAGE_UPDATE
+                    : self::MEETING_MESSAGE_INITIAL;
+            } elseif ($method === 'PUBLISH') {
+                $this->meetingmessagetype = self::MEETING_MESSAGE_INITIAL;
+            }
+        }
+
         try {
             $organizer = parse_url($vevent->getAttribute('ORGANIZER'));
             $this->organizer = $organizer['path'];

@@ -136,6 +136,16 @@ class Horde_ActiveSync_Mime
             case 'application/pkcs7-signature':
             case 'application/x-pkcs7-signature':
                 return false;
+
+            case 'text/calendar':
+            case 'application/ics':
+                if ($this->_isInlineCalendarAlternative($id)) {
+                    return false;
+                }
+                if ($this->_base->getPart($id)->getDisposition() == 'attachment') {
+                    return true;
+                }
+                return true;
         }
 
         if ($this->_base->getPart($id)->getDisposition() == 'attachment') {
@@ -157,6 +167,25 @@ class Horde_ActiveSync_Mime
     }
 
     /**
+     * Check if a MIME part is an inline calendar alternative body part.
+     *
+     * @param string $id  The MIME part id.
+     *
+     * @return boolean
+     */
+    protected function _isInlineCalendarAlternative($id)
+    {
+        if (strpos($id, '.') === false) {
+            return $this->_base->getSubType() == 'alternative';
+        }
+
+        $parentId = substr($id, 0, strrpos($id, '.'));
+        $parent = $this->_base->getPart($parentId);
+
+        return $parent && $parent->getSubType() == 'alternative';
+    }
+
+    /**
      * Return the MIME part of the iCalendar attachment, if available.
      *
      * @return mixed  The mime id of an iCalendar part, if present. Otherwise
@@ -164,9 +193,6 @@ class Horde_ActiveSync_Mime
      */
     public function hasiCalendar()
     {
-        if (!$this->hasAttachments()) {
-            return false;
-        }
         foreach ($this->_base->contentTypeMap() as $id => $type) {
             if ($type == 'text/calendar' || $type == 'application/ics') {
                 return $id;
