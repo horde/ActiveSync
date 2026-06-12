@@ -155,6 +155,67 @@ class MimeTest extends TestCase
         $this->assertEquals(true, (bool) $mime->hasiCalendar());
     }
 
+    public function testInlineCalendarAlternativeIsNotAttachment()
+    {
+        $ics = new Horde_Mime_Part();
+        $ics->setType('text/calendar');
+        $ics->setContents("BEGIN:VCALENDAR\nEND:VCALENDAR\n");
+        $ics->setName('event.ics');
+
+        $plain = new Horde_Mime_Part();
+        $plain->setType('text/plain');
+        $plain->setContents('Invitation');
+
+        $alternative = new Horde_Mime_Part();
+        $alternative->setType('multipart/alternative');
+        $alternative->addPart($plain);
+        $alternative->addPart($ics);
+        $alternative->buildMimeIds();
+
+        $mime = new Horde_ActiveSync_Mime($alternative);
+        $this->assertEquals(false, $mime->hasAttachments());
+        $this->assertEquals(true, (bool) $mime->hasiCalendar());
+        $this->assertEquals(false, $mime->isAttachment('2', 'text/calendar'));
+
+        $attached = clone $ics;
+        $attached->setType('application/ics');
+        $attached->setDisposition('attachment');
+
+        $mixed = new Horde_Mime_Part();
+        $mixed->setType('multipart/mixed');
+        $mixed->addPart($alternative);
+        $mixed->addPart($attached);
+        $mixed->buildMimeIds();
+
+        $mime = new Horde_ActiveSync_Mime($mixed);
+        $this->assertEquals(true, $mime->hasAttachments());
+        $this->assertEquals(false, $mime->isAttachment('1.2', 'text/calendar'));
+        $this->assertEquals(true, $mime->isAttachment('2', 'application/ics'));
+
+        $kronolith = new Horde_Mime_Part();
+        $kronolith->setType('multipart/alternative');
+        $kronolith->addPart($plain);
+        $related = new Horde_Mime_Part();
+        $related->setType('multipart/related');
+        $html = new Horde_Mime_Part();
+        $html->setType('text/html');
+        $html->setContents('<p>Invitation</p>');
+        $image = new Horde_Mime_Part();
+        $image->setType('image/png');
+        $image->setContents('png');
+        $image->setDisposition('attachment');
+        $related->addPart($html);
+        $related->addPart($image);
+        $kronolith->addPart($related);
+        $kronolith->addPart(clone $ics);
+        $kronolith->buildMimeIds();
+
+        $mime = new Horde_ActiveSync_Mime($kronolith);
+        $this->assertEquals(true, $mime->hasAttachments());
+        $this->assertEquals(true, $mime->isAttachment('2.2', 'image/png'));
+        $this->assertEquals(false, $mime->isAttachment('3', 'text/calendar'));
+    }
+
     public function testIdna()
     {
         $fixture = file_get_contents(__DIR__ . '/fixtures/idna.eml');

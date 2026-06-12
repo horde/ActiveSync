@@ -70,6 +70,18 @@ class Horde_ActiveSync_Mime_Iterator implements Countable, Iterator
         return count(iterator_to_array($this));
     }
 
+    protected function _isInlineCalendarAlternative($id)
+    {
+        if (strpos($id, '.') === false) {
+            return $this->_part->getSubType() == 'alternative';
+        }
+
+        $parentId = substr($id, 0, strrpos($id, '.'));
+        $parent = $this->_part->getPart($parentId);
+
+        return $parent && $parent->getSubType() == 'alternative';
+    }
+
     protected function _isAttachment($part)
     {
         if ($part->getDisposition() == 'attachment') {
@@ -92,6 +104,16 @@ class Horde_ActiveSync_Mime_Iterator implements Countable, Iterator
             case 'application/pkcs7-signature':
             case 'application/x-pkcs7-signature':
                 return false;
+
+            case 'text/calendar':
+            case 'application/ics':
+                if ($this->_isInlineCalendarAlternative($id)) {
+                    return false;
+                }
+                if ($part->getDisposition() == 'attachment') {
+                    return true;
+                }
+                return true;
         }
 
         [$ptype, ] = explode('/', $mime_type, 2);
