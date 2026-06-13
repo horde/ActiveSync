@@ -677,7 +677,7 @@ class Horde_ActiveSync_SyncCache
             if ($collections[$key]['windowsize'] > Horde_ActiveSync_Request_Sync::MAX_WINDOW_SIZE
                 || $collections[$key]['windowsize'] == 0) {
 
-                $collections[$key]['windowsize'] = self::MAX_WINDOW_SIZE;
+                $collections[$key]['windowsize'] = Horde_ActiveSync_Request_Sync::MAX_WINDOW_SIZE;
                 $this->_markCollectionsDirty($key);
             }
 
