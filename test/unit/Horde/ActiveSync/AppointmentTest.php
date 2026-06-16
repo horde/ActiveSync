@@ -21,6 +21,7 @@ use Horde_ActiveSync_Message_Appointment;
 use Horde_Date;
 use Horde_ActiveSync_Device;
 use Horde_Date_Recurrence;
+use Horde_ActiveSync_Message_Recurrence;
 
 #[CoversNothing]
 class AppointmentTest extends TestCase
@@ -497,6 +498,38 @@ class AppointmentTest extends TestCase
         $contact->setSupported([Horde_ActiveSync::ALL_GHOSTED]);
         $this->assertEquals(true, $contact->isGhosted('subject'));
         $this->assertEquals(true, $contact->isGhosted('body'));
+    }
+
+    /**
+     * Regression test: setRecurrence() on an EAS 16.0 appointment must not
+     * throw an "unknown property" exception for firstdayofweek, and the
+     * resulting recurrence sub-message must expose the value correctly.
+     */
+    public function testSetRecurrenceEas16SetsFirstDayOfWeek()
+    {
+        $logger = new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null());
+        $appt = new Horde_ActiveSync_Message_Appointment([
+            'logger' => $logger,
+            'protocolversion' => Horde_ActiveSync::VERSION_SIXTEEN,
+        ]);
+        $start = new Horde_Date('2024-01-01T10:00:00', 'UTC');
+        $appt->starttime = $start;
+        $appt->endtime = new Horde_Date('2024-01-01T11:00:00', 'UTC');
+        $appt->setTimezone($start);
+
+        $recurrence = new Horde_Date_Recurrence('2024-01-01T10:00:00');
+        $recurrence->setRecurType(Horde_Date_Recurrence::RECUR_WEEKLY);
+        $recurrence->setRecurInterval(1);
+        $recurrence->setRecurOnDay(Horde_Date::MASK_MONDAY);
+
+        $fdow = Horde_ActiveSync_Message_Recurrence::FIRSTDAY_SUNDAY;
+
+        // Must not throw an exception (e.g. "unknown property firstdayofweek")
+        $appt->setRecurrence($recurrence, $fdow);
+
+        // The recurrence sub-message must have firstdayofweek set to the
+        // value we passed in.
+        $this->assertEquals($fdow, $appt->recurrence->firstdayofweek);
     }
 
     public function testEas16StripsForbiddenInboundFields()
