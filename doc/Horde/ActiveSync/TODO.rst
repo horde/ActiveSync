@@ -1,155 +1,229 @@
-TODO
-=====
+ActiveSync TODO
+===============
 
-- Email recurrence related properties for recurring meeting requests.
+Last reviewed: 2026-06-16
 
-- SCHEMA support in ITEMOPERATIONS requests. Don't have client that supports
-  currently.
+This file tracks **remaining** work. For what the library already supports
+(protocol versions, commands, EAS 16.0 behaviour, deployment setup), see the
+package ``README.md`` at the repository root.
 
-- Implement some sort of issue tracking/counting to prevent loops due to things
-  like clients not supporting standard status codes, like FOLDERSYNC_REQUIRED.
-  Send the error code up to a maximum number of times, and after that send a
-  server 500-ish error code indicating the client should stop trying. Probably
-  store data in device object, but need to figure out how to prevent race
-  conditions since multiple requests can be in progress. Perhaps some sort
-  of shared memory cache?
+Items are grouped by intent. The **Horde 6** section is a breaking-change
+roadmap — do not implement those entries piecemeal on the FRAMEWORK_6_0 /
+3.x line without an explicit migration plan.
 
-- Perhaps if we use a shared memory solution, we can also possibly create
-  some sort of top-like application to monitor EAS usage. Make it easier to
-  find troublesome devices etc....
 
-- Work out / more fully test Task recurrence. Especially completion of a single
-  instance using DEADRECUR etc... (most work is in Nag, but put here to keep
-  sync todos together).
+Near-term (actionable before Horde 6)
+-------------------------------------
 
-- Add support for throttling via HTTP 503 and the X-MS-Throttle header.
-  (See https://docs.microsoft.com/en-us/previous-versions/office/developer/exchange-server-interoperability-guidance/jj899829(v%3dexchg.140))
+- **``FILTERTYPE_INCOMPLETETASKS`` handling**
 
-BC BREAKING (i.e., Horde 6).
-============================
+  ``Horde_ActiveSync_State_Base::_getCutOffDate()`` returns the literal filter
+  constant ``8`` when ``FILTERTYPE_INCOMPLETETASKS`` is selected, instead of
+  passing the filter type through to the driver. The driver should interpret
+  filter type ``8`` for task collections (incomplete tasks only) rather than
+  treating it as a Unix timestamp. Mail and calendar paths can receive the same
+  numeric value if a client misconfigures collections.
 
-- Move all non-specific constants to single class.
+- **Recurring meeting requests in mail**
 
-- Clean up the various foldertype constant messes. I.e., probably store
-  the Horde_ActiveSync::FOLDER_TYPE_* and Horde_ActiveSync::CLASS_* values
-  in the saved state instead of having to switch between them in various
-  places. (Some client commands are sent using the CLASS, some using the
-  FOLDER_TYPE).
+  ``Horde_ActiveSync_Message_MeetingRequest`` still defaults
+  ``instancetype`` to ``0`` and does not export recurrence data embedded in
+  meeting-invitation messages. Calendar recurrence sync is separate and works
+  for EAS 16.0; this item is only about **recurring invitations carried inside
+  email** (``MeetingRequest`` / ``MeetingRequestRecurrence``).
 
-- Clean up and refactor the folder creation/editing/deleting methods in the
-  backend. They need to be normalized in accepting/returning the same objects
-  now that we support multiple folders per non-email collection.
+- **FOLDERSYNC_REQUIRED error-loop guard**
 
-- Refactor Horde_ActiveSync_State_*::listDevices() to return a
-  Horde_ActiveSync_Device object instead of a hash keyed by backend field names
-  and to take the object property names as filters instead of backend field names.
+  Some clients ignore sync status ``12`` (FOLDERSYNC_REQUIRED) and retry
+  indefinitely. Many unrelated sync/PING loop bugs have been fixed (see
+  *Recently completed*), but there is still no per-device counter that stops
+  responding with the same status after *N* ignored errors. Would likely live
+  on the device record in state storage; watch for parallel-request races.
 
-- Clean up logger creation/setting/log_level setting and provide a single
-  access point for the logger instead of injecting it everywhere. Possibly
-  implement Horde_ActiveSync_Debug to handle all logging duties.
 
-- Refactor out the need for the various static ::_* properties in the main
-  ActiveSync class.
+Deferred (low priority or no known client)
+------------------------------------------
 
-- Change the readable names of the WBXML tags to reflect what they are called
-  in the MS-AS* documents, and not what Z-Push's developers decided to call them.
+- **ItemOperations ``Schema`` requests**
 
-- Look at extracting something like Request_Parser and Request_Handler classes
-  to separate the reading of the request from the handling of it. The parser
-  should return some standard request object that can be passed to the handler
-  that contains the pertinent information. Use temporary streams to hold any
-  incoming message data to preserve the low memory footprint from dealing with
-  changes as we read them.
+  The decoder skips ``ItemOperations:Schema`` subtrees without acting on them.
+  No client in active use is known to require schema-based fetches. Revisit if
+  a device surfaces a concrete failure.
 
-- Consolidate folderUid <-> backend id mapping methods into a single place.
-  Currently they live in both the collection handler and the backend driver.
+- **HTTP 503 throttling (``X-MS-Throttle``)**
 
-- Maintain the serverid -> backendid map in a single place and stop storing
-  backend ids (i.e., IMAP folder names) in collection/state/folder cache etc...
-  Also, standardize on using the serverid value everwhere within H_AS code.
-  backendid should be just that - only used when communicating with the backend.
+  Exchange-style overload signalling is not implemented. Only relevant at high
+  load or when deliberately rate-limiting devices.
 
-- Possibly move the syncCache and state into the device object so we have a
-  single object to pass around that has access to all.
+  See `Microsoft throttling guidance <https://learn.microsoft.com/en-us/previous-versions/office/developer/exchange-server-interoperability-guidance/jj899829(v=exchg.140)>`_.
 
-- Extract a basic Horde_ActiveSync_Storage class? At the very least we need to
-  rename the current Horde_ActiveSync_State_* classes to Horde_ActiveSync_Storage
-  since they now deal with more than device state.
+- **Task recurrence edge cases (``DEADOCUR`` / single-instance completion)**
 
-- Implmement Horde_ActiveSync_HttpRequest object and remove dependency on
-  Horde_Controller. We only use the Horde_Controller_Request_Http object from
-  that package.
+  Basic task recurrence sync exists (Nag ↔ ``Horde_ActiveSync_Message_Task``).
+  Completing or deleting a single instance of a recurring task series —
+  especially client use of ``DEADOCUR`` — needs more end-to-end testing and
+  may require Nag changes more than activesync library changes.
 
-- Implmement A Horde_ActiveSync_Response object and move functionality currently
-  living in the RPC layer (sending back certain headers, etc...) into this
-  class.
+- **Find / KQL expansion**
 
-- Implement a Horde_ActiveSync_Change_Filter class/interface. Used to implement
-  workarounds for broken clients. E.g., filter out the ADD commands sent in
-  response to MOVEITEMS for Outlook clients. Use a similar pattern for other
-  types of broken client behavior.
+  EAS 16.0 ``Find`` is implemented with a minimal KQL subset (``from:``,
+  ``to:``, ``subject:``, quoted terms, ``OR``). Broader KQL coverage is
+  incremental polish, not a blocker for 16.0.
 
-- No longer ignore SMS synchronization in the library, but pass it up to the
-  backend and the let the backend decide what to do with it. Since the SMS
-  ability of EAS uses the device to actually send the SMS, I could foresee
-  some added ability in IMP, or maybe a separate app, that allows managing this.
 
-- Break up Horde_ActiveSync_Driver::getMessage(). Add _getCalendarMessage() etc...
-  and move base logic for calling the correct method into the base class.
+Operations and monitoring (out of library scope)
+------------------------------------------------
 
-- Decouple the codepage definitions from the Encoder/Decoder class. Break them
-  out into individual classes.
+- **EAS usage dashboard / “top-like” monitor**
 
-- Pass the Horde_ActiveSync::FILTERTYPE_ constant directly to the driver, and
-  let the driver calculate the needed time slice if needed. Needed to correctly
-  deal with Horde_ActiveSync::FILTERTYPE_INCOMPLETETASKS.
+  A live view of active devices, error rates, and stuck sync keys would be
+  valuable for operators but belongs in a separate admin tool or Horde UI
+  module, not in the protocol library. Per-device protocol logging
+  (``logging.type = perdevice`` in Horde config) is the supported debugging
+  path today.
 
-- Introduce some sort of filter or similar data in the definitions of the wbxml
-  fields to allow for things like specifying the maximum size of a field allowed.
 
-- Move Horde_Core_ActiveSync_Mail into the Horde_ActiveSync library.
-  Horde_ActiveSync_Mailer (?). This is functionality that should be provided
-  out of the box from the library. Need to figure out the best way to inject the
-  Horde specific things, like the actual mailer and identity data.
+Horde 6 (breaking changes — planned refactor)
+---------------------------------------------
 
-- Implement something like Horde_ActiveSync_Sync_Options:: to encapsulate loading
-  and transporting the various collection options/bodyprefs around.
+Do not start these ad hoc. Each item touches public API surface, persisted
+state, or both.
 
-- Likewise, implement a collection object instead of using an array to define
-  each collection and have it be responsible for providing some of the return
-  objects/values (See comments in Sync.php).
+**Protocol and class layout**
 
-- Implement Horde_ActiveSync_SyncKey.
+- Consolidate non-protocol constants into a dedicated class.
+- Rename WBXML tag constants to match MS-AS* document names (today many follow
+  legacy Z-Push naming).
+- Decouple WBXML codepage tables from ``Horde_ActiveSync_Wbxml_Encoder`` /
+  ``Decoder`` into separate classes.
+- Add field-definition metadata (e.g. maximum encoded size) on message maps.
+- Introduce ``Horde_ActiveSync_Protocol_Exception`` and tighten the exception
+  hierarchy.
 
-- Move non server-ish methods out of Horde_ActiveSync(_Server). E.g.,
-  getMimeTrucSize() etc...
+**Request / response pipeline**
 
-- Implment a "changes" object that uses either an array/spl array, or a
-  temporary php stream (for the larger initial email syncs) to store the actual
-  change data structure. Needed to avoid hitting PHP memory limit for very large
-  mailboxes when synchronizing to clients that pull the entire mailbox down
-  (like Outlook). Also, standardize the data format instead of having to
-  (re)build a flat array from a multidimensional array of 'changes', 'add' etc..
+- Split request parsing from handling (``Request_Parser`` +
+  ``Request_Handler``); stream large inbound bodies instead of buffering.
+- Replace ``Horde_Controller_Request_Http`` with a library-local HTTP request
+  object; add a matching response object and move header logic out of
+  ``Horde_Rpc_ActiveSync``.
+- Move non-server helpers out of ``Horde_ActiveSync`` (truncation helpers,
+  version negotiation utilities, etc.).
 
-- Use a configuration object (or maybe a Builder) for constructing the
-  ActiveSync Driver and Server objects. At the very least, need to clean up the
-  constructor parameters and various configuration options mess. (E.g., the
-  "PING" configuration values are no longer really all strictly related to PING
-  requests).
+**State, storage, and identity**
 
-- Implement a Repository pattern for adding/supporting each backend collection
-  type instead of using a monolithic driver/connector object.
+- Rename ``Horde_ActiveSync_State_*`` to ``Horde_ActiveSync_Storage_*`` (or
+  extract a storage layer) — these classes already manage more than sync keys.
+- Return ``Horde_ActiveSync_Device`` objects from ``listDevices()`` instead
+  of SQL field hashes; accept device property names in filters.
+- Eliminate static ``Horde_ActiveSync::$_*`` properties (logger, device,
+  version).
+- Unify ``serverid`` vs backend folder names: one map, server IDs everywhere
+  inside the library; backend IDs only at the driver boundary.
+- Fold ``SyncCache`` and per-collection state into the device object where
+  practical.
+- Implement ``Horde_ActiveSync_SyncKey`` as a first-class type.
 
-- Use a Horde_ActiveSync_Date or Horde_ActiveSync_Message_Date object to wrap
-  logic such as NormalizePoomContactsDate etc...
+**Driver and backend shape**
 
-- Clean up exception types, add Horde_ActiveSync_Protocol_Exception etc...
+- Repository (or similar) per collection class instead of monolithic
+  ``Horde_ActiveSync_Driver_Base`` / ``Horde_Core_ActiveSync_Connector``
+  switch statements.
+- Normalize folder create/edit/delete to accept and return
+  ``Horde_ActiveSync_Message_Folder`` objects consistently. Multiplexed
+  non-email folders (``Calendar:ID``, ``Tasks:ID``, …) already work, but
+  method signatures and return shapes still vary.
+- Store ``Horde_ActiveSync::CLASS_*`` and ``FOLDER_TYPE_*`` in persisted state
+  to stop converting between them at runtime.
+- Consolidate folder UID ↔ backend ID mapping (today split across
+  ``Horde_ActiveSync_Collections`` and the driver).
+- Pass ``FILTERTYPE_*`` to the driver by constant, not precomputed cutoff
+  timestamps (supersedes the near-term ``INCOMPLETETASKS`` fix style).
+- Split ``getMessage()`` into per-class methods with shared base logic.
+- ``Horde_ActiveSync_Change_Filter`` (or equivalent) for client-specific
+  workarounds. Some MOVEITEMS duplication issues were fixed in the past, but
+  there is no general filter framework.
+- Move mail send/forward/reply helpers from ``Horde_Core_ActiveSync_Mail`` into
+  the activesync package behind injectable mailer/identity dependencies.
 
-- Implement some type of SYNC_REPLY object that is responsible for outputing
-  the SYNC_REPLY data for itself. E.g., return such an object from the
-  H_A_S_Driver::changeMessage either instead of a $stat array, or as part
-  of the $stat array. Move functionality in H_A_S_Exporter_Sync::syncAddResponse
-  and ::syncModifiedResponse() into these new objects. Probably need concrete
-  classes for Calendar and Email etc...
+**Sync data structures**
 
-- Clean up Horde_ActiveSync_Device - break into device specific child classes.
+- ``Horde_ActiveSync_Sync_Options`` (and similar) for collection options /
+  body preferences instead of raw arrays.
+- Collection object replacing the associative collection array in ``Sync.php``.
+- Changes object (array, ``SplFixedArray``, or temp stream) to cap memory on
+  large initial mailbox syncs and to unify the ``add`` / ``modify`` / ``delete``
+  shapes between email and PIM collections.
+- Sync-reply objects per collection type; move logic out of
+  ``Horde_ActiveSync_Connector_Exporter_Sync``.
+- Configuration builder for server/driver construction (Ping-related settings
+  are no longer Ping-only).
+
+**SMS**
+
+- Today SMS is deliberately stubbed: imports return ``IGNORESMS_*`` phantom
+  UIDs so broken clients do not break email sync. Horde 6 should pass SMS
+  collections to the backend and let it opt in/out instead of hard-coding
+  ignores in ``Horde_ActiveSync_Connector_Importer``.
+
+**Miscellaneous**
+
+- Single logger access point (``Horde_ActiveSync_Debug`` or similar) instead of
+  injecting ``Horde_Log_Logger`` everywhere.
+- ``Horde_ActiveSync_Message_Date`` (or shared date helper) for POOM date
+  normalisation currently scattered in message classes.
+- Device class hierarchy instead of one ``Horde_ActiveSync_Device`` with all
+  properties.
+
+
+Recently completed
+------------------
+
+Verified in the 3.x / FRAMEWORK_6_0 tree as of 2026-06. Removed from the
+active backlog; kept here so this file does not resurrect settled work.
+
+**Protocol versions and commands**
+
+- EAS **16.0** as the supported ceiling (``VERSION_SIXTEEN``; ``16.1`` constant
+  only, not implemented).
+- EAS 16.0 **Find** command with mailbox/GAL search and minimal KQL
+  (``Horde_ActiveSync_Request_Find``, ``Horde_ActiveSync_Find_Kql``).
+- **Autodiscover**, **ItemOperations** (fetch/move/empty; not Schema),
+  **Settings**, **Provision**, **Ping**, **Search**, **ValidateCert** — all
+  present for supported versions (see ``README.md``).
+
+**EAS 16.0 calendar** (library + ``horde/kronolith`` + ``horde/core``)
+
+- Instance model: bound exceptions as top-level items with ``InstanceId``;
+  modified instances omitted from master ``Exceptions`` at 16.0+.
+- ``ClientUid`` import/export round-trip.
+- ``AirSyncBase:Location`` import/export (display name + coordinates).
+- Inbound appointment validation strips forbidden fields instead of rejecting.
+- Initial calendar sync hides bound exceptions only for protocol versions
+  below 16.0.
+
+**EAS 16.0 mail** (``horde/core``)
+
+- Draft folder content changes use ``CHANGE_TYPE_DRAFT``.
+- Draft send via ``POOMMAIL2:Send`` (``toRfc822Stream()`` + SMTP).
+- ``Forwardee`` objects on SmartForward/SmartReply.
+
+**Multi-folder PIM**
+
+- Multiplexed calendar, contact, task, and note folders
+  (``Class:backendId`` server IDs, device ``multiplex`` flag).
+
+**Stability (3.0.0-RC1 and related)**
+
+- SQL/Mongo row locks for parallel state access.
+- Reject and repair corrupt ``sync_data`` on load/save.
+- Separate PING watermark from SYNC modseq (iOS mail loop fix).
+- Hardened initial-sync ACK and KEYMISMATCH on corrupt state.
+- Meeting invitation RSVP / ``MeetingResponse`` improvements.
+
+**Older but still relevant**
+
+- EAS 16 draft **sync** (create/edit drafts on device) since 2.36.0.
+- MOVEITEMS duplicate-message fix.
+- Multiple SYNC/PING/OPTIONS loop fixes for broken clients (see
+  ``doc/changelog.yml``).
