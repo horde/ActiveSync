@@ -321,8 +321,9 @@ class Horde_ActiveSync_Message_Appointment extends Horde_ActiveSync_Message_Base
         // These values are not allowed in a EAS 16.0 command request.
         if ($this->_version == Horde_ActiveSync::VERSION_SIXTEEN) {
             foreach (['uid', 'dtstamp', 'organizername', 'organizeremail'] as $property) {
-                if (!empty($this->_properties[$property])) {
+                if ($this->_properties[$property] !== false) {
                     $this->_properties[$property] = false;
+                    unset($this->_exists[$property]);
                 }
             }
         }
