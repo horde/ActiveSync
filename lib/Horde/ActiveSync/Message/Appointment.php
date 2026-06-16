@@ -319,13 +319,11 @@ class Horde_ActiveSync_Message_Appointment extends Horde_ActiveSync_Message_Base
         }
 
         // These values are not allowed in a EAS 16.0 command request.
-        // @todo - should we just wipe the values instead of failing the test?
         if ($this->_version == Horde_ActiveSync::VERSION_SIXTEEN) {
-            if (!empty($this->_properties['uid'])
-                || !empty($this->_properties['dtstamp'])
-                || !empty($this->_properties['organizername'])
-                || !empty($this->_properties['organizeremail'])) {
-                return false;
+            foreach (['uid', 'dtstamp', 'organizername', 'organizeremail'] as $property) {
+                if (!empty($this->_properties[$property])) {
+                    $this->_properties[$property] = false;
+                }
             }
         }
 
@@ -694,7 +692,11 @@ class Horde_ActiveSync_Message_Appointment extends Horde_ActiveSync_Message_Base
      */
     public function setRecurrence(Horde_Date_Recurrence $recurrence, $fdow = null)
     {
-        $r = Horde_ActiveSync::messageFactory('Recurrence');
+        $r = new Horde_ActiveSync_Message_Recurrence([
+            'logger' => $this->_logger,
+            'protocolversion' => $this->_version,
+            'device' => $this->_device,
+        ]);
 
         if ($this->_version >= Horde_ActiveSync::VERSION_FOURTEENONE) {
             $r->firstdayofweek = $fdow;

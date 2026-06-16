@@ -499,4 +499,25 @@ class AppointmentTest extends TestCase
         $this->assertEquals(true, $contact->isGhosted('body'));
     }
 
+    public function testEas16StripsForbiddenInboundFields()
+    {
+        $logger = new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null());
+        $message = new Horde_ActiveSync_Message_Appointment([
+            'logger' => $logger,
+            'protocolversion' => Horde_ActiveSync::VERSION_SIXTEEN,
+        ]);
+        $message->uid = 'client-uid-not-server';
+        $message->dtstamp = new Horde_Date('2026-06-16T10:00:00', 'UTC');
+        $message->organizername = 'Organizer';
+        $message->organizeremail = 'org@example.com';
+
+        $method = new \ReflectionMethod($message, '_validateDecodedValues');
+        $method->setAccessible(true);
+        $this->assertTrue($method->invoke($message));
+        $this->assertFalse($message->getProperty('uid'));
+        $this->assertFalse($message->getProperty('dtstamp'));
+        $this->assertFalse($message->getProperty('organizername'));
+        $this->assertFalse($message->getProperty('organizeremail'));
+    }
+
 }
