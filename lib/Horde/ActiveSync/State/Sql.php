@@ -1470,7 +1470,8 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             throw new Horde_ActiveSync_Exception($e);
         }
 
-        if ($status == Horde_ActiveSync::RWSTATUS_PENDING) {
+        if ($status == Horde_ActiveSync::RWSTATUS_PENDING
+            || $status == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING) {
             // Need to clear the policykey to force a PROVISION. Clear ALL
             // entries, to ensure the device is wiped.
             $query = 'UPDATE ' . $this->_syncUsersTable

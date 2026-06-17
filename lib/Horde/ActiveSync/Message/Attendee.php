@@ -58,6 +58,8 @@ class Horde_ActiveSync_Message_Attendee extends Horde_ActiveSync_Message_Base
         Horde_ActiveSync_Message_Appointment::POOMCAL_NAME  =>  [self::KEY_ATTRIBUTE => 'name'],
         Horde_ActiveSync_Message_Appointment::POOMCAL_ATTENDEESTATUS => [self::KEY_ATTRIBUTE => 'status'],
         Horde_ActiveSync_Message_Appointment::POOMCAL_ATTENDEETYPE => [self::KEY_ATTRIBUTE => 'type'],
+        'MeetingResponse:ProposedStartTime' => [self::KEY_ATTRIBUTE => 'proposedstarttime', self::KEY_TYPE => self::TYPE_DATE],
+        'MeetingResponse:ProposedEndTime' => [self::KEY_ATTRIBUTE => 'proposedendtime', self::KEY_TYPE => self::TYPE_DATE],
     ];
 
     /**
@@ -70,6 +72,8 @@ class Horde_ActiveSync_Message_Attendee extends Horde_ActiveSync_Message_Base
         'name'  => false,
         'status' => false,
         'type' => false,
+        'proposedstarttime' => false,
+        'proposedendtime' => false,
     ];
 
     /**

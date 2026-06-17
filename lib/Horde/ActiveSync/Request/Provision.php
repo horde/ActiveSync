@@ -78,7 +78,8 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
         }
 
         // Handle remote wipe status response for Android devices.
-        if ($this->_decoder->getElementStartTag(Horde_ActiveSync::PROVISION_REMOTEWIPE)) {
+        $wipeTag = $this->_detectWipeTag();
+        if ($wipeTag !== null) {
             if (!$this->_decoder->getElementStartTag(Horde_ActiveSync::PROVISION_STATUS)) {
                 return $this->_globalError(self::STATUS_PROTERROR);
             }
@@ -88,7 +89,12 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
                 return $this->_globalError(self::STATUS_PROTERROR);
             }
             if ($status == self::STATUS_CLIENT_SUCCESS) {
-                $this->_state->setDeviceRWStatus($this->_devId, Horde_ActiveSync::RWSTATUS_WIPED);
+                $this->_state->setDeviceRWStatus(
+                    $this->_devId,
+                    $wipeTag === Horde_ActiveSync::PROVISION_ACCOUNTONLYREMOTEWIPE
+                        ? Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED
+                        : Horde_ActiveSync::RWSTATUS_WIPED
+                );
             }
             $policytype = Horde_ActiveSync::POLICYTYPE_XML;
         } else {
@@ -160,7 +166,8 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
             }
 
             // Handle remote wipe status for other devices
-            if ($this->_decoder->getElementStartTag(Horde_ActiveSync::PROVISION_REMOTEWIPE)) {
+            $wipeTag = $this->_detectWipeTag();
+            if ($wipeTag !== null) {
                 if (!$this->_decoder->getElementStartTag(Horde_ActiveSync::PROVISION_STATUS)) {
                     return $this->_globalError(self::STATUS_PROTERROR);
                 }
@@ -170,7 +177,12 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
                     return $this->_globalError(self::STATUS_PROTERROR);
                 }
                 if ($status == self::STATUS_CLIENT_SUCCESS) {
-                    $this->_state->setDeviceRWStatus($this->_device->id, Horde_ActiveSync::RWSTATUS_WIPED);
+                    $this->_state->setDeviceRWStatus(
+                        $this->_device->id,
+                        $wipeTag === Horde_ActiveSync::PROVISION_ACCOUNTONLYREMOTEWIPE
+                            ? Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED
+                            : Horde_ActiveSync::RWSTATUS_WIPED
+                    );
                 }
             }
         }
@@ -270,10 +282,24 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
         // Remote wipe if requested.
         $rwstatus = $this->_state->getDeviceRWStatus($this->_device->id);
         if ($rwstatus == Horde_ActiveSync::RWSTATUS_PENDING
-            || $rwstatus == Horde_ActiveSync::RWSTATUS_WIPED) {
-
-            $this->_encoder->startTag(Horde_ActiveSync::PROVISION_REMOTEWIPE, false, true);
-            $this->_state->setDeviceRWStatus($this->_device->id, Horde_ActiveSync::RWSTATUS_WIPED);
+            || $rwstatus == Horde_ActiveSync::RWSTATUS_WIPED
+            || $rwstatus == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING
+            || $rwstatus == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED) {
+            $isAccountOnly = ($rwstatus == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING
+                || $rwstatus == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED);
+            $this->_encoder->startTag(
+                $isAccountOnly
+                    ? Horde_ActiveSync::PROVISION_ACCOUNTONLYREMOTEWIPE
+                    : Horde_ActiveSync::PROVISION_REMOTEWIPE,
+                false,
+                true
+            );
+            $this->_state->setDeviceRWStatus(
+                $this->_device->id,
+                $isAccountOnly
+                    ? Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED
+                    : Horde_ActiveSync::RWSTATUS_WIPED
+            );
         }
         $this->_encoder->endTag();     //provision
 
@@ -367,6 +393,23 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
         $this->_encoder->content(Horde_ActiveSync_Status::DEVICE_NOT_FULLY_PROVISIONABLE);
         $this->_encoder->endTag();
         $this->_encoder->endTag();
+    }
+
+    /**
+     * Detect and return the wipe tag in this request.
+     *
+     * @return string|null
+     */
+    protected function _detectWipeTag()
+    {
+        if ($this->_decoder->getElementStartTag(Horde_ActiveSync::PROVISION_REMOTEWIPE)) {
+            return Horde_ActiveSync::PROVISION_REMOTEWIPE;
+        }
+        if ($this->_decoder->getElementStartTag(Horde_ActiveSync::PROVISION_ACCOUNTONLYREMOTEWIPE)) {
+            return Horde_ActiveSync::PROVISION_ACCOUNTONLYREMOTEWIPE;
+        }
+
+        return null;
     }
 
 }

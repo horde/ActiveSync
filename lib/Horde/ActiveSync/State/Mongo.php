@@ -1357,7 +1357,8 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
             throw new Horde_ActiveSync_Exception($e);
         }
 
-        if ($status == Horde_ActiveSync::RWSTATUS_PENDING) {
+        if ($status == Horde_ActiveSync::RWSTATUS_PENDING
+            || $status == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING) {
             $new_data[self::DEVICE_USERS_POLICYKEY] = 0;
             $cursor = $this->_db->selectCollection(self::COLLECTION_DEVICE)
                 ->find($query, ['users' => true]);
@@ -1514,7 +1515,12 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
         if (!empty($options['devId']) && !empty($options['user'])) {
             $query = [
                 self::MONGO_ID => $options['devId'],
-                '$or' => [[self::DEVICE_RWSTATUS => Horde_ActiveSync::RWSTATUS_PENDING], [self::DEVICE_RWSTATUS => Horde_ActiveSync::RWSTATUS_WIPED]],
+                '$or' => [
+                    [self::DEVICE_RWSTATUS => Horde_ActiveSync::RWSTATUS_PENDING],
+                    [self::DEVICE_RWSTATUS => Horde_ActiveSync::RWSTATUS_WIPED],
+                    [self::DEVICE_RWSTATUS => Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING],
+                    [self::DEVICE_RWSTATUS => Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED],
+                ],
             ];
             try {
                 $results = $this->_db->selectCollection(self::COLLECTION_DEVICE)
