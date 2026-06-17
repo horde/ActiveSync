@@ -36,13 +36,15 @@ class Horde_ActiveSync_FindKqlTest extends TestCase
         $this->assertStringContainsString('quarterly report', (string) $q);
     }
 
-    public function testIphoneOrExpansionQuery()
+    public function testClientOrExpansionQuery()
     {
-        $kql = 'to:"Stoewer" OR cc:"Stoewer" OR from:"Stoewer" OR subject:"Stoewer" OR "Stoewer" OR "Stoewer"';
+        $term = 'Example Contact';
+        $kql = 'to:"' . $term . '" OR cc:"' . $term . '" OR from:"' . $term
+            . '" OR subject:"' . $term . '" OR "' . $term . '" OR "' . $term . '"';
         $q = Horde_ActiveSync_Find_Kql::toImapQuery($kql);
         $imap = (string) $q;
         $this->assertStringContainsString('OR', $imap);
-        $this->assertStringContainsString('Stoewer', $imap);
+        $this->assertStringContainsString('Example Contact', $imap);
     }
 
     public function testImplicitAndBetweenRestrictions()
@@ -84,10 +86,10 @@ class Horde_ActiveSync_FindKqlTest extends TestCase
 
     public function testParticipantsRestriction()
     {
-        $q = Horde_ActiveSync_Find_Kql::toImapQuery('participants:garth@contoso.com');
+        $q = Horde_ActiveSync_Find_Kql::toImapQuery('participants:alice@example.com');
         $imap = (string) $q;
         $this->assertStringContainsString('OR', $imap);
-        $this->assertStringContainsString('garth@contoso.com', $imap);
+        $this->assertStringContainsString('alice@example.com', $imap);
     }
 
     public function testBodyRestriction()
