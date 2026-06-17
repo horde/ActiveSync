@@ -181,6 +181,7 @@ class Horde_ActiveSync
     public const PROVISION_DATA                        =  'Provision:Data';
     public const PROVISION_STATUS                      =  'Provision:Status';
     public const PROVISION_REMOTEWIPE                  =  'Provision:RemoteWipe';
+    public const PROVISION_ACCOUNTONLYREMOTEWIPE       =  'Provision:AccountOnlyRemoteWipe';
     public const PROVISION_EASPROVISIONDOC             =  'Provision:EASProvisionDoc';
 
     /* Policy types */
@@ -224,6 +225,8 @@ class Horde_ActiveSync
     public const RWSTATUS_OK                           = 1;
     public const RWSTATUS_PENDING                      = 2;
     public const RWSTATUS_WIPED                        = 3;
+    public const RWSTATUS_ACCOUNTONLY_PENDING          = 4;
+    public const RWSTATUS_ACCOUNTONLY_WIPED            = 5;
 
     /* GAL **/
     public const GAL_DISPLAYNAME                       = 'GAL:DisplayName';
@@ -299,6 +302,16 @@ class Horde_ActiveSync
     public const VERSION_FOURTEENONE                   = '14.1';
     public const VERSION_SIXTEEN                       = '16.0';
     public const VERSION_SIXTEENONE                    = '16.1';
+
+    /**
+     * Returns whether a device protocol version supports account-only remote wipe.
+     *
+     * @param string|null $deviceVersion  Device protocol version.
+     */
+    public static function deviceSupportsAccountOnlyWipe($deviceVersion)
+    {
+        return version_compare((string) ($deviceVersion ?? '0.0'), self::VERSION_SIXTEENONE, '>=');
+    }
 
     public const MIME_SUPPORT_NONE                     = 0;
     public const MIME_SUPPORT_SMIME                    = 1;
@@ -472,6 +485,7 @@ class Horde_ActiveSync
         self::VERSION_FOURTEEN,
         self::VERSION_FOURTEENONE,
         self::VERSION_SIXTEEN,
+        self::VERSION_SIXTEENONE,
     ];
 
     /**
@@ -1051,6 +1065,9 @@ class Horde_ActiveSync
                 break;
             case self::VERSION_SIXTEEN:
                 $headers[] = 'MS-Server-ActiveSync: 16.0';
+                break;
+            case self::VERSION_SIXTEENONE:
+                $headers[] = 'MS-Server-ActiveSync: 16.1';
         }
 
         foreach ($headers as $hdr) {
@@ -1114,6 +1131,7 @@ class Horde_ActiveSync
             case self::VERSION_FOURTEEN:
             case self::VERSION_FOURTEENONE:
             case self::VERSION_SIXTEEN:
+            case self::VERSION_SIXTEENONE:
                 return 'Sync,SendMail,SmartForward,SmartReply,GetAttachment,GetHierarchy,CreateCollection,DeleteCollection,MoveCollection,FolderSync,FolderCreate,FolderDelete,FolderUpdate,MoveItems,GetItemEstimate,MeetingResponse,Search,Settings,Ping,ItemOperations,Provision,ResolveRecipients,ValidateCert,Find';
         }
     }
