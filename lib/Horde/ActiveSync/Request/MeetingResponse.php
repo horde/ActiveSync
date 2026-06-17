@@ -46,6 +46,9 @@ class Horde_ActiveSync_Request_MeetingResponse extends Horde_ActiveSync_Request_
 
     // 16.0
     public const MEETINGRESPONSE_SENDRESPONSE    = 'MeetingResponse:SendResponse';
+    // 16.1
+    public const MEETINGRESPONSE_PROPOSEDSTARTTIME = 'MeetingResponse:ProposedStartTime';
+    public const MEETINGRESPONSE_PROPOSEDENDTIME   = 'MeetingResponse:ProposedEndTime';
 
     // Response constants
     public const RESPONSE_ACCEPTED               = 1;
@@ -121,16 +124,41 @@ class Horde_ActiveSync_Request_MeetingResponse extends Horde_ActiveSync_Request_
                         if ($this->_decoder->isEmptyElement($this->_decoder->getLastStartElement())) {
                             $req['sendresponse'] = true;
                         } else {
-                            // elementContent is an AirSyncBaseBody object.
-                            $this->_decoder->getElementStartTag(Horde_ActiveSync::AIRSYNCBASE_BODY);
-                            $body = Horde_ActiveSync::messageFactory('AirSyncBaseBody');
-                            $body->decodeStream($this->_decoder);
-                            $req['sendresponse'] = $body;
-                            $this->_decoder->getElementEndTag(); // AirSyncbaseBody
+                            while (($sendTag = ($this->_decoder->getElementStartTag(Horde_ActiveSync::AIRSYNCBASE_BODY) ? Horde_ActiveSync::AIRSYNCBASE_BODY
+                                    : ($this->_decoder->getElementStartTag(self::MEETINGRESPONSE_PROPOSEDSTARTTIME) ? self::MEETINGRESPONSE_PROPOSEDSTARTTIME
+                                    : ($this->_decoder->getElementStartTag(self::MEETINGRESPONSE_PROPOSEDENDTIME) ? self::MEETINGRESPONSE_PROPOSEDENDTIME : -1)))) != -1) {
+                                switch ($sendTag) {
+                                    case Horde_ActiveSync::AIRSYNCBASE_BODY:
+                                        // elementContent is an AirSyncBaseBody object.
+                                        $body = Horde_ActiveSync::messageFactory('AirSyncBaseBody');
+                                        $body->decodeStream($this->_decoder);
+                                        $req['sendresponse'] = $body;
+                                        if (!$this->_decoder->getElementEndTag()) { // AirSyncBaseBody
+                                            throw new Horde_ActiveSync_Exception('Protocol Error');
+                                        }
+                                        break;
+                                    case self::MEETINGRESPONSE_PROPOSEDSTARTTIME:
+                                        $req['proposedstarttime'] = $this->_decoder->getElementContent();
+                                        if (!$this->_decoder->getElementEndTag()) {
+                                            throw new Horde_ActiveSync_Exception('Protocol Error');
+                                        }
+                                        break;
+                                    case self::MEETINGRESPONSE_PROPOSEDENDTIME:
+                                        $req['proposedendtime'] = $this->_decoder->getElementContent();
+                                        if (!$this->_decoder->getElementEndTag()) {
+                                            throw new Horde_ActiveSync_Exception('Protocol Error');
+                                        }
+                                        break;
+                                }
+                            }
+                            if (!isset($req['sendresponse'])) {
+                                // SendResponse container was present with proposal fields only.
+                                $req['sendresponse'] = true;
+                            }
                             if (!$this->_decoder->getElementEndTag()) {
                                 throw new Horde_ActiveSync_Exception('Protocol Error');
                             }
-                        }
+                        } // SendResponse
                         break;
                 }
             }

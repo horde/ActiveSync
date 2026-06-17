@@ -377,7 +377,10 @@ class Horde_ActiveSync_Wbxml
                 0x0d => 'Version',
                 // EAS 14.1
                 0x0e => 'InstanceId',
-                // EAS 16.0
+                // EAS 16.1
+                0x0f => 'ProposedStartTime',
+                0x10 => 'ProposedEndTime',
+                // EAS 16.0+
                 0x12 => 'SendResponse',
             ],
             /* POOMTASKS */
@@ -541,6 +544,8 @@ class Horde_ActiveSync_Wbxml
                 0x38 => 'ApplicationName',
                 0x39 => 'ApprovedApplicationList',
                 0x3A => 'Hash',
+                // EAS 16.1
+                0x3B => 'AccountOnlyRemoteWipe',
             ],
             /* SEARCH */
             0xf => [

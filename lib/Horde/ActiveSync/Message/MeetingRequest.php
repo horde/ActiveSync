@@ -73,6 +73,8 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
         Horde_ActiveSync_Message_Mail::POOMMAIL_BUSYSTATUS => [self::KEY_ATTRIBUTE => 'busystatus'],
         Horde_ActiveSync_Message_Mail::POOMMAIL_TIMEZONE => [self::KEY_ATTRIBUTE => 'timezone'],
         Horde_ActiveSync_Message_Mail::POOMMAIL_GLOBALOBJID => [self::KEY_ATTRIBUTE => 'globalobjid'],
+        Horde_ActiveSync_Message_Mail::MEETINGRESPONSE_PROPOSEDSTARTTIME => [self::KEY_ATTRIBUTE => 'proposedstarttime', self::KEY_TYPE => self::TYPE_DATE],
+        Horde_ActiveSync_Message_Mail::MEETINGRESPONSE_PROPOSEDENDTIME => [self::KEY_ATTRIBUTE => 'proposedendtime', self::KEY_TYPE => self::TYPE_DATE],
     ];
 
     /**
@@ -96,6 +98,8 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
         'busystatus' => false,
         'timezone' => false,
         'globalobjid' => false,
+        'proposedstarttime' => false,
+        'proposedendtime' => false,
     ];
 
     /**

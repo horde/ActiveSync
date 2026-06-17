@@ -149,6 +149,9 @@ class Horde_ActiveSync_Message_Mail extends Horde_ActiveSync_Message_Base
     public const POOMMAIL2_ISDRAFT                = 'POOMMAIL2:IsDraft';
     public const POOMMAIL2_BCC                    = 'POOMMAIL2:Bcc';
     public const POOMMAIL2_SEND                   = 'POOMMAIL2:Send';
+    // EAS 16.1 (MeetingResponse namespace)
+    public const MEETINGRESPONSE_PROPOSEDSTARTTIME = 'MeetingResponse:ProposedStartTime';
+    public const MEETINGRESPONSE_PROPOSEDENDTIME   = 'MeetingResponse:ProposedEndTime';
 
     /* Mail message types */
     public const CLASS_NOTE                       = 'IPM.Note';
