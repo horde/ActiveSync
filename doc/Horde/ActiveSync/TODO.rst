@@ -184,8 +184,8 @@ active backlog; kept here so this file does not resurrect settled work.
 
 **Protocol versions and commands**
 
-- EAS **16.0** as the supported ceiling (``VERSION_SIXTEEN``; ``16.1`` constant
-  only, not implemented).
+- EAS **16.0** and **16.1** as supported ceilings (``VERSION_SIXTEEN``,
+  ``VERSION_SIXTEENONE``).
 - EAS 16.0 **Find** command with mailbox/GAL search and minimal KQL
   (``Horde_ActiveSync_Request_Find``, ``Horde_ActiveSync_Find_Kql``).
 - **Autodiscover**, **ItemOperations** (fetch/move/empty; not Schema),
@@ -207,6 +207,14 @@ active backlog; kept here so this file does not resurrect settled work.
 - Draft folder content changes use ``CHANGE_TYPE_DRAFT``.
 - Draft send via ``POOMMAIL2:Send`` (``toRfc822Stream()`` + SMTP).
 - ``Forwardee`` objects on SmartForward/SmartReply.
+
+**EAS 16.1** (library + ``horde/core`` + ``horde/kronolith`` + ``horde/itip`` + ``horde/imp``)
+
+- ``MeetingResponse`` ``ProposedStartTime`` / ``ProposedEndTime`` with RFC5546
+  ``METHOD=COUNTER`` / ``DECLINECOUNTER``.
+- Attendee proposed times stored and exported on calendar sync.
+- ``DisallowNewTimeProposal`` export from Kronolith (iCal ``DISALLOW-COUNTER``).
+- ``Provision:AccountOnlyRemoteWipe`` with admin and prefs UI.
 
 **Multi-folder PIM**
 

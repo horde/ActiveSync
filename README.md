@@ -56,7 +56,7 @@ The library defines constants for EAS **2.5**, **12.0**, **12.1**, **14.0**,
 |---------|---------------------|
 | 2.5 – 14.1 | Mature; long-standing Horde support |
 | **16.0** | Supported end-to-end for production use (see below) |
-| 16.1 | Constant present; **not implemented** |
+| **16.1** | Supported; extends 16.0 with meeting proposals and account-only wipe (see below) |
 
 ### How version negotiation works
 
@@ -92,7 +92,7 @@ Set in Horde administration → ActiveSync → *What is the highest version of E
 that Horde should support?*, or in `conf.php`:
 
 ```php
-$conf['activesync']['version'] = '16.0';
+$conf['activesync']['version'] = '16.1';
 ```
 
 `Horde_Core_Factory_ActiveSyncServer` calls `setSupportedVersion()` with this
@@ -105,8 +105,7 @@ Default mode: `version_mode` is **`user`** when unset.
 Administrators can assign **Maximum ActiveSync protocol version**
 (`horde:activesync:version`) per user or group under Horde administration →
 Permissions → ActiveSync. Allowed values: `2.5`, `12.0`, `12.1`, `14.0`,
-`14.1`, `16.0` (and `16.1` in the permission enum, though the server does not
-implement 16.1 yet).
+`14.1`, `16.0`, and `16.1`.
 
 On each request, `versionCallback()` resolves the authenticated Horde username
 (from HTTP Basic credentials, the `User` GET parameter, or the registry) and
@@ -273,11 +272,24 @@ codebase:
 Horde driver details (initial calendar UID list omits bound exceptions at 16.0+,
 `calendar_import()` unified return shape) live in `horde/core` and `horde/kronolith`.
 
+## EAS 16.1 — what changed
+
+EAS 16.1 is a small delta on top of 16.0. The following are implemented in this
+codebase:
+
+| Area | Behaviour |
+|------|-----------|
+| **Propose new time** | `MeetingResponse` accepts `ProposedStartTime` / `ProposedEndTime`; outbound RFC5546 `METHOD=COUNTER`; inbound storage and sync of attendee proposals |
+| **DisallowNewTimeProposal** | Exported on calendar appointments (≥14.0) from iCal `DISALLOW-COUNTER`; inbound proposals ignored when set |
+| **Account-only remote wipe** | `Provision:AccountOnlyRemoteWipe` status flow; admin and user prefs UI (devices must negotiate ≥16.1) |
+
+Horde driver, Kronolith, iTip, and IMP details live in `horde/core`, `horde/kronolith`,
+`horde/itip`, and `horde/imp`.
+
 ## Known gaps and limitations
 
 These are intentional deferrals or still-open items — not bugs in basic sync:
 
-- **EAS 16.1** not started
 - **Find / KQL**: supports common `from:`, `to:`, `subject:`, quoted terms, and
   `OR`; not a full KQL implementation
 - **ItemOperations `Schema`** requests unsupported (no known client in the wild)
@@ -295,7 +307,7 @@ In Horde administration → ActiveSync (or `var/config/horde/conf.php`):
 
 ```php
 $conf['activesync']['enabled'] = true;
-$conf['activesync']['version'] = '16.0';   // global protocol ceiling (see above)
+$conf['activesync']['version'] = '16.1';   // global protocol ceiling (see above)
 $conf['activesync']['storage'] = 'Sql';    // or 'Nosql' (Mongo)
 $conf['activesync']['emailsync'] = true;
 $conf['activesync']['auth']['type'] = 'basic';
