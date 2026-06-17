@@ -184,7 +184,9 @@ abstract class Horde_ActiveSync_Request_Base
             $this->_logger->meta(sprintf('Stored key: %s', $storedKey));
 
             // Did we request a remote wipe?
-            if ($this->_state->getDeviceRWStatus($this->_device->id) == Horde_ActiveSync::RWSTATUS_PENDING) {
+            $rwStatus = $this->_state->getDeviceRWStatus($this->_device->id);
+            if ($rwStatus == Horde_ActiveSync::RWSTATUS_PENDING
+                || $rwStatus == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING) {
                 $this->_requireProvisionWbxml($requestType, Horde_ActiveSync_Status::REMOTEWIPE_REQUESTED);
                 return false;
             }
