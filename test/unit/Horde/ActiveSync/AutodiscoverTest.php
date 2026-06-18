@@ -12,18 +12,20 @@ namespace Horde\ActiveSync;
 
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
-use Horde\ActiveSync\Factory\TestServer;
+use Horde\ActiveSync\Test\Support\ActiveSyncServerTrait;
 
 #[CoversNothing]
 class AutodiscoverTest extends TestCase
 {
+    use ActiveSyncServerTrait;
+
     /**
      * Tests autodiscover functionality when passed a proper XML data structure
      * containing an email address that needs to be mapped to a username.
      */
     public function testAutodiscoverWithProperXML()
     {
-        $factory = new TestServer();
+        $fixture = $this->createActiveSyncServer();
 
         $request = <<<EOT
             <?xml version="1.0" encoding="utf-8"?>
@@ -36,22 +38,22 @@ class AutodiscoverTest extends TestCase
             </Request>
             </Autodiscover>
             EOT;
-        fwrite($factory->input, $request);
-        rewind($factory->input);
+        fwrite($fixture->input, $request);
+        rewind($fixture->input);
 
         // Mock the getUsernameFromEmail method to return 'mike' when 'mike@example.com'
         // is passed.
-        $factory->driver->expects($this->once())
+        $fixture->driver->expects($this->once())
             ->method('getUsernameFromEmail')
             ->willReturnMap([['mike@example.com', 'mike']]);
 
         // Mock authenticate to return true only if mike is passed as username.
-        $factory->driver->expects($this->any())
+        $fixture->driver->expects($this->any())
             ->method('authenticate')
             ->willReturnMap([['mike', 'password', null, true]]);
 
         // Setup is called once, and must return true.
-        $factory->driver->expects($this->once())
+        $fixture->driver->expects($this->once())
             ->method('setup')
             ->willReturn(true);
 
@@ -69,11 +71,11 @@ class AutodiscoverTest extends TestCase
             'url' => 'https://example.com/Microsoft-Server-ActiveSync',
         ];
 
-        $factory->driver->expects($this->once())
+        $fixture->driver->expects($this->once())
             ->method('autoDiscover')
             ->willReturnMap([[$mock_driver_parameters, $mock_driver_results]]);
 
-        $factory->server->handleRequest('Autodiscover', 'testdevice');
+        $fixture->server->handleRequest('Autodiscover', 'testdevice');
 
         // Test the results
         $expected = <<<EOT
@@ -97,8 +99,8 @@ class AutodiscoverTest extends TestCase
                             </Response>
                           </Autodiscover>
             EOT;
-        $factory->server->encoder->getStream()->rewind();
-        $this->assertEquals($expected, $factory->server->encoder->getStream()->getString());
+        $fixture->server->encoder->getStream()->rewind();
+        $this->assertEquals($expected, $fixture->server->encoder->getStream()->getString());
     }
 
     /**
@@ -110,25 +112,26 @@ class AutodiscoverTest extends TestCase
     {
         // Basic auth: mike:password
         $auth = 'Basic bWlrZTpwYXNzd29yZA==';
-        $factory = new TestServer();
-        $factory->request->expects($this->any())
-            ->method('getServerVars')
-            ->willReturn(['HTTP_AUTHORIZATION' => $auth]);
+        $fixture = $this->createActiveSyncServer([
+            'serverVars' => [
+                'HTTP_AUTHORIZATION' => $auth,
+            ],
+        ]);
 
         // Mock the getUsernameFromEmail method to return 'mike' when 'mike'
         // is passed.
-        $factory->driver->expects($this->once())
+        $fixture->driver->expects($this->once())
             ->method('getUsernameFromEmail')
             ->willReturnMap([['mike', 'mike']]);
 
         // Mock authenticate to return true only if 'mike' is passed as username
         // and 'password' is passed as the password.
-        $factory->driver->expects($this->any())
+        $fixture->driver->expects($this->any())
             ->method('authenticate')
             ->willReturnMap([['mike', 'password', null, true]]);
 
         // Setup is called once, and must return true.
-        $factory->driver->expects($this->once())
+        $fixture->driver->expects($this->once())
             ->method('setup')
             ->willReturn(true);
 
@@ -146,11 +149,11 @@ class AutodiscoverTest extends TestCase
             'url' => 'https://example.com/Microsoft-Server-ActiveSync',
         ];
 
-        $factory->driver->expects($this->once())
+        $fixture->driver->expects($this->once())
             ->method('autoDiscover')
             ->willReturnMap([[$mock_driver_parameters, $mock_driver_results]]);
 
-        $factory->server->handleRequest('Autodiscover', 'testdevice');
+        $fixture->server->handleRequest('Autodiscover', 'testdevice');
 
         // Test the results
         $expected = <<<EOT
@@ -174,8 +177,8 @@ class AutodiscoverTest extends TestCase
                             </Response>
                           </Autodiscover>
             EOT;
-        $factory->server->encoder->getStream()->rewind();
-        $this->assertEquals($expected, $factory->server->encoder->getStream()->getString());
+        $fixture->server->encoder->getStream()->rewind();
+        $this->assertEquals($expected, $fixture->server->encoder->getStream()->getString());
     }
 
 }
