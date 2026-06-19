@@ -820,6 +820,11 @@ class Horde_ActiveSync
             $cmd = 'FolderCreate';
         }
 
+        // Deprecated EAS 1.x folder commands (see LegacyCollection handler).
+        if ($cmd == 'CreateCollection' || $cmd == 'DeleteCollection' || $cmd == 'MoveCollection') {
+            $cmd = 'LegacyCollection';
+        }
+
         // Device id is REQUIRED
         if (empty($devId)) {
             if ($cmd == 'Options') {
