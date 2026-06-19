@@ -31,7 +31,8 @@ class Horde_ActiveSync_Request_LegacyCollection extends Horde_ActiveSync_Request
     protected function _handle()
     {
         $next = $this->_decoder->peek();
-        if ($next[Horde_ActiveSync_Wbxml::EN_TYPE] != Horde_ActiveSync_Wbxml::EN_TYPE_STARTTAG) {
+        if ($next === false
+            || $next[Horde_ActiveSync_Wbxml::EN_TYPE] != Horde_ActiveSync_Wbxml::EN_TYPE_STARTTAG) {
             throw new Horde_ActiveSync_Exception('Protocol Error');
         }
 
