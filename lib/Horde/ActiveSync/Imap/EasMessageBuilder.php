@@ -359,6 +359,17 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
                 } catch (Horde_ActiveSync_Exception $e) {
                     $this->_logger->err($e->getMessage());
                 }
+                break;
+            case 'CANCEL':
+                try {
+                    $mtg = Horde_ActiveSync::messageFactory('MeetingRequest');
+                    $mtg->fromvEvent($vCal);
+                    $this->_easMessage->meetingrequest = $mtg;
+                    $this->_easMessage->messageclass = Horde_ActiveSync_Message_Mail::CLASS_MEETING_CANCELED;
+                } catch (Horde_ActiveSync_Exception $e) {
+                    $this->_logger->err($e->getMessage());
+                }
+                break;
         }
     }
 

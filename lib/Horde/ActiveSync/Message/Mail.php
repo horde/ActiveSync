@@ -156,6 +156,7 @@ class Horde_ActiveSync_Message_Mail extends Horde_ActiveSync_Message_Base
     /* Mail message types */
     public const CLASS_NOTE                       = 'IPM.Note';
     public const CLASS_MEETING_REQUEST            = 'IPM.Schedule.Meeting.Request';
+    public const CLASS_MEETING_CANCELED           = 'IPM.Schedule.Meeting.Canceled';
     public const CLASS_MEETING_NOTICE             = 'IPM.Notification.Meeting';
 
     /* Flags */

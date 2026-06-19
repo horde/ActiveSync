@@ -75,29 +75,49 @@ class MeetingRequestTest extends TestCase
         $this->assertFalse($message->propertyExists('disallownewtimeproposal'));
     }
 
+    public function testFromVeventSetsMeetingMessageTypeForCancel(): void
+    {
+        $message = $this->_createMeetingRequest(
+            Horde_ActiveSync::VERSION_SIXTEENONE,
+            [],
+            'CANCEL'
+        );
+
+        $this->assertSame(
+            Horde_ActiveSync_Message_MeetingRequest::MEETING_MESSAGE_CANCEL,
+            $message->getProperty('meetingmessagetype')
+        );
+        $this->assertSame('0', $message->getProperty('responserequested'));
+    }
+
     protected function _createMeetingRequest(
         string $version,
-        array $extraEventLines = []
-    ): Horde_ActiveSync_Message_MeetingRequest {
+        array $extraEventLines = [],
+        string $method = 'REQUEST'
+    ): Horde_ActiveSync_Message_MeetingRequest
+    {
         $logger = new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null());
         $message = new Horde_ActiveSync_Message_MeetingRequest([
             'logger' => $logger,
             'protocolversion' => $version,
         ]);
         $vcal = new Horde_Icalendar();
-        $vcal->parseVcalendar($this->_buildVcalendar($extraEventLines));
+        $vcal->parseVcalendar($this->_buildVcalendar($extraEventLines, $method));
         $message->fromvEvent($vcal);
 
         return $message;
     }
 
-    protected function _buildVcalendar(array $extraEventLines = []): string
+    protected function _buildVcalendar(
+        array $extraEventLines = [],
+        string $method = 'REQUEST'
+    ): string
     {
         return implode("\r\n", array_merge([
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
             'PRODID:-//Horde//ActiveSync Test//EN',
-            'METHOD:REQUEST',
+            'METHOD:' . $method,
             'BEGIN:VEVENT',
             'UID:test-event-uid@example.test',
             'DTSTART:20260618T220000Z',
