@@ -338,6 +338,8 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
 
         try {
             $collection['serverid'] = $this->getBackendIdForFolderUid($collection['id']);
+        } catch (Horde_ActiveSync_Exception_FolderGone $e) {
+            throw $e;
         } catch (Horde_ActiveSync_Exception $e) {
             throw new Horde_ActiveSync_Exception_StateGone($e->getMessage());
         }

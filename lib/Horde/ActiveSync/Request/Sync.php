@@ -806,6 +806,10 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
 
             try {
                 $this->_collections->addCollection($collection);
+            } catch (Horde_ActiveSync_Exception_FolderGone $e) {
+                $this->_statusCode = self::STATUS_FOLDERSYNC_REQUIRED;
+                $this->_handleError($collection);
+                return false;
             } catch (Horde_ActiveSync_Exception_StateGone $e) {
                 $this->_statusCode = self::STATUS_NOTFOUND;
                 $this->_handleError($collection);
@@ -1029,7 +1033,7 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                                     $collection['modifiedids'] = [];
                                 }
                                 $collection['modifiedids'][] = $ires['id'];
-                                $collection['atchash'][$serverid] = !empty($ires['atchash'])
+                                $collection['atchash'][$ires['id']] = !empty($ires['atchash'])
                                     ? $ires['atchash']
                                     : [];
                             }
@@ -1307,18 +1311,6 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
      */
     protected function _handleError(array $collection)
     {
-        // Log detailed error context for diagnostics
-        if (isset($this->_logger)) {
-            $this->_logger->err(sprintf(
-                'SYNC ERROR: status=%s, collection_id=%s, class=%s, synckey=%s, keys=[%s]',
-                $this->_statusCode ?? 'UNKNOWN',
-                $collection['id'] ?? 'MISSING',
-                $collection['class'] ?? 'MISSING',
-                $collection['synckey'] ?? 'MISSING',
-                implode(',', array_keys($collection))
-            ));
-        }
-
         $this->_encoder->startWBXML();
         $this->_encoder->startTag(Horde_ActiveSync::SYNC_SYNCHRONIZE);
 
@@ -1374,6 +1366,18 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                     $collection['id']
                 ));
             }
+        }
+
+        // Log after status/class resolution so diagnostics match the WBXML response.
+        if (isset($this->_logger)) {
+            $this->_logger->err(sprintf(
+                'SYNC ERROR: status=%s, collection_id=%s, class=%s, synckey=%s, keys=[%s]',
+                $this->_statusCode ?? 'UNKNOWN',
+                $collection['id'] ?? 'MISSING',
+                $collection['class'] ?? 'MISSING',
+                $collection['synckey'] ?? 'MISSING',
+                implode(',', array_keys($collection))
+            ));
         }
 
         $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDER);
