@@ -44,14 +44,16 @@ class MeetingRequestTest extends TestCase
         $this->assertTrue($message->getProperty('disallownewtimeproposal'));
     }
 
-    public function testFromVeventExportsDisallowNewTimeProposalForMicrosoftVariant(): void
+    public function testFromVeventExportsDisallowNewTimeProposalForMicrosoftVariants(): void
     {
-        $message = $this->_createMeetingRequest(
-            Horde_ActiveSync::VERSION_SIXTEENONE,
-            ['X-MS-DISALLOW-COUNTER:TRUE']
-        );
+        foreach (['X-MS-DISALLOW-COUNTER:TRUE', 'X-MICROSOFT-DISALLOW-COUNTER:TRUE'] as $line) {
+            $message = $this->_createMeetingRequest(
+                Horde_ActiveSync::VERSION_SIXTEENONE,
+                [$line]
+            );
 
-        $this->assertTrue($message->getProperty('disallownewtimeproposal'));
+            $this->assertTrue($message->getProperty('disallownewtimeproposal'));
+        }
     }
 
     public function testFromVeventOmitsDisallowNewTimeProposalWhenUnset(): void
