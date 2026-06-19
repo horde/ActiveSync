@@ -111,7 +111,8 @@ class MeetingRequestTest extends TestCase
     protected function _buildVcalendar(
         array $extraEventLines = [],
         string $method = 'REQUEST'
-    ): string {
+    ): string
+    {
         return implode("\r\n", array_merge([
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
