@@ -45,12 +45,19 @@ use Horde\Util\HordeString;
  * @property integer   $busystatus
  * @property string|Horde_Date timezone
  * @proprety string globalobjid
+ * @property boolean  $disallownewtimeproposal
  */
 class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_Base
 {
     /** @see [MS-ASEMAIL] 2.2.2.39 MeetingMessageType */
     public const MEETING_MESSAGE_INITIAL = '1';
     public const MEETING_MESSAGE_UPDATE  = '2';
+
+    protected const DISALLOW_COUNTER_ATTRIBUTES = [
+        'DISALLOW-COUNTER',
+        'X-MICROSOFT-DISALLOW-COUNTER',
+        'X-MS-DISALLOW-COUNTER',
+    ];
 
     /**
      * Property mapping.
@@ -117,6 +124,14 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
     public function __construct(array $options = [])
     {
         parent::__construct($options);
+        if ($this->_version >= Horde_ActiveSync::VERSION_FOURTEEN) {
+            $this->_mapping += [
+                Horde_ActiveSync_Message_Mail::POOMMAIL_DISALLOWNEWTIMEPROPOSAL => [self::KEY_ATTRIBUTE => 'disallownewtimeproposal'],
+            ];
+            $this->_properties += [
+                'disallownewtimeproposal' => false,
+            ];
+        }
         if ($this->_version > Horde_ActiveSync::VERSION_FOURTEEN) {
             $this->_mapping += [
                 Horde_ActiveSync_Message_Mail::POOMMAIL2_MEETINGMESSAGETYPE  => [self::KEY_ATTRIBUTE => 'meetingmessagetype'],
@@ -287,6 +302,34 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
                 }
             } else {
                 $this->reminder = -intval($trigger);
+            }
+        }
+
+        $this->_parseDisallowNewTimeProposal($vevent);
+    }
+
+    /**
+     * Import iCal disallow-counter state for EAS 14+ meeting requests.
+     */
+    protected function _parseDisallowNewTimeProposal(Horde_Icalendar_Vevent $vevent): void
+    {
+        if ($this->_version < Horde_ActiveSync::VERSION_FOURTEEN) {
+            return;
+        }
+
+        foreach (self::DISALLOW_COUNTER_ATTRIBUTES as $name) {
+            try {
+                $value = $vevent->getAttribute($name);
+            } catch (Horde_Icalendar_Exception $e) {
+                continue;
+            }
+            if (is_array($value)) {
+                $value = reset($value);
+            }
+            if (is_string($value)
+                && in_array(strtoupper(trim($value)), ['1', 'TRUE', 'YES'], true)) {
+                $this->disallownewtimeproposal = true;
+                return;
             }
         }
     }
