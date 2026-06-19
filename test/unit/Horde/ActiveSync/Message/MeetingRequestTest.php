@@ -94,7 +94,8 @@ class MeetingRequestTest extends TestCase
         string $version,
         array $extraEventLines = [],
         string $method = 'REQUEST'
-    ): Horde_ActiveSync_Message_MeetingRequest {
+    ): Horde_ActiveSync_Message_MeetingRequest
+    {
         $logger = new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null());
         $message = new Horde_ActiveSync_Message_MeetingRequest([
             'logger' => $logger,
