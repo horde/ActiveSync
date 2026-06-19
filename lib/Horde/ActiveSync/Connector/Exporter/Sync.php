@@ -275,7 +275,10 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
     {
         foreach ($collection['missing'] as $uid) {
             $this->_encoder->startTag(Horde_ActiveSync::SYNC_REMOVE);
-            $this->_encoder->startTag(Horde_ActiveSync::SYNC_CLIENTENTRYID);
+            // Client Remove commands carry ServerEntryId (see Sync.php command
+            // parsing); the reply must use the same tag or iOS maild crashes
+            // parsing the Sync Replies Remove (addDeliveryIdToClear: nil).
+            $this->_encoder->startTag(Horde_ActiveSync::SYNC_SERVERENTRYID);
             $this->_encoder->content($uid);
             $this->_encoder->endTag();
             $this->_encoder->startTag(Horde_ActiveSync::SYNC_STATUS);
