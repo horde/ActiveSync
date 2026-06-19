@@ -295,4 +295,16 @@ class SyncTest extends TestCase
 
         return $replies;
     }
+    protected function tearDown(): void
+    {
+        $deviceRef = new ReflectionProperty(Horde_ActiveSync::class, '_device');
+        $deviceRef->setAccessible(true);
+        $deviceRef->setValue(null, null);
+
+        $versionRef = new ReflectionProperty(Horde_ActiveSync::class, '_version');
+        $versionRef->setAccessible(true);
+        $versionRef->setValue(null, null);
+
+        parent::tearDown();
+    }
 }
