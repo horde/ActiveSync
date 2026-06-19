@@ -48,6 +48,8 @@ class Horde_ActiveSync_Message_Attendee extends Horde_ActiveSync_Message_Base
     public const STATUS_DECLINE    = 4;
     public const STATUS_NORESPONSE = 5;
 
+    public $clearProposedTimes = false;
+
     /**
      * Property mapping.
      *
@@ -89,6 +91,42 @@ class Horde_ActiveSync_Message_Attendee extends Horde_ActiveSync_Message_Base
         }
 
         return true;
+    }
+
+    /**
+     * Encode attendee data, optionally emitting empty proposed-time elements
+     * so clients clear a previously synced counter-proposal.
+     */
+    public function encodeStream(Horde_ActiveSync_Wbxml_Encoder &$encoder)
+    {
+        if (!$this->clearProposedTimes
+            || $this->_version < Horde_ActiveSync::VERSION_SIXTEENONE) {
+            parent::encodeStream($encoder);
+            return;
+        }
+
+        $clearTags = [
+            'MeetingResponse:ProposedStartTime',
+            'MeetingResponse:ProposedEndTime',
+        ];
+        $savedMapping = $this->_mapping;
+        $this->_mapping = array_filter(
+            $savedMapping,
+            function ($tag) use ($clearTags) {
+                return !in_array($tag, $clearTags, true);
+            },
+            ARRAY_FILTER_USE_KEY
+        );
+
+        try {
+            parent::encodeStream($encoder);
+        } finally {
+            $this->_mapping = $savedMapping;
+        }
+
+        foreach ($clearTags as $tag) {
+            $encoder->startTag($tag, false, true);
+        }
     }
 
 }

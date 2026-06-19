@@ -378,8 +378,8 @@ class Horde_ActiveSync_Wbxml
                 // EAS 14.1
                 0x0e => 'InstanceId',
                 // EAS 16.1
-                0x0f => 'ProposedStartTime',
-                0x10 => 'ProposedEndTime',
+                0x10 => 'ProposedStartTime',
+                0x11 => 'ProposedEndTime',
                 // EAS 16.0+
                 0x12 => 'SendResponse',
             ],
