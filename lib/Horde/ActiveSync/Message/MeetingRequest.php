@@ -44,7 +44,7 @@ use Horde\Util\HordeString;
  * @property integer   $sensitivity
  * @property integer   $busystatus
  * @property string|Horde_Date timezone
- * @proprety string globalobjid
+ * @property string   globalobjid
  * @property boolean  $disallownewtimeproposal
  */
 class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_Base
