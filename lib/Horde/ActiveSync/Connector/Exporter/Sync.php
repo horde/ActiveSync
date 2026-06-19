@@ -216,7 +216,8 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
                     }
                     break;
                 case Horde_ActiveSync::CLASS_EMAIL:
-                    if (empty($collection['conversations'])) {
+                    if (empty($collection['atchash'][$serverid])
+                        && empty($collection['conversations'][$serverid])) {
                         continue 2;
                     }
                     break;
@@ -275,7 +276,11 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
     {
         foreach ($collection['missing'] as $uid) {
             $this->_encoder->startTag(Horde_ActiveSync::SYNC_REMOVE);
-            $this->_encoder->startTag(Horde_ActiveSync::SYNC_CLIENTENTRYID);
+            // Sync Remove identifies items by ServerEntryId (MS-ASCMD Delete/
+            // ServerId); failed Remove replies under Responses must echo that
+            // same ServerEntryId with Status 8. ClientEntryId is Add-only;
+            // using it here breaks iOS maild (addDeliveryIdToClear: nil).
+            $this->_encoder->startTag(Horde_ActiveSync::SYNC_SERVERENTRYID);
             $this->_encoder->content($uid);
             $this->_encoder->endTag();
             $this->_encoder->startTag(Horde_ActiveSync::SYNC_STATUS);
@@ -413,10 +418,13 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
             $this->_encoder->endTag();
         } elseif ($this->_as->device->version >= Horde_ActiveSync::VERSION_SIXTEEN
                   && $collection['class'] == Horde_ActiveSync::CLASS_EMAIL
-                  && !empty($collection['conversations'][$serverid])) {
+                  && (!empty($collection['conversations'][$serverid])
+                      || !empty($collection['atchash'][$serverid]['add']))) {
             $msg = $this->_as->messageFactory('Mail');
-            $msg->conversationid = $collection['conversations'][$serverid][0];
-            $msg->conversationindex = $collection['conversations'][$serverid][1];
+            if (!empty($collection['conversations'][$serverid])) {
+                $msg->conversationid = $collection['conversations'][$serverid][0];
+                $msg->conversationindex = $collection['conversations'][$serverid][1];
+            }
 
             if (!empty($collection['atchash'][$serverid]['add'])) {
                 foreach ($collection['atchash'][$serverid]['add'] as $clientid => $filereference) {

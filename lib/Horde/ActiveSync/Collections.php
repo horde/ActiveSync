@@ -295,10 +295,12 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
      * @param boolean $requireSyncKey  Attempt to read missing synckey from
      *                                 cache if true. If not found, set to 0.
      *
-     * @throws  Horde_ActiveSync_Exception_StateGone  Thrown when no synckey
-     *              is provided when one is specified as required, indicating
-     *              the state on the client is possibly corrupt or when the
-     *              serverid can not be found by the backend.
+     * @throws Horde_ActiveSync_Exception_StateGone  Thrown when no synckey
+     *             is provided when one is specified as required, indicating
+     *             the state on the client is possibly corrupt or when the
+     *             serverid can not be found by the backend.
+     * @throws Horde_ActiveSync_Exception_FolderGone  Thrown when the collection
+     *             folder cannot be found in the backend/cache.
      */
     public function addCollection(array $collection, $requireSyncKey = false)
     {
@@ -338,6 +340,8 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
 
         try {
             $collection['serverid'] = $this->getBackendIdForFolderUid($collection['id']);
+        } catch (Horde_ActiveSync_Exception_FolderGone $e) {
+            throw $e;
         } catch (Horde_ActiveSync_Exception $e) {
             throw new Horde_ActiveSync_Exception_StateGone($e->getMessage());
         }
