@@ -52,6 +52,7 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
     /** @see [MS-ASEMAIL] 2.2.2.39 MeetingMessageType */
     public const MEETING_MESSAGE_INITIAL = '1';
     public const MEETING_MESSAGE_UPDATE  = '2';
+    public const MEETING_MESSAGE_CANCEL  = '3';
 
     protected const DISALLOW_COUNTER_ATTRIBUTES = [
         'DISALLOW-COUNTER',
@@ -222,6 +223,8 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
                     : self::MEETING_MESSAGE_INITIAL;
             } elseif ($method === 'PUBLISH') {
                 $this->meetingmessagetype = self::MEETING_MESSAGE_INITIAL;
+            } elseif ($method === 'CANCEL') {
+                $this->meetingmessagetype = self::MEETING_MESSAGE_CANCEL;
             }
         }
 
