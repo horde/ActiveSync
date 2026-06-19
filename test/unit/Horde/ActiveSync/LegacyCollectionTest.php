@@ -36,6 +36,13 @@ class LegacyCollectionTest extends TestCase
     private const SYNCKEY = '{00000000-0000-0000-0000-000000000001}1';
     private const NEWSYNCKEY = '{00000000-0000-0000-0000-000000000001}2';
 
+    protected function tearDown(): void
+    {
+        $deviceRef = new ReflectionProperty(Horde_ActiveSync::class, '_device');
+        $deviceRef->setAccessible(true);
+        $deviceRef->setValue(null, null);
+        parent::tearDown();
+    }
     public function testLegacyCreateCollectionReturnsFolderEnvelopeWithServerEntryId()
     {
         $folder = new Horde_ActiveSync_Message_Folder();
