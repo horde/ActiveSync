@@ -117,8 +117,12 @@ class Horde_ActiveSync_Message_Attendee extends Horde_ActiveSync_Message_Base
             },
             ARRAY_FILTER_USE_KEY
         );
-        parent::encodeStream($encoder);
-        $this->_mapping = $savedMapping;
+
+        try {
+            parent::encodeStream($encoder);
+        } finally {
+            $this->_mapping = $savedMapping;
+        }
 
         foreach ($clearTags as $tag) {
             $encoder->startTag($tag, false, true);
