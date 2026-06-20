@@ -185,9 +185,18 @@ abstract class Horde_ActiveSync_Request_Base
 
             // Did we request a remote wipe?
             $rwStatus = $this->_state->getDeviceRWStatus($this->_device->id);
-            if ($rwStatus == Horde_ActiveSync::RWSTATUS_PENDING
-                || $rwStatus == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING) {
+            if ($rwStatus == Horde_ActiveSync::RWSTATUS_PENDING) {
                 $this->_requireProvisionWbxml($requestType, Horde_ActiveSync_Status::REMOTEWIPE_REQUESTED);
+                return false;
+            }
+
+            $accountOnlyStatus = $this->_state->getAccountOnlyRWStatus($this->_device->id);
+            if ($accountOnlyStatus == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING) {
+                $this->_requireProvisionWbxml($requestType, Horde_ActiveSync_Status::REMOTEWIPE_REQUESTED);
+                return false;
+            }
+            if ($accountOnlyStatus == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED) {
+                $this->_requireProvisionWbxml($requestType, Horde_ActiveSync_Status::DEVICE_NOT_PROVISIONED);
                 return false;
             }
 

@@ -111,6 +111,8 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
     public const DEVICE_USER            = 'device_user';
     public const DEVICE_USERS_USER      = 'users.device_user';
     public const DEVICE_USERS_POLICYKEY = 'users.device_policykey';
+    public const DEVICE_ACCOUNTONLY_RWSTATUS = 'device_accountonly_rwstatus';
+    public const DEVICE_USERS_ACCOUNTONLY_RWSTATUS = 'users.device_accountonly_rwstatus';
     public const DEVICE_POLICYKEY       = 'device_policykey';
 
     /**
@@ -1120,6 +1122,8 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
         foreach ($device_data['users'] as $user_entry) {
             if ($user_entry[self::DEVICE_USER] == $user) {
                 $device['policykey'] = $user_entry[self::DEVICE_POLICYKEY];
+                $device['accountOnlyRwstatus'] = $user_entry[self::DEVICE_ACCOUNTONLY_RWSTATUS]
+                    ?? Horde_ActiveSync::RWSTATUS_NA;
                 break;
             }
         }
@@ -1357,8 +1361,7 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
             throw new Horde_ActiveSync_Exception($e);
         }
 
-        if ($status == Horde_ActiveSync::RWSTATUS_PENDING
-            || $status == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING) {
+        if ($status == Horde_ActiveSync::RWSTATUS_PENDING) {
             $new_data[self::DEVICE_USERS_POLICYKEY] = 0;
             $cursor = $this->_db->selectCollection(self::COLLECTION_DEVICE)
                 ->find($query, ['users' => true]);
@@ -1376,6 +1379,52 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
                 $this->_logger->err($e->getMessage());
                 throw new Horde_ActiveSync_Exception($e);
             }
+        }
+    }
+
+    /**
+     * Set account-only remote wipe status for a device user.
+     *
+     * @param string $devId    The device id.
+     * @param string $user     The device user.
+     * @param string $status   A Horde_ActiveSync::RWSTATUS_* constant.
+     *
+     * @throws Horde_ActiveSync_Exception
+     */
+    public function setAccountOnlyRWStatus($devId, $user, $status)
+    {
+        $query = [
+            self::MONGO_ID => $devId,
+            self::DEVICE_USERS_USER => $user,
+        ];
+        $update = [
+            '$set' => [
+                self::DEVICE_USERS_ACCOUNTONLY_RWSTATUS => $status,
+            ],
+        ];
+        try {
+            $this->_db->selectCollection(self::COLLECTION_DEVICE)->update($query, $update);
+        } catch (Exception $e) {
+            $this->_logger->err($e->getMessage());
+            throw new Horde_ActiveSync_Exception($e);
+        }
+
+        if ($status == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING) {
+            try {
+                $this->_db->selectCollection(self::COLLECTION_DEVICE)->update(
+                    $query,
+                    ['$set' => [self::DEVICE_USERS_POLICYKEY => 0]]
+                );
+            } catch (Exception $e) {
+                $this->_logger->err($e->getMessage());
+                throw new Horde_ActiveSync_Exception($e);
+            }
+        }
+
+        if (!empty($this->_deviceInfo)
+            && $this->_deviceInfo->id == $devId
+            && $this->_deviceInfo->user == $user) {
+            $this->_deviceInfo->accountOnlyRwstatus = $status;
         }
     }
 
@@ -1518,8 +1567,6 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
                 '$or' => [
                     [self::DEVICE_RWSTATUS => Horde_ActiveSync::RWSTATUS_PENDING],
                     [self::DEVICE_RWSTATUS => Horde_ActiveSync::RWSTATUS_WIPED],
-                    [self::DEVICE_RWSTATUS => Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING],
-                    [self::DEVICE_RWSTATUS => Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED],
                 ],
             ];
             try {

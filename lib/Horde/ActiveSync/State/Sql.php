@@ -1174,7 +1174,8 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
         }
 
         if (!empty($user)) {
-            $query = 'SELECT device_policykey FROM ' . $this->_syncUsersTable
+            $query = 'SELECT device_policykey, device_accountonly_rwstatus FROM '
+                . $this->_syncUsersTable
                 . ' WHERE device_id = ? AND device_user = ?';
             try {
                 $duser = $this->_db->selectOne($query, [$devId, $user]);
@@ -1185,6 +1186,9 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
 
         $this->_deviceInfo = new Horde_ActiveSync_Device($this);
         $this->_deviceInfo->rwstatus = $device['device_rwstatus'];
+        $this->_deviceInfo->accountOnlyRwstatus = !empty($duser['device_accountonly_rwstatus'])
+            ? $duser['device_accountonly_rwstatus']
+            : Horde_ActiveSync::RWSTATUS_NA;
         $this->_deviceInfo->deviceType = $device['device_type'];
         $this->_deviceInfo->userAgent = $device['device_agent'];
         $this->_deviceInfo->id = $devId;
@@ -1351,7 +1355,8 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     public function listDevices($user = null, $filter = [])
     {
         $query = 'SELECT d.device_id AS device_id, device_type, device_agent,'
-            . ' device_policykey, device_rwstatus, device_user, device_properties FROM '
+            . ' device_policykey, device_rwstatus, device_accountonly_rwstatus,'
+            . ' device_user, device_properties FROM '
             . $this->_syncDeviceTable . ' d  INNER JOIN ' . $this->_syncUsersTable
             . ' u ON d.device_id = u.device_id';
         $values = [];
@@ -1470,8 +1475,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             throw new Horde_ActiveSync_Exception($e);
         }
 
-        if ($status == Horde_ActiveSync::RWSTATUS_PENDING
-            || $status == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING) {
+        if ($status == Horde_ActiveSync::RWSTATUS_PENDING) {
             // Need to clear the policykey to force a PROVISION. Clear ALL
             // entries, to ensure the device is wiped.
             $query = 'UPDATE ' . $this->_syncUsersTable
@@ -1481,6 +1485,44 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             } catch (Horde_Db_Exception $e) {
                 throw new Horde_ActiveSync_Exception($e);
             }
+        }
+    }
+
+    /**
+     * Set account-only remote wipe status for a device user.
+     *
+     * @param string $devId    The device id.
+     * @param string $user     The device user.
+     * @param string $status   A Horde_ActiveSync::RWSTATUS_* constant.
+     *
+     * @throws Horde_ActiveSync_Exception
+     */
+    public function setAccountOnlyRWStatus($devId, $user, $status)
+    {
+        $query = 'UPDATE ' . $this->_syncUsersTable
+            . ' SET device_accountonly_rwstatus = ?'
+            . ' WHERE device_id = ? AND device_user = ?';
+        $values = [$status, $devId, $user];
+        try {
+            $this->_db->update($query, $values);
+        } catch (Horde_Db_Exception $e) {
+            throw new Horde_ActiveSync_Exception($e);
+        }
+
+        if ($status == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING) {
+            $query = 'UPDATE ' . $this->_syncUsersTable
+                . ' SET device_policykey = 0 WHERE device_id = ? AND device_user = ?';
+            try {
+                $this->_db->update($query, [$devId, $user]);
+            } catch (Horde_Db_Exception $e) {
+                throw new Horde_ActiveSync_Exception($e);
+            }
+        }
+
+        if (!empty($this->_deviceInfo)
+            && $this->_deviceInfo->id == $devId
+            && $this->_deviceInfo->user == $user) {
+            $this->_deviceInfo->accountOnlyRwstatus = $status;
         }
     }
 

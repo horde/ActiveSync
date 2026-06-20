@@ -1232,10 +1232,14 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                 $rw_check_countdown = 5;
                 if ($this->_as->provisioning != Horde_ActiveSync::PROVISIONING_NONE) {
                     $rwstatus = $this->_as->state->getDeviceRWStatus($this->_as->device->id, true);
+                    $accountOnlyStatus = $this->_as->state->getAccountOnlyRWStatus(
+                        $this->_as->device->id,
+                        true
+                    );
                     if ($rwstatus == Horde_ActiveSync::RWSTATUS_PENDING
                         || $rwstatus == Horde_ActiveSync::RWSTATUS_WIPED
-                        || $rwstatus == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING
-                        || $rwstatus == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED) {
+                        || $accountOnlyStatus == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING
+                        || $accountOnlyStatus == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED) {
                         return self::COLLECTION_ERR_FOLDERSYNC_REQUIRED;
                     }
                 }
