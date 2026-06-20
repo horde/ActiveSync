@@ -294,4 +294,24 @@ class DeviceTest extends TestCase
         $this->assertEquals($device->supported, ['contacts' => ['one', 'two']]);
     }
 
+    public function testIssetReportsNestedDeviceProperties()
+    {
+        $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
+        $fixture = [
+            'properties' => [
+                Horde_ActiveSync_Device::VERSION => '16.1',
+            ],
+        ];
+        $device = new Horde_ActiveSync_Device($state, $fixture);
+
+        $this->assertTrue(isset($device->version));
+        $this->assertEquals('16.1', $device->version);
+        $this->assertFalse(isset($device->announcedVersion));
+
+        $emptyVersion = new Horde_ActiveSync_Device($state, [
+            'properties' => [Horde_ActiveSync_Device::VERSION => ''],
+        ]);
+        $this->assertFalse(isset($emptyVersion->version));
+    }
+
 }
