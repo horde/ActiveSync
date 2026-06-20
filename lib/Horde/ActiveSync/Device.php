@@ -244,23 +244,18 @@ class Horde_ActiveSync_Device
     public function __isset($property)
     {
         switch ($property) {
-        case self::MULTIPLEX:
-        case self::ANNOUNCED_VERSION:
-        case self::BLOCKED:
-            return !empty($this->_properties['properties'][$property]);
+            case self::MULTIPLEX:
+            case self::ANNOUNCED_VERSION:
+            case self::BLOCKED:
+            case self::VERSION:
+            case self::OS:
+                return !empty($this->_properties['properties'][$property]);
 
-        case self::VERSION:
-        case self::OS:
-            return isset($this->_properties['properties'][$property])
-                && $this->_properties['properties'][$property] !== '';
+            case 'clientType':
+                return !empty($this->_clientType);
 
-        case 'clientType':
-            return !empty($this->_clientType);
-
-        default:
-            return isset($this->_properties[$property])
-                && $this->_properties[$property] !== ''
-                && $this->_properties[$property] !== 0;
+            default:
+                return !empty($this->_properties[$property]);
         }
     }
 
