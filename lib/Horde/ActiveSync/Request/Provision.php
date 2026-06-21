@@ -89,15 +89,23 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
                 return $this->_globalError(self::STATUS_PROTERROR);
             }
             if ($status == self::STATUS_CLIENT_SUCCESS) {
+                if ($wipeTag === Horde_ActiveSync::PROVISION_ACCOUNTONLYREMOTEWIPE) {
+                    return $this->_completeAccountOnlyWipeAck();
+                }
                 $this->_state->setDeviceRWStatus(
-                    $this->_devId,
-                    $wipeTag === Horde_ActiveSync::PROVISION_ACCOUNTONLYREMOTEWIPE
-                        ? Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED
-                        : Horde_ActiveSync::RWSTATUS_WIPED
+                    $this->_device->id,
+                    Horde_ActiveSync::RWSTATUS_WIPED
                 );
             }
             $policytype = Horde_ActiveSync::POLICYTYPE_XML;
         } else {
+            if ($this->_state->getAccountOnlyRWStatus($this->_device->id)
+                == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED) {
+                $this->_sendNoProvisionNeededResponse(self::STATUS_SUCCESS);
+
+                return true;
+            }
+
             if ($deviceinfo = $this->_handleSettings()) {
                 $deviceinfo['version'] = $this->_device->version;
                 $this->_device->setDeviceProperties($deviceinfo);
@@ -177,11 +185,12 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
                     return $this->_globalError(self::STATUS_PROTERROR);
                 }
                 if ($status == self::STATUS_CLIENT_SUCCESS) {
+                    if ($wipeTag === Horde_ActiveSync::PROVISION_ACCOUNTONLYREMOTEWIPE) {
+                        return $this->_completeAccountOnlyWipeAck();
+                    }
                     $this->_state->setDeviceRWStatus(
                         $this->_device->id,
-                        $wipeTag === Horde_ActiveSync::PROVISION_ACCOUNTONLYREMOTEWIPE
-                            ? Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED
-                            : Horde_ActiveSync::RWSTATUS_WIPED
+                        Horde_ActiveSync::RWSTATUS_WIPED
                     );
                 }
             }
@@ -282,26 +291,42 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
         // Remote wipe if requested.
         $rwstatus = $this->_state->getDeviceRWStatus($this->_device->id);
         if ($rwstatus == Horde_ActiveSync::RWSTATUS_PENDING
-            || $rwstatus == Horde_ActiveSync::RWSTATUS_WIPED
-            || $rwstatus == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING
-            || $rwstatus == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED) {
-            $isAccountOnly = ($rwstatus == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING
-                || $rwstatus == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED);
+            || $rwstatus == Horde_ActiveSync::RWSTATUS_WIPED) {
             $this->_encoder->startTag(
-                $isAccountOnly
-                    ? Horde_ActiveSync::PROVISION_ACCOUNTONLYREMOTEWIPE
-                    : Horde_ActiveSync::PROVISION_REMOTEWIPE,
+                Horde_ActiveSync::PROVISION_REMOTEWIPE,
                 false,
                 true
             );
             $this->_state->setDeviceRWStatus(
                 $this->_device->id,
-                $isAccountOnly
-                    ? Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED
-                    : Horde_ActiveSync::RWSTATUS_WIPED
+                Horde_ActiveSync::RWSTATUS_WIPED
+            );
+        } elseif ($this->_state->getAccountOnlyRWStatus($this->_device->id)
+            == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING) {
+            $this->_encoder->startTag(
+                Horde_ActiveSync::PROVISION_ACCOUNTONLYREMOTEWIPE,
+                false,
+                true
             );
         }
         $this->_encoder->endTag();     //provision
+
+        return true;
+    }
+
+    /**
+     * Finalize a successful account-only remote wipe acknowledgment.
+     *
+     * @return boolean
+     */
+    protected function _completeAccountOnlyWipeAck()
+    {
+        $this->_state->setAccountOnlyRWStatus(
+            $this->_device->id,
+            $this->_device->user,
+            Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED
+        );
+        $this->_sendNoProvisionNeededResponse(self::STATUS_SUCCESS);
 
         return true;
     }

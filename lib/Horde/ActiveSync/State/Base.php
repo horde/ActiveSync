@@ -372,6 +372,32 @@ abstract class Horde_ActiveSync_State_Base
     }
 
     /**
+     * Obtain the account-only remote wipe status for the loaded device user.
+     *
+     * @param string $devId    The device id.
+     * @param boolean $refresh If true, reload from storage.
+     *
+     * @return integer
+     */
+    public function getAccountOnlyRWStatus($devId, $refresh = false)
+    {
+        if (empty($this->_deviceInfo) || $this->_deviceInfo->id != $devId) {
+            throw new Horde_ActiveSync_Exception('Device not loaded.');
+        }
+
+        if ($refresh) {
+            $this->loadDeviceInfo(
+                $this->_deviceInfo->id,
+                $this->_deviceInfo->user,
+                ['force' => true]
+            );
+        }
+
+        return $this->_deviceInfo->accountOnlyRwstatus
+            ?? Horde_ActiveSync::RWSTATUS_NA;
+    }
+
+    /**
      * Set the backend driver
      * (should really only be called by a backend object when passing this
      * object to client code)
@@ -1317,11 +1343,24 @@ abstract class Horde_ActiveSync_State_Base
      * Set a new remotewipe status for the device
      *
      * @param string $devId    The device id.
-     * @param string $status   A Horde_ActiveSync::RWSTATUS_* constant.
+     * @param string $status   A device-level Horde_ActiveSync::RWSTATUS_*
+     *                         constant. Account-only wipe statuses must be set
+     *                         via setAccountOnlyRWStatus().
      *
      * @throws Horde_ActiveSync_Exception
      */
     abstract public function setDeviceRWStatus($devId, $status);
+
+    /**
+     * Set account-only remote wipe status for a device user.
+     *
+     * @param string $devId   The device id.
+     * @param string $user    The device user.
+     * @param string $status  A Horde_ActiveSync::RWSTATUS_* constant.
+     *
+     * @throws Horde_ActiveSync_Exception
+     */
+    abstract public function setAccountOnlyRWStatus($devId, $user, $status);
 
     /**
      * Obtain the device object.
