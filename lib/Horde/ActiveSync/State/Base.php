@@ -393,7 +393,8 @@ abstract class Horde_ActiveSync_State_Base
             );
         }
 
-        return $this->_deviceInfo->accountOnlyRwstatus;
+        return $this->_deviceInfo->accountOnlyRwstatus
+            ?? Horde_ActiveSync::RWSTATUS_NA;
     }
 
     /**
@@ -1342,7 +1343,9 @@ abstract class Horde_ActiveSync_State_Base
      * Set a new remotewipe status for the device
      *
      * @param string $devId    The device id.
-     * @param string $status   A Horde_ActiveSync::RWSTATUS_* constant.
+     * @param string $status   A device-level Horde_ActiveSync::RWSTATUS_*
+     *                         constant. Account-only wipe statuses must be set
+     *                         via setAccountOnlyRWStatus().
      *
      * @throws Horde_ActiveSync_Exception
      */

@@ -1351,6 +1351,13 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
      */
     public function setDeviceRWStatus($devId, $status)
     {
+        if ($status == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING
+            || $status == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED) {
+            throw new Horde_ActiveSync_Exception(
+                'Account-only remote wipe status must be set via setAccountOnlyRWStatus().'
+            );
+        }
+
         $query = [self::MONGO_ID => $devId];
         $new_data = [self::DEVICE_RWSTATUS => $status];
         $update = ['$set' => $new_data];

@@ -1173,12 +1173,13 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             throw new Horde_ActiveSync_Exception($e);
         }
 
+        $duser = [];
         if (!empty($user)) {
             $query = 'SELECT device_policykey, device_accountonly_rwstatus FROM '
                 . $this->_syncUsersTable
                 . ' WHERE device_id = ? AND device_user = ?';
             try {
-                $duser = $this->_db->selectOne($query, [$devId, $user]);
+                $duser = $this->_db->selectOne($query, [$devId, $user]) ?: [];
             } catch (Horde_Db_Exception $e) {
                 throw new Horde_ActiveSync_Exception($e);
             }
@@ -1466,6 +1467,13 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
      */
     public function setDeviceRWStatus($devId, $status)
     {
+        if ($status == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_PENDING
+            || $status == Horde_ActiveSync::RWSTATUS_ACCOUNTONLY_WIPED) {
+            throw new Horde_ActiveSync_Exception(
+                'Account-only remote wipe status must be set via setAccountOnlyRWStatus().'
+            );
+        }
+
         $query = 'UPDATE ' . $this->_syncDeviceTable . ' SET device_rwstatus = ?'
             . ' WHERE device_id = ?';
         $values = [$status, $devId];
