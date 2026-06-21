@@ -65,6 +65,7 @@ class Horde_ActiveSync_Request_Provision extends Horde_ActiveSync_Request_Base
         // Be optimistic
         $status = self::STATUS_SUCCESS;
         $policyStatus = self::STATUS_SUCCESS;
+        $deviceinfo = false;
 
         if ($error = $this->_activeSync->checkGlobalError()) {
             $this->_globalError($error);
