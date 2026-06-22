@@ -172,6 +172,16 @@ abstract class Horde_ActiveSync_Driver_Base
     }
 
     /**
+     * Obtain Sync response settings.
+     *
+     * @return array
+     */
+    public function getSyncConfig()
+    {
+        return $this->_params['sync'] ?? [];
+    }
+
+    /**
      * Any code needed to authenticate to backend as the actual user.
      *
      * @param string $username  The username to authenticate as

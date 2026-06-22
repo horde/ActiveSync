@@ -247,6 +247,39 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
     }
 
     /**
+     * Replace the WBXML output stream.
+     *
+     * Used to buffer Sync Commands output so MOREAVAILABLE can be inserted
+     * before Commands when a time budget stops the send loop early.
+     *
+     * @param Horde_Stream|resource $stream  New output stream.
+     *
+     * @return Horde_Stream|resource  Previous output stream.
+     */
+    public function swapOutputStream($stream)
+    {
+        $previous = $this->_stream;
+        $this->_stream = $stream;
+        return $previous;
+    }
+
+    /**
+     * Append a buffered stream to the current output.
+     *
+     * @param Horde_Stream|resource $stream  Stream to append.
+     */
+    public function appendOutputStream($stream)
+    {
+        if ($stream instanceof Horde_Stream) {
+            $stream->rewind();
+        } elseif (is_resource($stream)) {
+            rewind($stream);
+        }
+
+        $this->_stream->add($stream);
+    }
+
+    /**
      * Output any tags on the stack that haven't been output yet
      *
      */

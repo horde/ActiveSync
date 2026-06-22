@@ -793,4 +793,9 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
             'waitinterval' => 10];
     }
 
+    public function getSyncConfig()
+    {
+        return $this->_params['sync'] ?? [];
+    }
+
 }
