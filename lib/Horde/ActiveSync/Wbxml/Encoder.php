@@ -258,6 +258,12 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
      */
     public function swapOutputStream($stream)
     {
+        if (is_resource($stream)) {
+            $stream = new Horde_Stream_Existing(['stream' => $stream]);
+        } elseif (!$stream instanceof Horde_Stream) {
+            throw new InvalidArgumentException('swapOutputStream() expects a Horde_Stream or stream resource.');
+        }
+
         $previous = $this->_stream;
         $this->_stream = $stream;
         return $previous;
