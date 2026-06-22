@@ -424,7 +424,7 @@ class Horde_ActiveSync_Driver_Mock extends Horde_ActiveSync_Driver_Base
      * @return array A list of messge uids that have chnaged in the specified
      *               time period.
      */
-    public function getServerChanges($folderId, $from_ts, $to_ts, $cutoffdate, $ping)
+    public function getServerChanges($folderId, $from_ts, $to_ts, $cutoffdate, $ping, $ignoreFirstSync = false, $maxitems = 100, $refreshFilter = false, $filtertype = 0)
     {
 
         $changes = [

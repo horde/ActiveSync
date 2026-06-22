@@ -15,15 +15,6 @@ roadmap — do not implement those entries piecemeal on the FRAMEWORK_6_0 /
 Near-term (actionable before Horde 6)
 -------------------------------------
 
-- **``FILTERTYPE_INCOMPLETETASKS`` handling**
-
-  ``Horde_ActiveSync_State_Base::_getCutOffDate()`` returns the literal filter
-  constant ``8`` when ``FILTERTYPE_INCOMPLETETASKS`` is selected, instead of
-  passing the filter type through to the driver. The driver should interpret
-  filter type ``8`` for task collections (incomplete tasks only) rather than
-  treating it as a Unix timestamp. Mail and calendar paths can receive the same
-  numeric value if a client misconfigures collections.
-
 - **Recurring meeting requests in mail**
 
   ``Horde_ActiveSync_Message_MeetingRequest`` still defaults
@@ -223,6 +214,9 @@ active backlog; kept here so this file does not resurrect settled work.
 
 **Stability (3.0.0-RC1 and related)**
 
+- ``FILTERTYPE_INCOMPLETETASKS``: pass FilterType to the driver; incomplete-only
+  task sync in ``horde/core`` / ``horde/nag``; no longer encode filter ``8`` as a
+  Unix cutoff (avoids mail/calendar misconfiguration).
 - SQL/Mongo row locks for parallel state access.
 - Reject and repair corrupt ``sync_data`` on load/save.
 - Separate PING watermark from SYNC modseq (iOS mail loop fix).
