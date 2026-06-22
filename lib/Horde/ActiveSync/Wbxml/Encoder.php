@@ -274,6 +274,8 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
             $stream->rewind();
         } elseif (is_resource($stream)) {
             rewind($stream);
+        } else {
+            throw new InvalidArgumentException('appendOutputStream() expects a Horde_Stream or stream resource.');
         }
 
         $this->_stream->add($stream);
