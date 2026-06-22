@@ -242,6 +242,10 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
         }
 
         $pingSettings = $this->_driver->getHeartbeatConfig();
+        $syncSettings = $this->_driver->getSyncConfig();
+        $syncTimeBudget = !empty($syncSettings['maxresponsetime'])
+            ? (int) $syncSettings['maxresponsetime']
+            : 0;
 
         // Override the total, per-request, WINDOWSIZE?
         if (!empty($pingSettings['maximumrequestwindowsize'])) {
@@ -303,6 +307,7 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
         );
 
         // Start output to client
+        $syncOutputStart = microtime(true);
         $this->_encoder->startWBXML();
         $this->_encoder->startTag(Horde_ActiveSync::SYNC_SYNCHRONIZE);
         $this->_encoder->startTag(Horde_ActiveSync::SYNC_STATUS);
@@ -462,9 +467,20 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                         ? min($collection['windowsize'], $pingSettings['maximumwindowsize'])
                         : $collection['windowsize'];
 
+                    $countExceedsWindow = !empty($changecount)
+                        && (($changecount > $max_windowsize)
+                        || $cnt_global + $changecount > $this->_collections->getDefaultWindowSize());
+
+                    $useCommandBuffer = $this->_useSyncCommandsBuffer(
+                        $syncTimeBudget,
+                        $changecount,
+                        $max_windowsize,
+                        $cnt_global,
+                        $this->_collections->getDefaultWindowSize()
+                    );
+
                     // MOREAVAILABLE?
-                    if (!empty($changecount)
-                        && (($changecount > $max_windowsize) || $cnt_global + $changecount > $this->_collections->getDefaultWindowSize())) {
+                    if ($countExceedsWindow) {
                         $this->_logger->meta(
                             sprintf(
                                 'Sending MOREAVAILABLE. WINDOWSIZE = %d, $changecount = %d, MAX_REQUEST_WINDOWSIZE = %d, $cnt_global = %d',
@@ -481,13 +497,38 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                     // Send each message now.
                     if (!empty($changecount)) {
                         $exporter->setChanges($this->_collections->getCollectionChanges(false), $collection);
+
+                        $commandsBuffer = null;
+                        $mainStream = null;
+                        if ($useCommandBuffer) {
+                            $commandsBuffer = new Horde_Stream_Temp();
+                            $mainStream = $this->_encoder->swapOutputStream($commandsBuffer);
+                        }
+
                         $this->_encoder->startTag(Horde_ActiveSync::SYNC_COMMANDS);
                         $cnt_collection = 0;
+                        $timeBudgetExceeded = false;
                         /* sendNextChange() returns true on successful export,
                          * false when no more changes remain or on non-fatal
                          * error (remaining batch preserved in sync_pending). */
                         while ($cnt_collection < $max_windowsize
                                && $cnt_global < $this->_collections->getDefaultWindowSize()) {
+                            if ($exporter->hasPendingChanges() && $this->_isSyncTimeBudgetExceeded(
+                                $syncOutputStart,
+                                $syncTimeBudget,
+                                $cnt_collection
+                            )) {
+                                $this->_logger->info(sprintf(
+                                    'Sync time budget (%ds) reached after %d change(s) in collection %s (%.1fs elapsed); MOREAVAILABLE.',
+                                    $syncTimeBudget,
+                                    $cnt_collection,
+                                    $collection['id'],
+                                    microtime(true) - $syncOutputStart
+                                ));
+                                $timeBudgetExceeded = true;
+                                break;
+                            }
+
                             $progress = $exporter->sendNextChange();
                             if ($progress !== true) {
                                 break;
@@ -502,6 +543,14 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                             ++$cnt_global;
                         }
                         $this->_encoder->endTag();
+
+                        if ($useCommandBuffer) {
+                            $this->_encoder->swapOutputStream($mainStream);
+                            if ($timeBudgetExceeded || $exporter->hasPendingChanges()) {
+                                $this->_encoder->startTag(Horde_ActiveSync::SYNC_MOREAVAILABLE, false, true);
+                            }
+                            $this->_encoder->appendOutputStream($commandsBuffer);
+                        }
                     }
                 }
 
@@ -598,6 +647,56 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
         return true;
     }
 
+    /**
+     * Should Sync Commands be buffered so MOREAVAILABLE can precede Commands
+     * when a time budget stops the batch early?
+     *
+     * @param integer $syncTimeBudget
+     * @param integer $changecount
+     * @param integer $maxWindowsize
+     * @param integer $cntGlobal
+     * @param integer $defaultWindowSize
+     *
+     * @return boolean
+     */
+    protected function _useSyncCommandsBuffer(
+        $syncTimeBudget,
+        $changecount,
+        $maxWindowsize,
+        $cntGlobal,
+        $defaultWindowSize
+    ) {
+        $countExceedsWindow = !empty($changecount)
+            && (($changecount > $maxWindowsize)
+            || $cntGlobal + $changecount > $defaultWindowSize);
+
+        return $syncTimeBudget > 0
+            && !empty($changecount)
+            && !$countExceedsWindow;
+    }
+
+    /**
+     * Has the per-response sync time budget been reached?
+     *
+     * The first change in a batch is always allowed even if it exceeds the
+     * budget, so clients never receive an empty Commands block with
+     * MOREAVAILABLE.
+     *
+     * @param float $syncOutputStart
+     * @param integer $budget
+     * @param integer $cntCollection
+     *
+     * @return boolean
+     */
+    protected function _isSyncTimeBudgetExceeded(
+        $syncOutputStart,
+        $budget,
+        $cntCollection
+    ) {
+        return $budget > 0
+            && $cntCollection > 0
+            && (microtime(true) - $syncOutputStart) >= $budget;
+    }
 
     protected function _sendOverWindowResponse($collection)
     {

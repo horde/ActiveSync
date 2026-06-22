@@ -66,6 +66,16 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
     }
 
     /**
+     * Are there unsent changes remaining in the current batch?
+     *
+     * @return boolean
+     */
+    public function hasPendingChanges()
+    {
+        return $this->_step < count($this->_changes);
+    }
+
+    /**
      * Send a message change over the wbxml stream
      *
      * @param string $id                              The uid of the message
