@@ -513,7 +513,7 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                          * error (remaining batch preserved in sync_pending). */
                         while ($cnt_collection < $max_windowsize
                                && $cnt_global < $this->_collections->getDefaultWindowSize()) {
-                            if ($this->_isSyncTimeBudgetExceeded(
+                            if ($exporter->hasPendingChanges() && $this->_isSyncTimeBudgetExceeded(
                                 $syncOutputStart,
                                 $syncTimeBudget,
                                 $cnt_collection
