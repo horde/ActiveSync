@@ -594,10 +594,12 @@ abstract class Horde_ActiveSync_State_Base
     public function getChanges(array $options = [])
     {
         if (!empty($this->_collection['id'])) {
+            $filtertype = !empty($this->_collection['filtertype'])
+                ? (int) $this->_collection['filtertype']
+                : Horde_ActiveSync::FILTERTYPE_ALL;
+
             // How far back to sync for those collections that use this.
-            $cutoffdate = self::_getCutOffDate(!empty($this->_collection['filtertype'])
-                ? $this->_collection['filtertype']
-                : 0);
+            $cutoffdate = self::_getCutOffDate($filtertype);
 
             $this->_logger->meta(
                 sprintf(
@@ -646,7 +648,8 @@ abstract class Horde_ActiveSync_State_Base
                     !empty($options['ping']),
                     $this->_folder->haveInitialSync,
                     !empty($options['maxitems']) ? $options['maxitems'] : 100,
-                    !empty($this->_collection['forcerefresh'])
+                    !empty($this->_collection['forcerefresh']),
+                    $filtertype
                 );
             } catch (Horde_Exception_AuthenticationFailure $e) {
                 // @todo For BC reasons, we need to treat AuthenticationFailure
@@ -940,11 +943,12 @@ abstract class Horde_ActiveSync_State_Base
      */
     protected static function _getCutOffDate($restrict)
     {
-        // @todo Should just pass the filtertype to the driver instead
-        // of parsing it here, let the driver figure out what to do with it.
-        if ($restrict == Horde_ActiveSync::FILTERTYPE_INCOMPLETETASKS) {
-            return $restrict;
+        // Task-only filter types (e.g. FILTERTYPE_INCOMPLETETASKS) are passed
+        // separately to the driver; they are not date cutoffs.
+        if ((int) $restrict === Horde_ActiveSync::FILTERTYPE_INCOMPLETETASKS) {
+            return 0;
         }
+
         switch ($restrict) {
             case Horde_ActiveSync::FILTERTYPE_1DAY:
                 $back = 86400;
