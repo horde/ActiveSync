@@ -23,14 +23,6 @@ Near-term (actionable before Horde 6)
   for EAS 16.0; this item is only about **recurring invitations carried inside
   email** (``MeetingRequest`` / ``MeetingRequestRecurrence``).
 
-- **FOLDERSYNC_REQUIRED error-loop guard**
-
-  Some clients ignore sync status ``12`` (FOLDERSYNC_REQUIRED) and retry
-  indefinitely. Many unrelated sync/PING loop bugs have been fixed (see
-  *Recently completed*), but there is still no per-device counter that stops
-  responding with the same status after *N* ignored errors. Would likely live
-  on the device record in state storage; watch for parallel-request races.
-
 
 Deferred (low priority or no known client)
 ------------------------------------------
@@ -217,6 +209,9 @@ active backlog; kept here so this file does not resurrect settled work.
 - ``FILTERTYPE_INCOMPLETETASKS``: pass FilterType to the driver; incomplete-only
   task sync in ``horde/core`` / ``horde/nag``; no longer encode filter ``8`` as a
   Unix cutoff (avoids mail/calendar misconfiguration).
+- ``FOLDERSYNC_REQUIRED`` loop guard: per-device counter in sync cache stops
+  returning status ``12`` (SYNC) / ``7`` (PING) after five ignored responses;
+  escalates to KEYMISMATCH / server error so broken clients can recover.
 - SQL/Mongo row locks for parallel state access.
 - Reject and repair corrupt ``sync_data`` on load/save.
 - Separate PING watermark from SYNC modseq (iOS mail loop fix).

@@ -23,6 +23,7 @@
 class Horde_ActiveSync_Collections implements IteratorAggregate
 {
     public const COLLECTION_ERR_FOLDERSYNC_REQUIRED = -1;
+    public const FOLDERSYNC_REQUIRED_MAX_IGNORED    = 5;
     public const COLLECTION_ERR_SERVER              = -2;
     public const COLLECTION_ERR_STALE               = -3;
     public const COLLECTION_ERR_SYNC_REQUIRED       = -4;
@@ -796,6 +797,49 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
     public function updateHierarchyKey($key)
     {
         $this->_cache->hierarchy = $key;
+        $this->_cache->resetFolderSyncRequiredIgnored();
+    }
+
+    /**
+     * Resolve a FOLDERSYNC_REQUIRED status with per-device loop guard.
+     *
+     * Some clients ignore FOLDERSYNC_REQUIRED and retry indefinitely. After
+     * FOLDERSYNC_REQUIRED_MAX_IGNORED responses, return an escalated status so
+     * the client can recover (typically via a full resync).
+     *
+     * @param integer $foldersyncStatus  The normal FOLDERSYNC_REQUIRED status.
+     * @param integer $escalatedStatus   Status to return after max ignored errors.
+     *
+     * @return integer
+     */
+    public function folderSyncRequiredStatus($foldersyncStatus, $escalatedStatus)
+    {
+        if (!$this->_cache->validateCache()) {
+            $this->_cache->loadCacheFromStorage();
+        }
+
+        $count = $this->_cache->getFolderSyncRequiredIgnoredCount();
+        if ($count >= self::FOLDERSYNC_REQUIRED_MAX_IGNORED) {
+            $this->_logger->warn(sprintf(
+                'COLLECTIONS: FOLDERSYNC_REQUIRED ignored %d times, escalating to status %d',
+                $count,
+                $escalatedStatus
+            ));
+            $this->_cache->resetFolderSyncRequiredIgnored();
+            $this->save();
+
+            return $escalatedStatus;
+        }
+
+        $newCount = $this->_cache->incrementFolderSyncRequiredIgnored();
+        $this->_logger->info(sprintf(
+            'COLLECTIONS: FOLDERSYNC_REQUIRED response %d of %d',
+            $newCount,
+            self::FOLDERSYNC_REQUIRED_MAX_IGNORED
+        ));
+        $this->save();
+
+        return $foldersyncStatus;
     }
 
     /**
