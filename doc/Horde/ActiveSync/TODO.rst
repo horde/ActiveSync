@@ -34,12 +34,11 @@ Deferred (low priority or no known client)
 
   See `Microsoft throttling guidance <https://learn.microsoft.com/en-us/previous-versions/office/developer/exchange-server-interoperability-guidance/jj899829(v=exchg.140)>`_.
 
-- **Task recurrence edge cases (``DEADOCUR`` / single-instance completion)**
+- **Task ``Regenerate=1`` (Outlook regenerating tasks)**
 
-  Basic task recurrence sync exists (Nag ↔ ``Horde_ActiveSync_Message_Task``).
-  Completing or deleting a single instance of a recurring task series —
-  especially client use of ``DEADOCUR`` — needs more end-to-end testing and
-  may require Nag changes more than activesync library changes.
+  Not supported — Nag uses fixed RRULE + ``completions[]``, not post-completion
+  regenerated due dates. Phase 0 (2026-06-23) saw ``Regenerate=0`` only on
+  Outlook weekly-series traffic. Documented in ``README.md`` (Tasks section).
 
 
 Operations and monitoring (out of library scope)
@@ -208,6 +207,15 @@ active backlog; kept here so this file does not resurrect settled work.
 
 - Multiplexed calendar, contact, task, and note folders
   (``Class:backendId`` server IDs, device ``multiplex`` flag).
+
+**Task recurrence (``horde/nag`` + ActiveSync)**
+
+- Single-instance completion: ``DEADOCUR`` / ``Complete`` / master due advance →
+  Nag ``completions[]`` (``fromASTask`` / ``import`` merge).
+- Export: next due via ``getNextDue()``; ``seriesIsFullyComplete()`` for
+  ``complete`` flag.
+- PING ``StateGone`` recovery for stale collection synckeys during long poll.
+- **Not supported:** ``POOMTASKS:Regenerate=1`` (documented limitation).
 
 **Stability (3.0.0-RC1 and related)**
 

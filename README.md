@@ -240,7 +240,11 @@ Handled in `horde/kronolith` (`Kronolith_Event::fromASAppointment()` /
 ### Tasks (`Tasks`) and Notes (`Notes`)
 
 - Full folder sync and item CRUD through Nag and Mnemo
-- Task recurrence (basic)
+- Task recurrence (basic); single-instance completion via Nag (`DEADOCUR` /
+  `completions[]` — see `docs/task-recurrence-activesync-design.md` in deployments)
+- **Not supported:** `POOMTASKS:Regenerate=1` (Outlook “regenerating” tasks).
+  Horde/Nag use fixed RRULE series only; captured Outlook traffic used
+  `Regenerate=0`.
 
 ### Device management
 

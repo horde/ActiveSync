@@ -1161,7 +1161,11 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                                             $ires['conversationindex']];
                                 }
                                 $collection['importedchanges'] = true;
-                            } elseif (!$id || is_array($id)) {
+                            } elseif ($clientid && is_string($ires)) {
+                                // Duplicate addition; client never received UID.
+                                $collection['clientids'][$clientid] = $ires;
+                                $collection['importedchanges'] = true;
+                            } elseif ($clientid) {
                                 $collection['clientids'][$clientid] = false;
                             }
                         }
