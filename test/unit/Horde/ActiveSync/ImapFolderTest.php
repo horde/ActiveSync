@@ -141,9 +141,9 @@ class ImapFolderTest extends TestCase
         $folder->setChanges($fixture);
         $folder->setStatus($status);
         $folder->updateState();
+        // UID list compression is applied to the JSON serialization payload.
+        $this->assertTrue(strlen($folder->serialize()) < 300);
         $serialized = serialize($folder);
-        // General test that the imap uid compression worked.
-        $this->assertTrue(strlen($serialized) < 300);
         $folder = unserialize($serialized);
         // Ensure the values were preserved.
         $this->assertEquals($fixture, $folder->messages());
@@ -161,6 +161,30 @@ class ImapFolderTest extends TestCase
         $folder = unserialize($serialized);
         $this->assertEquals($fixture, $folder->messages());
 
+    }
+
+    public function testNativeSerializeNonModseqRoundTrip()
+    {
+        $folder = new Horde_ActiveSync_Folder_Imap('INBOX', Horde_ActiveSync::CLASS_EMAIL);
+        $status = [
+            Horde_ActiveSync_Folder_Imap::UIDVALIDITY => 100,
+            Horde_ActiveSync_Folder_Imap::UIDNEXT => 106,
+        ];
+        $msg_changes = [100, 101, 102, 103, 104, 105];
+        $flag_changes = [
+            100 => ['read' => 0],
+            101 => ['read' => 0],
+            102 => ['read' => 0],
+            103 => ['read' => 0],
+            104 => ['read' => 0],
+            105 => ['read' => 1],
+        ];
+        $folder->setChanges($msg_changes, $flag_changes);
+        $folder->setStatus($status);
+        $folder->updateState();
+
+        $restored = unserialize(serialize($folder));
+        $this->assertEquals($msg_changes, $restored->messages());
     }
 
     public function testPingCheckpointPreservesSyncModseq()
