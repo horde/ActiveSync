@@ -95,7 +95,7 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
         'starttime' => false,
         'dtstamp' => false,
         'endtime' => false,
-        'instancetype' => '0', // For now, no recurring meeting request support.
+        'instancetype' => '0',
         'location' => false,
         'organizer' => false,
         'recurrenceid' => false,
@@ -309,6 +309,44 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
         }
 
         $this->_parseDisallowNewTimeProposal($vevent);
+        $this->_parseInstanceTypeAndRecurrence($vevent);
+    }
+
+    /**
+     * Populate instancetype, recurrenceid, and recurrences from VEVENT data.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     */
+    protected function _parseInstanceTypeAndRecurrence(Horde_Icalendar_Vevent $vevent): void
+    {
+        $this->instancetype = Horde_ActiveSync_Utils_Recurrence::detectInstanceType($vevent);
+
+        if (in_array($this->instancetype, ['2', '3'], true)) {
+            try {
+                $this->recurrenceid = new Horde_Date($vevent->getAttribute('RECURRENCE-ID'));
+            } catch (Horde_Exception $e) {
+            }
+        }
+
+        if ($this->instancetype !== '1') {
+            return;
+        }
+
+        $recurrence = Horde_ActiveSync_Utils_Recurrence::recurrenceFromVevent($vevent);
+        if ($recurrence === null) {
+            return;
+        }
+
+        $this->recurrences = [
+            Horde_ActiveSync_Utils_Recurrence::toMeetingRequestRecurrence(
+                $recurrence,
+                [
+                    'logger' => $this->_logger,
+                    'protocolversion' => $this->_version,
+                    'device' => $this->_device,
+                ]
+            ),
+        ];
     }
 
     /**

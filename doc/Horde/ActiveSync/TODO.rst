@@ -15,13 +15,7 @@ roadmap — do not implement those entries piecemeal on the FRAMEWORK_6_0 /
 Near-term (actionable before Horde 6)
 -------------------------------------
 
-- **Recurring meeting requests in mail**
-
-  ``Horde_ActiveSync_Message_MeetingRequest`` still defaults
-  ``instancetype`` to ``0`` and does not export recurrence data embedded in
-  meeting-invitation messages. Calendar recurrence sync is separate and works
-  for EAS 16.0; this item is only about **recurring invitations carried inside
-  email** (``MeetingRequest`` / ``MeetingRequestRecurrence``).
+*(No open items as of 2026-06-23.)*
 
 
 Deferred (low priority or no known client)
@@ -198,6 +192,16 @@ active backlog; kept here so this file does not resurrect settled work.
 - Attendee proposed times stored and exported on calendar sync.
 - ``DisallowNewTimeProposal`` export from Kronolith (iCal ``DISALLOW-COUNTER``).
 - ``Provision:AccountOnlyRemoteWipe`` with admin and prefs UI.
+
+**Calendar invitations (iTIP mail + ActiveSync)** (``horde/activesync`` +
+``horde/kronolith`` + ``horde/itip`` + ``horde/imp``)
+
+- Recurring meeting requests in mail: ``MeetingRequest`` exports
+  ``instancetype`` and ``MeetingRequestRecurrence`` from embedded iCal RRULE /
+  ``RECURRENCE-ID`` data.
+- Outbound invitation MIME simplified to ``multipart/alternative`` (plain,
+  HTML, inline ``text/calendar``) via ``Horde\Itip\Generator\MimeEnvelopeBuilder``.
+- IMP shows iTip RSVP UI above the HTML notification body for invitation mail.
 
 **Multi-folder PIM**
 

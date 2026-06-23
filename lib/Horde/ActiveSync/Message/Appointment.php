@@ -693,67 +693,19 @@ class Horde_ActiveSync_Message_Appointment extends Horde_ActiveSync_Message_Base
      */
     public function setRecurrence(Horde_Date_Recurrence $recurrence, $fdow = null)
     {
-        $r = new Horde_ActiveSync_Message_Recurrence([
+        $options = [
             'logger' => $this->_logger,
             'protocolversion' => $this->_version,
             'device' => $this->_device,
-        ]);
-
+        ];
         if ($this->_version >= Horde_ActiveSync::VERSION_FOURTEENONE) {
-            $r->firstdayofweek = $fdow;
+            $options['firstdayofweek'] = $fdow;
         }
 
-        /* Map the type fields */
-        switch ($recurrence->recurType) {
-            case Horde_Date_Recurrence::RECUR_DAILY:
-                $r->type = Horde_ActiveSync_Message_Recurrence::TYPE_DAILY;
-                break;
-            case Horde_Date_Recurrence::RECUR_WEEKLY:
-                $r->type = Horde_ActiveSync_Message_Recurrence::TYPE_WEEKLY;
-                $r->dayofweek = $recurrence->getRecurOnDays();
-                break;
-            case Horde_Date_Recurrence::RECUR_MONTHLY_DATE:
-                $r->type = Horde_ActiveSync_Message_Recurrence::TYPE_MONTHLY;
-                break;
-            case Horde_Date_Recurrence::RECUR_MONTHLY_WEEKDAY:
-                $r->type = Horde_ActiveSync_Message_Recurrence::TYPE_MONTHLY_NTH;
-                $r->weekofmonth = ceil($recurrence->start->mday / 7);
-                $r->dayofweek = $this->_dayOfWeekMap[$recurrence->start->dayOfWeek()];
-                break;
-            case Horde_Date_Recurrence::RECUR_YEARLY_DATE:
-                $r->type = Horde_ActiveSync_Message_Recurrence::TYPE_YEARLY;
-                $r->monthofyear = $recurrence->start->month;
-                $r->dayofmonth = $recurrence->start->mday;
-                break;
-            case Horde_Date_Recurrence::RECUR_YEARLY_DAY:
-                $r->type = Horde_ActiveSync_Message_Recurrence::TYPE_YEARLYNTH;
-                $r->weekofmonth = ceil($recurrence->start->mday / 7);
-                $r->monthofyear = $recurrence->start->month;
-                break;
-            case Horde_Date_Recurrence::RECUR_YEARLY_WEEKDAY:
-                $r->type = Horde_ActiveSync_Message_Recurrence::TYPE_YEARLYNTH;
-                $r->dayofweek = $this->_dayOfWeekMap[$recurrence->start->dayOfWeek()];
-                $r->weekofmonth = ceil($recurrence->start->mday / 7);
-                $r->monthofyear = $recurrence->start->month;
-                break;
-        }
-        if (!empty($recurrence->recurInterval)) {
-            $r->interval = $recurrence->recurInterval;
-        }
-
-        /* AS messages can only have one or the other (or none), not both */
-        if ($recurrence->hasRecurCount()) {
-            $r->occurrences = $recurrence->getRecurCount();
-        } elseif ($recurrence->hasRecurEnd()) {
-            $r->until = $recurrence->getRecurEnd();
-        }
-
-        // We don't support non-gregorian calendars.
-        if ($this->_version >= Horde_ActiveSync::VERSION_FOURTEEN) {
-            $r->calendartype = Horde_ActiveSync_Message_Recurrence::CALENDAR_TYPE_GREGORIAN;
-        }
-
-        $this->_properties['recurrence'] = $r;
+        $this->_properties['recurrence'] = Horde_ActiveSync_Utils_Recurrence::toCalendarRecurrence(
+            $recurrence,
+            $options
+        );
     }
 
     /**
