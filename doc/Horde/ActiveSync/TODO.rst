@@ -1,7 +1,7 @@
 ActiveSync TODO
 ===============
 
-Last reviewed: 2026-06-16
+Last reviewed: 2026-06-23
 
 This file tracks **remaining** work. For what the library already supports
 (protocol versions, commands, EAS 16.0 behaviour, deployment setup), see the
@@ -15,13 +15,7 @@ roadmap — do not implement those entries piecemeal on the FRAMEWORK_6_0 /
 Near-term (actionable before Horde 6)
 -------------------------------------
 
-- **Recurring meeting requests in mail**
-
-  ``Horde_ActiveSync_Message_MeetingRequest`` still defaults
-  ``instancetype`` to ``0`` and does not export recurrence data embedded in
-  meeting-invitation messages. Calendar recurrence sync is separate and works
-  for EAS 16.0; this item is only about **recurring invitations carried inside
-  email** (``MeetingRequest`` / ``MeetingRequestRecurrence``).
+*(No open items as of 2026-06-23.)*
 
 
 Deferred (low priority or no known client)
@@ -47,11 +41,15 @@ Deferred (low priority or no known client)
   especially client use of ``DEADOCUR`` — needs more end-to-end testing and
   may require Nag changes more than activesync library changes.
 
-- **Find / KQL expansion**
+- **Find / KQL — remaining edge cases**
 
-  EAS 16.0 ``Find`` is implemented with a minimal KQL subset (``from:``,
-  ``to:``, ``subject:``, quoted terms, ``OR``). Broader KQL coverage is
-  incremental polish, not a blocker for 16.0.
+  ``Horde_ActiveSync_Find_Kql`` now handles boolean operators (``AND``, ``OR``,
+  ``NOT``), parentheses, implicit ``AND``, and common Outlook property
+  restrictions (``participants:``, ``body:``, ``category:``, ``hasattachment:``,
+  ``isread:`` / ``isflagged:``, ``importance:``, ``received`` / ``sent`` dates,
+  ``size``). Full Exchange KQL is still not implemented — gaps include
+  ``NEAR``/proximity, wildcards, folder/conversation scoping, and uncommon
+  MS-ASCMD properties. Incremental polish only.
 
 
 Operations and monitoring (out of library scope)
@@ -169,8 +167,10 @@ active backlog; kept here so this file does not resurrect settled work.
 
 - EAS **16.0** and **16.1** as supported ceilings (``VERSION_SIXTEEN``,
   ``VERSION_SIXTEENONE``).
-- EAS 16.0 **Find** command with mailbox/GAL search and minimal KQL
-  (``Horde_ActiveSync_Request_Find``, ``Horde_ActiveSync_Find_Kql``).
+- EAS 16.0 **Find** command with mailbox/GAL search
+  (``Horde_ActiveSync_Request_Find``).
+- **Find KQL parser** — tokenizer and recursive-descent parser mapping common
+  Outlook/Exchange restrictions to IMAP search (``Horde_ActiveSync_Find_Kql``).
 - **Autodiscover**, **ItemOperations** (fetch/move/empty; not Schema),
   **Settings**, **Provision**, **Ping**, **Search**, **ValidateCert** — all
   present for supported versions (see ``README.md``).
@@ -198,6 +198,16 @@ active backlog; kept here so this file does not resurrect settled work.
 - Attendee proposed times stored and exported on calendar sync.
 - ``DisallowNewTimeProposal`` export from Kronolith (iCal ``DISALLOW-COUNTER``).
 - ``Provision:AccountOnlyRemoteWipe`` with admin and prefs UI.
+
+**Calendar invitations (iTIP mail + ActiveSync)** (``horde/activesync`` +
+``horde/kronolith`` + ``horde/itip`` + ``horde/imp``)
+
+- Recurring meeting requests in mail: ``MeetingRequest`` exports
+  ``instancetype`` and ``MeetingRequestRecurrence`` from embedded iCal RRULE /
+  ``RECURRENCE-ID`` data.
+- Outbound invitation MIME simplified to ``multipart/alternative`` (plain,
+  HTML, inline ``text/calendar``) via ``Horde\Itip\Generator\MimeEnvelopeBuilder``.
+- IMP shows iTip RSVP UI above the HTML notification body for invitation mail.
 
 **Multi-folder PIM**
 

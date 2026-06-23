@@ -208,7 +208,8 @@ EAS 2.5 omits `Settings`, `ItemOperations`, and `Find`.
   and draft send via `POOMMAIL2:Send`
 - **EAS 16.0** `Forwardee` objects on forward/reply
 - GAL search (`Search`, `ResolveRecipients`)
-- **EAS 16.0** mailbox `Find` with a minimal KQL parser (`Horde_ActiveSync_Find_Kql`)
+- **EAS 16.0** mailbox `Find` with KQL parser (`Horde_ActiveSync_Find_Kql`)
+  supporting boolean operators, property restrictions, dates, and size
 
 ### Calendar (EAS `Calendar` class)
 
@@ -265,7 +266,7 @@ codebase:
 | **ClientUid** | Persisted on events and exported on sync |
 | **Location** | `AirSyncBase:Location` instead of plain string for 16.0+ |
 | **Drafts** | Content changes reported as `CHANGE_TYPE_DRAFT`; `send=true` sends via SMTP and removes draft |
-| **Find** | New command for mailbox/GAL search (KQL subset → IMAP search) |
+| **Find** | Mailbox/GAL search; KQL parser maps common Outlook restrictions to IMAP search |
 | **SmartForward/Reply** | `Forwardee` list support |
 | **Appointment validation** | Forbidden inbound fields stripped per MS-ASCAL spec |
 
@@ -290,8 +291,10 @@ Horde driver, Kronolith, iTip, and IMP details live in `horde/core`, `horde/kron
 
 These are intentional deferrals or still-open items — not bugs in basic sync:
 
-- **Find / KQL**: supports common `from:`, `to:`, `subject:`, quoted terms, and
-  `OR`; not a full KQL implementation
+- **Find / KQL**: boolean operators, common property restrictions
+  (`from`/`to`/`cc`/`bcc`/`subject`/`body`/`participants`, flags, category,
+  dates, size); not full Exchange KQL (`NEAR`, wildcards, conversation/folder
+  scoping, etc.)
 - **ItemOperations `Schema`** requests unsupported (no known client in the wild)
 - **Email recurrence** properties on meeting-request messages
 - **SMS** collection class exists in the protocol but is not wired to a Horde app
