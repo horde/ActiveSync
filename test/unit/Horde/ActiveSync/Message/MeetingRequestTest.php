@@ -3,8 +3,9 @@
 /**
  * Unit tests for Horde_ActiveSync_Message_MeetingRequest.
  *
+ * @author    Torben Dannhauer <torben@dannhauer.de>
  * @license   http://www.horde.org/licenses/gpl GPLv2
- * @copyright 2026 Horde LLC (http://www.horde.org)
+ * @copyright 2026 The Horde Project (http://www.horde.org)
  * @package   ActiveSync
  */
 
@@ -88,6 +89,51 @@ class MeetingRequestTest extends TestCase
             $message->getProperty('meetingmessagetype')
         );
         $this->assertSame('0', $message->getProperty('responserequested'));
+    }
+
+    public function testFromVeventSetsInstanceTypeForSingleAppointment(): void
+    {
+        $message = $this->_createMeetingRequest(
+            Horde_ActiveSync::VERSION_SIXTEENONE
+        );
+
+        $this->assertSame('0', $message->getProperty('instancetype'));
+        $this->assertSame([], $message->getProperty('recurrences'));
+    }
+
+    public function testFromVeventExportsWeeklyRecurrenceForMasterSeries(): void
+    {
+        $message = $this->_createMeetingRequest(
+            Horde_ActiveSync::VERSION_SIXTEENONE,
+            ['RRULE:FREQ=WEEKLY;BYDAY=TH;COUNT=5']
+        );
+
+        $this->assertSame('1', $message->getProperty('instancetype'));
+        $recurrences = $message->getProperty('recurrences');
+        $this->assertCount(1, $recurrences);
+        $this->assertInstanceOf(
+            \Horde_ActiveSync_Message_MeetingRequestRecurrence::class,
+            $recurrences[0]
+        );
+        $this->assertSame(
+            \Horde_ActiveSync_Message_Recurrence::TYPE_WEEKLY,
+            $recurrences[0]->getProperty('type')
+        );
+        $this->assertSame(5, (int) $recurrences[0]->getProperty('occurrences'));
+    }
+
+    public function testFromVeventSetsInstanceTypeForRecurrenceId(): void
+    {
+        $message = $this->_createMeetingRequest(
+            Horde_ActiveSync::VERSION_SIXTEENONE,
+            ['RECURRENCE-ID:20260618T220000Z']
+        );
+
+        $this->assertSame('3', $message->getProperty('instancetype'));
+        $this->assertInstanceOf(
+            \Horde_Date::class,
+            $message->getProperty('recurrenceid')
+        );
     }
 
     protected function _createMeetingRequest(
