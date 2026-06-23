@@ -200,27 +200,10 @@ class Horde_ActiveSync_Request_Find extends Horde_ActiveSync_Request_SyncBase
         }
 
         $status = self::STATUS_SUCCESS;
-        $storeStatus = self::STORE_STATUS_SUCCESS;
-        $start = 0;
-        $limit = self::MAX_RESULTS;
-
-        if ($range !== null) {
-            if (preg_match('/^(\d+)-(\d+)$/', $range, $matches)) {
-                $start = (int) $matches[1];
-                $end = (int) $matches[2];
-                if ($end < $start) {
-                    $storeStatus = self::STORE_STATUS_RANGEERR;
-                } else {
-                    $limit = $end - $start + 1;
-                    // iOS sends 0-100 (101 slots); cap to server maximum.
-                    if ($limit > self::MAX_RESULTS) {
-                        $limit = self::MAX_RESULTS;
-                    }
-                }
-            } else {
-                $storeStatus = self::STORE_STATUS_RANGEERR;
-            }
-        }
+        $paging = self::_parseFindRange($range);
+        $start = $paging['start'];
+        $limit = $paging['limit'];
+        $storeStatus = $paging['storeStatus'];
 
         $results = null;
         if ($storeStatus === self::STORE_STATUS_SUCCESS && $type) {
@@ -577,5 +560,49 @@ class Horde_ActiveSync_Request_Find extends Horde_ActiveSync_Request_SyncBase
         $this->_encoder->startTag($tag);
         $this->_encoder->content($value);
         $this->_encoder->endTag();
+    }
+
+    /**
+     * Parse a Find Range element into paging parameters.
+     *
+     * @param string|null $range  Client range string (e.g. ``0-100``).
+     *
+     * @return array{start: int, limit: int, storeStatus: int}
+     */
+    protected static function _parseFindRange(?string $range): array
+    {
+        $start = 0;
+        $limit = self::MAX_RESULTS;
+        $storeStatus = self::STORE_STATUS_SUCCESS;
+
+        if ($range === null) {
+            return compact('start', 'limit', 'storeStatus');
+        }
+
+        if (!preg_match('/^(\d+)-(\d+)$/', $range, $matches)) {
+            return [
+                'start' => 0,
+                'limit' => self::MAX_RESULTS,
+                'storeStatus' => self::STORE_STATUS_RANGEERR,
+            ];
+        }
+
+        $start = (int) $matches[1];
+        $end = (int) $matches[2];
+        if ($end < $start) {
+            return [
+                'start' => $start,
+                'limit' => $limit,
+                'storeStatus' => self::STORE_STATUS_RANGEERR,
+            ];
+        }
+
+        $limit = $end - $start + 1;
+        // iOS sends 0-100 (101 slots); cap to server maximum.
+        if ($limit > self::MAX_RESULTS) {
+            $limit = self::MAX_RESULTS;
+        }
+
+        return compact('start', 'limit', 'storeStatus');
     }
 }

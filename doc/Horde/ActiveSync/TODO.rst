@@ -41,16 +41,6 @@ Deferred (low priority or no known client)
   especially client use of ``DEADOCUR`` — needs more end-to-end testing and
   may require Nag changes more than activesync library changes.
 
-- **Find / KQL — remaining edge cases**
-
-  ``Horde_ActiveSync_Find_Kql`` now handles boolean operators (``AND``, ``OR``,
-  ``NOT``), parentheses, implicit ``AND``, and common Outlook property
-  restrictions (``participants:``, ``body:``, ``category:``, ``hasattachment:``,
-  ``isread:`` / ``isflagged:``, ``importance:``, ``received`` / ``sent`` dates,
-  ``size``). Full Exchange KQL is still not implemented — gaps include
-  ``NEAR``/proximity, wildcards, folder/conversation scoping, and uncommon
-  MS-ASCMD properties. Incremental polish only.
-
 
 Operations and monitoring (out of library scope)
 ------------------------------------------------
@@ -169,8 +159,13 @@ active backlog; kept here so this file does not resurrect settled work.
   ``VERSION_SIXTEENONE``).
 - EAS 16.0 **Find** command with mailbox/GAL search
   (``Horde_ActiveSync_Request_Find``).
-- **Find KQL parser** — tokenizer and recursive-descent parser mapping common
-  Outlook/Exchange restrictions to IMAP search (``Horde_ActiveSync_Find_Kql``).
+- **Find KQL parser** (``Horde_ActiveSync_Find_Kql``) — boolean operators,
+  parentheses, implicit ``AND``, and common Outlook property restrictions
+  (``from``/``to``/``cc``/``bcc``/``subject``/``body``/``participants``,
+  ``category``, ``hasattachment``, ``isread``/``isflagged``, ``importance``,
+  ``received``/``sent`` dates, ``size``) mapped to IMAP search. Full Exchange
+  KQL (``NEAR``/proximity, wildcards, folder/conversation scoping, uncommon
+  MS-ASCMD properties) is out of scope for the IMAP-backed implementation.
 - **Autodiscover**, **ItemOperations** (fetch/move/empty; not Schema),
   **Settings**, **Provision**, **Ping**, **Search**, **ValidateCert** — all
   present for supported versions (see ``README.md``).

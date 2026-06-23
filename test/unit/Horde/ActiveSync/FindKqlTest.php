@@ -148,4 +148,51 @@ class Horde_ActiveSync_FindKqlTest extends TestCase
         $this->assertStringContainsString('OR', $imap);
         $this->assertStringContainsString('IMPORTANCE', $imap);
     }
+
+    public function testImportanceLow()
+    {
+        $q = Horde_ActiveSync_Find_Kql::toImapQuery('importance:low');
+        $imap = (string) $q;
+        $this->assertStringContainsString('OR', $imap);
+        $this->assertStringContainsString('IMPORTANCE', $imap);
+        $this->assertStringContainsString('low', $imap);
+    }
+
+    public function testSentDateSince()
+    {
+        $q = Horde_ActiveSync_Find_Kql::toImapQuery('sent>=2026-02-01');
+        $this->assertStringContainsString('SINCE', (string) $q);
+        $this->assertStringContainsString('2026', (string) $q);
+    }
+
+    public function testReceivedToday()
+    {
+        $q = Horde_ActiveSync_Find_Kql::toImapQuery('received:today');
+        $this->assertStringContainsString('ON', (string) $q);
+    }
+
+    public function testSizeRange()
+    {
+        $q = Horde_ActiveSync_Find_Kql::toImapQuery('size:1000..5000');
+        $imap = (string) $q;
+        $this->assertStringContainsString('LARGER', $imap);
+        $this->assertStringContainsString('1000', $imap);
+        $this->assertStringContainsString('5000', $imap);
+    }
+
+    public function testAttachmentNamesRestriction()
+    {
+        $q = Horde_ActiveSync_Find_Kql::toImapQuery('attachmentnames:report.pdf');
+        $imap = (string) $q;
+        $this->assertStringContainsString('HEADER', $imap);
+        $this->assertStringContainsString('CONTENT-DISPOSITION', $imap);
+        $this->assertStringContainsString('report.pdf', $imap);
+    }
+
+    public function testUnknownPropertyFallsBackToText()
+    {
+        $q = Horde_ActiveSync_Find_Kql::toImapQuery('kind:email');
+        $this->assertStringContainsString('TEXT', (string) $q);
+        $this->assertStringContainsString('kind:email', (string) $q);
+    }
 }

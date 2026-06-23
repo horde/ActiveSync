@@ -9,6 +9,9 @@ In a typical Horde deployment, this package is the **protocol engine**. The
 talks to IMAP (mail), Kronolith (calendar), Turba (contacts), Nag (tasks), and
 Mnemo (notes).
 
+Open work and the Horde 6 roadmap are tracked in
+[`doc/Horde/ActiveSync/TODO.rst`](doc/Horde/ActiveSync/TODO.rst).
+
 ## How it fits together
 
 ```
@@ -237,8 +240,7 @@ Handled in `horde/kronolith` (`Kronolith_Event::fromASAppointment()` /
 ### Tasks (`Tasks`) and Notes (`Notes`)
 
 - Full folder sync and item CRUD through Nag and Mnemo
-- Task recurrence (basic); some edge cases around single-instance completion
-  remain open — see `doc/Horde/ActiveSync/TODO.rst`
+- Task recurrence (basic)
 
 ### Device management
 
@@ -286,21 +288,6 @@ codebase:
 
 Horde driver, Kronolith, iTip, and IMP details live in `horde/core`, `horde/kronolith`,
 `horde/itip`, and `horde/imp`.
-
-## Known gaps and limitations
-
-These are intentional deferrals or still-open items — not bugs in basic sync:
-
-- **Find / KQL**: boolean operators, common property restrictions
-  (`from`/`to`/`cc`/`bcc`/`subject`/`body`/`participants`, flags, category,
-  dates, size); not full Exchange KQL (`NEAR`, wildcards, conversation/folder
-  scoping, etc.)
-- **ItemOperations `Schema`** requests unsupported (no known client in the wild)
-- **Email recurrence** properties on meeting-request messages
-- **SMS** collection class exists in the protocol but is not wired to a Horde app
-- **HTTP 503 throttling** (`X-MS-Throttle`) not implemented
-- **Filereference `mail:` prefix** for cross-store attachment refs deferred (BC)
-- Broader refactors planned for Horde 6 — see `doc/Horde/ActiveSync/TODO.rst`
 
 ## Using ActiveSync in a Horde deployment
 
@@ -444,4 +431,3 @@ GPL-2.0-only. See [LICENSE](LICENSE).
 
 - [Microsoft Exchange ActiveSync protocol docs](https://learn.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-ascntc30)
 - [Horde ActiveSync wiki](http://wiki.horde.org/ActiveSync)
-- Open work: `doc/Horde/ActiveSync/TODO.rst`
