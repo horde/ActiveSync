@@ -797,6 +797,39 @@ class Horde_ActiveSync_SyncCache
     }
 
     /**
+     * Return the number of ignored FOLDERSYNC_REQUIRED responses for this device.
+     *
+     * @return integer
+     */
+    public function getFolderSyncRequiredIgnoredCount()
+    {
+        return (int)($this->_data['foldersyncrequired'] ?? 0);
+    }
+
+    /**
+     * Increment the ignored FOLDERSYNC_REQUIRED counter.
+     *
+     * @return integer  The new counter value.
+     */
+    public function incrementFolderSyncRequiredIgnored()
+    {
+        $count = $this->getFolderSyncRequiredIgnoredCount() + 1;
+        $this->_data['foldersyncrequired'] = $count;
+        $this->_dirty['foldersyncrequired'] = true;
+
+        return $count;
+    }
+
+    /**
+     * Reset the ignored FOLDERSYNC_REQUIRED counter after a successful FolderSync.
+     */
+    public function resetFolderSyncRequiredIgnored()
+    {
+        $this->_data['foldersyncrequired'] = 0;
+        $this->_dirty['foldersyncrequired'] = true;
+    }
+
+    /**
      * Mark specific collection as dirty, but only if the entire collection
      * data is not already marked dirty.
      *

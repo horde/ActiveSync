@@ -61,6 +61,13 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
     protected $_pingSettings;
 
     /**
+     * Collections manager.
+     *
+     * @var Horde_ActiveSync_Collections
+     */
+    protected $_collections;
+
+    /**
      * Validate the configured/requested heartbeat
      * Will set self::_statusCode appropriately in case of an invalid interval.
      *
@@ -116,6 +123,7 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
         // Initialize the collections handler.
         try {
             $collections = $this->_activeSync->getCollectionsObject();
+            $this->_collections = $collections;
         } catch (Horde_ActiveSync_Exception $e) {
             $this->_status = self::STATUS_SERVERERROR;
             $this->_handleGlobalError();
@@ -338,12 +346,33 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
      */
     protected function _handleGlobalError()
     {
+        $this->_statusCode = $this->_resolveFolderSyncRequiredStatus($this->_statusCode);
+
         $this->_encoder->StartWBXML();
         $this->_encoder->startTag(self::PING);
         $this->_encoder->startTag(self::STATUS);
         $this->_encoder->content($this->_statusCode);
         $this->_encoder->endTag();
         $this->_encoder->endTag();
+    }
+
+    /**
+     * Apply the FOLDERSYNC_REQUIRED loop guard if needed.
+     *
+     * @param integer $status  The status code about to be sent.
+     *
+     * @return integer
+     */
+    protected function _resolveFolderSyncRequiredStatus($status)
+    {
+        if ($status !== self::STATUS_FOLDERSYNCREQD || empty($this->_collections)) {
+            return $status;
+        }
+
+        return $this->_collections->folderSyncRequiredStatus(
+            self::STATUS_FOLDERSYNCREQD,
+            self::STATUS_SERVERERROR
+        );
     }
 
 }

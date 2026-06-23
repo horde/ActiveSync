@@ -455,7 +455,7 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
             $exporter->syncFolderId($collection);
 
             // SYNC_STATUS
-            $exporter->syncStatus($statusCode);
+            $exporter->syncStatus($this->_resolveFolderSyncRequiredStatus($statusCode));
 
             if ($statusCode == self::STATUS_SUCCESS) {
                 // Server changes
@@ -1378,12 +1378,33 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
     }
 
     /**
+     * Apply the FOLDERSYNC_REQUIRED loop guard if needed.
+     *
+     * @param integer $status  The status code about to be sent.
+     *
+     * @return integer
+     */
+    protected function _resolveFolderSyncRequiredStatus($status)
+    {
+        if ($status !== self::STATUS_FOLDERSYNC_REQUIRED) {
+            return $status;
+        }
+
+        return $this->_collections->folderSyncRequiredStatus(
+            self::STATUS_FOLDERSYNC_REQUIRED,
+            self::STATUS_KEYMISM
+        );
+    }
+
+    /**
      * Helper for sending error status results.
      *
      * @param boolean $limit  Send the SYNC_LIMIT error if true.
      */
     protected function _handleGlobalSyncError($limit = false)
     {
+        $this->_statusCode = $this->_resolveFolderSyncRequiredStatus($this->_statusCode);
+
         $this->_encoder->StartWBXML();
         $this->_encoder->startTag(Horde_ActiveSync::SYNC_SYNCHRONIZE);
         $this->_encoder->startTag(Horde_ActiveSync::SYNC_STATUS);
@@ -1498,7 +1519,7 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
         $this->_encoder->endTag();
 
         $this->_encoder->startTag(Horde_ActiveSync::SYNC_STATUS);
-        $this->_encoder->content($this->_statusCode);
+        $this->_encoder->content($this->_resolveFolderSyncRequiredStatus($this->_statusCode));
         $this->_encoder->endTag();
 
         $this->_encoder->endTag(); // Horde_ActiveSync::SYNC_FOLDER
