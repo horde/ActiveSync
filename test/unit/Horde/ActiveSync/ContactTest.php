@@ -43,7 +43,8 @@ class ContactTest extends TestCase
         $currentChildren[] =  'blah';
         $contact->children = $currentChildren;
         $this->assertEquals(1, count($contact->children));
-        $this->assertEquals('blah', array_pop($contact->children));
+        $currentChildren = $contact->children ?? [];
+        $this->assertEquals('blah', array_pop($currentChildren));
 
     }
 

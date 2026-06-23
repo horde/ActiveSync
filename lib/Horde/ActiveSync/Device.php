@@ -860,10 +860,10 @@ class Horde_ActiveSync_Device
     protected function _isIos()
     {
         // Compare in order of likelyhood / most recent to least recent versions.
-        if (strpos($this->{self::OS}, 'iOS') === 0
-            || strpos($this->userAgent, 'iOS') === 0
+        if (($this->{self::OS} !== null && strpos($this->{self::OS}, 'iOS') === 0)
+            || ($this->userAgent !== null && strpos($this->userAgent, 'iOS') === 0)
             || in_array(HordeString::lower($this->clientType), [self::TYPE_IPAD, self::TYPE_IPOD, self::TYPE_IPHONE])
-            || strpos($this->userAgent, 'Apple-') === 0) {
+            || ($this->userAgent !== null && strpos($this->userAgent, 'Apple-') === 0) {
 
             return true;
         }

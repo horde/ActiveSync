@@ -54,6 +54,13 @@ class Horde_ActiveSync_Imap_Message
     protected $_imap;
 
     /**
+     * The mailbox object.
+     *
+     * @var Horde_Imap_Client_Mailbox
+     */
+    protected $_mbox;
+
+    /**
      * Cache if the last body part was encoded or not.
      *
      * @var boolean
