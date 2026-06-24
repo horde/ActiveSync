@@ -239,8 +239,10 @@ class Horde_ActiveSync_Message_Task extends Horde_ActiveSync_Message_Base
      * Set recurrence information for this task
      *
      * @param Horde_Date_Recurrence $recurrence
+     * @param integer|null        $remainingOccurrences  Remaining instance count
+     *                                                    for count-limited series.
      */
-    public function setRecurrence(Horde_Date_Recurrence $recurrence)
+    public function setRecurrence(Horde_Date_Recurrence $recurrence, $remainingOccurrences = null)
     {
         $r = Horde_ActiveSync::messageFactory('TaskRecurrence');
 
@@ -278,13 +280,26 @@ class Horde_ActiveSync_Message_Task extends Horde_ActiveSync_Message_Base
 
         // AS messages can only have one or the other (or none), not both
         if ($recurrence->hasRecurCount()) {
-            $r->occurrences = $recurrence->getRecurCount();
+            if ($remainingOccurrences !== null) {
+                if ($remainingOccurrences > 0) {
+                    $r->occurrences = $remainingOccurrences;
+                }
+            } else {
+                $r->occurrences = $recurrence->getRecurCount();
+            }
         } elseif ($recurrence->hasRecurEnd()) {
             $r->until = $recurrence->getRecurEnd();
         }
 
         // Set the start of the recurrence series.
-        $r->start = clone $this->duedate;
+        $start = $recurrence->getRecurStart();
+        if ($start) {
+            $r->start = clone $start;
+        } elseif ($this->utcduedate) {
+            $r->start = clone $this->utcduedate;
+        } elseif ($this->duedate) {
+            $r->start = clone $this->duedate;
+        }
 
         $this->_properties['recurrence'] = $r;
     }
@@ -301,7 +316,12 @@ class Horde_ActiveSync_Message_Task extends Horde_ActiveSync_Message_Base
             return false;
         }
 
-        $d = clone($this->getDueDate());
+        $dueDate = $this->utcduedate ?: $this->duedate;
+        if (!$dueDate) {
+            return false;
+        }
+
+        $d = clone $dueDate;
         //  $d->setTimezone($this->getTimezone());
 
         $rrule = new Horde_Date_Recurrence($d);
@@ -342,6 +362,38 @@ class Horde_ActiveSync_Message_Task extends Horde_ActiveSync_Message_Base
         }
 
         return $rrule;
+    }
+
+    /**
+     * Returns whether this MODIFY updates a recurring series master as part of
+     * single-instance completion (the companion change to a dead-occurrence
+     * Add in the same SYNC batch).
+     *
+     * @return boolean
+     */
+    public function isRecurrenceInstanceMasterChange()
+    {
+        if (!$this->recurrence) {
+            return false;
+        }
+
+        if ($this->getProperty('deadoccur')) {
+            return true;
+        }
+
+        if ($this->recurrence->getProperty('deadoccur')) {
+            return true;
+        }
+
+        if ($this->getProperty('complete') === self::TASK_COMPLETE_TRUE) {
+            return true;
+        }
+
+        if ($this->recurrence->getProperty('occurrences') !== false) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

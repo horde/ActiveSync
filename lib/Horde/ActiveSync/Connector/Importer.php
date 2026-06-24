@@ -164,6 +164,8 @@ class Horde_ActiveSync_Connector_Importer
             // is marked as changed after the first edit). Sniff that out here
             // and prevent the conflict check for those messages.
             if (!($message instanceof Horde_ActiveSync_Message_Appointment)
+                 && !($message instanceof Horde_ActiveSync_Message_Task
+                     && $message->isRecurrenceInstanceMasterChange())
                  && $this->_state->isDuplicatePIMChange($id, $synckey)) {
 
                 $conflict = $this->_isConflict(
@@ -184,7 +186,34 @@ class Horde_ActiveSync_Connector_Importer
                     ];
                 }
             }
-        } elseif (!$id && $uid = $this->_state->isDuplicatePIMAddition($clientid)) {
+        } elseif (!$id && ($uid = $this->_state->isDuplicatePIMAddition($clientid))) {
+            // iOS reuses ClientEntryId when toggling recurrence instance
+            // completion; apply the update instead of ignoring the change.
+            if ($message instanceof Horde_ActiveSync_Message_Task) {
+                $uid = $this->_as->driver->resolveTaskSeriesMasterUid(
+                    $uid,
+                    $message
+                );
+            }
+            if ($message instanceof Horde_ActiveSync_Message_Task
+                && ($stat = $this->_as->driver->changeMessage(
+                    $this->_folderId,
+                    $uid,
+                    $message,
+                    $device
+                ))) {
+                $stat['serverid'] = $this->_folderId;
+                $this->_state->updateState(
+                    Horde_ActiveSync::CHANGE_TYPE_CHANGE,
+                    $stat,
+                    Horde_ActiveSync::CHANGE_ORIGIN_PIM,
+                    $this->_as->driver->getUser(),
+                    $clientid
+                );
+
+                return $stat;
+            }
+
             // Already saw this addition, but client never received UID
             $this->_logger->notice(
                 sprintf(
