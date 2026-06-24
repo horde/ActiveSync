@@ -182,7 +182,7 @@ class Horde_ActiveSync_Connector_Importer
                     );
                     return [
                         $id,
-                        'error' => [Horde_ActiveSync_Request_Sync::STATUS_CONFLICT],
+                        'error' => Horde_ActiveSync_Request_Sync::STATUS_CONFLICT,
                     ];
                 }
             }
