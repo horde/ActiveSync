@@ -35,10 +35,18 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
 
         // Version 2 Autodisover request. Version 2 is always unauthenticated.
         if (!empty($server['REQUEST_URI']) && stripos($server['REQUEST_URI'], 'autodiscover/autodiscover.json') !== false) {
-            $params = ['protocol' => $request->getGetVars()['Protocol']];
+            $get = $request->getGetVars();
+            // The Protocol query parameter is required by the v2 protocol, but
+            // guard against malformed clients that omit it. This endpoint only
+            // serves ActiveSync, so that is the sensible default.
+            $protocol = empty($get['Protocol']) ? 'ActiveSync' : $get['Protocol'];
+            $params = ['protocol' => $protocol];
             $results = $this->_driver->autoDiscover($params, 2);
             if (!empty($results['url'])) {
-                $this->_encoder->getStream()->add('{"Protocol": "' . $params['protocol'] . '", "Url": "' . $results['url'] . '"}');
+                $this->_encoder->getStream()->add(json_encode(
+                    ['Protocol' => $protocol, 'Url' => $results['url']],
+                    JSON_UNESCAPED_SLASHES
+                ));
             }
             return 'application/json';
         }

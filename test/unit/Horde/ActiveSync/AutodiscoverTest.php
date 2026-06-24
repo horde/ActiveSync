@@ -181,4 +181,60 @@ class AutodiscoverTest extends TestCase
         $this->assertEquals($expected, $fixture->server->encoder->getStream()->getString());
     }
 
+    /**
+     * Tests the unauthenticated Autodiscover v2 (JSON) endpoint, which maps the
+     * requested protocol to the relevant service URL.
+     */
+    public function testAutodiscoverV2JsonReturnsActiveSyncUrl()
+    {
+        $fixture = $this->createActiveSyncServer([
+            'serverVars' => [
+                'REQUEST_URI' => '/autodiscover/autodiscover.json/v1.0/mike@example.com?Protocol=ActiveSync',
+            ],
+            'getVars' => ['Protocol' => 'ActiveSync'],
+        ]);
+
+        // v2 is unauthenticated: no authenticate()/setup() calls are expected.
+        $fixture->driver->expects($this->once())
+            ->method('autoDiscover')
+            ->willReturnMap([
+                [['protocol' => 'ActiveSync'], 2, ['protocol' => 'ActiveSync', 'url' => 'https://example.com/Microsoft-Server-ActiveSync']],
+            ]);
+
+        $fixture->server->handleRequest('Autodiscover', 'testdevice');
+
+        $fixture->server->encoder->getStream()->rewind();
+        $this->assertEquals(
+            '{"Protocol":"ActiveSync","Url":"https://example.com/Microsoft-Server-ActiveSync"}',
+            $fixture->server->encoder->getStream()->getString()
+        );
+    }
+
+    /**
+     * Tests that a v2 (JSON) request omitting the required Protocol parameter
+     * falls back to ActiveSync instead of triggering an undefined index error.
+     */
+    public function testAutodiscoverV2JsonDefaultsProtocolWhenMissing()
+    {
+        $fixture = $this->createActiveSyncServer([
+            'serverVars' => [
+                'REQUEST_URI' => '/autodiscover/autodiscover.json/v1.0/mike@example.com',
+            ],
+        ]);
+
+        $fixture->driver->expects($this->once())
+            ->method('autoDiscover')
+            ->willReturnMap([
+                [['protocol' => 'ActiveSync'], 2, ['protocol' => 'ActiveSync', 'url' => 'https://example.com/Microsoft-Server-ActiveSync']],
+            ]);
+
+        $fixture->server->handleRequest('Autodiscover', 'testdevice');
+
+        $fixture->server->encoder->getStream()->rewind();
+        $this->assertEquals(
+            '{"Protocol":"ActiveSync","Url":"https://example.com/Microsoft-Server-ActiveSync"}',
+            $fixture->server->encoder->getStream()->getString()
+        );
+    }
+
 }
