@@ -511,6 +511,35 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
     }
 
     /**
+     * Refresh a collection's synckey from the sync cache and retry loading
+     * state after a stale key was garbage collected by a parallel SYNC.
+     *
+     * @param string $id  The collection id.
+     *
+     * @return boolean  True if state loaded successfully after refresh.
+     */
+    protected function _refreshAndRetryCollectionState($id)
+    {
+        if (empty($this->_collections[$id])) {
+            return false;
+        }
+
+        $this->updateCollectionsFromCache();
+
+        if (empty($this->_collections[$id])) {
+            return false;
+        }
+
+        try {
+            $this->initCollectionState($this->_collections[$id], true);
+
+            return true;
+        } catch (Horde_ActiveSync_Exception_StateGone $e) {
+            return false;
+        }
+    }
+
+    /**
      * Return a collection class given the collection id.
      *
      * @param string $id  The collection id.
@@ -1262,6 +1291,10 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                 return self::COLLECTION_ERR_STALE;
             }
 
+            // Keep synckeys current before polling; a parallel SYNC may have
+            // advanced state while this PING connection slept.
+            $this->updateCollectionsFromCache();
+
             // Make sure the collections are still there (there might have been
             // an error in refreshing them from the cache). Ideally this should
             // NEVER happen.
@@ -1291,10 +1324,11 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
 
             // Check each collection we are interested in.
             foreach ($this->_collections as $id => $collection) {
+                $stateLoaded = false;
 
-                // Initialize the collection's state data in the state handler.
                 try {
-                    $this->initCollectionState($collection, true);
+                    $this->initCollectionState($this->_collections[$id], true);
+                    $stateLoaded = true;
                 } catch (Horde_ActiveSync_Exception_StaleState $e) {
                     $this->_logger->notice(
                         sprintf(
@@ -1313,7 +1347,16 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                     $dataavailable = true;
                     continue;
                 } catch (Horde_ActiveSync_Exception_StateGone $e) {
-                    if (!empty($options['pingable'])) {
+                    if (!empty($options['pingable'])
+                        && $this->_refreshAndRetryCollectionState($id)) {
+                        $this->_logger->notice(
+                            sprintf(
+                                'COLLECTIONS: State not found for %s during PING; recovered using refreshed synckey.',
+                                $id
+                            )
+                        );
+                        $stateLoaded = true;
+                    } elseif (!empty($options['pingable'])) {
                         $this->_logger->notice(
                             sprintf(
                                 'COLLECTIONS: State not found for %s during PING; dropping orphan collection from cache.',
@@ -1325,16 +1368,17 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                         unset($this->_collections[$id]);
                         $this->save();
                         continue;
+                    } else {
+                        $this->_logger->notice(
+                            sprintf(
+                                'COLLECTIONS: State not found for %s. Continuing by requesting a SYNC.',
+                                $id
+                            )
+                        );
+                        $dataavailable = true;
+                        $this->setGetChangesFlag($id);
+                        continue;
                     }
-                    $this->_logger->notice(
-                        sprintf(
-                            'COLLECTIONS: State not found for %s. Continuing by requesting a SYNC.',
-                            $id
-                        )
-                    );
-                    $dataavailable = true;
-                    $this->setGetChangesFlag($id);
-                    continue;
                 } catch (Horde_ActiveSync_Exception_InvalidRequest $e) {
                     // Thrown when state is unable to be initialized because the
                     // collection has not yet been synched, but was requested to
@@ -1360,6 +1404,10 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                     );
                     $this->setGetChangesFlag($id);
                     $dataavailable = true;
+                    continue;
+                }
+
+                if (!$stateLoaded) {
                     continue;
                 }
 

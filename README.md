@@ -10,7 +10,7 @@ talks to IMAP (mail), Kronolith (calendar), Turba (contacts), Nag (tasks), and
 Mnemo (notes).
 
 Open work and the Horde 6 roadmap are tracked in
-[`doc/Horde/ActiveSync/TODO.rst`](doc/Horde/ActiveSync/TODO.rst).
+[`doc/Horde/ActiveSync/todo.md`](doc/Horde/ActiveSync/todo.md).
 
 ## How it fits together
 
@@ -420,7 +420,7 @@ lib/Horde/ActiveSync/
   Driver/                         Base, Mock backends
 migration/                        SQL schema for state tables
 test/unit/                        PHPUnit tests
-doc/Horde/ActiveSync/TODO.rst     Open work and Horde 6 refactor notes
+doc/Horde/ActiveSync/todo.md      Open work and Horde 6 refactor notes
 ```
 
 ## License
