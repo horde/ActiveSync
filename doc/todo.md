@@ -50,6 +50,24 @@ roadmap — do not implement those entries piecemeal on the FRAMEWORK_6_0 /
 Do not start these ad hoc. Each item touches public API surface, persisted
 state, or both.
 
+### Architectural direction (review note, 2026-06-24)
+
+Larger refactor work should land together with these baseline changes rather
+than as isolated class extractions:
+
+- Replace `horde/controller` (`Horde_Controller_Request_Http`) with
+  `horde/http` request and response objects.
+- PSR-4 class names throughout (`Horde\ActiveSync\...`) instead of
+  underscore-separated `Horde_ActiveSync_*`.
+- PSR-3 logging via `Horde\Log\Logger` instead of `Horde_Log_Logger`.
+- Move from inheritance-based extension (subclass `Driver_Base`,
+  `Connector`, etc.) to pluggable subsystem implementations behind
+  interfaces, so backends compose collaborators instead of overriding
+  protected methods.
+
+The existing entries below predate this framing and should be folded into it
+when a migration plan is written.
+
 ### Protocol and class layout
 
 - Consolidate non-protocol constants into a dedicated class.
