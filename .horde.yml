@@ -7,8 +7,7 @@ list: dev
 type: library
 homepage: https://www.horde.org/libraries/Horde_ActiveSync
 authors:
-  -
-    name: Michael J Rubinsky
+  - name: Michael J Rubinsky
     user: mrubinsk
     email: mrubinsk@horde.org
     active: true
@@ -67,3 +66,74 @@ keywords:
   - sync
   - eas
   - exchange
+ci-platform:
+  '8.0':
+    - php: '>=7.2'
+    - composer-plugin-api: ^2.2.0
+    - ext-bcmath
+    - ext-ctype
+    - ext-dom
+    - ext-hash
+    - ext-pcre
+    - ext-simplexml
+    - ext-spl
+  '8.1':
+    - php: '>=7.2'
+    - composer-plugin-api: ^2.2.0
+    - ext-bcmath
+    - ext-ctype
+    - ext-dom
+    - ext-hash
+    - ext-pcre
+    - ext-simplexml
+    - ext-spl
+  '8.2':
+    - php: '>=7.2'
+    - composer-plugin-api: ^2.2.0
+    - ext-bcmath
+    - ext-ctype
+    - ext-dom
+    - ext-hash
+    - ext-pcre
+    - ext-simplexml
+    - ext-spl
+  '8.3':
+    - php: '>=7.2'
+    - composer-plugin-api: ^2.2.0
+    - ext-bcmath
+    - ext-ctype
+    - ext-dom
+    - ext-hash
+    - ext-pcre
+    - ext-simplexml
+    - ext-spl
+  '8.4':
+    - php: '>=7.2'
+    - composer-plugin-api: ^2.2.0
+    - ext-bcmath
+    - ext-ctype
+    - ext-dom
+    - ext-hash
+    - ext-pcre
+    - ext-simplexml
+    - ext-spl
+  '8.5':
+    - php: '>=7.2'
+    - composer-plugin-api: ^2.2.0
+    - ext-bcmath
+    - ext-ctype
+    - ext-dom
+    - ext-hash
+    - ext-pcre
+    - ext-simplexml
+    - ext-spl
+  '8.6':
+    - php: '>=7.2'
+    - composer-plugin-api: ^2.2.0
+    - ext-bcmath
+    - ext-ctype
+    - ext-dom
+    - ext-hash
+    - ext-pcre
+    - ext-simplexml
+    - ext-spl
