@@ -169,7 +169,7 @@ class SyncTimeBudgetTest extends TestCase
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
 
-        $params = new ReflectionClass(Horde_ActiveSync_Driver_Base::class)
+        $params = (new ReflectionClass(Horde_ActiveSync_Driver_Base::class))
             ->getProperty('_params');
         $params->setAccessible(true);
         $params->setValue($driver, ['sync' => $sync]);
