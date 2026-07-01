@@ -18,7 +18,7 @@
         "eas",
         "exchange"
     ],
-    "time": "2026-06-25",
+    "time": "2026-07-01",
     "repositories": [],
     "require": {
         "horde/horde-installer-plugin": "dev-FRAMEWORK_6_0 || ^3 || ^2",
@@ -62,6 +62,9 @@
             "Horde\\ActiveSync\\Test\\Helpers\\": "test/unit/Horde/ActiveSync/Helpers/"
         }
     },
+    "bin": [
+        "bin/ci-bootstrap.sh"
+    ],
     "config": {
         "allow-plugins": {
             "horde/horde-installer-plugin": true

@@ -13,7 +13,7 @@ authors:
     active: true
     role: lead
 version:
-  release: 3.0.0-RC4
+  release: 3.0.0-RC5
   api: 3.0.0alpha1
 state:
   release: RC
@@ -71,9 +71,9 @@ ci-platform:
     - php: '>=7.2'
     - composer-plugin-api: ^2.2.0
     - ext-bcmath
-    - ext-ctype
     - ext-dom
     - ext-hash
+    - ext-json
     - ext-pcre
     - ext-simplexml
     - ext-spl
@@ -81,9 +81,9 @@ ci-platform:
     - php: '>=7.2'
     - composer-plugin-api: ^2.2.0
     - ext-bcmath
-    - ext-ctype
     - ext-dom
     - ext-hash
+    - ext-json
     - ext-pcre
     - ext-simplexml
     - ext-spl
@@ -91,9 +91,9 @@ ci-platform:
     - php: '>=7.2'
     - composer-plugin-api: ^2.2.0
     - ext-bcmath
-    - ext-ctype
     - ext-dom
     - ext-hash
+    - ext-json
     - ext-pcre
     - ext-simplexml
     - ext-spl
@@ -101,9 +101,9 @@ ci-platform:
     - php: '>=7.2'
     - composer-plugin-api: ^2.2.0
     - ext-bcmath
-    - ext-ctype
     - ext-dom
     - ext-hash
+    - ext-json
     - ext-pcre
     - ext-simplexml
     - ext-spl
@@ -111,9 +111,9 @@ ci-platform:
     - php: '>=7.2'
     - composer-plugin-api: ^2.2.0
     - ext-bcmath
-    - ext-ctype
     - ext-dom
     - ext-hash
+    - ext-json
     - ext-pcre
     - ext-simplexml
     - ext-spl
@@ -121,9 +121,9 @@ ci-platform:
     - php: '>=7.2'
     - composer-plugin-api: ^2.2.0
     - ext-bcmath
-    - ext-ctype
     - ext-dom
     - ext-hash
+    - ext-json
     - ext-pcre
     - ext-simplexml
     - ext-spl
@@ -131,9 +131,11 @@ ci-platform:
     - php: '>=7.2'
     - composer-plugin-api: ^2.2.0
     - ext-bcmath
-    - ext-ctype
     - ext-dom
     - ext-hash
+    - ext-json
     - ext-pcre
     - ext-simplexml
     - ext-spl
+ci-platform-flags:
+  needs_installer_plugin: true

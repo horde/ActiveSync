@@ -1,4 +1,14 @@
 ---
+3.0.0-RC5:
+  api: 3.0.0-RC5
+  state:
+    release: RC
+    api: RC
+  date: 2026-07-01
+  license:
+    identifier: GPL-2.0-only
+    uri: https://spdx.org/licenses/GPL-2.0-only.html
+  notes: "fix(activesync): harden base64 URI decoding for GET requests\nci: add ci-platform block and regenerate workflow from RC6 phar\nci: regenerate workflow from RC5 phar templates\nci: regenerate workflow from RC4 phar templates\nci: regenerate workflow from RC3 phar templates\nci: install horde-components CI pipeline"
 3.0.0-RC4:
   api: 3.0.0-RC4
   state:
