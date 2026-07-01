@@ -55,6 +55,12 @@ class UtilsTest extends TestCase
         $this->assertEquals($fixture, $results);
     }
 
+    public function testDecodeBase64RejectsInvalidPayload()
+    {
+        $this->assertEquals([], Horde_ActiveSync_Utils::decodeBase64('not-valid-eas-data'));
+        $this->assertEquals([], Horde_ActiveSync_Utils::decodeBase64('YWJj'));
+    }
+
     public function testBodyTypePref()
     {
         $this->markTestIncomplete('Needs refactoring.');

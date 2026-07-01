@@ -1207,8 +1207,11 @@ class Horde_ActiveSync
             $serverVars = $this->_request->getServerVars();
             if (isset($serverVars['QUERY_STRING']) && strlen($serverVars['QUERY_STRING']) >= 10) {
                 $results = Horde_ActiveSync_Utils::decodeBase64($serverVars['QUERY_STRING']);
+                if (empty($results['Cmd'])) {
+                    return $this->_get;
+                }
                 // Normalize values.
-                switch ($results['DeviceType']) {
+                switch ($results['DeviceType'] ?? '') {
                     case 'PPC':
                         $results['DeviceType'] = 'PocketPC';
                         break;

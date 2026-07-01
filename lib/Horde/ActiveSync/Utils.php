@@ -37,6 +37,10 @@ class Horde_ActiveSync_Utils
             2  => 'SmartForward',
             3  => 'SmartReply',
             4  => 'GetAttachment',
+            5  => 'GetHierarchy',
+            6  => 'CreateCollection',
+            7  => 'DeleteCollection',
+            8  => 'MoveCollection',
             9  => 'FolderSync',
             10 => 'FolderCreate',
             11 => 'FolderDelete',
@@ -51,36 +55,83 @@ class Horde_ActiveSync_Utils
             20 => 'Provision',
             21 => 'ResolveRecipients',
             22 => 'ValidateCert',
+            23 => 'Find',
         ];
+
+        $decoded = base64_decode($uri, true);
+        if ($decoded === false || strlen($decoded) < 4) {
+            return [];
+        }
+
         $stream = fopen('php://temp', 'r+');
-        fwrite($stream, base64_decode($uri));
+        fwrite($stream, $decoded);
         rewind($stream);
         $results = [];
+
         // Version, command, locale
-        $data = unpack('CprotocolVersion/Ccommand/vlocale', fread($stream, 4));
+        $header = fread($stream, 4);
+        if (strlen($header) < 4) {
+            return [];
+        }
+        $data = unpack('CprotocolVersion/Ccommand/vlocale', $header);
+        if (!isset($commandMap[$data['command']])) {
+            return [];
+        }
         $results['ProtVer'] = substr($data['protocolVersion'], 0, -1) . '.' . substr($data['protocolVersion'], -1);
         $results['Cmd'] = $commandMap[$data['command']];
         $results['Locale'] = $data['locale'];
 
         // deviceId
-        $length = ord(fread($stream, 1));
+        $lengthByte = fread($stream, 1);
+        if ($lengthByte === '' || $lengthByte === false) {
+            return $results;
+        }
+        $length = ord($lengthByte);
         if ($length > 0) {
             $data = fread($stream, $length);
+            if (strlen($data) < $length) {
+                return [];
+            }
             $data = unpack('H' . ($length * 2) . 'DevID', $data);
+            if ($data === false || !isset($data['DevID'])) {
+                return [];
+            }
             $results['DeviceId'] = $data['DevID'];
         }
 
         // policyKey
-        $length = ord(fread($stream, 1));
+        $lengthByte = fread($stream, 1);
+        if ($lengthByte === '' || $lengthByte === false) {
+            return $results;
+        }
+        $length = ord($lengthByte);
         if ($length > 0) {
-            $data  = unpack('VpolicyKey', fread($stream, $length));
+            $data = fread($stream, $length);
+            if (strlen($data) < $length) {
+                return [];
+            }
+            $data = unpack('VpolicyKey', $data);
+            if ($data === false || !isset($data['policyKey'])) {
+                return [];
+            }
             $results['PolicyKey'] = $data['policyKey'];
         }
 
         // deviceType
-        $length = ord(fread($stream, 1));
+        $lengthByte = fread($stream, 1);
+        if ($lengthByte === '' || $lengthByte === false) {
+            return $results;
+        }
+        $length = ord($lengthByte);
         if ($length > 0) {
-            $data  = unpack('A' . $length . 'devType', fread($stream, $length));
+            $data = fread($stream, $length);
+            if (strlen($data) < $length) {
+                return [];
+            }
+            $data = unpack('A' . $length . 'devType', $data);
+            if ($data === false || !isset($data['devType'])) {
+                return [];
+            }
             $results['DeviceType'] = $data['devType'];
         }
 
