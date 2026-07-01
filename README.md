@@ -53,13 +53,13 @@ Message objects are version-aware: constructors accept
 ## Protocol versions
 
 The library defines constants for EAS **2.5**, **12.0**, **12.1**, **14.0**,
-**14.1**, **16.0**, and **16.1**.
+**14.1**, **16.0** and **16.1**.
 
 | Version | Status in this tree |
 |---------|---------------------|
 | 2.5 – 14.1 | Mature; long-standing Horde support |
 | **16.0** | Supported end-to-end for production use (see below) |
-| **16.1** | Supported; extends 16.0 with meeting proposals and account-only wipe (see below) |
+| **16.1** | Supported. It extends 16.0 with meeting proposals and account-only wipe (see below) |
 
 ### How version negotiation works
 
@@ -91,7 +91,7 @@ are **administrator permissions**.
 
 #### 1. Global ceiling (all users, default)
 
-Set in Horde administration → ActiveSync → *What is the highest version of EAS
+Set in Horde administration -> ActiveSync -> *What is the highest version of EAS
 that Horde should support?*, or in `conf.php`:
 
 ```php

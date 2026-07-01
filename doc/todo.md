@@ -10,9 +10,6 @@ Items are grouped by intent. The **Horde 6** section is a breaking-change
 roadmap — do not implement those entries piecemeal on the FRAMEWORK_6_0 /
 3.x line without an explicit migration plan.
 
-## Near-term (actionable before Horde 6)
-
-*(No open items as of 2026-06-23.)*
 
 ## Deferred (low priority or no known client)
 
@@ -68,6 +65,12 @@ than as isolated class extractions:
 The existing entries below predate this framing and should be folded into it
 when a migration plan is written.
 
+- Horde\ActiveSync owns the backend/repository interfaces and null implementations.
+- On a case-by-case basis, Horde\ActiveSync also owns default implementations as makes sense. These are marked final and reusable code is exposed as traits.
+- SQL, Mongo or other backends are owned by Horde\Core
+- Library owns a generic AuthBackendInterface, Core owns an implementation which ties into Horde Auth.
+- Interaction with orthogonal subsystems happens via PSR Events.
+
 ### Protocol and class layout
 
 - Consolidate non-protocol constants into a dedicated class.
@@ -88,6 +91,7 @@ when a migration plan is written.
   `Horde_Rpc_ActiveSync`.
 - Move non-server helpers out of `Horde_ActiveSync` (truncation helpers,
   version negotiation utilities, etc.).
+- Leverage horde/version
 
 ### State, storage, and identity
 
