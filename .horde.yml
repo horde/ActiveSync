@@ -13,10 +13,10 @@ authors:
     active: true
     role: lead
 version:
-  release: 3.0.0-RC5
+  release: 3.0.0
   api: 3.0.0alpha1
 state:
-  release: RC
+  release: stable
   api: alpha
 license:
   identifier: GPL-2.0-only

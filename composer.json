@@ -62,9 +62,6 @@
             "Horde\\ActiveSync\\Test\\Helpers\\": "test/unit/Horde/ActiveSync/Helpers/"
         }
     },
-    "bin": [
-        "bin/ci-bootstrap.sh"
-    ],
     "config": {
         "allow-plugins": {
             "horde/horde-installer-plugin": true
