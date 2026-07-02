@@ -98,8 +98,12 @@ class Horde_ActiveSync_Credentials
                 : (!empty($serverVars['REDIRECT_HTTP_AUTHORIZATION'])
                      ? $serverVars['REDIRECT_HTTP_AUTHORIZATION']
                      : $serverVars['Authorization']);
-            $hash = base64_decode(str_replace('Basic ', '', $authorization));
-            if (strpos($hash, ':') !== false) {
+            // Strip only a leading, case-insensitive "Basic " scheme token
+            // (str_replace() would remove the token anywhere in the string),
+            // and decode strictly so malformed input yields no credentials
+            // rather than garbage.
+            $hash = base64_decode(preg_replace('/^\s*Basic\s+/i', '', $authorization), true);
+            if ($hash !== false && strpos($hash, ':') !== false) {
                 [$user, $pass] = explode(':', $hash, 2);
             }
         } else {

@@ -120,16 +120,21 @@ class Horde_ActiveSync_Request_ValidateCert extends Horde_ActiveSync_Request_Bas
 
             // Valid purpose/trusted?
             // @TODO: CRL support, CHAIN support
+            // openssl_x509_checkpurpose() returns true (valid + trusted for the
+            // purpose), false (invalid purpose OR untrusted), or -1 on error.
+            // Check the -1 error case with a strict comparison first, since -1
+            // is loosely truthy and was previously masked by a typo ($results)
+            // that left this branch dead.
             $result = openssl_x509_checkpurpose($cert_pem, X509_PURPOSE_SMIME_SIGN, [$this->_activeSync->certPath]);
-            if ($result === false) {
+            if ($result === -1) {
+                // Unspecified error.
+                $cert_status[$key] = self::STATUS_UNKNOWN;
+            } elseif ($result === false) {
                 // @TODO:
                 // checkpurpose returns false if either the purpose is invalid OR
                 // the certificate is untrusted, so we should validate the
                 // trust before we send back any errors.
                 $cert_status[$key] = self::STATUS_PURPOSE_INVALID;
-            } elseif ($results == -1) {
-                // Unspecified error.
-                $cert_status[$key] = self::STATUS_UNKNOWN;
             } else {
                 // If checkpurpose passes, it's valid AND trusted.
                 $cert_status[$key] = self::STATUS_SUCCESS;

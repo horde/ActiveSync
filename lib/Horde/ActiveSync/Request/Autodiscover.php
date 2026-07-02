@@ -67,8 +67,27 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
         if (empty($values) && empty($username)) {
             throw new Horde_Exception_AuthenticationFailure('No username provided.');
         } elseif (!empty($values)) {
-            // Override the username; AUTODISCOVER MUST use email address.
-            $credentials->username = $values[2]['value'];
+            // Override the username; AUTODISCOVER MUST use the email address.
+            // Locate the EMailAddress element by tag name instead of relying on
+            // a fixed offset ($values[2]), which breaks (and can select the
+            // wrong node) if a client reorders or adds elements. The wire value
+            // is always an email address per the Autodiscover protocol; mapping
+            // it to the backend username (email, AD/LDAP, plain username, ...)
+            // is handled downstream by the driver's getUsernameFromEmail().
+            $email = null;
+            foreach ($values as $value) {
+                if (!empty($value['tag']) && $value['tag'] == 'EMAILADDRESS'
+                    && isset($value['value'])) {
+                    $email = trim($value['value']);
+                    break;
+                }
+            }
+            if ($email !== null && $email !== '') {
+                $credentials->username = $email;
+            } elseif (empty($username)) {
+                // No EMailAddress element and no username from the auth header.
+                throw new Horde_Exception_AuthenticationFailure('No username provided.');
+            }
         }
 
         if (!$this->_activeSync->authenticate($credentials)) {
@@ -108,6 +127,24 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
     protected function _handle() {}
 
     /**
+     * Escape a value for safe inclusion in the XML responses built below.
+     *
+     * The interpolated values (email, display name, schemas echoed back from
+     * the client request, backend host names, etc.) are otherwise concatenated
+     * straight into the response markup, which both corrupts the XML for values
+     * containing metacharacters and allows content injection for the
+     * client-supplied schema values.
+     *
+     * @param mixed $value  The value to escape.
+     *
+     * @return string  The XML-escaped value.
+     */
+    protected function _xmlEscape($value)
+    {
+        return htmlspecialchars((string) $value, ENT_QUOTES | ENT_XML1, 'UTF-8');
+    }
+
+    /**
      * Build the appropriate response string to send back to the client.
      *
      * @param array $properties  An array containing any needed properties.
@@ -136,17 +173,17 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
             return '<?xml version="1.0" encoding="utf-8"?>
               <Autodiscover xmlns="http://schemas.microsoft.com/exchange/autodiscover/responseschema/2006">
                 <Response xmlns="http://schemas.microsoft.com/exchange/autodiscover/mobilesync/responseschema/2006">
-                  <Culture>' . $properties['culture'] . '</Culture>
+                  <Culture>' . $this->_xmlEscape($properties['culture']) . '</Culture>
                   <User>
-                    <DisplayName>' . $properties['display_name'] . '</DisplayName>
-                    <EMailAddress>' . $properties['email'] . '</EMailAddress>
+                    <DisplayName>' . $this->_xmlEscape($properties['display_name']) . '</DisplayName>
+                    <EMailAddress>' . $this->_xmlEscape($properties['email']) . '</EMailAddress>
                   </User>
                   <Action>
                     <Settings>
                       <Server>
                         <Type>MobileSync</Type>
-                        <Url>' . $properties['url'] . '</Url>
-                        <Name>' . $properties['url'] . '</Name>
+                        <Url>' . $this->_xmlEscape($properties['url']) . '</Url>
+                        <Name>' . $this->_xmlEscape($properties['url']) . '</Name>
                        </Server>
                     </Settings>
                   </Action>
@@ -159,9 +196,9 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
             }
 
             $xml = '<Autodiscover xmlns="http://schemas.microsoft.com/exchange/autodiscover/responseschema/2006">
-                <Response xmlns="' . $properties['response_schema'] . '">
+                <Response xmlns="' . $this->_xmlEscape($properties['response_schema']) . '">
                 <User>
-                    <DisplayName>' . $properties['display_name'] . '</DisplayName>
+                    <DisplayName>' . $this->_xmlEscape($properties['display_name']) . '</DisplayName>
                 </User>
                 <Account>
                     <AccountType>email</AccountType>
@@ -170,9 +207,9 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
             if (!empty($properties['imap'])) {
                 $xml .= '<Protocol>
                     <Type>IMAP</Type>
-                    <Server>' . $properties['imap']['host'] . '</Server>
-                    <Port>' . $properties['imap']['port'] . '</Port>
-                    <LoginName>' . $properties['username'] . '</LoginName>
+                    <Server>' . $this->_xmlEscape($properties['imap']['host']) . '</Server>
+                    <Port>' . $this->_xmlEscape($properties['imap']['port']) . '</Port>
+                    <LoginName>' . $this->_xmlEscape($properties['username']) . '</LoginName>
                     <DomainRequired>off</DomainRequired>
                     <SPA>off</SPA>
                     ' . $this->_getEncryptionValue('imap', $properties) . '
@@ -182,9 +219,9 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
             if (!empty($properties['pop'])) {
                 $xml .= '<Protocol>
                     <Type>POP3</Type>
-                    <Server>' . $properties['pop']['host'] . '</Server>
-                    <Port>' . $properties['pop']['port'] . '</Port>
-                    <LoginName>' . $properties['username'] . '</LoginName>
+                    <Server>' . $this->_xmlEscape($properties['pop']['host']) . '</Server>
+                    <Port>' . $this->_xmlEscape($properties['pop']['port']) . '</Port>
+                    <LoginName>' . $this->_xmlEscape($properties['username']) . '</LoginName>
                     <DomainRequired>off</DomainRequired>
                     <SPA>off</SPA>
                     ' . $this->_getEncryptionValue('pop', $properties) . '
@@ -194,9 +231,9 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
             if (!empty($properties['smtp'])) {
                 $xml .= '<Protocol>
                     <Type>SMTP</Type>
-                    <Server>' . $properties['smtp']['host'] . '</Server>
-                    <Port>' . $properties['smtp']['port'] . '</Port>
-                    <LoginName>' . $properties['username'] . '</LoginName>
+                    <Server>' . $this->_xmlEscape($properties['smtp']['host']) . '</Server>
+                    <Port>' . $this->_xmlEscape($properties['smtp']['port']) . '</Port>
+                    <LoginName>' . $this->_xmlEscape($properties['username']) . '</LoginName>
                     <DomainRequired>off</DomainRequired>
                     <SPA>off</SPA>
                     ' . $this->_getEncryptionValue('smtp', $properties) . '
@@ -218,7 +255,7 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
     protected function _getEncryptionValue($type, $properties)
     {
         if (!empty($properties[$type]['encryption'])) {
-            return '<Encryption>' . $properties[$type]['encryption'] . '</Encryption>';
+            return '<Encryption>' . $this->_xmlEscape($properties[$type]['encryption']) . '</Encryption>';
         }
         // Older version of autodiscover.
         if (!empty($properties[$type]['ssl'])) {
@@ -244,14 +281,14 @@ class Horde_ActiveSync_Request_Autodiscover extends Horde_ActiveSync_Request_Bas
     {
         return '<?xml version="1.0" encoding="utf-8"?>
           <Autodiscover xmlns="http://schemas.microsoft.com/exchange/autodiscover/responseschema/2006">
-            <Response xmlns="' . $response_schema . '">
+            <Response xmlns="' . $this->_xmlEscape($response_schema) . '">
               <Culture>en:us</Culture>
               <User>
-                <EMailAddress>' . $email . '</EMailAddress>
+                <EMailAddress>' . $this->_xmlEscape($email) . '</EMailAddress>
               </User>
               <Action>
                 <Error>
-                  <Status>' . $status . '</Status>
+                  <Status>' . $this->_xmlEscape($status) . '</Status>
                   <Message>Unable to autoconfigure the supplied email address.</Message>
                   <DebugData>MailUser</DebugData>
                 </Error>
