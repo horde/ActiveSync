@@ -15,12 +15,23 @@ namespace Horde\ActiveSync\StateTest\Sql;
 use Horde\ActiveSync\Test\Helpers\DbHelper;
 use PHPUnit\Framework\TestCase;
 use Horde_ActiveSync;
+use Horde_ActiveSync_Exception_TemporaryFailure;
+use Horde_ActiveSync_Folder_Collection;
 use Horde_ActiveSync_State_Sql;
 use Horde_ActiveSync_Folder_Imap;
 use Horde_ActiveSync_Log_Logger;
 use Horde_Db_Adapter_Pdo_Sqlite;
 use Horde_Log_Handler_Null;
 use ReflectionClass;
+
+/**
+ * tables() is provided by the schema object via __call() on real adapters,
+ * so it must be declared explicitly for mocking.
+ */
+interface DbAdapterWithTables extends \Horde_Db_Adapter
+{
+    public function tables();
+}
 
 class CollectionLockTest extends TestCase
 {
@@ -82,6 +93,62 @@ class CollectionLockTest extends TestCase
         $state->save();
         $this->assertFalse($this->_getProperty($state, '_collectionLockHeld'));
         $this->assertFalse($this->_getProperty($state, '_stateRowLockHeld'));
+    }
+
+    public function testHeldLockThrowsTemporaryFailure()
+    {
+        $db = $this->createMock(DbAdapterWithTables::class);
+        $db->method('tables')->willReturn(['horde_activesync_collection_lock']);
+        $db->method('transactionStarted')->willReturn(false);
+        $db->method('selectValue')->willReturn(1);
+        $db->method('selectOne')->willReturn([
+            'lock_token' => 42,
+            'lock_time' => time(),
+        ]);
+        $db->expects($this->atLeastOnce())->method('rollbackDbTransaction');
+
+        $state = $this->_newState($db);
+        $this->_setProperty($state, '_type', Horde_ActiveSync::REQUEST_TYPE_SYNC);
+        $this->_setProperty($state, '_collection', ['id' => 'Ftest']);
+
+        $this->expectException(Horde_ActiveSync_Exception_TemporaryFailure::class);
+        $this->_method($state, '_acquireCollectionLock')->invoke($state);
+    }
+
+    public function testLoadStateResetWithEmptyCollectionEmitsNoWarnings()
+    {
+        if (!extension_loaded('pdo_sqlite')) {
+            $this->markTestSkipped('PDO SQLite extension is not loaded');
+        }
+
+        $migrationDir = dirname(__DIR__, 6) . '/migration/Horde/ActiveSync';
+        $db = DbHelper::createSqliteDb([
+            'migrations' => [[
+                'migrationsPath' => $migrationDir,
+                'schemaTableName' => 'horde_activesync_schema_info',
+            ]],
+        ]);
+
+        $state = $this->_newState($db);
+
+        $warnings = [];
+        set_error_handler(function ($errno, $errstr) use (&$warnings) {
+            $warnings[] = $errstr;
+            return true;
+        }, E_WARNING | E_NOTICE);
+        try {
+            // Error-recovery resets pass an empty collection array.
+            $state->loadState([], null, Horde_ActiveSync::REQUEST_TYPE_SYNC, 'Ftest');
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertSame([], $warnings);
+        $this->assertInstanceOf(
+            Horde_ActiveSync_Folder_Collection::class,
+            $this->_getProperty($state, '_folder')
+        );
+        $this->assertFalse($this->_getProperty($state, '_collectionLockHeld'));
     }
 
     public function testSkipsCollectionLockWhenTableMissing()

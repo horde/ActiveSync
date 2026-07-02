@@ -550,7 +550,9 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
             }
         }
 
-        throw new Horde_ActiveSync_Exception('Could not acquire collection lock.');
+        // Contention with a parallel request is a transient condition, not
+        // corrupt state - callers must not react with a state reset.
+        throw new Horde_ActiveSync_Exception_TemporaryFailure('Could not acquire collection lock.');
     }
 
     /**

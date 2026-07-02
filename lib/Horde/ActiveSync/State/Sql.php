@@ -430,7 +430,10 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                 if ($started) {
                     $this->_db->rollbackDbTransaction();
                 }
-                throw new Horde_ActiveSync_Exception('Collection lock held.');
+                // Contention with a parallel request is a transient
+                // condition, not corrupt state - callers must not react
+                // with a state reset.
+                throw new Horde_ActiveSync_Exception_TemporaryFailure('Collection lock held.');
             }
 
             $token = random_int(1, PHP_INT_MAX);
