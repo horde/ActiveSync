@@ -1337,12 +1337,25 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                             $e->getMessage()
                         )
                     );
-                    $this->_as->state->loadState(
-                        [],
-                        null,
-                        Horde_ActiveSync::REQUEST_TYPE_SYNC,
-                        $id
-                    );
+                    try {
+                        $this->_as->state->loadState(
+                            [],
+                            null,
+                            Horde_ActiveSync::REQUEST_TYPE_SYNC,
+                            $id
+                        );
+                    } catch (Horde_ActiveSync_Exception_TemporaryFailure $e) {
+                        // Reset blocked by a parallel request holding the
+                        // collection lock. Retry on the next poll iteration.
+                        $this->_logger->notice(
+                            sprintf(
+                                'COLLECTIONS: State reset for %s deferred: %s',
+                                $id,
+                                $e->getMessage()
+                            )
+                        );
+                        continue;
+                    }
                     $this->setGetChangesFlag($id);
                     $dataavailable = true;
                     continue;
@@ -1394,6 +1407,19 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                 } catch (Horde_ActiveSync_Exception_FolderGone $e) {
                     $this->_logger->warn('COLLECTIONS: Folder gone for collection ' . $collection['id']);
                     return self::COLLECTION_ERR_FOLDERSYNC_REQUIRED;
+                } catch (Horde_ActiveSync_Exception_TemporaryFailure $e) {
+                    // Transient contention (e.g. collection lock held by a
+                    // parallel SYNC). Skip this collection for now; it will
+                    // be retried on the next poll iteration. Do NOT reset
+                    // state for a transient condition.
+                    $this->_logger->notice(
+                        sprintf(
+                            'COLLECTIONS: Temporary failure loading state for %s; retrying next iteration: %s',
+                            $id,
+                            $e->getMessage()
+                        )
+                    );
+                    continue;
                 } catch (Horde_ActiveSync_Exception $e) {
                     $this->_logger->err('COLLECTIONS: Error loading state: ' . $e->getMessage());
                     $this->_as->state->loadState(
@@ -1437,12 +1463,25 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                             $e->getMessage()
                         )
                     );
-                    $this->_as->state->loadState(
-                        [],
-                        null,
-                        Horde_ActiveSync::REQUEST_TYPE_SYNC,
-                        $id
-                    );
+                    try {
+                        $this->_as->state->loadState(
+                            [],
+                            null,
+                            Horde_ActiveSync::REQUEST_TYPE_SYNC,
+                            $id
+                        );
+                    } catch (Horde_ActiveSync_Exception_TemporaryFailure $e) {
+                        // Reset blocked by a parallel request holding the
+                        // collection lock. Retry on the next poll iteration.
+                        $this->_logger->notice(
+                            sprintf(
+                                'COLLECTIONS: State reset for %s deferred: %s',
+                                $id,
+                                $e->getMessage()
+                            )
+                        );
+                        continue;
+                    }
                     $this->setGetChangesFlag($id);
                     $dataavailable = true;
                 } catch (Horde_ActiveSync_Exception_FolderGone $e) {

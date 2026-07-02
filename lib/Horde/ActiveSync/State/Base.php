@@ -1115,10 +1115,17 @@ abstract class Horde_ActiveSync_State_Base
             if ($type == Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC) {
                 $this->_folder = [];
             } else {
-                // Create a new folder object.
-                $this->_folder = ($this->_collection['class'] == Horde_ActiveSync::CLASS_EMAIL)
-                    ? new Horde_ActiveSync_Folder_Imap($this->_collection['serverid'], Horde_ActiveSync::CLASS_EMAIL)
-                    : ($this->_collection['serverid'] == 'RI' ? new Horde_ActiveSync_Folder_RI('RI', 'RI') : new Horde_ActiveSync_Folder_Collection($this->_collection['serverid'], $this->_collection['class']));
+                // Create a new folder object. The collection array may be
+                // empty when resetting state during error recovery.
+                $class = $this->_collection['class'] ?? null;
+                $serverid = $this->_collection['serverid'] ?? null;
+                if ($class == Horde_ActiveSync::CLASS_EMAIL) {
+                    $this->_folder = new Horde_ActiveSync_Folder_Imap($serverid, Horde_ActiveSync::CLASS_EMAIL);
+                } elseif ($serverid == 'RI') {
+                    $this->_folder = new Horde_ActiveSync_Folder_RI('RI', 'RI');
+                } else {
+                    $this->_folder = new Horde_ActiveSync_Folder_Collection($serverid, $class);
+                }
             }
             $this->_syncKey = '0';
             $lockFolderId = ($type == Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC)
