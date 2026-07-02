@@ -69,6 +69,13 @@ when a migration plan is written.
 - On a case-by-case basis, Horde\ActiveSync also owns default implementations as makes sense. These are marked final and reusable code is exposed as traits.
 - SQL, Mongo or other backends are owned by Horde\Core
 - Library owns a generic AuthBackendInterface, Core owns an implementation which ties into Horde Auth.
+- Certificate validation becomes a validator interface owned by
+  Horde\ActiveSync; Core owns the implementation and its configuration.
+  Today `Request_ValidateCert` performs the OpenSSL purpose/trust checks
+  (and the CRL/chain TODOs) inline in the request handler, which is the
+  wrong layer for that concern (review note on
+  [horde/ActiveSync#74](https://github.com/horde/ActiveSync/pull/74),
+  2026-07-02).
 - Interaction with orthogonal subsystems happens via PSR Events.
 
 ### Protocol and class layout
