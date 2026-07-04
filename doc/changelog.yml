@@ -1,4 +1,14 @@
 ---
+3.0.1:
+  api: 3.0.1
+  state:
+    release: stable
+    api: stable
+  date: 2026-07-04
+  license:
+    identifier: GPL-2.0-only
+    uri: https://spdx.org/licenses/GPL-2.0-only.html
+  notes: "fix(activesync): treat collection lock contention as transient during PING\nMerge pull request #74 from horde/security/activesync-hardening\ndocs(activesync): note ValidateCert validator extraction in H6 todo\nfix(activesync): correct ValidateCert OpenSSL result handling\nfix(activesync): harden Autodiscover parsing and escape XML responses\nfix(activesync): harden HTTP Basic auth header parsing"
 3.0.0:
   api: 3.0.0
   state:
