@@ -553,4 +553,22 @@ class AppointmentTest extends TestCase
         $this->assertFalse($message->getProperty('organizeremail'));
     }
 
+    public function testGetTimezoneReturnsFallbackForInvalidBlob()
+    {
+        $logger = new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null());
+        $appt = new Horde_ActiveSync_Message_Appointment(['logger' => $logger]);
+        $appt->timezone = '====';
+
+        $this->assertSame('Europe/Berlin', $appt->getTimezone('Europe/Berlin'));
+    }
+
+    public function testGetTimezoneReturnsFallbackWhenTimezoneEmpty()
+    {
+        $logger = new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null());
+        $appt = new Horde_ActiveSync_Message_Appointment(['logger' => $logger]);
+        $appt->timezone = '';
+
+        $this->assertSame('America/Chicago', $appt->getTimezone('America/Chicago'));
+    }
+
 }
