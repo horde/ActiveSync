@@ -407,12 +407,26 @@ class Horde_ActiveSync_Message_Appointment extends Horde_ActiveSync_Message_Base
     /**
      * Get the event's timezone
      *
+     * @param string|null $fallback  Timezone to use when the blob is missing,
+     *                               invalid, or cannot be resolved. Defaults to
+     *                               the server's default timezone.
+     *
      * @return string  The timezone identifier
      */
-    public function getTimezone()
+    public function getTimezone($fallback = null)
     {
-        $parser = new Horde_Mapi_Timezone();
-        return $parser->getTimezone($this->timezone, date_default_timezone_get());
+        if ($fallback === null) {
+            $fallback = date_default_timezone_get();
+        }
+        if ($this->isGhosted('timezone') || empty($this->timezone)) {
+            return $fallback;
+        }
+        try {
+            $parser = new Horde_Mapi_Timezone();
+            return $parser->getTimezone($this->timezone, $fallback);
+        } catch (Horde_Mapi_Exception $e) {
+            return $fallback;
+        }
     }
 
     /**
