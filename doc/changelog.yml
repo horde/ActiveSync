@@ -1,4 +1,14 @@
 ---
+3.0.2:
+  api: 3.0.2
+  state:
+    release: stable
+    api: stable
+  date: 2026-07-08
+  license:
+    identifier: GPL-2.0-only
+    uri: https://spdx.org/licenses/GPL-2.0-only.html
+  notes: "Merge pull request #79 from horde/fix/foldersync-empty-folderlist-guard\nfix(activesync): report no folder changes when getFolderList() is false\nMerge pull request #78 from horde/fix/imap-getimapob-null-guard\ntest(activesync): cover null IMAP client ping failure\nfix(activesync): preserve IMAP auth exception context\nUpdate _getImapOb() docblock @throws to Horde_Exception_AuthenticationFailure\nfix(activesync): guard against null IMAP client in _getImapOb()\nfix(activesync): handle invalid appointment timezone blobs in getTimezone()"
 3.0.1:
   api: 3.0.1
   state:
