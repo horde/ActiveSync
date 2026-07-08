@@ -1218,7 +1218,7 @@ class Horde_ActiveSync_Imap_Adapter
      * is not yet authenticated at the time of object creation.
      *
      * @return Horde_Imap_Client_Base
-     * @throws Horde_ActiveSync_Exception
+     * @throws Horde_Exception_AuthenticationFailure
      */
     protected function _getImapOb()
     {
