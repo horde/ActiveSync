@@ -59,6 +59,18 @@ class ImapAdapterTest extends TestCase
         $this->assertEquals(6000, $folder->pingModseq());
     }
 
+    public function testPingThrowsAuthenticationFailureWhenImapClientIsNull()
+    {
+        $adapter = new Horde_ActiveSync_Imap_Adapter([
+            'factory' => $this->_imapFactoryFixture(null),
+        ]);
+        $folder = new Horde_ActiveSync_Folder_Imap('INBOX', Horde_ActiveSync::CLASS_EMAIL);
+
+        $this->expectException(\Horde_Exception_AuthenticationFailure::class);
+
+        $adapter->ping($folder);
+    }
+
     public function testBug13711()
     {
         Bug13711Fixtures::setActiveSyncProtocolVersion('14.1');
