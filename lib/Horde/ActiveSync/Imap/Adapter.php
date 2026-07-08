@@ -1223,10 +1223,16 @@ class Horde_ActiveSync_Imap_Adapter
     protected function _getImapOb()
     {
         try {
-            return $this->_imap->getImapOb();
+            $imap = $this->_imap->getImapOb();
         } catch (Horde_ActiveSync_Exception $e) {
             throw new Horde_Exception_AuthenticationFailure('EMERGENCY - Unable to obtain the IMAP Client');
         }
+
+        if (empty($imap)) {
+            throw new Horde_Exception_AuthenticationFailure('EMERGENCY - Unable to obtain the IMAP Client');
+        }
+
+        return $imap;
     }
 
     /**
