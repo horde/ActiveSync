@@ -800,6 +800,12 @@ abstract class Horde_ActiveSync_State_Base
         $this->_logger->meta('STATE: Initializing folder diff engine');
         $folderlist = $this->_backend->getFolderList();
         if ($folderlist === false) {
+            // The backend could not produce a folder list (e.g. the mail
+            // server is temporarily unavailable). Report no changes rather
+            // than leaving $this->_changes unset (which would fatal on a
+            // later count()) or diffing against an empty list (which would
+            // delete the client's folders).
+            $this->_changes = [];
             return false;
         }
         // @TODO Remove in H6. We need to ensure we have 'serverid' in the
