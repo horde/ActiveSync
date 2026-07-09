@@ -414,8 +414,19 @@ abstract class Horde_ActiveSync_Driver_Base
         $rMap = array_flip($this->_typeMap);
         $prefix = $rMap[$type];
 
-        // None found, generate a new UID.
-        $this->_tempMap[$id] = sprintf('%s%04x%04x', $prefix, mt_rand(0, 0xffff), mt_rand(0, 0xffff));
+        // None found, generate a new UID. This is derived deterministically
+        // from the backend id (rather than mt_rand()) so that concurrent or
+        // repeated cache rebuilds for the same device (e.g. multiple EAS
+        // sessions racing a FolderSync reset after a hierarchy change such as
+        // moving contacts between address books) always reproduce the same UID
+        // for a given folder instead of a different random one each time.
+        // A random UID here made every reset diverge from the last one,
+        // which could cascade into devices with several concurrent
+        // Mail/Calendar/Contacts/Tasks/Notes sessions repeatedly invalidating
+        // each other's synckey and never settling.
+        //
+        // @author Torben Dannhauer <torben@dannhauer.de>
+        $this->_tempMap[$id] = sprintf('%s%08x', $prefix, crc32($prefix . ':' . $id));
         $this->_logger->meta(
             sprintf(
                 'Creating new folder uuid for %s: %s',
