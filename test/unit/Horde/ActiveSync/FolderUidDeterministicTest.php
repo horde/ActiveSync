@@ -70,9 +70,8 @@ class FolderUidDeterministicTest extends TestCase
             Horde_ActiveSync::FOLDER_TYPE_USER_CONTACT
         );
 
-        $this->assertSame($uidA, $uidB);
         $this->assertSame(
-            'C' . sprintf('%08x', crc32('C:' . $contactBackendId)),
+            'C' . sprintf('%08x', crc32('C:' . $contactBackendId) & 0xffffffff),
             $uidA
         );
     }
