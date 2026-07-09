@@ -500,7 +500,8 @@ class Horde_ActiveSync_Imap_Message
     {
         $part = $this->basePart->getPart($id);
         if ($part
-            && (strcasecmp($part->getCharset(), 'ISO-8859-1') === 0)) {
+            && $part->getCharset()
+            && strcasecmp($part->getCharset(), 'ISO-8859-1') === 0) {
             $part->setCharset('windows-1252');
         }
 
