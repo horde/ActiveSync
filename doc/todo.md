@@ -1,6 +1,6 @@
 # ActiveSync TODO
 
-Last reviewed: 2026-06-23
+Last reviewed: 2026-07-09
 
 This file tracks **remaining** work. For what the library already supports
 (protocol versions, commands, EAS 16.0 behaviour, deployment setup), see the
@@ -127,6 +127,51 @@ when a migration plan is written.
   to stop converting between them at runtime.
 - Consolidate folder UID ↔ backend ID mapping (today split across
   `Horde_ActiveSync_Collections` and the driver).
+- **Folder UID map vs volatile folder cache (long-term)**
+
+  When the folder hierarchy changes (e.g. multiplexed Turba address books
+  added/removed from ActiveSync), clients may issue concurrent EAS sessions.
+  `FolderSync` with `synckey=0` clears the per-device folder cache
+  (`State/Base.php` → `_resetDeviceState()` → `SyncCache::clearFolders()`).
+  The backend-id → EAS-folder-UID map lives in that cache
+  (`getFolderUidToBackendIdMap()`), so concurrent rebuilds can race on an
+  empty map while `FolderSync` is still exporting.
+
+  #81 (2026-07-09) mitigates this with deterministic UID generation when the
+  map is empty; see **Recently completed**. The structural issue remains:
+  folder identity should not depend on a cache that is wiped mid-rebuild.
+
+  **Long-term direction:**
+
+  1. **Persist UID assignments separately** — e.g. `(device_id, user,
+     backend_serverid)` → `eas_folder_uid`, updated on first assignment and
+     rename (`old_id` in `_getFolderUidForBackendId()`), not cleared by
+     `clearFolders()`. Hierarchy diff drives FolderSync Add/Update/Remove;
+     drop map entries only when the backend folder is gone.
+
+  2. **Or: atomic folder-cache rebuild** — build the new hierarchy in a
+     staging structure, swap in one `SyncCache::save()`; no empty-map window
+     visible to parallel SYNC/PING/FolderSync requests.
+
+  3. **Fold into Horde 6 storage refactor** — overlaps “Unify serverid vs
+     backend folder names” and “Fold SyncCache into device object” above.
+
+  **Key code paths:** `Driver/Base.php` (`_getFolderUidForBackendId`,
+  `_tempMap`), `State/Base.php` (`getFolderUidToBackendIdMap`, `loadState`
+  synckey `0`), `SyncCache.php` (`clearFolders`, `updateFolder`),
+  `Collections.php` (`getBackendIdForFolderUid`, `initHierarchySync`, `save`),
+  `Request/FolderSync.php`.
+
+  **Done when:** concurrent `FolderSync` `synckey=0` after a hierarchy
+  change yields one consistent saved UID map; devices converge without account
+  removal; renames preserve UID. Do not drop #81 deterministic generation
+  until (1) or (2) is in place.
+
+  **After structural fix:** Prefer switching back to opaque (e.g. random)
+  UIDs for *new* map entries. Deterministic derivation was only needed so
+  parallel rebuilds agreed while the map was empty; a persisted map assigns
+  each backend folder once and removes that race. Opaque IDs also avoid
+  leaking backend folder identity via a predictable `crc32(prefix:id)` scheme.
 - Pass `FILTERTYPE_*` to the driver by constant, not precomputed cutoff
   timestamps (supersedes the near-term `INCOMPLETETASKS` fix style).
 - Split `getMessage()` into per-class methods with shared base logic.
@@ -237,6 +282,8 @@ active backlog; kept here so this file does not resurrect settled work.
 
 ### Stability (3.0.0-RC1 and related)
 
+- Deterministic EAS folder UIDs on cache rebuild (#81, 2026-07-09); see
+  “Folder UID map vs volatile folder cache” for the remaining structural work.
 - `FILTERTYPE_INCOMPLETETASKS`: pass FilterType to the driver; incomplete-only
   task sync in `horde/core` / `horde/nag`; no longer encode filter `8` as a
   Unix cutoff (avoids mail/calendar misconfiguration).
