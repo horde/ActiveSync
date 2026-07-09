@@ -424,6 +424,14 @@ abstract class Horde_ActiveSync_Driver_Base
         // which could cascade into devices with several concurrent
         // Mail/Calendar/Contacts/Tasks/Notes sessions repeatedly invalidating
         // each other's synckey and never settling.
+        //
+        // crc32() returns a signed 32-bit integer on 64-bit PHP. Values with
+        // the high bit set become negative (e.g. -1 instead of 0xffffffff).
+        // Mask with 0xffffffff before sprintf('%08x') so the hex suffix is always
+        // an unsigned 32-bit value and matches what we stored previously or
+        // what clients already received; otherwise the same backend id could
+        // map to different UIDs depending on platform/sign.
+        //
         // @author Torben Dannhauer <torben@dannhauer.de>
         $crc = crc32($prefix . ':' . $id) & 0xffffffff;
         $this->_tempMap[$id] = sprintf('%s%08x', $prefix, $crc);
