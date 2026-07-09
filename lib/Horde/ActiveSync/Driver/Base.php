@@ -424,9 +424,9 @@ abstract class Horde_ActiveSync_Driver_Base
         // which could cascade into devices with several concurrent
         // Mail/Calendar/Contacts/Tasks/Notes sessions repeatedly invalidating
         // each other's synckey and never settling.
-        //
         // @author Torben Dannhauer <torben@dannhauer.de>
-        $this->_tempMap[$id] = sprintf('%s%08x', $prefix, crc32($prefix . ':' . $id));
+        $crc = crc32($prefix . ':' . $id) & 0xffffffff;
+        $this->_tempMap[$id] = sprintf('%s%08x', $prefix, $crc);
         $this->_logger->meta(
             sprintf(
                 'Creating new folder uuid for %s: %s',
