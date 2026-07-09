@@ -115,8 +115,8 @@ class Horde_ActiveSync_Request_MoveItems extends Horde_ActiveSync_Request_Base
                 $status = self::STATUS_SAME_FOLDERS;
             } else {
                 $importer = $this->_activeSync->getImporter();
-                $importer->init($this->_state, $move[self::SRCFLDKEY]);
                 try {
+                    $importer->init($this->_state, $move[self::SRCFLDKEY]);
                     $move_res = $importer->importMessageMove(
                         [$move[self::SRCMSGKEY]],
                         $move[self::DSTFLDKEY]
@@ -133,6 +133,9 @@ class Horde_ActiveSync_Request_MoveItems extends Horde_ActiveSync_Request_Base
                     } else {
                         $new_msgid = $move_res['results'][$move[self::SRCMSGKEY]];
                     }
+                } catch (Horde_ActiveSync_Exception_FolderGone $e) {
+                    $this->_logger->err($e->getMessage());
+                    $status = self::STATUS_INVALID_SRC;
                 } catch (Horde_ActiveSync_Exception $e) {
                     $this->_logger->err($e->getMessage());
                     $status = self::STATUS_INVALID_SRC;
