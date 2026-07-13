@@ -350,9 +350,19 @@ class Horde_ActiveSync_Request_Settings extends Horde_ActiveSync_Request_Base
         }
         $msg = Horde_ActiveSync::messageFactory('OofMessage');
         $msg->internal = '';
-        $msg->enabled = $info['oofmsgs'][0]['enabled'] ? 1 : "0";
-        $msg->reply = $info['oofmsgs'][0]['replymessage'];
-        $msg->bodytype = 'text';
+        $oofMsgs = $info->get('oofmsgs', []);
+        $oofMsg = (is_array($oofMsgs) && array_key_exists(0, $oofMsgs))
+            ? $oofMsgs[0]
+            : null;
+        if (is_array($oofMsg)) {
+            $msg->enabled = $oofMsg['enabled'] ? 1 : '0';
+            $msg->reply = $oofMsg['replymessage'] ?? '';
+            $msg->bodytype = $oofMsg['bodytype'] ?? 'text';
+        } else {
+            $msg->enabled = '0';
+            $msg->reply = '';
+            $msg->bodytype = 'text';
+        }
         $oof->messages[] = $msg;
 
         return $oof;
