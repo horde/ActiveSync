@@ -302,6 +302,15 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
             && is_resource($this->_stream->stream)) {
             fflush($this->_stream->stream);
         }
+        // The transport layer (Horde_Rpc_ActiveSync) removes PHP output
+        // buffers before streaming starts, but output_buffering=On or a
+        // non-Horde integrator may still have one active - flush() alone
+        // would not push its contents to the client. Only the topmost
+        // buffer can be flushed without ending it; clearing nested
+        // buffers remains the transport layer's responsibility.
+        if (ob_get_level()) {
+            @ob_flush();
+        }
         flush();
     }
 
