@@ -316,6 +316,8 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
      * available yet - e.g. while importing client-sent changes, which can
      * take far longer than the hard ~30 second read timeout of some clients
      * (Gmail Android).
+     *
+     * @see doc/sync-streaming.md
      */
     public function keepAlive()
     {
