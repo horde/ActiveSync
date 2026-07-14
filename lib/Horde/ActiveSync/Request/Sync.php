@@ -1001,11 +1001,13 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
             && $folderid = $this->_driver->getWasteBasket($collection['class'])) {
             $results = $importer->importMessageMove($removes, $folderid);
         } else {
-            $results = $importer->importMessageDeletion($removes, $collection['class']);
-            if (is_array($results)) {
-                $results['results'] = $results;
-                $results['missing'] = array_diff($removes, $results['results']);
-            }
+            // Mirror the ['results' => ..., 'missing' => ...] shape of
+            // importMessageMove(); importMessageDeletion() returns the
+            // plain list of successfully deleted uids.
+            $deleted = $importer->importMessageDeletion($removes, $collection['class']);
+            $results = is_array($deleted)
+                ? ['results' => $deleted, 'missing' => array_diff($removes, $deleted)]
+                : [];
         }
         if (!empty($results['missing'])) {
             $collection['missing'] = $results['missing'];
