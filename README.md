@@ -285,7 +285,22 @@ across three packages:
 |-------|-------------------------------------|
 | `horde/horde` `rpc.php` | Passes `$conf['activesync']['sync']['streaming']` to the RPC layer |
 | `horde/rpc` `Horde_Rpc_ActiveSync` | For `Cmd=Sync` POST only: skips the full-response output buffer, disables zlib compression, sends no `Content-Length` (the web server applies chunked transfer-encoding). All other commands (`GetAttachment`, `ItemOperations`, `Ping`, …) keep the buffered `Content-Length` response |
-| `horde/activesync` `Request_Sync` | Flushes WBXML to the client after the envelope status, after **every exported message** (`Encoder::flushOutput()`), and at each folder close |
+| `horde/activesync` `Request_Sync` | Flushes WBXML to the client after the envelope status, after **every exported message** (`Encoder::flushOutput()`), and at each folder close. Client-sent commands (up-sync) are imported **during response output** with keep-alive bytes flushed between imports (see below) |
+
+**Up-sync (deferred command import with keep-alives).** The export-phase
+flushing above does not help when the *incoming* side of a Sync request is
+slow: a large client upload batch (e.g. Gmail's `FullDraftsUpSync`, which can
+re-send hundreds of drafts in one request) used to be imported to the backend
+*while parsing the request*, before a single response byte was produced —
+easily exceeding the client's ~30 second read timeout with total silence on
+the wire. When streaming is enabled, `ADD`/`MODIFY`/`REMOVE` commands are
+therefore only *queued* during parsing and imported during response output,
+after the response preamble has been flushed, at the same logical position
+(before change detection and sync-key generation) the inline imports used to
+occupy. Between imports the encoder emits a **WBXML keep-alive token**
+(`Encoder::keepAlive()`: a redundant `SWITCH_PAGE` to the already-active code
+page, a semantic no-op for any conforming WBXML parser) and flushes, so
+response bytes keep flowing for the entire import phase.
 
 **`MoreAvailable` ordering without buffering.** MS-ASCMD requires
 `MoreAvailable` *before* `Commands` in the folder block. The legacy time
@@ -304,8 +319,8 @@ changed — HTTP 500 responses are only possible **before** streaming starts.
 
 | Phase | Error channel |
 |-------|---------------|
-| Pre-commit (policy check, request decode, incoming import, change poll) | HTTP 400/500, `Status` elements — unchanged |
-| Post-commit (after first flushed byte) | In-protocol only: folder `Status`, `SyncReplies`, `MoreAvailable`; a streaming abort handler catches exporter exceptions, logs them, and closes a valid WBXML envelope. Unsent changes stay in `sync_pending` |
+| Pre-commit (policy check, request decode, change poll) | HTTP 400/500, `Status` elements — unchanged |
+| Post-commit (after first flushed byte; includes the deferred import of client-sent commands) | In-protocol only: folder `Status`, `SyncReplies`, `MoreAvailable`; deferred import errors are recorded as per-command reply statuses, and a streaming abort handler catches exporter exceptions, logs them, and closes a valid WBXML envelope. Unsent changes stay in `sync_pending` |
 
 The RPC error paths guard `header()` calls with `headers_sent()`, so a
 post-commit failure degrades to a truncated (but prefix-valid) response the
@@ -332,7 +347,9 @@ behaviour (including the `maxresponsetime` budget) with no other changes.
 - The Sync handler logs
   `SYNC: starting response output N.Ns after request start (streaming on|off)`
   at INFO level — use it to verify streaming is active and to measure time
-  to first byte.
+  to first byte. Up-sync batches additionally log
+  `Queued N incoming changes for deferred import (streaming).` and
+  `SYNC: imported N deferred incoming change(s) for collection F… in N.Ns`.
 - Web-server-level buffering or compression on
   `/Microsoft-Server-ActiveSync` (lighttpd `mod_deflate`, nginx
   `gzip`/`proxy_buffering`, …) can re-introduce the timeout even with
