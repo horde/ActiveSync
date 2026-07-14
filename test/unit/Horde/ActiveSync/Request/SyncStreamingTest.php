@@ -14,9 +14,13 @@
 namespace Horde\ActiveSync;
 
 use Horde_ActiveSync;
+use Horde_ActiveSync_Connector_Importer;
 use Horde_ActiveSync_Log_Logger;
+use Horde_ActiveSync_Message_Base;
 use Horde_ActiveSync_Request_Sync;
+use Horde_ActiveSync_State_Base;
 use Horde_ActiveSync_Wbxml;
+use Horde_ActiveSync_Wbxml_Decoder;
 use Horde_ActiveSync_Wbxml_Encoder;
 use Horde_Log_Handler_Null;
 use Horde_Stream_Temp;
@@ -184,6 +188,158 @@ class SyncStreamingTest extends TestCase
         $encoder->swapOutputStream($saved);
 
         $this->assertGreaterThan(0, $bufferLength);
+    }
+
+    public function testKeepAliveTokensAreTransparentToDecoder()
+    {
+        $main = fopen('php://memory', 'wb+');
+        $encoder = $this->_encoder($main);
+
+        $encoder->startWBXML();
+        $encoder->keepAlive();
+        $encoder->startTag(Horde_ActiveSync::SYNC_SYNCHRONIZE);
+        $encoder->startTag(Horde_ActiveSync::SYNC_STATUS);
+        $encoder->keepAlive();
+        $encoder->content('1');
+        $encoder->endTag();
+        $encoder->keepAlive();
+        $encoder->endTag();
+
+        rewind($main);
+        $bytes = stream_get_contents($main);
+
+        // Keep-alive is a redundant SWITCH_PAGE to the active code page.
+        $this->assertSame(3, substr_count($bytes, chr(0x00) . chr(0x00)));
+
+        // A WBXML token parser must consume the document unchanged.
+        rewind($main);
+        $decoder = new Horde_ActiveSync_Wbxml_Decoder($main);
+        $decoder->readWbxmlHeader();
+        $this->assertNotFalse($decoder->getElementStartTag(Horde_ActiveSync::SYNC_SYNCHRONIZE));
+        $this->assertNotFalse($decoder->getElementStartTag(Horde_ActiveSync::SYNC_STATUS));
+        $this->assertSame('1', $decoder->getElementContent());
+        $this->assertNotFalse($decoder->getElementEndTag());
+        $this->assertNotFalse($decoder->getElementEndTag());
+    }
+
+    public function testWbxmlHeaderIsEmittedExactlyOnce()
+    {
+        $main = fopen('php://memory', 'wb+');
+        $encoder = $this->_encoder($main);
+
+        // keepAlive() before startWBXML() must pre-send the header;
+        // startWBXML() must not emit it a second time.
+        $encoder->keepAlive();
+        $encoder->startWBXML();
+        $encoder->startTag(Horde_ActiveSync::SYNC_SYNCHRONIZE);
+        $encoder->startTag(Horde_ActiveSync::SYNC_STATUS);
+        $encoder->content('1');
+        $encoder->endTag();
+        $encoder->endTag();
+
+        rewind($main);
+        $bytes = stream_get_contents($main);
+
+        $header = chr(0x03) . chr(0x01) . chr(106) . chr(0x00);
+        $this->assertSame(0, strpos($bytes, $header));
+        $this->assertSame(1, substr_count($bytes, $header));
+    }
+
+    public function testRunDeferredSyncCommandsImportsAndEmitsKeepAlives()
+    {
+        $sync = $this->_syncRequestWithoutConstructor();
+        $ref = new ReflectionClass($sync);
+
+        $appdata = $this->createMock(Horde_ActiveSync_Message_Base::class);
+
+        $importer = $this->createMock(Horde_ActiveSync_Connector_Importer::class);
+        $importer->expects($this->once())->method('init');
+        $importer->expects($this->exactly(2))
+            ->method('importMessageChange')
+            ->willReturnOnConsecutiveCalls(
+                // MODIFY result: stat array.
+                ['id' => '100', 'mod' => 1],
+                // ADD result: stat array with new server uid.
+                ['id' => '200', 'mod' => 1]
+            );
+
+        $as = $this->createMock(Horde_ActiveSync::class);
+        $as->method('getImporter')->willReturn($importer);
+
+        $main = fopen('php://memory', 'wb+');
+        $encoder = $this->_encoder($main);
+
+        foreach ([
+            '_activeSync' => $as,
+            '_device' => $this->createMock(\Horde_ActiveSync_Device::class),
+            '_state' => $this->createMock(Horde_ActiveSync_State_Base::class),
+            '_encoder' => $encoder,
+            '_logger' => new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null()),
+            '_deferredCommands' => [
+                'F1' => [
+                    'commands' => [
+                        [
+                            'type' => Horde_ActiveSync::SYNC_MODIFY,
+                            'serverid' => '100',
+                            'clientid' => false,
+                            'appdata' => $appdata,
+                        ],
+                        [
+                            'type' => Horde_ActiveSync::SYNC_ADD,
+                            'serverid' => false,
+                            'clientid' => 'client-1',
+                            'appdata' => $appdata,
+                        ],
+                    ],
+                ],
+            ],
+        ] as $property => $value) {
+            $prop = $ref->getProperty($property);
+            $prop->setAccessible(true);
+            $prop->setValue($sync, $value);
+        }
+
+        $collection = [
+            'id' => 'F1',
+            'class' => Horde_ActiveSync::CLASS_EMAIL,
+            'synckey' => '{uuid}5',
+            'conflict' => Horde_ActiveSync::CONFLICT_OVERWRITE_PIM,
+            'clientids' => [],
+        ];
+
+        $method = $ref->getMethod('_runDeferredSyncCommands');
+        $method->setAccessible(true);
+        $collectionArgs = [&$collection];
+        $method->invokeArgs($sync, $collectionArgs);
+
+        // Import results recorded like the inline (non-streaming) path.
+        $this->assertTrue($collection['importedchanges']);
+        $this->assertSame(['100'], $collection['modifiedids']);
+        $this->assertSame(['client-1' => '200'], $collection['clientids']);
+
+        // Queue consumed.
+        $deferredProp = $ref->getProperty('_deferredCommands');
+        $deferredProp->setAccessible(true);
+        $this->assertSame([], $deferredProp->getValue($sync));
+
+        // One keep-alive per imported command reached the output stream.
+        rewind($main);
+        $bytes = stream_get_contents($main);
+        $this->assertSame(2, substr_count($bytes, chr(0x00) . chr(0x00)));
+    }
+
+    public function testRunDeferredSyncCommandsNoopWithoutQueue()
+    {
+        $sync = $this->_syncRequestWithoutConstructor();
+        $ref = new ReflectionClass($sync);
+
+        $collection = ['id' => 'F1'];
+        $method = $ref->getMethod('_runDeferredSyncCommands');
+        $method->setAccessible(true);
+        $collectionArgs = [&$collection];
+        $method->invokeArgs($sync, $collectionArgs);
+
+        $this->assertSame(['id' => 'F1'], $collection);
     }
 
     protected function _encoder($stream)

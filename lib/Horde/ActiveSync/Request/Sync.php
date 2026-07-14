@@ -62,6 +62,29 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
     protected $_collections;
 
     /**
+     * Whether this Sync response is streamed to the client while the
+     * handler is still running (opt-in via the 'streaming' sync setting).
+     *
+     * @var boolean
+     */
+    protected $_streaming = false;
+
+    /**
+     * Client-sent Sync commands queued during request parsing for deferred
+     * import during response output (streaming only), keyed by collection
+     * id. Kept outside the collection arrays since entries contain message
+     * objects that must not end up in the sync cache or be serialized for
+     * partial-sync comparison.
+     *
+     * Each entry: array of
+     *   ['type' => SYNC_ADD|SYNC_MODIFY, 'serverid' => string|false,
+     *    'clientid' => string|false, 'appdata' => message object|null]
+     *
+     * @var array
+     */
+    protected $_deferredCommands = [];
+
+    /**
      * Handle the sync request
      *
      * @return boolean
@@ -86,6 +109,14 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
         // Defaults
         $this->_statusCode = self::STATUS_SUCCESS;
         $partial = false;
+
+        // Needed before parsing: when streaming, client-sent Sync commands
+        // are queued during parse and imported during response output (so
+        // response bytes flow while the server works; see
+        // _runDeferredSyncCommands()).
+        $syncSettings = $this->_driver->getSyncConfig();
+        $this->_streaming = !empty($syncSettings['streaming']);
+        $streaming = $this->_streaming;
 
         try {
             $this->_collections = $this->_activeSync->getCollectionsObject();
@@ -243,8 +274,6 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
         }
 
         $pingSettings = $this->_driver->getHeartbeatConfig();
-        $syncSettings = $this->_driver->getSyncConfig();
-        $streaming = !empty($syncSettings['streaming']);
         $syncTimeBudget = !empty($syncSettings['maxresponsetime'])
             ? (int) $syncSettings['maxresponsetime']
             : 0;
@@ -371,6 +400,23 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
             $changecount = 0;
 
             if ($over_window || $cnt_global > $this->_collections->getDefaultWindowSize()) {
+                // Client-sent commands must still be imported (matching the
+                // non-streaming flow, where imports happen during parsing
+                // even for over-window collections). Replies are skipped,
+                // exactly like the non-streaming over-window response; the
+                // client re-sends and duplicate detection resolves it.
+                if (!empty($this->_deferredCommands[$id])) {
+                    try {
+                        $this->_collections->initCollectionState($collection);
+                        $this->_runDeferredSyncCommands($collection);
+                    } catch (Horde_ActiveSync_Exception $e) {
+                        $this->_logger->err(sprintf(
+                            'Unable to import deferred commands for over-window collection %s: %s',
+                            $id,
+                            $e->getMessage()
+                        ));
+                    }
+                }
                 $this->_sendOverWindowResponse($collection);
                 continue;
             }
@@ -402,6 +448,18 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
             } catch (Horde_ActiveSync_Exception $e) {
                 $this->_logger->err($e->getMessage());
                 return false;
+            }
+
+            // Import client-sent commands deferred during parsing
+            // (streaming only). Runs at the same logical position as the
+            // legacy inline imports - before change detection and synckey
+            // generation - but now with response bytes already on the wire
+            // and keep-alive tokens flushed between imports, so clients
+            // with hard read timeouts (Gmail Android ~30s) do not abort
+            // while a large batch (e.g. a full Drafts up-sync) is written
+            // to the backend.
+            if ($statusCode == self::STATUS_SUCCESS) {
+                $this->_runDeferredSyncCommands($collection);
             }
 
             // Clients are allowed to NOT request changes. We still must check
@@ -841,6 +899,233 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
             && (microtime(true) - $syncOutputStart) >= $budget;
     }
 
+    /**
+     * Import a single client-sent ADD or MODIFY command and record the
+     * result in the collection array (replies, failures, atchash, ...).
+     *
+     * Shared by the inline (non-streaming) parse-phase import and the
+     * deferred (streaming) output-phase import.
+     *
+     * @param Horde_ActiveSync_Connector_Importer $importer  The importer.
+     * @param array $collection    The collection array, updated in place.
+     * @param string $commandType  SYNC_ADD or SYNC_MODIFY.
+     * @param string|boolean $serverid  Server id for MODIFY, false for ADD.
+     * @param string|boolean $clientid  Client id for ADD, false for MODIFY.
+     * @param Horde_ActiveSync_Message_Base $appdata  The message data.
+     */
+    protected function _importSyncCommand(
+        $importer,
+        array &$collection,
+        $commandType,
+        $serverid,
+        $clientid,
+        $appdata
+    ) {
+        switch ($commandType) {
+            case Horde_ActiveSync::SYNC_MODIFY:
+                $ires = $importer->importMessageChange(
+                    $serverid,
+                    $appdata,
+                    $this->_device,
+                    false,
+                    $collection['class'],
+                    $collection['synckey']
+                );
+                if (is_array($ires) && !empty($ires['error'])) {
+                    $collection['importfailures'][$ires[0]] = $ires['error'];
+                } elseif (is_array($ires)) {
+                    $collection['importedchanges'] = true;
+                    if (empty($collection['modifiedids'])) {
+                        $collection['modifiedids'] = [];
+                    }
+                    $collection['modifiedids'][] = $ires['id'];
+                    $collection['atchash'][$ires['id']] = !empty($ires['atchash'])
+                        ? $ires['atchash']
+                        : [];
+                }
+                break;
+
+            case Horde_ActiveSync::SYNC_ADD:
+                $ires = $importer->importMessageChange(
+                    false,
+                    $appdata,
+                    $this->_device,
+                    $clientid,
+                    $collection['class']
+                );
+                if (!$ires || !empty($ires['error'])) {
+                    $collection['clientids'][$clientid] = false;
+                } elseif ($clientid && is_array($ires)) {
+                    $collection['clientids'][$clientid] = $ires['id'];
+                    $collection['atchash'][$ires['id']] = !empty($ires['atchash'])
+                        ? $ires['atchash']
+                        : [];
+                    if (!empty($ires['conversationid'])) {
+                        $collection['conversations'][$ires['id']]
+                            = [$ires['conversationid'],
+                                $ires['conversationindex']];
+                    }
+                    $collection['importedchanges'] = true;
+                } elseif ($clientid && is_string($ires)) {
+                    // Duplicate addition; client never received UID.
+                    $collection['clientids'][$clientid] = $ires;
+                    $collection['importedchanges'] = true;
+                } elseif ($clientid) {
+                    $collection['clientids'][$clientid] = false;
+                }
+                break;
+        }
+    }
+
+    /**
+     * Import a batch of client-sent REMOVE commands.
+     *
+     * @param Horde_ActiveSync_Connector_Importer $importer  The importer.
+     * @param array $collection      The collection array, updated in place.
+     * @param array $removes         Server uids to remove.
+     * @param boolean $deletesasmoves  Move to trash instead of deleting.
+     */
+    protected function _importRemoves(
+        $importer,
+        array &$collection,
+        array $removes,
+        $deletesasmoves
+    ) {
+        if ($deletesasmoves
+            && $folderid = $this->_driver->getWasteBasket($collection['class'])) {
+            $results = $importer->importMessageMove($removes, $folderid);
+        } else {
+            $results = $importer->importMessageDeletion($removes, $collection['class']);
+            if (is_array($results)) {
+                $results['results'] = $results;
+                $results['missing'] = array_diff($removes, $results['results']);
+            }
+        }
+        if (!empty($results['missing'])) {
+            $collection['missing'] = $results['missing'];
+        }
+        $collection['importedchanges'] = true;
+    }
+
+    /**
+     * Import client-sent EAS 16.0 instance deletions.
+     *
+     * @param Horde_ActiveSync_Connector_Importer $importer  The importer.
+     * @param array $collection         The collection array.
+     * @param array $instanceidRemoves  Hash of uid => instanceid.
+     */
+    protected function _importInstanceIdRemoves(
+        $importer,
+        array &$collection,
+        array $instanceidRemoves
+    ) {
+        foreach ($instanceidRemoves as $uid => $instanceid) {
+            $importer->importMessageDeletion([$uid => $instanceid], $collection['class'], true);
+        }
+    }
+
+    /**
+     * Import client-sent Sync commands that were queued during request
+     * parsing (streaming only).
+     *
+     * Runs during response output, after the WBXML preamble has been
+     * flushed, at the same logical position the inline imports of the
+     * non-streaming flow occupy: before server-change detection and synckey
+     * generation for the collection. A WBXML keep-alive token is flushed
+     * after every imported command so clients with hard read timeouts keep
+     * receiving response body bytes during large up-sync batches.
+     *
+     * Import errors are recorded per command (reply status), never thrown:
+     * response bytes are already on the wire, so the request must finish
+     * with a valid WBXML envelope.
+     *
+     * @param array $collection  The collection array, updated in place.
+     */
+    protected function _runDeferredSyncCommands(array &$collection)
+    {
+        if (empty($this->_deferredCommands[$collection['id']])) {
+            return;
+        }
+        $deferred = $this->_deferredCommands[$collection['id']];
+        unset($this->_deferredCommands[$collection['id']]);
+
+        $importer = $this->_activeSync->getImporter();
+        $importer->init($this->_state, $collection['id'], $collection['conflict']);
+
+        $start = microtime(true);
+        $count = 0;
+        foreach ($deferred['commands'] ?? [] as $command) {
+            try {
+                $this->_importSyncCommand(
+                    $importer,
+                    $collection,
+                    $command['type'],
+                    $command['serverid'],
+                    $command['clientid'],
+                    $command['appdata']
+                );
+            } catch (Horde_Exception $e) {
+                $this->_logger->err(sprintf(
+                    'Deferred import failed for collection %s: %s',
+                    $collection['id'],
+                    $e->getMessage()
+                ));
+                if ($command['type'] == Horde_ActiveSync::SYNC_ADD
+                    && $command['clientid']) {
+                    $collection['clientids'][$command['clientid']] = false;
+                } elseif ($command['serverid']) {
+                    $collection['importfailures'][$command['serverid']]
+                        = self::STATUS_SERVERERROR;
+                }
+            }
+            ++$count;
+            $this->_encoder->keepAlive();
+        }
+
+        if (!empty($deferred['removes'])) {
+            try {
+                $this->_importRemoves(
+                    $importer,
+                    $collection,
+                    $deferred['removes'],
+                    !empty($deferred['deletesasmoves'])
+                );
+            } catch (Horde_Exception $e) {
+                $this->_logger->err(sprintf(
+                    'Deferred remove failed for collection %s: %s',
+                    $collection['id'],
+                    $e->getMessage()
+                ));
+            }
+            $count += count($deferred['removes']);
+            $this->_encoder->keepAlive();
+        }
+        if (!empty($deferred['instanceid_removes'])) {
+            try {
+                $this->_importInstanceIdRemoves(
+                    $importer,
+                    $collection,
+                    $deferred['instanceid_removes']
+                );
+            } catch (Horde_Exception $e) {
+                $this->_logger->err(sprintf(
+                    'Deferred instance remove failed for collection %s: %s',
+                    $collection['id'],
+                    $e->getMessage()
+                ));
+            }
+            $count += count($deferred['instanceid_removes']);
+            $this->_encoder->keepAlive();
+        }
+
+        $this->_logger->info(sprintf(
+            'SYNC: imported %d deferred incoming change(s) for collection %s in %.1fs (streaming).',
+            $count,
+            $collection['id'],
+            microtime(true) - $start
+        ));
+    }
+
     protected function _sendOverWindowResponse($collection)
     {
         $this->_logger->meta('Over window maximum, skip polling for this request.');
@@ -1058,7 +1343,12 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                 return false;
             }
 
-            if (!empty($collection['importedchanges'])) {
+            // Deferred (not yet imported) commands count as imported changes
+            // here: the flags gate looping sync and the empty-response
+            // shortcut, and a request carrying client commands must always
+            // produce a full response with replies.
+            if (!empty($collection['importedchanges'])
+                || !empty($this->_deferredCommands[$collection['id']])) {
                 $this->_collections->importedChanges = true;
             }
             if ($this->_collections->collectionExists($collection['id']) && !empty($collection['windowsize'])) {
@@ -1125,6 +1415,12 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
             $importer = $this->_activeSync->getImporter();
             $importer->init($this->_state, $collection['id'], $collection['conflict']);
         }
+
+        /* When streaming, queue ADD/MODIFY imports and REMOVE batches for
+         * execution during response output (_runDeferredSyncCommands()), so
+         * the potentially slow backend writes happen while response bytes
+         * are already flowing to the client. */
+        $deferring = $this->_streaming && !empty($collection['synckey']);
         $nchanges = 0;
         while (1) {
             // SYNC_MODIFY, SYNC_REMOVE, SYNC_ADD or SYNC_FETCH
@@ -1258,58 +1554,24 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
             if (!empty($collection['synckey'])) {
                 switch ($commandType) {
                     case Horde_ActiveSync::SYNC_MODIFY:
-                        if (isset($appdata)) {
-                            $ires = $importer->importMessageChange(
-                                $serverid,
-                                $appdata,
-                                $this->_device,
-                                false,
-                                $collection['class'],
-                                $collection['synckey']
-                            );
-                            if (is_array($ires) && !empty($ires['error'])) {
-                                $collection['importfailures'][$ires[0]] = $ires['error'];
-                            } elseif (is_array($ires)) {
-                                $collection['importedchanges'] = true;
-                                if (empty($collection['modifiedids'])) {
-                                    $collection['modifiedids'] = [];
-                                }
-                                $collection['modifiedids'][] = $ires['id'];
-                                $collection['atchash'][$ires['id']] = !empty($ires['atchash'])
-                                    ? $ires['atchash']
-                                    : [];
-                            }
-                        }
-                        break;
-
                     case Horde_ActiveSync::SYNC_ADD:
                         if (isset($appdata)) {
-                            $ires = $importer->importMessageChange(
-                                false,
-                                $appdata,
-                                $this->_device,
-                                $clientid,
-                                $collection['class']
-                            );
-                            if (!$ires || !empty($ires['error'])) {
-                                $collection['clientids'][$clientid] = false;
-                            } elseif ($clientid && is_array($ires)) {
-                                $collection['clientids'][$clientid] = $ires['id'];
-                                $collection['atchash'][$ires['id']] = !empty($ires['atchash'])
-                                    ? $ires['atchash']
-                                    : [];
-                                if (!empty($ires['conversationid'])) {
-                                    $collection['conversations'][$ires['id']]
-                                        = [$ires['conversationid'],
-                                            $ires['conversationindex']];
-                                }
-                                $collection['importedchanges'] = true;
-                            } elseif ($clientid && is_string($ires)) {
-                                // Duplicate addition; client never received UID.
-                                $collection['clientids'][$clientid] = $ires;
-                                $collection['importedchanges'] = true;
-                            } elseif ($clientid) {
-                                $collection['clientids'][$clientid] = false;
+                            if ($deferring) {
+                                $this->_deferredCommands[$collection['id']]['commands'][] = [
+                                    'type' => $commandType,
+                                    'serverid' => $serverid,
+                                    'clientid' => $clientid,
+                                    'appdata' => $appdata,
+                                ];
+                            } else {
+                                $this->_importSyncCommand(
+                                    $importer,
+                                    $collection,
+                                    $commandType,
+                                    $serverid,
+                                    $clientid,
+                                    $appdata
+                                );
                             }
                         }
                         break;
@@ -1337,33 +1599,49 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
             }
         }
 
-        // Do all the SYNC_REMOVE requests at once
-        if (!empty($collection['removes'])
-            && !empty($collection['synckey'])) {
-            if (!empty($collection['deletesasmoves']) && $folderid = $this->_driver->getWasteBasket($collection['class'])) {
-                $results = $importer->importMessageMove($collection['removes'], $folderid);
-            } else {
-                $results = $importer->importMessageDeletion($collection['removes'], $collection['class']);
-                if (is_array($results)) {
-                    $results['results'] = $results;
-                    $results['missing'] = array_diff($collection['removes'], $results['results']);
-                }
+        if ($deferring) {
+            // Hand REMOVE batches to the deferred runner as well.
+            if (!empty($collection['removes'])) {
+                $this->_deferredCommands[$collection['id']]['removes']
+                    = $collection['removes'];
+                $this->_deferredCommands[$collection['id']]['deletesasmoves']
+                    = !empty($collection['deletesasmoves']);
+                unset($collection['removes']);
             }
-            if (!empty($results['missing'])) {
-                $collection['missing'] = $results['missing'];
+            if (!empty($collection['instanceid_removes'])) {
+                $this->_deferredCommands[$collection['id']]['instanceid_removes']
+                    = $collection['instanceid_removes'];
+                unset($collection['instanceid_removes']);
             }
-            unset($collection['removes']);
-            $collection['importedchanges'] = true;
-        }
-        // EAS 16.0 instance deletions.
-        if (!empty($collection['instanceid_removes']) && !empty($collection['synckey'])) {
-            foreach ($collection['instanceid_removes'] as $uid => $instanceid) {
-                $importer->importMessageDeletion([$uid => $instanceid], $collection['class'], true);
+            $this->_logger->info(sprintf(
+                'Queued %d incoming changes for deferred import (streaming).',
+                $nchanges
+            ));
+        } else {
+            // Do all the SYNC_REMOVE requests at once
+            if (!empty($collection['removes'])
+                && !empty($collection['synckey'])) {
+                $this->_importRemoves(
+                    $importer,
+                    $collection,
+                    $collection['removes'],
+                    !empty($collection['deletesasmoves'])
+                );
+                unset($collection['removes']);
             }
-            unset($collection['instanceid_removes']);
-        }
+            // EAS 16.0 instance deletions.
+            if (!empty($collection['instanceid_removes'])
+                && !empty($collection['synckey'])) {
+                $this->_importInstanceIdRemoves(
+                    $importer,
+                    $collection,
+                    $collection['instanceid_removes']
+                );
+                unset($collection['instanceid_removes']);
+            }
 
-        $this->_logger->info(sprintf('Processed %d incoming changes', $nchanges));
+            $this->_logger->info(sprintf('Processed %d incoming changes', $nchanges));
+        }
 
         if (!$this->_decoder->getElementEndTag()) {
             // end commands

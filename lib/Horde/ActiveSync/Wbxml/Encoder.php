@@ -68,6 +68,17 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
     protected $_tempStream;
 
     /**
+     * Whether the WBXML document header was already written.
+     *
+     * Streaming Sync responses may pre-send the header (and keep-alive
+     * tokens) while the incoming request is still being processed; the
+     * regular startWBXML() call later must not emit it a second time.
+     *
+     * @var boolean
+     */
+    protected $_headerSent = false;
+
+    /**
      * Const'r
      *
      * @param stream $output      The output stream
@@ -114,9 +125,15 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
     /**
      * Output the Wbxml header to the output stream.
      *
+     * A no-op if the header was already written (streaming Sync responses
+     * pre-send it via keep-alive handling before the regular startWBXML()).
      */
     public function outputWbxmlHeader()
     {
+        if ($this->_headerSent) {
+            return;
+        }
+        $this->_headerSent = true;
         $this->_outByte(0x03);   // WBXML 1.3
         $this->_outMBUInt(0x01); // Public ID 1
         $this->_outMBUInt(106);  // UTF-8
@@ -286,6 +303,26 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
             fflush($this->_stream->stream);
         }
         flush();
+    }
+
+    /**
+     * Emit a WBXML keep-alive no-op and flush it to the client.
+     *
+     * Writes a SWITCH_PAGE token targeting the code page that is already
+     * active. Token-stream WBXML parsers (including this package's own
+     * decoder) process it without any semantic effect. Streaming Sync
+     * responses use this to keep response body bytes flowing while
+     * long-running server work is in progress and no protocol content is
+     * available yet - e.g. while importing client-sent changes, which can
+     * take far longer than the hard ~30 second read timeout of some clients
+     * (Gmail Android).
+     */
+    public function keepAlive()
+    {
+        $this->outputWbxmlHeader();
+        $this->_stream->add(chr(self::SWITCH_PAGE));
+        $this->_stream->add(chr($this->_tagcp));
+        $this->flushOutput();
     }
 
     /**

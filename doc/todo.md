@@ -39,20 +39,28 @@ roadmap — do not implement those entries piecemeal on the FRAMEWORK_6_0 /
 
   Streams Sync WBXML incrementally (chunked HTTP for `Cmd=Sync` only) so
   clients with ~30s read timeouts (Gmail Android) receive body bytes while
-  work continues. Behaviour, config keys (`streaming`,
-  `maxmessagesperresponse`, `maxmessagetime`, `maxrequestduration`, legacy
-  `maxresponsetime`), error model, and operator notes are documented in
-  `README.md` § *Sync response streaming*. Companion changes live in
-  `horde/rpc` (`Horde_Rpc_ActiveSync` streaming path) and `horde/horde`
-  (`rpc.php` config passthrough, `conf.xml` keys). Motivated by
-  [#77](https://github.com/horde/ActiveSync/issues/77).
+  work continues. Covers both directions: per-message flush on export, and
+  — since the 2026-07-14 reporter test exposed a 55.7s silent
+  `FullDraftsUpSync` import phase — deferred import of client-sent commands
+  during response output with WBXML keep-alive tokens
+  (`Encoder::keepAlive()`) flushed between imports. Behaviour, config keys
+  (`streaming`, `maxmessagesperresponse`, `maxmessagetime`,
+  `maxrequestduration`, legacy `maxresponsetime`), error model, and operator
+  notes are documented in `README.md` § *Sync response streaming*. Companion
+  changes live in `horde/rpc` (`Horde_Rpc_ActiveSync` streaming path) and
+  `horde/horde` (`rpc.php` config passthrough, `conf.xml` keys). Motivated
+  by [#77](https://github.com/horde/ActiveSync/issues/77).
 
   **Remaining before #83 can close:**
 
   - [x] Author deployment soak (streaming on): iOS Mail account re-add /
     fresh mail sync clean (2026-07-14).
-  - [ ] Gmail Android validation — no test device available to the author;
-    asking the #77 reporter to test from the feature branch.
+  - [x] Reporter test round 1 (2026-07-14): export-path streaming confirmed
+    working (stalled Inbox catch-up completed immediately); found the
+    up-sync gap (Drafts import before first byte), fixed via deferred
+    import + keep-alives.
+  - [ ] Gmail Android re-validation of the up-sync path (reporter, feature
+    branch) — includes keep-alive token tolerance of Gmail's WBXML parser.
   - [ ] Flip `streaming` default to `true` in `conf.xml` after validation.
   - [ ] Move this entry to **Recently completed** when #83 closes.
 
