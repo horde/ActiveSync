@@ -93,8 +93,11 @@ byte. When streaming is enabled:
   conflict detection against the change map all behave as before).
 - Between imports the encoder emits a **WBXML keep-alive**
   (`Encoder::keepAlive()`) and flushes, so bytes flow for the whole import
-  phase (one token per command; for a 200-command batch over ~55 s that is
-  a byte every ~0.3 s).
+  phase. Emission is throttled to at most one token per interval
+  (`keepaliveinterval` sync setting, default 15 s — safely below the ~30 s
+  read timeout of the strictest known clients while keeping the token
+  count minimal; a 200-command batch over ~55 s produces 3 tokens instead
+  of 200; `0` = one token per command).
 
 #### The keep-alive token
 
@@ -107,8 +110,11 @@ encoder guarantees the WBXML document header precedes the first keep-alive
 (`outputWbxmlHeader()` is idempotent and called from `keepAlive()`).
 
 Verified transparent against this package's own `Wbxml_Decoder`
-(`SyncStreamingTest::testKeepAliveTokensAreTransparentToDecoder`) and in
-practice against iOS and Gmail clients.
+(`SyncStreamingTest::testKeepAliveTokensAreTransparentToDecoder`).
+Real-world client tolerance is still being validated in
+[horde/ActiveSync#77](https://github.com/horde/ActiveSync/issues/77); the
+emission throttle exists so strict client parsers see only a handful of
+redundant tokens per response instead of hundreds.
 
 ## Error model: pre-commit vs post-commit
 
@@ -144,6 +150,7 @@ All keys under `$conf['activesync']['sync']` (for library embedders: the
 | `maxmessagesperresponse` | `10` | Count cap per response when streaming; more changes are announced via `MoreAvailable`. `0` = window size only |
 | `maxmessagetime` | `0` | Soft cap (seconds) for assembling a single message; stops the batch after a slow message. Streaming only. `0` = off |
 | `maxrequestduration` | `0` | Whole-request wall clock cap (seconds), measured from request start (includes the deferred import phase). Streaming only. `0` = off |
+| `keepaliveinterval` | `15` | Minimum seconds between WBXML keep-alive tokens during deferred import. `0` = one token per imported command. Keep below the strictest client read timeout (~30 s) |
 | `maxresponsetime` | `25` | **Legacy** export-phase time budget; only honored when `streaming` is `false` |
 
 `maxmessagesperresponse` is folded into the effective window size, so it can
@@ -157,8 +164,9 @@ INFO-level log lines to verify and measure streaming:
   — time to first byte; the primary health signal.
 - `Queued N incoming changes for deferred import (streaming).` — up-sync
   batch detected during parsing.
-- `SYNC: imported N deferred incoming change(s) for collection F… in N.Ns`
-  — duration of the deferred import phase.
+- `SYNC: imported N deferred incoming change(s) for collection F… in N.Ns,
+  N keep-alive(s) emitted` — duration of the deferred import phase and how
+  many keep-alive tokens went to the wire.
 
 ## Deployment prerequisites
 

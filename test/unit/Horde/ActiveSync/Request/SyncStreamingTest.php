@@ -275,6 +275,8 @@ class SyncStreamingTest extends TestCase
             '_state' => $this->createMock(Horde_ActiveSync_State_Base::class),
             '_encoder' => $encoder,
             '_logger' => new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null()),
+            // Interval 0: emit a keep-alive after every imported command.
+            '_keepAliveInterval' => 0,
             '_deferredCommands' => [
                 'F1' => [
                     'commands' => [
@@ -322,10 +324,54 @@ class SyncStreamingTest extends TestCase
         $deferredProp->setAccessible(true);
         $this->assertSame([], $deferredProp->getValue($sync));
 
-        // One keep-alive per imported command reached the output stream.
+        // One keep-alive per imported command reached the output stream
+        // (interval 0 disables the throttle).
         rewind($main);
         $bytes = stream_get_contents($main);
         $this->assertSame(2, substr_count($bytes, chr(0x00) . chr(0x00)));
+    }
+
+    public function testKeepAliveThrottleSuppressesTokensWithinInterval()
+    {
+        $sync = $this->_syncRequestWithoutConstructor();
+        $ref = new ReflectionClass($sync);
+
+        $main = fopen('php://memory', 'wb+');
+        $encoder = $this->_encoder($main);
+
+        foreach ([
+            '_encoder' => $encoder,
+            // Default-style interval: far longer than this test runs.
+            '_keepAliveInterval' => 15,
+            '_lastKeepAlive' => microtime(true),
+        ] as $property => $value) {
+            $prop = $ref->getProperty($property);
+            $prop->setAccessible(true);
+            $prop->setValue($sync, $value);
+        }
+
+        $method = $ref->getMethod('_emitKeepAlive');
+        $method->setAccessible(true);
+        $emitted = 0;
+        for ($i = 0; $i < 200; $i++) {
+            $emitted += $method->invoke($sync);
+        }
+
+        // Interval not elapsed: no token may reach the stream.
+        $this->assertSame(0, $emitted);
+        rewind($main);
+        $this->assertSame('', stream_get_contents($main));
+
+        // Backdate the last keep-alive beyond the interval: exactly one
+        // token is emitted, then the throttle closes again.
+        $prop = $ref->getProperty('_lastKeepAlive');
+        $prop->setAccessible(true);
+        $prop->setValue($sync, microtime(true) - 16);
+        $emitted = 0;
+        for ($i = 0; $i < 200; $i++) {
+            $emitted += $method->invoke($sync);
+        }
+        $this->assertSame(1, $emitted);
     }
 
     public function testRunDeferredSyncCommandsNoopWithoutQueue()

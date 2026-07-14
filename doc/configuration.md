@@ -180,6 +180,7 @@ ActiveSync → *Sync Response Delivery*):
 | `maxmessagesperresponse` | `10` | Count cap per response when streaming; more changes are announced via `MoreAvailable`. `0` = window size only |
 | `maxmessagetime` | `0` | Soft cap (seconds) for assembling a single message; stops the batch after a slow message. Streaming only. `0` = off |
 | `maxrequestduration` | `0` | Whole-request wall clock cap (seconds), measured from request start (includes import of client changes). Streaming only. `0` = off |
+| `keepaliveinterval` | `15` | Minimum seconds between WBXML keep-alive tokens during import of client changes. `0` = one token per imported command |
 | `maxresponsetime` | `25` | **Legacy** export-phase time budget; only honored when `streaming` is `false` |
 
 Rollback: set `streaming = false` to restore the buffered `Content-Length`
@@ -192,7 +193,8 @@ behaviour (including the `maxresponsetime` budget) with no other changes.
   at INFO level — use it to verify streaming is active and to measure time
   to first byte. Up-sync batches additionally log
   `Queued N incoming changes for deferred import (streaming).` and
-  `SYNC: imported N deferred incoming change(s) for collection F… in N.Ns`.
+  `SYNC: imported N deferred incoming change(s) for collection F… in N.Ns,
+  N keep-alive(s) emitted`.
 - Web-server-level buffering or compression on
   `/Microsoft-Server-ActiveSync` can re-introduce the timeout even with
   streaming enabled — PHP cannot disable it from inside the request. Exclude
