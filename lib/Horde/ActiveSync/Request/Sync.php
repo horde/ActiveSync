@@ -27,6 +27,7 @@
  *
  * @copyright 2009-2020 Horde LLC (http://www.horde.org)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
+ * @author    Torben Dannhauer <torben@dannhauer.de>
  * @package   ActiveSync
  * @internal
  */
@@ -243,9 +244,36 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
 
         $pingSettings = $this->_driver->getHeartbeatConfig();
         $syncSettings = $this->_driver->getSyncConfig();
+        $streaming = !empty($syncSettings['streaming']);
         $syncTimeBudget = !empty($syncSettings['maxresponsetime'])
             ? (int) $syncSettings['maxresponsetime']
             : 0;
+        if ($streaming && $syncTimeBudget > 0) {
+            /* Streaming supersedes the export-phase time budget: the
+             * Commands buffering the budget needs for MOREAVAILABLE
+             * reordering would defeat per-message flushing. */
+            $this->_logger->meta('Ignoring maxresponsetime; Sync response streaming is enabled.');
+            $syncTimeBudget = 0;
+        }
+        /* Count-based batch cap (streaming only). Capping the window before
+         * the Commands section starts lets truncation reuse the
+         * window-exceeded path, keeping MOREAVAILABLE before Commands
+         * without buffering. */
+        $maxMessagesPerResponse = $streaming
+            ? (int) ($syncSettings['maxmessagesperresponse'] ?? 10)
+            : 0;
+        /* Soft per-message assembly cap and whole-request wall clock
+         * (streaming only); both leave unsent changes in sync_pending. */
+        $maxMessageTime = $streaming
+            ? (int) ($syncSettings['maxmessagetime'] ?? 0)
+            : 0;
+        $maxRequestDuration = $streaming
+            ? (int) ($syncSettings['maxrequestduration'] ?? 0)
+            : 0;
+        $requestServerVars = $this->_activeSync->request->getServerVars();
+        $requestStart = !empty($requestServerVars['REQUEST_TIME_FLOAT'])
+            ? (float) $requestServerVars['REQUEST_TIME_FLOAT']
+            : microtime(true);
 
         // Override the total, per-request, WINDOWSIZE?
         if (!empty($pingSettings['maximumrequestwindowsize'])) {
@@ -308,11 +336,22 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
 
         // Start output to client
         $syncOutputStart = microtime(true);
+        $this->_logger->info(sprintf(
+            'SYNC: starting response output %.1fs after request start (streaming %s).',
+            $syncOutputStart - $requestStart,
+            $streaming ? 'on' : 'off'
+        ));
         $this->_encoder->startWBXML();
         $this->_encoder->startTag(Horde_ActiveSync::SYNC_SYNCHRONIZE);
         $this->_encoder->startTag(Horde_ActiveSync::SYNC_STATUS);
         $this->_encoder->content(self::STATUS_SUCCESS);
         $this->_encoder->endTag();
+        if ($streaming) {
+            /* First body bytes on the wire; keeps clients with hard read
+             * timeouts (Gmail ~30s) from aborting while messages are
+             * assembled below. */
+            $this->_encoder->flushOutput();
+        }
 
         // Start SYNC_FOLDERS
         $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDERS);
@@ -466,6 +505,11 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                     $max_windowsize = !empty($pingSettings['maximumwindowsize'])
                         ? min($collection['windowsize'], $pingSettings['maximumwindowsize'])
                         : $collection['windowsize'];
+                    $max_windowsize = $this->_streamingMaxWindowSize(
+                        $max_windowsize,
+                        $streaming,
+                        $maxMessagesPerResponse
+                    );
 
                     $countExceedsWindow = !empty($changecount)
                         && (($changecount > $max_windowsize)
@@ -476,7 +520,8 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                         $changecount,
                         $max_windowsize,
                         $cnt_global,
-                        $this->_collections->getDefaultWindowSize()
+                        $this->_collections->getDefaultWindowSize(),
+                        $streaming
                     );
 
                     // MOREAVAILABLE?
@@ -529,9 +574,30 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                                 break;
                             }
 
-                            $progress = $exporter->sendNextChange();
+                            $msgStart = microtime(true);
+                            try {
+                                $progress = $exporter->sendNextChange();
+                            } catch (Horde_Exception $e) {
+                                if (!$streaming) {
+                                    throw $e;
+                                }
+                                /* Post-commit abort: body bytes are already
+                                 * on the wire, so finish a valid WBXML
+                                 * envelope instead of letting the RPC layer
+                                 * attempt an HTTP 500. Unsent changes stay
+                                 * in sync_pending. */
+                                $this->_logger->err(sprintf(
+                                    'Streaming SYNC: aborting export for collection %s after error: %s',
+                                    $collection['id'],
+                                    $e->getMessage()
+                                ));
+                                break;
+                            }
                             if ($progress !== true) {
                                 break;
+                            }
+                            if ($streaming) {
+                                $this->_encoder->flushOutput();
                             }
                             $this->_logger->meta(
                                 sprintf(
@@ -541,6 +607,29 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                             );
                             ++$cnt_collection;
                             ++$cnt_global;
+
+                            if (!$exporter->hasPendingChanges()) {
+                                continue;
+                            }
+                            if ($this->_isGuardExceeded($msgStart, $maxMessageTime)) {
+                                $this->_logger->warn(sprintf(
+                                    'SYNC: single message took %.1fs (cap %ds) in collection %s; stopping batch, remaining changes stay in sync_pending.',
+                                    microtime(true) - $msgStart,
+                                    $maxMessageTime,
+                                    $collection['id']
+                                ));
+                                break;
+                            }
+                            if ($this->_isGuardExceeded($requestStart, $maxRequestDuration)) {
+                                $this->_logger->warn(sprintf(
+                                    'SYNC: request duration %.1fs exceeds cap (%ds) after %d change(s) in collection %s; stopping batch, remaining changes stay in sync_pending.',
+                                    microtime(true) - $requestStart,
+                                    $maxRequestDuration,
+                                    $cnt_collection,
+                                    $collection['id']
+                                ));
+                                break;
+                            }
                         }
                         $this->_encoder->endTag();
 
@@ -618,6 +707,9 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
 
             // End SYNC_FOLDER
             $this->_encoder->endTag();
+            if ($streaming) {
+                $this->_encoder->flushOutput();
+            }
             $this->_logger->meta(
                 sprintf(
                     'Collection output peak memory usage: %d',
@@ -631,6 +723,9 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
 
         // End SYNC_SYNCHRONIZE
         $this->_encoder->endTag();
+        if ($streaming) {
+            $this->_encoder->flushOutput();
+        }
 
         if ($this->_device->version >= Horde_ActiveSync::VERSION_TWELVEONE) {
             if ($this->_collections->checkStaleRequest()) {
@@ -651,11 +746,17 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
      * Should Sync Commands be buffered so MOREAVAILABLE can precede Commands
      * when a time budget stops the batch early?
      *
+     * Never buffer when streaming: buffering would hold all Commands bytes
+     * back until the batch completes, defeating per-message flushing.
+     * Truncation ordering is handled up front via the count-capped window
+     * instead (@see _streamingMaxWindowSize()).
+     *
      * @param integer $syncTimeBudget
      * @param integer $changecount
      * @param integer $maxWindowsize
      * @param integer $cntGlobal
      * @param integer $defaultWindowSize
+     * @param boolean $streaming
      *
      * @return boolean
      */
@@ -664,15 +765,57 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
         $changecount,
         $maxWindowsize,
         $cntGlobal,
-        $defaultWindowSize
+        $defaultWindowSize,
+        $streaming = false
     ) {
         $countExceedsWindow = !empty($changecount)
             && (($changecount > $maxWindowsize)
             || $cntGlobal + $changecount > $defaultWindowSize);
 
-        return $syncTimeBudget > 0
+        return !$streaming
+            && $syncTimeBudget > 0
             && !empty($changecount)
             && !$countExceedsWindow;
+    }
+
+    /**
+     * Reduce the effective per-collection window when streaming with a
+     * count-based response cap (maxmessagesperresponse).
+     *
+     * Capping the window before the Commands section starts means the
+     * truncation decision is known up front, so MOREAVAILABLE can be
+     * emitted before Commands (the only MS-ASCMD-valid ordering) without
+     * buffering the Commands output.
+     *
+     * @param integer $maxWindowsize          Effective window so far.
+     * @param boolean $streaming              Streaming enabled?
+     * @param integer $maxMessagesPerResponse Count cap, 0 = disabled.
+     *
+     * @return integer
+     */
+    protected function _streamingMaxWindowSize(
+        $maxWindowsize,
+        $streaming,
+        $maxMessagesPerResponse
+    ) {
+        if ($streaming && $maxMessagesPerResponse > 0) {
+            return min($maxWindowsize, $maxMessagesPerResponse);
+        }
+
+        return $maxWindowsize;
+    }
+
+    /**
+     * Has an elapsed-time guard been exceeded?
+     *
+     * @param float $start    Start time (microtime).
+     * @param integer $limit  Limit in seconds, 0 = disabled.
+     *
+     * @return boolean
+     */
+    protected function _isGuardExceeded($start, $limit)
+    {
+        return $limit > 0 && (microtime(true) - $start) >= $limit;
     }
 
     /**

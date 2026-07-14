@@ -10,7 +10,7 @@ talks to IMAP (mail), Kronolith (calendar), Turba (contacts), Nag (tasks), and
 Mnemo (notes).
 
 Open work and the Horde 6 roadmap are tracked in
-[`doc/Horde/ActiveSync/todo.md`](doc/Horde/ActiveSync/todo.md).
+[`doc/todo.md`](doc/todo.md).
 
 ## How it fits together
 
@@ -256,6 +256,101 @@ Handled in `horde/kronolith` (`Kronolith_Event::fromASAppointment()` /
 - `Ping` long-poll with configurable heartbeat bounds
 - `SyncCache` for in-request collection state
 - WBXML protocol logging at configurable verbosity
+- Streaming `Sync` response delivery (see
+  [Sync response streaming](#sync-response-streaming))
+
+## Sync response streaming
+
+### The problem
+
+Historically the whole `Sync` WBXML response was buffered
+(`Horde_Rpc_ActiveSync` wrapped the handler in a 1 MiB output buffer and sent
+the result with a `Content-Length` header). A client therefore received **no
+response body bytes** until the server had fetched and encoded the entire
+batch. Some clients — notably Gmail on Android — abort the connection after
+~30 seconds without body bytes (`SocketTimeout`), retry with the old sync
+key, and can end up in a broken state that only an account re-add or a
+server-side state reset resolves
+([horde/ActiveSync#77](https://github.com/horde/ActiveSync/issues/77)).
+
+The client timeout is on *time to first/next byte*, not on total request
+duration: a Sync may take minutes as long as data keeps arriving.
+
+### Architecture
+
+Implemented in [horde/ActiveSync#83](https://github.com/horde/ActiveSync/issues/83)
+across three packages:
+
+| Layer | Behaviour when streaming is enabled |
+|-------|-------------------------------------|
+| `horde/horde` `rpc.php` | Passes `$conf['activesync']['sync']['streaming']` to the RPC layer |
+| `horde/rpc` `Horde_Rpc_ActiveSync` | For `Cmd=Sync` POST only: skips the full-response output buffer, disables zlib compression, sends no `Content-Length` (the web server applies chunked transfer-encoding). All other commands (`GetAttachment`, `ItemOperations`, `Ping`, …) keep the buffered `Content-Length` response |
+| `horde/activesync` `Request_Sync` | Flushes WBXML to the client after the envelope status, after **every exported message** (`Encoder::flushOutput()`), and at each folder close |
+
+**`MoreAvailable` ordering without buffering.** MS-ASCMD requires
+`MoreAvailable` *before* `Commands` in the folder block. The legacy time
+budget solved this by buffering the whole `Commands` section — which defeats
+streaming. Instead, the count cap `maxmessagesperresponse` is folded into
+the effective window size *before* the `Commands` section starts, so
+truncation is always known up front and `MoreAvailable` is emitted through
+the existing window-exceeded path. The `Commands` buffer is never used when
+streaming, and the legacy `maxresponsetime` budget is ignored (a log notice
+is emitted if both are configured).
+
+### Error model: pre-commit vs post-commit
+
+Once the first body byte is flushed, the HTTP status line can no longer be
+changed — HTTP 500 responses are only possible **before** streaming starts.
+
+| Phase | Error channel |
+|-------|---------------|
+| Pre-commit (policy check, request decode, incoming import, change poll) | HTTP 400/500, `Status` elements — unchanged |
+| Post-commit (after first flushed byte) | In-protocol only: folder `Status`, `SyncReplies`, `MoreAvailable`; a streaming abort handler catches exporter exceptions, logs them, and closes a valid WBXML envelope. Unsent changes stay in `sync_pending` |
+
+The RPC error paths guard `header()` calls with `headers_sent()`, so a
+post-commit failure degrades to a truncated (but prefix-valid) response the
+client re-requests — never a mid-stream protocol violation.
+
+### Configuration
+
+All keys live under `$conf['activesync']['sync']` (Horde administration →
+ActiveSync → *Sync Response Delivery*):
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `streaming` | `false` | Master switch for streaming Sync delivery |
+| `maxmessagesperresponse` | `10` | Count cap per response when streaming; more changes are announced via `MoreAvailable`. `0` = window size only |
+| `maxmessagetime` | `0` | Soft cap (seconds) for assembling a single message; stops the batch after a slow message. Streaming only. `0` = off |
+| `maxrequestduration` | `0` | Whole-request wall clock cap (seconds), measured from request start (includes import of client changes). Streaming only. `0` = off |
+| `maxresponsetime` | `25` | **Legacy** export-phase time budget; only honored when `streaming` is `false` |
+
+Rollback: set `streaming = false` to restore the buffered `Content-Length`
+behaviour (including the `maxresponsetime` budget) with no other changes.
+
+### Operator notes
+
+- The Sync handler logs
+  `SYNC: starting response output N.Ns after request start (streaming on|off)`
+  at INFO level — use it to verify streaming is active and to measure time
+  to first byte.
+- Web-server-level buffering or compression on
+  `/Microsoft-Server-ActiveSync` (lighttpd `mod_deflate`, nginx
+  `gzip`/`proxy_buffering`, …) can re-introduce the timeout even with
+  streaming enabled — PHP cannot disable it from inside the request. Exclude
+  the ActiveSync path from response buffering/compression.
+- Streaming trades slightly more HTTP round-trips (smaller batches with
+  `MoreAvailable`) for reliability and lower peak memory.
+- A device already stuck from earlier timeouts may still need one account
+  re-add (or server-side device state removal) — streaming prevents the
+  breakage, it does not repair broken client state.
+
+### Non-goals
+
+- Client pacing of `MoreAvailable` follow-up requests (client behaviour).
+- Client state self-repair after an already-broken sync relationship.
+- The full Horde 6 request/response pipeline refactor (`doc/todo.md`) —
+  streaming is a tactical subset; the Changes-object and response-object
+  work remains on the roadmap.
 
 ## EAS 16.0 — what changed
 
@@ -420,7 +515,7 @@ lib/Horde/ActiveSync/
   Driver/                         Base, Mock backends
 migration/                        SQL schema for state tables
 test/unit/                        PHPUnit tests
-doc/Horde/ActiveSync/todo.md      Open work and Horde 6 refactor notes
+doc/todo.md                       Open work and Horde 6 refactor notes
 ```
 
 ## License
