@@ -28,6 +28,7 @@
  *
  * @copyright 2009-2020 Horde LLC (http://www.horde.org)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
+ * @author    Torben Dannhauer <torben@dannhauer.de>
  * @package   ActiveSync
  */
 use Horde\Util\HordeString;
@@ -267,6 +268,24 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
         $previous = $this->_stream;
         $this->_stream = $stream;
         return $previous;
+    }
+
+    /**
+     * Flush pending output to the underlying stream and, when writing to the
+     * SAPI output stream, on to the client.
+     *
+     * Used by streaming Sync responses so each exported message reaches
+     * clients with hard read timeouts (e.g. Gmail Android at ~30 seconds)
+     * while the remaining batch is still being assembled. A no-op in effect
+     * when the output stream is a memory or temp stream (tests, buffers).
+     */
+    public function flushOutput()
+    {
+        if (isset($this->_stream->stream)
+            && is_resource($this->_stream->stream)) {
+            fflush($this->_stream->stream);
+        }
+        flush();
     }
 
     /**

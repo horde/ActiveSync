@@ -1,6 +1,6 @@
 # ActiveSync TODO
 
-Last reviewed: 2026-07-09
+Last reviewed: 2026-07-14
 
 This file tracks **remaining** work. For what the library already supports
 (protocol versions, commands, EAS 16.0 behaviour, deployment setup), see the
@@ -31,6 +31,33 @@ roadmap — do not implement those entries piecemeal on the FRAMEWORK_6_0 /
   Not supported — Nag uses fixed RRULE + `completions[]`, not post-completion
   regenerated due dates. Phase 0 (2026-06-23) saw `Regenerate=0` only on
   Outlook weekly-series traffic. Documented in `README.md` (Tasks section).
+
+## Near-term reliability (FRAMEWORK_6_0)
+
+- **Sync response streaming ([#83](https://github.com/horde/ActiveSync/issues/83))
+  — implemented 2026-07-14, awaiting client validation**
+
+  Streams Sync WBXML incrementally (chunked HTTP for `Cmd=Sync` only) so
+  clients with ~30s read timeouts (Gmail Android) receive body bytes while
+  work continues. Behaviour, config keys (`streaming`,
+  `maxmessagesperresponse`, `maxmessagetime`, `maxrequestduration`, legacy
+  `maxresponsetime`), error model, and operator notes are documented in
+  `README.md` § *Sync response streaming*. Companion changes live in
+  `horde/rpc` (`Horde_Rpc_ActiveSync` streaming path) and `horde/horde`
+  (`rpc.php` config passthrough, `conf.xml` keys). Motivated by
+  [#77](https://github.com/horde/ActiveSync/issues/77).
+
+  **Remaining before #83 can close:**
+
+  - [x] Author deployment soak (streaming on): iOS Mail account re-add /
+    fresh mail sync clean (2026-07-14).
+  - [ ] Gmail Android validation — no test device available to the author;
+    asking the #77 reporter to test from the feature branch.
+  - [ ] Flip `streaming` default to `true` in `conf.xml` after validation.
+  - [ ] Move this entry to **Recently completed** when #83 closes.
+
+  Partial step toward “Request / response pipeline” and “Changes object”
+  below; not a substitute for the full Horde 6 response-object refactor.
 
 ## Operations and monitoring (out of library scope)
 
@@ -96,6 +123,9 @@ when a migration plan is written.
 - Replace `Horde_Controller_Request_Http` with a library-local HTTP request
   object; add a matching response object and move header logic out of
   `Horde_Rpc_ActiveSync`.
+- **Interim (FRAMEWORK_6_0):** Sync-only chunked streaming in
+  `Horde_Rpc_ActiveSync` ([#83](https://github.com/horde/ActiveSync/issues/83));
+  full `horde/http` response object remains Horde 6.
 - Move non-server helpers out of `Horde_ActiveSync` (truncation helpers,
   version negotiation utilities, etc.).
 - Leverage horde/version
@@ -188,7 +218,9 @@ when a migration plan is written.
 - Collection object replacing the associative collection array in `Sync.php`.
 - Changes object (array, `SplFixedArray`, or temp stream) to cap memory on
   large initial mailbox syncs and to unify the `add` / `modify` / `delete`
-  shapes between email and PIM collections.
+  shapes between email and PIM collections. Streaming v1 ([#83](https://github.com/horde/ActiveSync/issues/83))
+  uses count-based `maxmessagesperresponse` and per-message flush instead; a
+  proper Changes object can follow in Horde 6.
 - Sync-reply objects per collection type; move logic out of
   `Horde_ActiveSync_Connector_Exporter_Sync`.
 - Configuration builder for server/driver construction (Ping-related settings
