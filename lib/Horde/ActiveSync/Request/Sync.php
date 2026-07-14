@@ -91,6 +91,27 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
     protected $_deferredCommands = [];
 
     /**
+     * Minimum seconds between WBXML keep-alive tokens during deferred
+     * import (streaming only). Keeps the token count low (a handful per
+     * import phase instead of one per command) while still staying safely
+     * below the ~30 second read timeout of the strictest known clients
+     * (Gmail Android). 0 = emit after every imported command. Tunable via
+     * the 'keepaliveinterval' sync setting for client-compatibility
+     * diagnostics.
+     *
+     * @var integer
+     */
+    protected $_keepAliveInterval = 15;
+
+    /**
+     * Timestamp of the last emitted keep-alive (or of the flushed response
+     * preamble). @see _emitKeepAlive()
+     *
+     * @var float
+     */
+    protected $_lastKeepAlive = 0.0;
+
+    /**
      * Handle the sync request
      *
      * @return boolean
@@ -123,6 +144,9 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
         $syncSettings = $this->_driver->getSyncConfig();
         $this->_streaming = !empty($syncSettings['streaming']);
         $streaming = $this->_streaming;
+        if (isset($syncSettings['keepaliveinterval'])) {
+            $this->_keepAliveInterval = max(0, (int)$syncSettings['keepaliveinterval']);
+        }
 
         try {
             $this->_collections = $this->_activeSync->getCollectionsObject();
@@ -1039,9 +1063,11 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
      * Runs during response output, after the WBXML preamble has been
      * flushed, at the same logical position the inline imports of the
      * non-streaming flow occupy: before server-change detection and synckey
-     * generation for the collection. A WBXML keep-alive token is flushed
-     * after every imported command so clients with hard read timeouts keep
-     * receiving response body bytes during large up-sync batches.
+     * generation for the collection. Between imports a WBXML keep-alive
+     * token is flushed at most once per $_keepAliveInterval seconds so
+     * clients with hard read timeouts keep receiving response body bytes
+     * during large up-sync batches without flooding strict WBXML parsers
+     * with redundant tokens.
      *
      * Import errors are recorded per command (reply status), never thrown:
      * response bytes are already on the wire, so the request must finish
@@ -1061,6 +1087,9 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
         $importer->init($this->_state, $collection['id'], $collection['conflict']);
 
         $start = microtime(true);
+        // The preamble was just flushed; keep-alive pacing starts here.
+        $this->_lastKeepAlive = $start;
+        $keepAlives = 0;
         $count = 0;
         foreach ($deferred['commands'] ?? [] as $command) {
             try {
@@ -1087,7 +1116,7 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                 }
             }
             ++$count;
-            $this->_encoder->keepAlive();
+            $keepAlives += $this->_emitKeepAlive();
         }
 
         if (!empty($deferred['removes'])) {
@@ -1106,7 +1135,7 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                 ));
             }
             $count += count($deferred['removes']);
-            $this->_encoder->keepAlive();
+            $keepAlives += $this->_emitKeepAlive();
         }
         if (!empty($deferred['instanceid_removes'])) {
             try {
@@ -1123,15 +1152,34 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                 ));
             }
             $count += count($deferred['instanceid_removes']);
-            $this->_encoder->keepAlive();
+            $keepAlives += $this->_emitKeepAlive();
         }
 
         $this->_logger->info(sprintf(
-            'SYNC: imported %d deferred incoming change(s) for collection %s in %.1fs (streaming).',
+            'SYNC: imported %d deferred incoming change(s) for collection %s in %.1fs, %d keep-alive(s) emitted (streaming).',
             $count,
             $collection['id'],
-            microtime(true) - $start
+            microtime(true) - $start,
+            $keepAlives
         ));
+    }
+
+    /**
+     * Emit a WBXML keep-alive if the configured interval has elapsed since
+     * the last one (or since the flushed response preamble).
+     *
+     * @return integer  1 if a keep-alive was emitted, 0 otherwise.
+     */
+    protected function _emitKeepAlive()
+    {
+        $now = microtime(true);
+        if ($now - $this->_lastKeepAlive < $this->_keepAliveInterval) {
+            return 0;
+        }
+        $this->_lastKeepAlive = $now;
+        $this->_encoder->keepAlive();
+
+        return 1;
     }
 
     protected function _sendOverWindowResponse($collection)
