@@ -1,523 +1,90 @@
 # Horde ActiveSync
 
-PHP library implementing the Microsoft Exchange ActiveSync (EAS) protocol. It
-decodes WBXML requests from mobile clients, drives synchronization through a
-pluggable backend driver, and encodes WBXML responses.
+PHP library implementing the Microsoft Exchange ActiveSync (EAS) protocol,
+versions **2.5 through 16.1**. It decodes WBXML requests from mobile clients,
+drives synchronization through a pluggable backend driver, and encodes WBXML
+responses — including streamed `Sync` response delivery for clients with hard
+read timeouts.
 
 In a typical Horde deployment, this package is the **protocol engine**. The
 **data backend** lives in `horde/core` as `Horde_Core_ActiveSync_Driver`, which
 talks to IMAP (mail), Kronolith (calendar), Turba (contacts), Nag (tasks), and
-Mnemo (notes).
+Mnemo (notes). The library itself has no Horde application dependencies at
+runtime and can be embedded with a custom driver.
 
-Open work and the Horde 6 roadmap are tracked in
-[`doc/todo.md`](doc/todo.md).
+## Documentation
 
-## How it fits together
+The documentation is split by audience:
+
+| You are… | You want to… | Read |
+|----------|--------------|------|
+| **Administrator / end user** | Enable ActiveSync, configure protocol versions, streaming, logging, the web server endpoint, and per-user policy | [`doc/configuration.md`](doc/configuration.md) |
+| **Library user / integrator** | Embed the library in your own product: server object, driver API, state backends, custom backends | [`doc/integration.md`](doc/integration.md) |
+| **ActiveSync developer** | Understand the internals: components, request lifecycle, Sync anatomy, state machine, tests | [`doc/architecture.md`](doc/architecture.md) |
+
+Cross-cutting references, useful to all three:
+
+| Topic | Read |
+|-------|------|
+| Supported EAS protocol versions, negotiation, and what each version adds | [`doc/protocol-versions.md`](doc/protocol-versions.md) |
+| Streamed `Sync` response delivery — design, error model, tuning | [`doc/sync-streaming.md`](doc/sync-streaming.md) |
+| Open work and the Horde 6 roadmap | [`doc/todo.md`](doc/todo.md) |
+
+## At a glance
 
 ```
-Mobile client (Outlook, iOS Mail, …)
+Mobile client (Outlook, iOS Mail, Gmail, …)
         │  HTTPS POST, WBXML body
         ▼
 Web server  →  /Microsoft-Server-ActiveSync  (rewritten to Horde rpc.php)
         │
         ▼
-Horde_Rpc_ActiveSync
+Horde_Rpc_ActiveSync                (horde/rpc)
         │
         ▼
-Horde_ActiveSync                 ← this library
+Horde_ActiveSync                    ← this library
   ├── Request handlers (Sync, FolderSync, Ping, …)
   ├── Message classes (Appointment, Mail, Contact, …)
   ├── WBXML encoder/decoder
   └── Horde_ActiveSync_Driver_Base  (abstract backend API)
         │
         ▼
-Horde_Core_ActiveSync_Driver     ← horde/core (Horde deployment)
+Horde_Core_ActiveSync_Driver        (horde/core, in a Horde deployment)
   └── Horde_Core_ActiveSync_Connector → Horde apps / IMAP
 ```
 
-### Main classes
-
-| Class | Role |
-|-------|------|
-| `Horde_ActiveSync` | Server entry point: auth, version negotiation, request dispatch |
-| `Horde_ActiveSync_Request_*` | One class per EAS command (`Sync`, `FolderSync`, `Find`, …) |
-| `Horde_ActiveSync_Message_*` | Typed WBXML property maps for each item type |
-| `Horde_ActiveSync_Driver_Base` | Abstract backend all data access goes through |
-| `Horde_ActiveSync_State_Sql` / `_Mongo` | Device state, sync keys, change maps |
-| `Horde_ActiveSync_Device` | Per-device metadata (type, policy key, remote wipe) |
-| `Horde_ActiveSync_Wbxml_*` | Low-level WBXML encode/decode and protocol logging |
-
-Message objects are version-aware: constructors accept
-`protocolversion` and adjust their property maps for the negotiated EAS level.
-
-## Protocol versions
-
-The library defines constants for EAS **2.5**, **12.0**, **12.1**, **14.0**,
-**14.1**, **16.0** and **16.1**.
-
-| Version | Status in this tree |
-|---------|---------------------|
-| 2.5 – 14.1 | Mature; long-standing Horde support |
-| **16.0** | Supported end-to-end for production use (see below) |
-| **16.1** | Supported. It extends 16.0 with meeting proposals and account-only wipe (see below) |
-
-### How version negotiation works
-
-Two related values matter on each request:
-
-1. **Server ceiling** (`Horde_ActiveSync::$_maxVersion`, set via
-   `setSupportedVersion()`). Controls what the server **advertises** in
-   `OPTIONS` / `MS-ASProtocolVersions` and `MS-Server-ActiveSync`, and which
-   command sets are available.
-2. **Session protocol version** (client header `MS-ASProtocolVersion`, or
-   `ProtVer` in GET for very old clients). The level actually used for WBXML
-   encoding/decoding on that request. The client must not exceed what it
-   offered and what the server supports.
-
-Clients normally negotiate down: a device that sends `MS-ASProtocolVersion: 16.0`
-against a server ceiling of `14.1` will sync at 14.1.
-
-In a Horde deployment the ceiling is applied in **layers** (see next section).
-The library itself only exposes `setSupportedVersion()`; per-user and
-per-device policy is implemented in `Horde_Core_ActiveSync_Driver::versionCallback()`
-and invoked at the start of every `Horde_ActiveSync::handleRequest()` call,
-before authentication completes.
-
-### Protocol version configuration (Horde)
-
-Three mechanisms stack together. None of them are personal **preferences**
-(users cannot change their own EAS version under Preferences); per-user limits
-are **administrator permissions**.
-
-#### 1. Global ceiling (all users, default)
-
-Set in Horde administration -> ActiveSync -> *What is the highest version of EAS
-that Horde should support?*, or in `conf.php`:
-
-```php
-$conf['activesync']['version'] = '16.1';
-```
-
-`Horde_Core_Factory_ActiveSyncServer` calls `setSupportedVersion()` with this
-value when the server object is created. This is the baseline for every request.
-
-#### 2. Per-user ceiling (permissions)
-
-Default mode: `version_mode` is **`user`** when unset.
-
-Administrators can assign **Maximum ActiveSync protocol version**
-(`horde:activesync:version`) per user or group under Horde administration →
-Permissions → ActiveSync. Allowed values: `2.5`, `12.0`, `12.1`, `14.0`,
-`14.1`, `16.0`, and `16.1`.
-
-On each request, `versionCallback()` resolves the authenticated Horde username
-(from HTTP Basic credentials, the `User` GET parameter, or the registry) and
-reads that permission. If set, it calls `setSupportedVersion()` again for this
-request only.
-
-| Situation | Effective ceiling for this request |
-|-----------|-------------------------------------|
-| Permission empty / permission tree not defined | Global `conf['activesync']['version']` only |
-| User permission **lower** than global (e.g. user `14.1`, global `16.0`) | User value — caps that user below the site default |
-| User permission **higher** than global (e.g. user `16.0`, global `14.1`) | User value — can raise the advertised ceiling above the admin default for that user |
-| User in multiple groups with different values | **Lowest** (most restrictive) allowed version |
-
-The last row matters for group-based permissions: if one group allows `16.0` and
-another `14.1`, the user syncs at `14.1`.
-
-#### 3. Per-device ceiling (hook)
-
-For device-specific policy (pilot devices, problematic clients, lab handsets),
-set in `conf.php`:
-
-```php
-$conf['activesync']['version_mode'] = 'device';
-```
-
-Then implement `activesync_device_version()` in `config/hooks.php` (see
-`vendor/horde/horde/config/hooks.php.dist`):
-
-```php
-public function activesync_device_version($deviceId, $user)
-{
-    // $deviceId is normalised to uppercase.
-    $map = [
-        'OLD-OUTLOOK-DEVICE-ID' => '14.1',
-        'TEST-IPHONE-ID'        => '16.0',
-    ];
-
-    return $map[$deviceId] ?? null;
-}
-```
-
-Hook return values:
-
-| Return | Meaning |
-|--------|---------|
-| String, e.g. `'16.0'` | Use this ceiling for the device |
-| Array of version strings | **Lowest** (most restrictive) entry is used |
-| `null`, `false`, `''`, or `-1` | No override; fall back to global / user permission behaviour |
-
-`DeviceId` must be present in the request (standard on all sync commands). If
-the hook is not defined or returns no override, behaviour depends on
-`version_mode`: in **`device`** mode with no hook result, no permission override
-is applied; switch back to **`user`** mode to use group permissions as the
-primary per-principal control.
-
-#### Choosing `user` vs `device` mode
-
-| `version_mode` | Source of per-request override |
-|----------------|-------------------------------|
-| `user` (default) | `horde:activesync:version` permission |
-| `device` | `activesync_device_version` hook |
-
-Only one mode is active per installation. Use **permissions** for
-account/class-of-user policy; use the **hook** when the device ID is the right
-key (e.g. force an old Outlook build to `14.1` while everyone else stays on
-`16.0`).
-
-#### Custom / non-Horde drivers
-
-Any backend driver may implement `versionCallback(Horde_ActiveSync $server)` the
-same way as `Horde_Core_ActiveSync_Driver`. The library checks
-`is_callable([$driver, 'versionCallback'])` on every request. Integrators
-without Horde permissions can set policy entirely inside that method.
-
-## EAS commands
-
-Commands advertised for EAS ≥ 12.0 (including 16.0):
-
-`Sync`, `SendMail`, `SmartForward`, `SmartReply`, `GetAttachment`,
-`GetHierarchy`, `CreateCollection`, `DeleteCollection`, `MoveCollection`,
-`FolderSync`, `FolderCreate`, `FolderDelete`, `FolderUpdate`, `MoveItems`,
-`GetItemEstimate`, `MeetingResponse`, `Search`, `Settings`, `Ping`,
-`ItemOperations`, `Provision`, `ResolveRecipients`, `ValidateCert`, **`Find`**
-
-EAS 2.5 omits `Settings`, `ItemOperations`, and `Find`.
-
-`OPTIONS` and **Autodiscover** are handled outside the normal command loop via
-`Horde_Rpc_ActiveSync`.
-
-## Implemented feature set
-
-### Mail (EAS `Email` class)
-
-- Folder hierarchy sync, message sync, flags, categories
-- Send, reply, forward (`SendMail`, `SmartReply`, `SmartForward`)
-- Attachments (`GetAttachment`, `ItemOperations:Fetch`)
-- Meeting requests embedded in mail
-- Body preferences and truncation (`AirSyncBase:Body`)
-- Draft folder sync; **EAS 16.0** draft edit detection (`CHANGE_TYPE_DRAFT`)
-  and draft send via `POOMMAIL2:Send`
-- **EAS 16.0** `Forwardee` objects on forward/reply
-- GAL search (`Search`, `ResolveRecipients`)
-- **EAS 16.0** mailbox `Find` with KQL parser (`Horde_ActiveSync_Find_Kql`)
-  supporting boolean operators, property restrictions, dates, and size
-
-### Calendar (EAS `Calendar` class)
-
-Handled in `horde/kronolith` (`Kronolith_Event::fromASAppointment()` /
-`toASAppointment()`) with logic in this library's `Message/Appointment` and
-`Message/Exception` classes.
-
-- Create, update, delete appointments; recurrence and exceptions
-- Attendees, reminders, categories, sensitivity, busy status
-- Meeting responses (`MeetingResponse`)
-- **EAS 16.0 instance model**: modified recurrence instances sync as separate
-  items with top-level `InstanceId`; masters export only deleted-instance
-  exceptions; `ClientUid` round-trip; bound exceptions visible in initial sync
-- **EAS 16.0** `AirSyncBase:Location` (display name + coordinates)
-- **EAS 16.0** inbound validation strips forbidden top-level fields (`uid`,
-  `dtstamp`, `organizername`, `organizeremail`) instead of rejecting the item
-- All-day event rules for 16.0 (date-only, no spurious timezone conversion)
-
-### Contacts (`Contacts`)
-
-- Personal address books and GAL
-- Photo support via `ResolveRecipients` / Find picture options
-- Standard vCard-style field mapping
-
-### Tasks (`Tasks`) and Notes (`Notes`)
-
-- Full folder sync and item CRUD through Nag and Mnemo
-- Task recurrence (basic)
-
-### Device management
-
-- Provisioning and policy keys (`Provision`, `Settings`)
-- Remote wipe status tracking
-- Per-device logging (`perdevice` log type in Horde config)
-- Device block/allow hooks (Horde `hooks.php`)
-
-### State and performance
-
-- SQL (default) or MongoDB state backends
-- Sync key / modseq change tracking
-- `Ping` long-poll with configurable heartbeat bounds
-- `SyncCache` for in-request collection state
-- WBXML protocol logging at configurable verbosity
-- Streaming `Sync` response delivery (see
-  [Sync response streaming](#sync-response-streaming))
-
-## Sync response streaming
-
-### The problem
-
-Historically the whole `Sync` WBXML response was buffered
-(`Horde_Rpc_ActiveSync` wrapped the handler in a 1 MiB output buffer and sent
-the result with a `Content-Length` header). A client therefore received **no
-response body bytes** until the server had fetched and encoded the entire
-batch. Some clients — notably Gmail on Android — abort the connection after
-~30 seconds without body bytes (`SocketTimeout`), retry with the old sync
-key, and can end up in a broken state that only an account re-add or a
-server-side state reset resolves
-([horde/ActiveSync#77](https://github.com/horde/ActiveSync/issues/77)).
-
-The client timeout is on *time to first/next byte*, not on total request
-duration: a Sync may take minutes as long as data keeps arriving.
-
-### Architecture
-
-Implemented in [horde/ActiveSync#83](https://github.com/horde/ActiveSync/issues/83)
-across three packages:
-
-| Layer | Behaviour when streaming is enabled |
-|-------|-------------------------------------|
-| `horde/horde` `rpc.php` | Passes `$conf['activesync']['sync']['streaming']` to the RPC layer |
-| `horde/rpc` `Horde_Rpc_ActiveSync` | For `Cmd=Sync` POST only: skips the full-response output buffer, disables zlib compression, sends no `Content-Length` (the web server applies chunked transfer-encoding). All other commands (`GetAttachment`, `ItemOperations`, `Ping`, …) keep the buffered `Content-Length` response |
-| `horde/activesync` `Request_Sync` | Flushes WBXML to the client after the envelope status, after **every exported message** (`Encoder::flushOutput()`), and at each folder close. Client-sent commands (up-sync) are imported **during response output** with keep-alive bytes flushed between imports (see below) |
-
-**Up-sync (deferred command import with keep-alives).** The export-phase
-flushing above does not help when the *incoming* side of a Sync request is
-slow: a large client upload batch (e.g. Gmail's `FullDraftsUpSync`, which can
-re-send hundreds of drafts in one request) used to be imported to the backend
-*while parsing the request*, before a single response byte was produced —
-easily exceeding the client's ~30 second read timeout with total silence on
-the wire. When streaming is enabled, `ADD`/`MODIFY`/`REMOVE` commands are
-therefore only *queued* during parsing and imported during response output,
-after the response preamble has been flushed, at the same logical position
-(before change detection and sync-key generation) the inline imports used to
-occupy. Between imports the encoder emits a **WBXML keep-alive token**
-(`Encoder::keepAlive()`: a redundant `SWITCH_PAGE` to the already-active code
-page, a semantic no-op for any conforming WBXML parser) and flushes, so
-response bytes keep flowing for the entire import phase.
-
-**`MoreAvailable` ordering without buffering.** MS-ASCMD requires
-`MoreAvailable` *before* `Commands` in the folder block. The legacy time
-budget solved this by buffering the whole `Commands` section — which defeats
-streaming. Instead, the count cap `maxmessagesperresponse` is folded into
-the effective window size *before* the `Commands` section starts, so
-truncation is always known up front and `MoreAvailable` is emitted through
-the existing window-exceeded path. The `Commands` buffer is never used when
-streaming, and the legacy `maxresponsetime` budget is ignored (a log notice
-is emitted if both are configured).
-
-### Error model: pre-commit vs post-commit
-
-Once the first body byte is flushed, the HTTP status line can no longer be
-changed — HTTP 500 responses are only possible **before** streaming starts.
-
-| Phase | Error channel |
-|-------|---------------|
-| Pre-commit (policy check, request decode, change poll) | HTTP 400/500, `Status` elements — unchanged |
-| Post-commit (after first flushed byte; includes the deferred import of client-sent commands) | In-protocol only: folder `Status`, `SyncReplies`, `MoreAvailable`; deferred import errors are recorded as per-command reply statuses, and a streaming abort handler catches exporter exceptions, logs them, and closes a valid WBXML envelope. Unsent changes stay in `sync_pending` |
-
-The RPC error paths guard `header()` calls with `headers_sent()`, so a
-post-commit failure degrades to a truncated (but prefix-valid) response the
-client re-requests — never a mid-stream protocol violation.
-
-### Configuration
-
-All keys live under `$conf['activesync']['sync']` (Horde administration →
-ActiveSync → *Sync Response Delivery*):
-
-| Key | Default | Meaning |
-|-----|---------|---------|
-| `streaming` | `false` | Master switch for streaming Sync delivery |
-| `maxmessagesperresponse` | `10` | Count cap per response when streaming; more changes are announced via `MoreAvailable`. `0` = window size only |
-| `maxmessagetime` | `0` | Soft cap (seconds) for assembling a single message; stops the batch after a slow message. Streaming only. `0` = off |
-| `maxrequestduration` | `0` | Whole-request wall clock cap (seconds), measured from request start (includes import of client changes). Streaming only. `0` = off |
-| `maxresponsetime` | `25` | **Legacy** export-phase time budget; only honored when `streaming` is `false` |
-
-Rollback: set `streaming = false` to restore the buffered `Content-Length`
-behaviour (including the `maxresponsetime` budget) with no other changes.
-
-### Operator notes
-
-- The Sync handler logs
-  `SYNC: starting response output N.Ns after request start (streaming on|off)`
-  at INFO level — use it to verify streaming is active and to measure time
-  to first byte. Up-sync batches additionally log
-  `Queued N incoming changes for deferred import (streaming).` and
-  `SYNC: imported N deferred incoming change(s) for collection F… in N.Ns`.
-- Web-server-level buffering or compression on
-  `/Microsoft-Server-ActiveSync` (lighttpd `mod_deflate`, nginx
-  `gzip`/`proxy_buffering`, …) can re-introduce the timeout even with
-  streaming enabled — PHP cannot disable it from inside the request. Exclude
-  the ActiveSync path from response buffering/compression.
-- Streaming trades slightly more HTTP round-trips (smaller batches with
-  `MoreAvailable`) for reliability and lower peak memory.
-- A device already stuck from earlier timeouts may still need one account
-  re-add (or server-side device state removal) — streaming prevents the
-  breakage, it does not repair broken client state.
-
-### Non-goals
-
-- Client pacing of `MoreAvailable` follow-up requests (client behaviour).
-- Client state self-repair after an already-broken sync relationship.
-- The full Horde 6 request/response pipeline refactor (`doc/todo.md`) —
-  streaming is a tactical subset; the Changes-object and response-object
-  work remains on the roadmap.
-
-## EAS 16.0 — what changed
-
-Microsoft reworked several areas in 16.0. The following are implemented in this
-codebase:
-
-| Area | Behaviour |
-|------|-----------|
-| **Calendar instances** | Exceptions are first-class sync items, not only embedded in the series master |
-| **ClientUid** | Persisted on events and exported on sync |
-| **Location** | `AirSyncBase:Location` instead of plain string for 16.0+ |
-| **Drafts** | Content changes reported as `CHANGE_TYPE_DRAFT`; `send=true` sends via SMTP and removes draft |
-| **Find** | Mailbox/GAL search; KQL parser maps common Outlook restrictions to IMAP search |
-| **SmartForward/Reply** | `Forwardee` list support |
-| **Appointment validation** | Forbidden inbound fields stripped per MS-ASCAL spec |
-
-Horde driver details (initial calendar UID list omits bound exceptions at 16.0+,
-`calendar_import()` unified return shape) live in `horde/core` and `horde/kronolith`.
-
-## EAS 16.1 — what changed
-
-EAS 16.1 is a small delta on top of 16.0. The following are implemented in this
-codebase:
-
-| Area | Behaviour |
-|------|-----------|
-| **Propose new time** | `MeetingResponse` accepts `ProposedStartTime` / `ProposedEndTime`; outbound RFC5546 `METHOD=COUNTER`; inbound storage and sync of attendee proposals |
-| **DisallowNewTimeProposal** | Exported on calendar appointments (≥14.0) from iCal `DISALLOW-COUNTER`; inbound proposals ignored when set |
-| **Account-only remote wipe** | `Provision:AccountOnlyRemoteWipe` status flow; admin and user prefs UI (devices must negotiate ≥16.1) |
-
-Horde driver, Kronolith, iTip, and IMP details live in `horde/core`, `horde/kronolith`,
-`horde/itip`, and `horde/imp`.
-
-## Using ActiveSync in a Horde deployment
-
-### 1. Enable and configure
-
-In Horde administration → ActiveSync (or `var/config/horde/conf.php`):
-
-```php
-$conf['activesync']['enabled'] = true;
-$conf['activesync']['version'] = '16.1';   // global protocol ceiling (see above)
-$conf['activesync']['storage'] = 'Sql';    // or 'Nosql' (Mongo)
-$conf['activesync']['emailsync'] = true;
-$conf['activesync']['auth']['type'] = 'basic';
-// Optional: per-device version policy instead of per-user permissions
-// $conf['activesync']['version_mode'] = 'device';
-```
-
-Per-user version limits are **not** preference keys — configure them under
-Permissions → ActiveSync → *Maximum ActiveSync protocol version*. See
-[Protocol version configuration](#protocol-version-configuration-horde).
-
-Also configure IMAP/SMTP host hints for Autodiscover, logging path/level, and
-Ping heartbeat bounds. Full option descriptions are in
-`vendor/horde/horde/config/conf.xml` under the `activesync` tab.
-
-History (`$conf['history']['enabled']`) must be enabled — ActiveSync relies on
-it for change timestamps.
-
-### 2. Web server URL
-
-Clients expect `/Microsoft-Server-ActiveSync`. Rewrite that path to Horde's RPC
-endpoint, for example:
-
-```
-/Microsoft-Server-ActiveSync  →  /horde/rpc.php
-```
-
-The RPC layer selects the ActiveSync backend when `server=ActiveSync` is passed
-(Apache/nginx configs usually add this; see
-[Horde ActiveSync wiki](http://wiki.horde.org/ActiveSync)).
-
-Autodiscover is served from the same endpoint when the request URI contains
-`autodiscover/autodiscover`.
-
-### 3. Client setup
-
-Point the device at your mail domain. With Autodiscover enabled
-(`autodiscovery` in config), iOS and Outlook discover the ActiveSync URL
-automatically. Otherwise configure the ActiveSync server URL manually.
-
-Authentication is HTTP Basic against Horde by default (`auth.type = basic`).
-
-### 4. Per-user access
-
-Users need the **ActiveSync** permission in Horde. They can manage enrolled
-devices under Personal Preferences → ActiveSync (device list and wipe — not
-protocol version).
-
-Administrators assign the maximum EAS version per user or group via
-**Permissions**, and optionally per device via `hooks.php` when
-`version_mode = device`.
-## For integrators — custom backends
-
-To use this library outside Horde (or with a minimal test stack):
-
-1. Subclass `Horde_ActiveSync_Driver_Base` and implement the abstract methods for
-   each collection class you support.
-2. Provide a `Horde_ActiveSync_State_*` implementation (or use SQL/Mongo drivers
-   from this package).
-3. Instantiate the server:
-
-```php
-$server = new Horde_ActiveSync(
-    $driver,
-    new Horde_ActiveSync_Wbxml_Decoder(fopen('php://input', 'r')),
-    new Horde_ActiveSync_Wbxml_Encoder(fopen('php://output', 'w+')),
-    $state,
-    $httpRequest
-);
-$server->setSupportedVersion(Horde_ActiveSync::VERSION_SIXTEEN);
-$server->setLogger($logger);
-// Optional: implement versionCallback() on your driver for dynamic ceilings
-$server->handleRequest($cmd, $device);
-```
-
-`Horde_ActiveSync_Driver_Mock` plus `Horde_ActiveSync_Driver_MockConnector` in
-this package provide a reference stack for unit and integration tests.
-
-Import/export of calendar data is normally done by converting between
-`Horde_ActiveSync_Message_Appointment` and your domain model (in Horde,
-`Kronolith_Event`).
-
-## Development and tests
-
-**Requirements:** PHP `^7.4 || ^8`, plus Horde packages listed in `composer.json`.
-Suggested packages for a full stack: `horde/imap_client`, `horde/db`, `horde/mail`.
-
-Run unit tests from the package directory:
-
-```bash
-cd vendor/horde/activesync
-php ../../../vendor/bin/phpunit --bootstrap ../../../vendor/autoload.php
-```
-
-Calendar EAS 16.0 import/export tests live in `horde/kronolith`:
-
-```bash
-php vendor/bin/phpunit \
-  --bootstrap vendor/horde/kronolith/test/bootstrap.php \
-  vendor/horde/kronolith/test/Kronolith/Unit/EventActiveSyncTest.php
-```
-
-WBXML fixtures and protocol-level tests are under `test/unit/` and
-`test/integration/`.
-
-Enable protocol logging (`logging.level` / per-device log files) when debugging
-client issues — the logger records command names, collection IDs, and decoded
-metadata without dumping full message bodies at low levels.
+### Protocol versions
+
+All EAS versions from 2.5 to 16.1 are implemented and production-supported.
+Clients negotiate down to the server's advertised ceiling; the ceiling is
+configurable globally, per user, and per device. Details, the version
+negotiation mechanics, and a per-version feature delta are in
+[`doc/protocol-versions.md`](doc/protocol-versions.md).
+
+| Version | Notes |
+|---------|-------|
+| 2.5 | Baseline; reduced command set (no `Settings`, `ItemOperations`, `Find`) |
+| 12.0 / 12.1 | `AirSyncBase` bodies, provisioning 2, empty/hanging Sync, SyncCache |
+| 14.0 / 14.1 | Conversations, reply/forward state, rights management, body parts |
+| 16.0 | Calendar instance model, drafts sync, `Find`, `AirSyncBase:Location` |
+| 16.1 | Meeting time proposals, account-only remote wipe |
+
+### Feature highlights
+
+- **Mail:** folder & message sync, flags, drafts (incl. EAS 16 draft
+  editing/sending), send/reply/forward, attachments, meeting requests,
+  mailbox `Find` with KQL parsing, GAL search
+- **Calendar:** full recurrence + exceptions, attendees, meeting responses,
+  EAS 16 instance model, meeting time proposals (16.1)
+- **Contacts / Tasks / Notes:** full CRUD sync incl. task recurrence
+- **Device management:** provisioning & policies, remote wipe (full and
+  account-only), per-device protocol ceilings, per-device logging
+- **State:** SQL (default) or MongoDB backends, sync-key/modseq change
+  tracking, `Ping` long-poll, `SyncCache`
+- **Delivery:** optional streamed `Sync` responses (chunked HTTP) with
+  deferred up-sync import and WBXML keep-alives, so clients with ~30 s read
+  timeouts survive large batches — see
+  [`doc/sync-streaming.md`](doc/sync-streaming.md)
 
 ## Package layout
 
@@ -528,11 +95,12 @@ lib/Horde/ActiveSync/
   Message/                        Item type WBXML mappings
   State/                          Sync state persistence (SQL, Mongo)
   Wbxml/                          Encoder, decoder, code pages
+  Imap/                           IMAP-to-EAS message building
   Find/                           EAS 16.0 Find command helpers
   Driver/                         Base, Mock backends
 migration/                        SQL schema for state tables
+doc/                              Documentation (see index above)
 test/unit/                        PHPUnit tests
-doc/todo.md                       Open work and Horde 6 refactor notes
 ```
 
 ## License

@@ -2,9 +2,10 @@
 
 Last reviewed: 2026-07-14
 
-This file tracks **remaining** work. For what the library already supports
-(protocol versions, commands, EAS 16.0 behaviour, deployment setup), see the
-package `README.md` at the repository root.
+This file tracks **remaining** work. For what the library already supports,
+see the doc index in the package `README.md` — in particular
+[`protocol-versions.md`](protocol-versions.md) (versions, commands, per-version
+behaviour) and [`configuration.md`](configuration.md) (deployment setup).
 
 Items are grouped by intent. The **Horde 6** section is a breaking-change
 roadmap — do not implement those entries piecemeal on the FRAMEWORK_6_0 /
@@ -30,7 +31,8 @@ roadmap — do not implement those entries piecemeal on the FRAMEWORK_6_0 /
 
   Not supported — Nag uses fixed RRULE + `completions[]`, not post-completion
   regenerated due dates. Phase 0 (2026-06-23) saw `Regenerate=0` only on
-  Outlook weekly-series traffic. Documented in `README.md` (Tasks section).
+  Outlook weekly-series traffic. Documented in `doc/protocol-versions.md`
+  (Tasks section).
 
 ## Near-term reliability (FRAMEWORK_6_0)
 
@@ -46,7 +48,7 @@ roadmap — do not implement those entries piecemeal on the FRAMEWORK_6_0 /
   (`Encoder::keepAlive()`) flushed between imports. Behaviour, config keys
   (`streaming`, `maxmessagesperresponse`, `maxmessagetime`,
   `maxrequestduration`, legacy `maxresponsetime`), error model, and operator
-  notes are documented in `README.md` § *Sync response streaming*. Companion
+  notes are documented in [`sync-streaming.md`](sync-streaming.md). Companion
   changes live in `horde/rpc` (`Horde_Rpc_ActiveSync` streaming path) and
   `horde/horde` (`rpc.php` config passthrough, `conf.xml` keys). Motivated
   by [#77](https://github.com/horde/ActiveSync/issues/77).
@@ -276,7 +278,7 @@ active backlog; kept here so this file does not resurrect settled work.
   MS-ASCMD properties) is out of scope for the IMAP-backed implementation.
 - **Autodiscover**, **ItemOperations** (fetch/move/empty; not Schema),
   **Settings**, **Provision**, **Ping**, **Search**, **ValidateCert** — all
-  present for supported versions (see `README.md`).
+  present for supported versions (see `doc/protocol-versions.md`).
 
 ### EAS 16.0 calendar (library + `horde/kronolith` + `horde/core`)
 

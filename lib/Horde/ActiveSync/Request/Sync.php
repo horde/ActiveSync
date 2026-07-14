@@ -23,6 +23,11 @@
 /**
  * Handle Sync requests
  *
+ * Supports two delivery modes: classic buffered responses, and streamed
+ * (chunked) responses with incremental WBXML flushing and deferred import
+ * of client-sent commands. The streaming design is documented in
+ * doc/sync-streaming.md.
+ *
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
  * @copyright 2009-2020 Horde LLC (http://www.horde.org)
@@ -30,6 +35,7 @@
  * @author    Torben Dannhauer <torben@dannhauer.de>
  * @package   ActiveSync
  * @internal
+ * @see       doc/sync-streaming.md
  */
 class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
 {
