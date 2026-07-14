@@ -225,6 +225,12 @@ when a migration plan is written.
   `Horde_ActiveSync_Connector_Exporter_Sync`.
 - Configuration builder for server/driver construction (Ping-related settings
   are no longer Ping-only).
+- **Unify batch-size vectors:** `maximumwindowsize` (client WindowSize
+  override, ping settings) and `maxmessagesperresponse` (streaming batch
+  cap, #83) both feed the same export-loop bound via `min()`. They stay
+  separate on FRAMEWORK_6_0 for rollback semantics (streaming cap must not
+  leak into buffered mode), but the Sync options / configuration-builder
+  refactor should collapse them into one batching policy.
 
 ### SMS
 
