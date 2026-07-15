@@ -972,6 +972,15 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                     $collection['atchash'][$ires['id']] = !empty($ires['atchash'])
                         ? $ires['atchash']
                         : [];
+                    // Keep the conversation data like the SYNC_ADD path does.
+                    // Without it, EAS 16 email MODIFYs (e.g. Gmail's Drafts
+                    // up-sync) get no SYNC_MODIFY reply at all and the client
+                    // rejects the response and re-sends the same batch.
+                    if (!empty($ires['conversationid'])) {
+                        $collection['conversations'][$ires['id']]
+                            = [$ires['conversationid'],
+                                $ires['conversationindex']];
+                    }
                 }
                 break;
 

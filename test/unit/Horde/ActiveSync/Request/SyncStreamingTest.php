@@ -257,8 +257,15 @@ class SyncStreamingTest extends TestCase
         $importer->expects($this->exactly(2))
             ->method('importMessageChange')
             ->willReturnOnConsecutiveCalls(
-                // MODIFY result: stat array.
-                ['id' => '100', 'mod' => 1],
+                // MODIFY result: stat array. Draft email modifies carry
+                // conversation data (the backend replaces the IMAP message,
+                // so the client must receive a SYNC_MODIFY reply).
+                [
+                    'id' => '100',
+                    'mod' => 1,
+                    'conversationid' => '1a2b',
+                    'conversationindex' => 1234567890,
+                ],
                 // ADD result: stat array with new server uid.
                 ['id' => '200', 'mod' => 1]
             );
@@ -318,6 +325,14 @@ class SyncStreamingTest extends TestCase
         $this->assertTrue($collection['importedchanges']);
         $this->assertSame(['100'], $collection['modifiedids']);
         $this->assertSame(['client-1' => '200'], $collection['clientids']);
+
+        // Conversation data from the MODIFY import must be preserved so
+        // the exporter emits a SYNC_MODIFY reply for the item (Gmail
+        // rejects Drafts up-sync responses without these replies).
+        $this->assertSame(
+            ['100' => ['1a2b', 1234567890]],
+            $collection['conversations']
+        );
 
         // Queue consumed.
         $deferredProp = $ref->getProperty('_deferredCommands');
