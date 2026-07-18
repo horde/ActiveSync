@@ -1,4 +1,14 @@
 ---
+3.1.0:
+  api: 3.1.0
+  state:
+    release: stable
+    api: stable
+  date: 2026-07-18
+  license:
+    identifier: GPL-2.0-only
+    uri: https://spdx.org/licenses/GPL-2.0-only.html
+  notes: "fix(sync): emit SYNC_MODIFY replies for EAS 16 email modifies\nfix(activesync): throttle deferred-import keep-alive tokens\nfix(activesync): address streaming review findings\ndocs(activesync): restructure documentation by audience\nfeat(activesync): defer up-sync imports and emit WBXML keep-alives when streaming\ndocs(activesync): note batch-size vector consolidation for Horde 6\nfeat(activesync): stream Sync responses incrementally\nMerge pull request #82 from horde/fix/settings-oof-empty-msgs\nfix(activesync): guard empty OOF messages in Settings response\ndocs(todo): document folder UID map long-term work\ndocs(activesync): explain crc32 mask in folder UID generation\nMerge pull request #81 from horde/fix/deterministic-folder-uids-moveitems-gone\nPotential fix for pull request finding\nPotential fix for pull request finding\nPotential fix for pull request finding\nfix(activesync): stabilize folder UIDs after hierarchy changes\nMerge pull request #80 from horde/fix/imap-mimepart-null-charset\nfix(activesync): guard null charset before strcasecmp in getMimePart()"
 3.0.2:
   api: 3.0.2
   state:

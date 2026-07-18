@@ -18,7 +18,7 @@
         "eas",
         "exchange"
     ],
-    "time": "2026-07-08",
+    "time": "2026-07-18",
     "repositories": [],
     "require": {
         "horde/horde-installer-plugin": "dev-FRAMEWORK_6_0 || ^3 || ^2",
