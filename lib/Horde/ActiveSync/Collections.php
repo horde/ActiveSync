@@ -374,10 +374,24 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
         $folder = $this->_cache->getFolder($folderid);
         if ($folder) {
             return $folder['serverid'];
-        } else {
-            $this->_logger->err('COLLECTIONS: Horde_ActiveSync_Collections::getBackendIdForFolderUid failed because folder was not found in cache.');
-            throw new Horde_ActiveSync_Exception_FolderGone('Folder not found in cache.');
         }
+
+        // Fall back to the persistent foldermap. FolderSync synckey=0 used to
+        // clear+save an empty folders cache, leaving concurrent SYNC/PING
+        // unable to resolve known UIDs. foldermap survives that window.
+        $map = $this->_as->state->getFolderUidToBackendIdMap();
+        $backendId = array_search($folderid, $map, true);
+        if ($backendId !== false) {
+            $this->_logger->meta(sprintf(
+                'COLLECTIONS: Resolved folder uid %s via persistent foldermap to %s',
+                $folderid,
+                $backendId
+            ));
+            return $backendId;
+        }
+
+        $this->_logger->err('COLLECTIONS: Horde_ActiveSync_Collections::getBackendIdForFolderUid failed because folder was not found in cache.');
+        throw new Horde_ActiveSync_Exception_FolderGone('Folder not found in cache.');
     }
 
     /**
@@ -737,6 +751,9 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
         $update = false
     ) {
         $this->_cache->updateFolder($folder);
+        if (!empty($folder->_serverid) && !empty($folder->serverid)) {
+            $this->_as->state->rememberFolderUid($folder->_serverid, $folder->serverid);
+        }
         $cols = $this->_cache->getCollections(false);
         $cols[$folder->serverid]['serverid'] = $folder->_serverid;
         $this->_cache->updateCollection($cols[$folder->serverid]);
@@ -753,10 +770,27 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
     public function deleteFolderFromHierarchy($uid)
     {
         $this->_cache->deleteFolder($uid);
+        $this->_as->state->resetFolderUidMap();
         $this->_as->state->removeState([
             'id' => $uid,
             'devId' => $this->_as->device->id,
             'user' => $this->_as->device->user]);
+    }
+
+    /**
+     * After FolderSync synckey=0, drop folders that are no longer live.
+     *
+     * Folders are intentionally kept during the reset window; reconcile once
+     * the new hierarchy UIDs are known.
+     *
+     * @param array $liveFolderUids  EAS folder uids present after export.
+     *
+     * @since 3.0.3
+     */
+    public function reconcileHierarchyFolders(array $liveFolderUids)
+    {
+        $this->_cache->reconcileFolders($liveFolderUids);
+        $this->_as->state->resetFolderUidMap();
     }
 
     /**

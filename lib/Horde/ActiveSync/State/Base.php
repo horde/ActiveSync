@@ -485,6 +485,10 @@ abstract class Horde_ActiveSync_State_Base
     /**
      * Return the mapping of folder uids to backend folderids.
      *
+     * Prefers the persistent SyncCache foldermap (survives clearFolders /
+     * FolderSync synckey=0). Falls back to deriving the map from the folders
+     * cache for caches that predate foldermap.
+     *
      * @return array  An array of backend folderids -> uids.
      * @since 2.9.0
      */
@@ -495,14 +499,58 @@ abstract class Horde_ActiveSync_State_Base
             $cache = $this->getSyncCache(
                 $this->_deviceInfo->id,
                 $this->_deviceInfo->user,
-                ['folders']
+                ['foldermap', 'folders']
             );
-            foreach ($cache['folders'] as $id => $folder) {
-                $this->_folderUidMap[$folder['serverid']] = $id;
+            if (!empty($cache['foldermap']) && is_array($cache['foldermap'])) {
+                $this->_folderUidMap = $cache['foldermap'];
+            } elseif (!empty($cache['folders']) && is_array($cache['folders'])) {
+                foreach ($cache['folders'] as $id => $folder) {
+                    if (!empty($folder['serverid'])) {
+                        $this->_folderUidMap[$folder['serverid']] = $id;
+                    }
+                }
             }
         }
 
         return $this->_folderUidMap;
+    }
+
+    /**
+     * Remember a backend-id → EAS-uid assignment for this request.
+     *
+     * Keeps the in-memory map coherent while FolderSync rebuilds folders.
+     * Persistence happens via SyncCache::updateFolder() / setFolderMapEntry().
+     *
+     * @param string $backendId  Backend folder id.
+     * @param string $uid        EAS folder uid.
+     *
+     * @since 3.0.3
+     */
+    public function rememberFolderUid($backendId, $uid)
+    {
+        if ($backendId === '' || $backendId === null || $uid === '' || $uid === null) {
+            return;
+        }
+        if (!isset($this->_folderUidMap)) {
+            $this->getFolderUidToBackendIdMap();
+        }
+        foreach ($this->_folderUidMap as $existingBackendId => $existingUid) {
+            if ($existingUid === $uid && $existingBackendId !== $backendId) {
+                unset($this->_folderUidMap[$existingBackendId]);
+            }
+        }
+        $this->_folderUidMap[$backendId] = $uid;
+    }
+
+    /**
+     * Drop the request-local folder UID map so the next lookup reloads
+     * from SyncCache storage.
+     *
+     * @since 3.0.3
+     */
+    public function resetFolderUidMap()
+    {
+        unset($this->_folderUidMap);
     }
 
     /**

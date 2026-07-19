@@ -27,6 +27,10 @@
  * @property array    $folders             The folders cache: the list of
  *     current folders, keyed by their internal uid and containing 'class',
  *     'serverid' and 'type'.
+ * @property array    $foldermap           Persistent backend-id → EAS-uid map.
+ *     Survives clearFolders() / FolderSync synckey=0 so concurrent SYNC/PING
+ *     never observe an empty UID map mid-rebuild. Pruned only when a folder
+ *     is deleted or the hierarchy is reconciled to the live set.
  * @property integer  $hbinterval          The heartbeat interval (in seconds).
  * @property integer  $wait                The wait interval (in minutes).
  * @property integer  $pingheartbeat       The heartbeat used in PING requests.
@@ -120,6 +124,7 @@ class Horde_ActiveSync_SyncCache
             : Horde_ActiveSync::_wrapLogger($logger);
 
         $this->_logger->meta('Creating new Horde_ActiveSync_SyncCache.');
+        $this->ensureFolderMap();
     }
 
     public function __get($property)
@@ -160,7 +165,8 @@ class Horde_ActiveSync_SyncCache
     {
         return in_array($property, [
             'hbinterval', 'wait', 'hierarchy', 'confirmed_synckeys', 'timestamp',
-            'lasthbsyncstarted', 'lastsyncendnormal', 'folders', 'pingheartbeat']);
+            'lasthbsyncstarted', 'lastsyncendnormal', 'folders', 'foldermap',
+            'pingheartbeat']);
     }
 
     /**
@@ -708,12 +714,109 @@ class Horde_ActiveSync_SyncCache
     }
 
     /**
-     * Clear the folder cache
+     * Clear the folder cache.
+     *
+     * Does not clear foldermap — UID assignments must survive FolderSync
+     * synckey=0 rebuilds so concurrent requests keep stable identities.
      */
     public function clearFolders()
     {
         $this->_data['folders'] = [];
         $this->_dirty['folders'] = true;
+    }
+
+    /**
+     * Return the persistent backend-id → EAS-uid map.
+     *
+     * @return array
+     * @since 3.0.3
+     */
+    public function getFolderMap()
+    {
+        if (empty($this->_data['foldermap']) || !is_array($this->_data['foldermap'])) {
+            return [];
+        }
+
+        return $this->_data['foldermap'];
+    }
+
+    /**
+     * Seed foldermap from the folders cache when missing (upgrade path).
+     *
+     * @since 3.0.3
+     */
+    public function ensureFolderMap()
+    {
+        if (!isset($this->_data['foldermap']) || !is_array($this->_data['foldermap'])) {
+            $this->_data['foldermap'] = [];
+        }
+        if (!empty($this->_data['foldermap'])) {
+            return;
+        }
+        if (empty($this->_data['folders']) || !is_array($this->_data['folders'])) {
+            return;
+        }
+        foreach ($this->_data['folders'] as $uid => $folder) {
+            if (!empty($folder['serverid'])) {
+                $this->_data['foldermap'][$folder['serverid']] = $uid;
+            }
+        }
+        if (!empty($this->_data['foldermap'])) {
+            $this->_dirty['foldermap'] = true;
+        }
+    }
+
+    /**
+     * Record or refresh a backend-id → EAS-uid assignment.
+     *
+     * @param string $backendId  Backend folder id (e.g. INBOX).
+     * @param string $uid        EAS folder uid.
+     *
+     * @since 3.0.3
+     */
+    public function setFolderMapEntry($backendId, $uid)
+    {
+        if ($backendId === '' || $backendId === null || $uid === '' || $uid === null) {
+            return;
+        }
+        if (!isset($this->_data['foldermap']) || !is_array($this->_data['foldermap'])) {
+            $this->_data['foldermap'] = [];
+        }
+        // Drop stale backend keys that previously pointed at this uid (rename).
+        foreach ($this->_data['foldermap'] as $existingBackendId => $existingUid) {
+            if ($existingUid === $uid && $existingBackendId !== $backendId) {
+                unset($this->_data['foldermap'][$existingBackendId]);
+            }
+        }
+        $this->_data['foldermap'][$backendId] = $uid;
+        $this->_dirty['foldermap'] = true;
+    }
+
+    /**
+     * Remove folders (and foldermap entries) not in the live UID set.
+     *
+     * Used after FolderSync synckey=0 when folders were intentionally left
+     * in place during rebuild to avoid an empty-map race.
+     *
+     * @param array $liveFolderUids  EAS folder uids that still exist.
+     *
+     * @since 3.0.3
+     */
+    public function reconcileFolders(array $liveFolderUids)
+    {
+        $live = array_flip($liveFolderUids);
+        foreach (array_keys($this->getFolders()) as $uid) {
+            if (!isset($live[$uid])) {
+                $this->deleteFolder($uid);
+            }
+        }
+        // Also drop foldermap orphans whose uid is not live.
+        foreach ($this->getFolderMap() as $backendId => $uid) {
+            if (!isset($live[$uid])) {
+                unset($this->_data['foldermap'][$backendId]);
+                $this->_dirty['foldermap'] = true;
+            }
+        }
     }
 
     /**
@@ -726,6 +829,12 @@ class Horde_ActiveSync_SyncCache
         $cache = $this->_state->getSyncCache($this->_devid, $this->_user);
         $this->_data['folders'] = $cache['folders'];
         $this->_dirty['folders'] = false;
+        if (isset($cache['foldermap']) && is_array($cache['foldermap'])) {
+            $this->_data['foldermap'] = $cache['foldermap'];
+            $this->_dirty['foldermap'] = false;
+        } else {
+            $this->ensureFolderMap();
+        }
     }
 
     /**
@@ -759,6 +868,9 @@ class Horde_ActiveSync_SyncCache
         $this->_data['folders'][$folder->serverid]['type'] = $folder->type;
 
         $this->_dirty['folders'] = true;
+        if (!empty($folder->_serverid)) {
+            $this->setFolderMapEntry($folder->_serverid, $folder->serverid);
+        }
     }
 
     /**
@@ -768,10 +880,29 @@ class Horde_ActiveSync_SyncCache
      */
     public function deleteFolder($folder)
     {
+        $backendId = null;
+        if (!empty($this->_data['folders'][$folder]['serverid'])) {
+            $backendId = $this->_data['folders'][$folder]['serverid'];
+        }
         unset($this->_data['folders'][$folder]);
         unset($this->_data['collections'][$folder]);
         $this->_dirty['folders'] = true;
         $this->_markCollectionsDirty($folder);
+
+        if ($backendId !== null
+            && isset($this->_data['foldermap'][$backendId])
+            && $this->_data['foldermap'][$backendId] === $folder) {
+            unset($this->_data['foldermap'][$backendId]);
+            $this->_dirty['foldermap'] = true;
+        } elseif (!empty($this->_data['foldermap']) && is_array($this->_data['foldermap'])) {
+            foreach ($this->_data['foldermap'] as $mapBackendId => $uid) {
+                if ($uid === $folder) {
+                    unset($this->_data['foldermap'][$mapBackendId]);
+                    $this->_dirty['foldermap'] = true;
+                    break;
+                }
+            }
+        }
     }
 
     /**

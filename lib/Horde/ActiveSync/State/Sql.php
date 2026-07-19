@@ -1757,6 +1757,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                 'wait' => false,
                 'hbinterval' => false,
                 'folders' => [],
+                'foldermap' => [],
                 'hierarchy' => false,
                 'collections' => [],
                 'pingheartbeat' => false,
@@ -2172,12 +2173,21 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
         if ($id != Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC) {
             $cache->removeCollection($id, false);
         } else {
-            $this->_logger->notice('STATE: Clearing foldersync state from synccache.');
-            $cache->clearFolders();
+            // Do not clearFolders() here. Clearing and saving an empty folders
+            // map opens a race where concurrent SYNC/PING see FolderGone for
+            // every collection until this FolderSync finishes rebuilding.
+            // Hierarchy diff uses State::_folder (reset separately); SyncCache
+            // folders + foldermap stay available and are reconciled to the live
+            // set at the end of FolderSync (synckey=0).
+            //
+            // @author Torben Dannhauer <torben@dannhauer.de>
+            $this->_logger->notice('STATE: Clearing foldersync collections/hierarchy from synccache (keeping folders + foldermap).');
+            $cache->ensureFolderMap();
             $cache->clearCollections();
             $cache->hierarchy = '0';
         }
         $cache->save();
+        $this->resetFolderUidMap();
     }
 
     /**
