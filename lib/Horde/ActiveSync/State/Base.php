@@ -1502,6 +1502,115 @@ abstract class Horde_ActiveSync_State_Base
     abstract public function isDuplicatePIMAddition($id);
 
     /**
+     * Synthetic map clientid for an email Draft Modify (UID replace) under a
+     * given folder. Used so a retried Sync under the same SyncKey can return
+     * the already-created replacement UID without appending again.
+     *
+     * @param string $folderServerId  Backend folder id.
+     * @param string|integer $oldUid  Client-supplied ServerId (old IMAP UID).
+     *
+     * @return string
+     * @since 3.0.3
+     */
+    public static function draftModifyClientId($folderServerId, $oldUid)
+    {
+        return 'eas:draftmod:' . $folderServerId . ':' . $oldUid;
+    }
+
+    /**
+     * Synthetic map clientid for an email Remove-as-move (deletesasmoves).
+     *
+     * @param string $folderServerId  Source backend folder id.
+     * @param string|integer $oldUid  Source message UID.
+     *
+     * @return string
+     * @since 3.0.3
+     */
+    public static function mailMoveClientId($folderServerId, $oldUid)
+    {
+        return 'eas:mailmove:' . $folderServerId . ':' . $oldUid;
+    }
+
+    /**
+     * Return a previously applied PIM Modify for the given ServerId/SyncKey
+     * (email Draft UID replace), or null if none.
+     *
+     * @param string|integer $serverid  The client ServerId (old UID).
+     * @param string $synckey           SyncKey the command was applied under.
+     *
+     * @return array|null  Stat-like array with at least 'id' (new UID), or null.
+     * @throws Horde_ActiveSync_Exception
+     * @since 3.0.3
+     */
+    abstract public function getAppliedPIMChange($serverid, $synckey);
+
+    /**
+     * Record that a PIM Modify (email Draft UID replace) was applied so a
+     * retry under the same SyncKey can short-circuit.
+     *
+     * @param string|integer $oldId  Client ServerId (old UID).
+     * @param array $stat            Stat from the driver (must include 'id').
+     * @param string $synckey        SyncKey the command was applied under.
+     *
+     * @throws Horde_ActiveSync_Exception
+     * @since 3.0.3
+     */
+    abstract public function recordAppliedPIMChange($oldId, array $stat, $synckey);
+
+    /**
+     * Record a client Add's clientid → server UID mapping in the sync map.
+     * Used for email collections (mailmap has no sync_clientid column).
+     *
+     * @param string $clientid          Client ClientId from the Add.
+     * @param string|integer $uid       Server UID assigned to the new message.
+     * @param string|integer $folderId  Backend folder id.
+     * @param string|null $synckey      SyncKey; defaults to current state key.
+     *
+     * @throws Horde_ActiveSync_Exception
+     * @since 3.0.3
+     */
+    abstract public function recordPIMAddition($clientid, $uid, $folderId, $synckey = null);
+
+    /**
+     * Whether mailmap already records a client-origin change of $type for $uid
+     * (optional SyncKey scope for flag changes).
+     *
+     * @param string|integer $uid  Message UID.
+     * @param string $type         Horde_ActiveSync::CHANGE_TYPE_* constant.
+     * @param string|null $synckey If set, require this SyncKey (flag retries).
+     *
+     * @return boolean
+     * @throws Horde_ActiveSync_Exception
+     * @since 3.0.3
+     */
+    abstract public function isMailMapChangeApplied($uid, $type, $synckey = null);
+
+    /**
+     * Look up a previously applied Remove-as-move mapping for $oldUid.
+     *
+     * @param string|integer $oldUid  Source UID.
+     * @param string $synckey         SyncKey the move was applied under.
+     *
+     * @return string|null  Destination UID, or null.
+     * @throws Horde_ActiveSync_Exception
+     * @since 3.0.3
+     */
+    abstract public function getAppliedMailMove($oldUid, $synckey);
+
+    /**
+     * Record a Remove-as-move old→new UID mapping for retry idempotency.
+     *
+     * @param string|integer $oldUid  Source UID.
+     * @param string|integer $newUid  Destination UID.
+     * @param string $synckey         SyncKey the move was applied under.
+     * @param string $dstFolderId     Destination backend folder id.
+     *
+     * @throws Horde_ActiveSync_Exception
+     * @since 3.0.3
+     */
+    abstract public function recordAppliedMailMove($oldUid, $newUid, $synckey, $dstFolderId);
+
+    /**
      * Close the underlying backend storage connection.
      * To be used during PING or looping SYNC operations.
      */

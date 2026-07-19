@@ -1696,9 +1696,14 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     public function isDuplicatePIMAddition($id)
     {
         $sql = 'SELECT message_uid FROM ' . $this->_syncMapTable
-            . ' WHERE sync_clientid = ? AND sync_user = ?';
+            . ' WHERE sync_clientid = ? AND sync_user = ? AND sync_devid = ?';
+        $params = [$id, $this->_deviceInfo->user, $this->_deviceInfo->id];
+        if (!empty($this->_collection['serverid'])) {
+            $sql .= ' AND sync_folderid = ?';
+            $params[] = $this->_collection['serverid'];
+        }
         try {
-            $uid = $this->_db->selectValue($sql, [$id, $this->_deviceInfo->user]);
+            $uid = $this->_db->selectValue($sql, $params);
 
             return $uid;
         } catch (Horde_Db_Exception $e) {
@@ -1719,9 +1724,236 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     public function isDuplicatePIMChange($uid, $synckey)
     {
         $sql = 'SELECT count(*) FROM ' . $this->_syncMapTable
-            . ' WHERE message_uid = ? AND sync_user = ? AND sync_key = ?';
+            . ' WHERE message_uid = ? AND sync_user = ? AND sync_key = ?'
+            . ' AND sync_devid = ?';
         try {
-            return $this->_db->selectValue($sql, [$uid, $this->_deviceInfo->user, $synckey]);
+            return (bool) $this->_db->selectValue(
+                $sql,
+                [$uid, $this->_deviceInfo->user, $synckey, $this->_deviceInfo->id]
+            );
+        } catch (Horde_Db_Exception $e) {
+            throw new Horde_ActiveSync_Exception($e);
+        }
+    }
+
+    /**
+     * @since 3.0.3
+     */
+    public function getAppliedPIMChange($serverid, $synckey)
+    {
+        if (empty($this->_collection['serverid'])) {
+            return null;
+        }
+        $clientid = self::draftModifyClientId(
+            $this->_collection['serverid'],
+            $serverid
+        );
+        $sql = 'SELECT message_uid FROM ' . $this->_syncMapTable
+            . ' WHERE sync_clientid = ? AND sync_key = ? AND sync_user = ?'
+            . ' AND sync_devid = ? AND sync_folderid = ?';
+        try {
+            $uid = $this->_db->selectValue(
+                $sql,
+                [
+                    $clientid,
+                    $synckey,
+                    $this->_deviceInfo->user,
+                    $this->_deviceInfo->id,
+                    $this->_collection['serverid'],
+                ]
+            );
+        } catch (Horde_Db_Exception $e) {
+            throw new Horde_ActiveSync_Exception($e);
+        }
+        if ($uid === null || $uid === false) {
+            return null;
+        }
+
+        return ['id' => $uid, 'mod' => 0, 'flags' => []];
+    }
+
+    /**
+     * @since 3.0.3
+     */
+    public function recordAppliedPIMChange($oldId, array $stat, $synckey)
+    {
+        if (empty($this->_collection['serverid']) || empty($stat['id'])) {
+            return;
+        }
+        $this->_insertMapClientIdRow(
+            self::draftModifyClientId($this->_collection['serverid'], $oldId),
+            $stat['id'],
+            $this->_collection['serverid'],
+            $synckey,
+            !empty($stat['mod']) ? $stat['mod'] : 0
+        );
+    }
+
+    /**
+     * @since 3.0.3
+     */
+    public function recordPIMAddition($clientid, $uid, $folderId, $synckey = null)
+    {
+        if ($clientid === '' || $clientid === null || $clientid === false) {
+            return;
+        }
+        $syncKey = $synckey ?: (empty($this->_syncKey)
+            ? $this->getLatestSynckeyForCollection($this->_collection['id'] ?? '')
+            : $this->_syncKey);
+        $this->_insertMapClientIdRow($clientid, $uid, $folderId, $syncKey, time());
+    }
+
+    /**
+     * @since 3.0.3
+     */
+    public function isMailMapChangeApplied($uid, $type, $synckey = null)
+    {
+        if (empty($this->_collection['serverid'])) {
+            return false;
+        }
+        $column = null;
+        switch ($type) {
+            case Horde_ActiveSync::CHANGE_TYPE_DELETE:
+                $column = 'sync_deleted';
+                break;
+            case Horde_ActiveSync::CHANGE_TYPE_FLAGS:
+                // Any flag column counts as applied for short-circuit.
+                $sql = 'SELECT COUNT(*) FROM ' . $this->_syncMailMapTable
+                    . ' WHERE message_uid = ? AND sync_devid = ? AND sync_user = ?'
+                    . ' AND sync_folderid = ? AND ('
+                    . 'sync_read IS NOT NULL OR sync_flagged IS NOT NULL'
+                    . ' OR sync_category IS NOT NULL)';
+                $params = [
+                    $uid,
+                    $this->_deviceInfo->id,
+                    $this->_deviceInfo->user,
+                    $this->_collection['serverid'],
+                ];
+                if ($synckey !== null) {
+                    $sql .= ' AND sync_key = ?';
+                    $params[] = $synckey;
+                }
+                try {
+                    return (bool) $this->_db->selectValue($sql, $params);
+                } catch (Horde_Db_Exception $e) {
+                    throw new Horde_ActiveSync_Exception($e);
+                }
+            case Horde_ActiveSync::CHANGE_TYPE_DRAFT:
+                $column = 'sync_draft';
+                break;
+            case Horde_ActiveSync::CHANGE_TYPE_CHANGE:
+                $column = 'sync_changed';
+                break;
+            default:
+                return false;
+        }
+        $sql = 'SELECT COUNT(*) FROM ' . $this->_syncMailMapTable
+            . ' WHERE message_uid = ? AND sync_devid = ? AND sync_user = ?'
+            . ' AND sync_folderid = ? AND ' . $column . ' IS NOT NULL'
+            . ' AND ' . $column . ' = ?';
+        $params = [
+            $uid,
+            $this->_deviceInfo->id,
+            $this->_deviceInfo->user,
+            $this->_collection['serverid'],
+            true,
+        ];
+        if ($synckey !== null) {
+            $sql .= ' AND sync_key = ?';
+            $params[] = $synckey;
+        }
+        try {
+            return (bool) $this->_db->selectValue($sql, $params);
+        } catch (Horde_Db_Exception $e) {
+            throw new Horde_ActiveSync_Exception($e);
+        }
+    }
+
+    /**
+     * @since 3.0.3
+     */
+    public function getAppliedMailMove($oldUid, $synckey)
+    {
+        if (empty($this->_collection['serverid'])) {
+            return null;
+        }
+        $clientid = self::mailMoveClientId(
+            $this->_collection['serverid'],
+            $oldUid
+        );
+        $sql = 'SELECT message_uid FROM ' . $this->_syncMapTable
+            . ' WHERE sync_clientid = ? AND sync_key = ? AND sync_user = ?'
+            . ' AND sync_devid = ?';
+        try {
+            $uid = $this->_db->selectValue(
+                $sql,
+                [
+                    $clientid,
+                    $synckey,
+                    $this->_deviceInfo->user,
+                    $this->_deviceInfo->id,
+                ]
+            );
+        } catch (Horde_Db_Exception $e) {
+            throw new Horde_ActiveSync_Exception($e);
+        }
+        if ($uid === null || $uid === false) {
+            return null;
+        }
+
+        return $uid;
+    }
+
+    /**
+     * @since 3.0.3
+     */
+    public function recordAppliedMailMove($oldUid, $newUid, $synckey, $dstFolderId)
+    {
+        if (empty($this->_collection['serverid'])) {
+            return;
+        }
+        $this->_insertMapClientIdRow(
+            self::mailMoveClientId($this->_collection['serverid'], $oldUid),
+            $newUid,
+            $dstFolderId,
+            $synckey,
+            time()
+        );
+    }
+
+    /**
+     * Insert a sync_map row keyed by sync_clientid.
+     *
+     * @param string $clientid
+     * @param string|integer $messageUid
+     * @param string $folderId
+     * @param string $synckey
+     * @param integer $modtime
+     *
+     * @throws Horde_ActiveSync_Exception
+     */
+    protected function _insertMapClientIdRow(
+        $clientid,
+        $messageUid,
+        $folderId,
+        $synckey,
+        $modtime
+    ) {
+        $sql = 'INSERT INTO ' . $this->_syncMapTable
+            . ' (message_uid, sync_modtime, sync_key, sync_devid,'
+            . ' sync_folderid, sync_user, sync_clientid, sync_deleted)'
+            . ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+        try {
+            $this->_db->insert($sql, [
+                (string) $messageUid,
+                $modtime,
+                $synckey,
+                $this->_deviceInfo->id,
+                $folderId,
+                $this->_deviceInfo->user,
+                $clientid,
+                false,
+            ]);
         } catch (Horde_Db_Exception $e) {
             throw new Horde_ActiveSync_Exception($e);
         }

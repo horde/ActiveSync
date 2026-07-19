@@ -92,6 +92,8 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
     public const SYNC_FLAGGED           = 'sync_flagged';
     public const SYNC_DELETED           = 'sync_deleted';
     public const SYNC_CHANGED           = 'sync_changed';
+    public const SYNC_DRAFT             = 'sync_draft';
+    public const SYNC_CATEGORY          = 'sync_category';
     public const SYNC_MODTIME           = 'sync_modtime';
     public const SYNC_CLIENTID          = 'sync_clientid';
     public const SYNC_DATA              = 'sync_data';
@@ -998,8 +1000,10 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
                         case Horde_ActiveSync::CHANGE_TYPE_FLAGS:
                             if (isset($change['flags']['read'])) {
                                 $document[self::SYNC_READ] = !empty($change['flags']['read']);
-                            } else {
-                                $document[self::SYNC_FLAGGED] = $flag_value = !empty($change['flags']['flagged']);
+                            } elseif (isset($change['flags']['flagged'])) {
+                                $document[self::SYNC_FLAGGED] = !empty($change['flags']['flagged']);
+                            } elseif (!empty($change['categories'])) {
+                                $document[self::SYNC_CATEGORY] = md5(implode('', $change['categories']));
                             }
                             break;
                         case Horde_ActiveSync::CHANGE_TYPE_DELETE:
@@ -1008,11 +1012,14 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
                         case Horde_ActiveSync::CHANGE_TYPE_CHANGE:
                             $document[self::SYNC_CHANGED] = true;
                             break;
+                        case Horde_ActiveSync::CHANGE_TYPE_DRAFT:
+                            $document[self::SYNC_DRAFT] = true;
+                            break;
                     }
                     try {
                         $this->_db->selectCollection(self::COLLECTION_MAILMAP)->insert($document);
                     } catch (Exception $e) {
-                        throw Horde_ActiveSync_Exception($e);
+                        throw new Horde_ActiveSync_Exception($e);
                     }
                     break;
 
@@ -1706,6 +1713,9 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
             self::SYNC_USER => $this->_deviceInfo->user,
             self::SYNC_DEVID => $this->_deviceInfo->id,
         ];
+        if (!empty($this->_collection['serverid'])) {
+            $query[self::SYNC_FOLDERID] = $this->_collection['serverid'];
+        }
 
         try {
             $result = $this->_db->selectCollection(self::COLLECTION_MAP)
@@ -1723,6 +1733,233 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
         }
 
         return $result[self::MESSAGE_UID];
+    }
+
+    /**
+     * Check if the UID provided was altered during the SYNC_KEY provided.
+     *
+     * @param string $uid      The UID to check.
+     * @param string $synckey  The synckey to check.
+     *
+     * @return boolean
+     * @since 2.31.0
+     */
+    public function isDuplicatePIMChange($uid, $synckey)
+    {
+        $query = [
+            self::MESSAGE_UID => $uid,
+            self::SYNC_USER => $this->_deviceInfo->user,
+            self::SYNC_KEY => $synckey,
+            self::SYNC_DEVID => $this->_deviceInfo->id,
+        ];
+        try {
+            $result = $this->_db->selectCollection(self::COLLECTION_MAP)
+                ->findOne($query, [self::MONGO_ID => true]);
+        } catch (Exception $e) {
+            $this->_logger->err($e->getMessage());
+            throw new Horde_ActiveSync_Exception($e);
+        }
+
+        return !empty($result);
+    }
+
+    /**
+     * @since 3.0.3
+     */
+    public function getAppliedPIMChange($serverid, $synckey)
+    {
+        if (empty($this->_collection['serverid'])) {
+            return null;
+        }
+        $query = [
+            self::SYNC_CLIENTID => self::draftModifyClientId(
+                $this->_collection['serverid'],
+                $serverid
+            ),
+            self::SYNC_KEY => $synckey,
+            self::SYNC_USER => $this->_deviceInfo->user,
+            self::SYNC_DEVID => $this->_deviceInfo->id,
+            self::SYNC_FOLDERID => $this->_collection['serverid'],
+        ];
+        try {
+            $result = $this->_db->selectCollection(self::COLLECTION_MAP)
+                ->findOne($query, [self::MESSAGE_UID => true]);
+        } catch (Exception $e) {
+            $this->_logger->err($e->getMessage());
+            throw new Horde_ActiveSync_Exception($e);
+        }
+        if (empty($result[self::MESSAGE_UID])) {
+            return null;
+        }
+
+        return [
+            'id' => $result[self::MESSAGE_UID],
+            'mod' => 0,
+            'flags' => [],
+        ];
+    }
+
+    /**
+     * @since 3.0.3
+     */
+    public function recordAppliedPIMChange($oldId, array $stat, $synckey)
+    {
+        if (empty($this->_collection['serverid']) || empty($stat['id'])) {
+            return;
+        }
+        $this->_insertMapClientIdDoc(
+            self::draftModifyClientId($this->_collection['serverid'], $oldId),
+            $stat['id'],
+            $this->_collection['serverid'],
+            $synckey,
+            !empty($stat['mod']) ? $stat['mod'] : 0
+        );
+    }
+
+    /**
+     * @since 3.0.3
+     */
+    public function recordPIMAddition($clientid, $uid, $folderId, $synckey = null)
+    {
+        if ($clientid === '' || $clientid === null || $clientid === false) {
+            return;
+        }
+        $syncKey = $synckey ?: (empty($this->_syncKey)
+            ? $this->getLatestSynckeyForCollection($this->_collection['id'] ?? '')
+            : $this->_syncKey);
+        $this->_insertMapClientIdDoc($clientid, $uid, $folderId, $syncKey, time());
+    }
+
+    /**
+     * @since 3.0.3
+     */
+    public function isMailMapChangeApplied($uid, $type, $synckey = null)
+    {
+        if (empty($this->_collection['serverid'])) {
+            return false;
+        }
+        $query = [
+            self::MESSAGE_UID => (string) $uid,
+            self::SYNC_DEVID => $this->_deviceInfo->id,
+            self::SYNC_USER => $this->_deviceInfo->user,
+            self::SYNC_FOLDERID => $this->_collection['serverid'],
+        ];
+        if ($synckey !== null) {
+            $query[self::SYNC_KEY] = $synckey;
+        }
+        switch ($type) {
+            case Horde_ActiveSync::CHANGE_TYPE_DELETE:
+                $query[self::SYNC_DELETED] = true;
+                break;
+            case Horde_ActiveSync::CHANGE_TYPE_DRAFT:
+                $query[self::SYNC_DRAFT] = true;
+                break;
+            case Horde_ActiveSync::CHANGE_TYPE_CHANGE:
+                $query[self::SYNC_CHANGED] = true;
+                break;
+            case Horde_ActiveSync::CHANGE_TYPE_FLAGS:
+                $query['$or'] = [
+                    [self::SYNC_READ => ['$exists' => true]],
+                    [self::SYNC_FLAGGED => ['$exists' => true]],
+                    [self::SYNC_CATEGORY => ['$exists' => true]],
+                ];
+                break;
+            default:
+                return false;
+        }
+        try {
+            $result = $this->_db->selectCollection(self::COLLECTION_MAILMAP)
+                ->findOne($query, [self::MONGO_ID => true]);
+        } catch (Exception $e) {
+            $this->_logger->err($e->getMessage());
+            throw new Horde_ActiveSync_Exception($e);
+        }
+
+        return !empty($result);
+    }
+
+    /**
+     * @since 3.0.3
+     */
+    public function getAppliedMailMove($oldUid, $synckey)
+    {
+        if (empty($this->_collection['serverid'])) {
+            return null;
+        }
+        $query = [
+            self::SYNC_CLIENTID => self::mailMoveClientId(
+                $this->_collection['serverid'],
+                $oldUid
+            ),
+            self::SYNC_KEY => $synckey,
+            self::SYNC_USER => $this->_deviceInfo->user,
+            self::SYNC_DEVID => $this->_deviceInfo->id,
+        ];
+        try {
+            $result = $this->_db->selectCollection(self::COLLECTION_MAP)
+                ->findOne($query, [self::MESSAGE_UID => true]);
+        } catch (Exception $e) {
+            $this->_logger->err($e->getMessage());
+            throw new Horde_ActiveSync_Exception($e);
+        }
+        if (empty($result[self::MESSAGE_UID])) {
+            return null;
+        }
+
+        return $result[self::MESSAGE_UID];
+    }
+
+    /**
+     * @since 3.0.3
+     */
+    public function recordAppliedMailMove($oldUid, $newUid, $synckey, $dstFolderId)
+    {
+        if (empty($this->_collection['serverid'])) {
+            return;
+        }
+        $this->_insertMapClientIdDoc(
+            self::mailMoveClientId($this->_collection['serverid'], $oldUid),
+            $newUid,
+            $dstFolderId,
+            $synckey,
+            time()
+        );
+    }
+
+    /**
+     * Insert a HAS_map document keyed by sync_clientid.
+     *
+     * @param string $clientid
+     * @param string|integer $messageUid
+     * @param string $folderId
+     * @param string $synckey
+     * @param integer $modtime
+     *
+     * @throws Horde_ActiveSync_Exception
+     */
+    protected function _insertMapClientIdDoc(
+        $clientid,
+        $messageUid,
+        $folderId,
+        $synckey,
+        $modtime
+    ) {
+        $document = [
+            self::MESSAGE_UID => (string) $messageUid,
+            self::SYNC_MODTIME => $modtime,
+            self::SYNC_KEY => $synckey,
+            self::SYNC_DEVID => $this->_deviceInfo->id,
+            self::SYNC_FOLDERID => $folderId,
+            self::SYNC_USER => $this->_deviceInfo->user,
+            self::SYNC_CLIENTID => $clientid,
+            self::SYNC_DELETED => false,
+        ];
+        try {
+            $this->_db->selectCollection(self::COLLECTION_MAP)->insert($document);
+        } catch (Exception $e) {
+            $this->_logger->err($e->getMessage());
+            throw new Horde_ActiveSync_Exception($e);
+        }
     }
 
     /**
@@ -1994,7 +2231,9 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
                 self::SYNC_READ => true,
                 self::SYNC_FLAGGED => true,
                 self::SYNC_DELETED => true,
-                self::SYNC_CHANGED,
+                self::SYNC_CHANGED => true,
+                self::SYNC_DRAFT => true,
+                self::SYNC_CATEGORY => true,
             ]
         );
         $results = [];
@@ -2004,16 +2243,23 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
                     switch ($change['type']) {
                         case Horde_ActiveSync::CHANGE_TYPE_FLAGS:
                             $results[$row[self::MESSAGE_UID]][$change['type']]
-                                = (!is_null($row[self::SYNC_READ]) && $row[self::SYNC_READ] == $change['flags']['read'])
-                                || (!is_null($row[self::SYNC_FLAGGED] && $row[self::SYNC_FLAGGED] == $change['flags']['flagged']));
+                                = (isset($row[self::SYNC_READ]) && $row[self::SYNC_READ] == $change['flags']['read'])
+                                || (isset($row[self::SYNC_FLAGGED]) && $row[self::SYNC_FLAGGED] == ($change['flags']['flagged'] ?? null))
+                                || (isset($row[self::SYNC_CATEGORY]) && !empty($change['categories'])
+                                    && $row[self::SYNC_CATEGORY] == md5(implode('', $change['categories'])));
                             continue 3;
                         case Horde_ActiveSync::CHANGE_TYPE_DELETE:
                             $results[$row[self::MESSAGE_UID]][$change['type']]
-                                = !is_null($row[self::SYNC_DELETED]) && $row[self::SYNC_DELETED] == true;
+                                = !empty($row[self::SYNC_DELETED]);
                             continue 3;
                         case Horde_ActiveSync::CHANGE_TYPE_CHANGE:
                             $results[$row[self::MESSAGE_UID]][$change['type']]
-                                = !is_null($row[self::SYNC_CHANGED]) && $row[self::SYNC_CHANGED] == true;
+                                = !empty($row[self::SYNC_CHANGED]);
+                            continue 3;
+                        case Horde_ActiveSync::CHANGE_TYPE_DRAFT:
+                            $results[$row[self::MESSAGE_UID]][$change['type']]
+                                = !empty($row[self::SYNC_DRAFT]);
+                            continue 3;
                     }
                 }
             }
