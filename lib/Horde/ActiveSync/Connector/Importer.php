@@ -164,12 +164,14 @@ class Horde_ActiveSync_Connector_Importer
             && ($applied = $this->_state->getAppliedPIMChange($id, $synckey))) {
             $this->_logger->notice(
                 sprintf(
-                    'Duplicate draft modify for %s under %s; returning %s',
+                    'Duplicate draft modify for %s under %s; mapped to %s',
                     $id,
                     $synckey,
                     $applied['id']
                 )
             );
+            // Reply ServerEntryId stays $id (client ServerId); $applied['id']
+            // is only the post-append IMAP UID used for conversationindex.
             return $this->_draftModifyStat($applied['id'], $message, $synckey, $id);
         }
 
@@ -357,10 +359,14 @@ class Horde_ActiveSync_Connector_Importer
      * Build a Draft Modify stat array suitable for Sync replies, including
      * conversation fields so EAS 16 clients accept the response on retry.
      *
-     * @param string|integer $newId
+     * SyncReplies must echo the client's ServerEntryId ($oldId). IMAP
+     * append+delete yields a new UID ($newId) that only the applied map and
+     * mailmap track; putting it in Replies makes Gmail reject the SyncKey.
+     *
+     * @param string|integer $newId  Post-append IMAP UID (conversationindex).
      * @param Horde_ActiveSync_Message_Base $message
      * @param string $synckey
-     * @param string|integer $oldId
+     * @param string|integer $oldId  Client ServerId for SyncReplies.
      * @param array $stat  Optional driver stat to merge (atchash, etc.).
      *
      * @return array
@@ -374,19 +380,24 @@ class Horde_ActiveSync_Connector_Importer
     ) {
         $out = array_merge(
             [
-                'id' => $newId,
+                'id' => $oldId,
                 'mod' => 0,
                 'flags' => [],
             ],
             $stat
         );
-        $out['id'] = $newId;
+        // Force client ServerId even if $stat carried the new IMAP UID.
+        $out['id'] = $oldId;
         $out['serverid'] = $this->_folderId;
         // Stable conversation fields (not time()) so retries emit the same
-        // SyncReplies shape Gmail requires for Drafts up-sync.
+        // SyncReplies shape Gmail requires for Drafts up-sync. Never leave
+        // conversationid empty: Sync skips email Modify replies when both
+        // conversations and atchash are empty (!empty('') is false).
         if ($message instanceof Horde_ActiveSync_Message_Mail) {
             $subject = (string) $message->subject;
-            $out['conversationid'] = bin2hex($subject);
+            $out['conversationid'] = bin2hex(
+                $subject !== '' ? $subject : ('draft:' . $oldId)
+            );
             $out['conversationindex'] = crc32($synckey . ':' . $oldId . ':' . $newId);
         }
 

@@ -49,7 +49,8 @@ class Horde_ActiveSync_Connector_ImporterIdempotentImportTest extends TestCase
             $synckey
         );
 
-        $this->assertSame($newUid, $stat['id']);
+        // SyncReplies must echo the client's ServerId, not the new IMAP UID.
+        $this->assertSame($oldUid, $stat['id']);
         $this->assertSame(bin2hex('Meeting notes'), $stat['conversationid']);
         $this->assertArrayHasKey('conversationindex', $stat);
     }
@@ -99,7 +100,7 @@ class Horde_ActiveSync_Connector_ImporterIdempotentImportTest extends TestCase
             $synckey
         );
 
-        $this->assertSame($newUid, $stat['id']);
+        $this->assertSame($oldUid, $stat['id']);
         $this->assertSame(
             [
                 'record',
@@ -108,6 +109,47 @@ class Horde_ActiveSync_Connector_ImporterIdempotentImportTest extends TestCase
             ],
             $callOrder
         );
+    }
+
+    public function testDraftModifyReplyUsesClientServerIdWhenSubjectEmpty(): void
+    {
+        $synckey = '{uuid}5';
+        $oldUid = '100';
+        $newUid = '101';
+        $message = $this->_draftMailMessage('Body only', '');
+
+        $state = $this->createMock(Horde_ActiveSync_State_Base::class);
+        $state->method('getAppliedPIMChange')->willReturn(null);
+        $state->expects($this->once())
+            ->method('recordAppliedPIMChange')
+            ->with($oldUid, $this->callback(function ($stat) use ($newUid) {
+                return is_array($stat) && ($stat['id'] ?? null) == $newUid;
+            }), $synckey);
+        $state->expects($this->exactly(2))->method('updateState');
+
+        $driver = $this->createMock(Horde_ActiveSync_Driver_Base::class);
+        $driver->method('getUser')->willReturn('alice@example.com');
+        $driver->expects($this->once())
+            ->method('changeMessage')
+            ->willReturn([
+                'id' => $newUid,
+                'mod' => 0,
+                'flags' => [],
+            ]);
+
+        $importer = $this->_importer($state, $driver);
+        $stat = $importer->importMessageChange(
+            $oldUid,
+            $message,
+            $this->createMock(Horde_ActiveSync_Device::class),
+            false,
+            Horde_ActiveSync::CLASS_EMAIL,
+            $synckey
+        );
+
+        $this->assertSame($oldUid, $stat['id']);
+        $this->assertSame(bin2hex('draft:' . $oldUid), $stat['conversationid']);
+        $this->assertNotSame('', $stat['conversationid']);
     }
 
     public function testDraftAddDuplicateClientIdSkipsChangeMessage(): void
