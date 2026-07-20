@@ -157,6 +157,40 @@ class Horde_ActiveSync_Connector_ImporterIdempotentImportTest extends TestCase
         $this->assertSame(['100'], $deleted);
     }
 
+    public function testNotesRemoveDoesNotQueryMailMap(): void
+    {
+        $noteUid = '6a5a2daf-881c-4a66-b8cc-574e00000000';
+
+        $state = $this->createMock(Horde_ActiveSync_State_Base::class);
+        $state->expects($this->never())->method('isMailMapChangeApplied');
+        $state->expects($this->once())
+            ->method('updateState')
+            ->with(
+                Horde_ActiveSync::CHANGE_TYPE_DELETE,
+                $this->callback(function ($change) use ($noteUid) {
+                    return ($change['id'] ?? null) === $noteUid;
+                }),
+                Horde_ActiveSync::CHANGE_ORIGIN_PIM,
+                'alice@example.com'
+            );
+
+        $driver = $this->createMock(Horde_ActiveSync_Driver_Base::class);
+        $driver->method('getUser')->willReturn('alice@example.com');
+        $driver->method('getSyncStamp')->willReturn(1);
+        $driver->expects($this->once())
+            ->method('deleteMessage')
+            ->with($this->anything(), [$noteUid])
+            ->willReturn([$noteUid]);
+
+        $importer = $this->_importer($state, $driver);
+        $deleted = $importer->importMessageDeletion(
+            [$noteUid],
+            Horde_ActiveSync::CLASS_NOTES
+        );
+
+        $this->assertSame([$noteUid], $deleted);
+    }
+
     public function testMoveRetryReturnsPriorMapping(): void
     {
         $synckey = '{uuid}5';

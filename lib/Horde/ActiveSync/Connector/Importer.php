@@ -440,10 +440,13 @@ class Horde_ActiveSync_Connector_Importer
             if (strpos((string) $id, 'IGNORESMS_') === 0) {
                 continue;
             }
-            if ($this->_state->isMailMapChangeApplied(
-                $id,
-                Horde_ActiveSync::CHANGE_TYPE_DELETE
-            )) {
+            // mailmap.message_uid is an IMAP integer; never query it for
+            // Notes/Calendar/Contacts/Tasks (UUID string server ids).
+            if ($class == Horde_ActiveSync::CLASS_EMAIL
+                && $this->_state->isMailMapChangeApplied(
+                    $id,
+                    Horde_ActiveSync::CHANGE_TYPE_DELETE
+                )) {
                 $already[] = $id;
             } else {
                 $toDelete[] = $id;

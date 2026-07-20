@@ -1575,6 +1575,9 @@ abstract class Horde_ActiveSync_State_Base
      * Whether mailmap already records a client-origin change of $type for $uid
      * (optional SyncKey scope for flag changes).
      *
+     * Non-integer UIDs (Notes/Calendar/Contacts/Tasks) return false without
+     * querying mailmap — message_uid is an IMAP integer column.
+     *
      * @param string|integer $uid  Message UID.
      * @param string $type         Horde_ActiveSync::CHANGE_TYPE_* constant.
      * @param string|null $synckey If set, require this SyncKey (flag retries).

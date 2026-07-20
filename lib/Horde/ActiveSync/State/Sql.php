@@ -1811,6 +1811,11 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
         if (empty($this->_collection['serverid'])) {
             return false;
         }
+        // PostgreSQL mailmap.message_uid is integer (IMAP UID). Non-mail
+        // collections use UUID strings; querying them aborts the txn (22P02).
+        if (!$this->_isMailMapMessageUid($uid)) {
+            return false;
+        }
         $column = null;
         switch ($type) {
             case Horde_ActiveSync::CHANGE_TYPE_DELETE:
@@ -1836,6 +1841,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                 try {
                     return (bool) $this->_db->selectValue($sql, $params);
                 } catch (Horde_Db_Exception $e) {
+                    $this->_rollbackDbOnFailure();
                     throw new Horde_ActiveSync_Exception($e);
                 }
             case Horde_ActiveSync::CHANGE_TYPE_DRAFT:
@@ -1865,7 +1871,40 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
         try {
             return (bool) $this->_db->selectValue($sql, $params);
         } catch (Horde_Db_Exception $e) {
+            $this->_rollbackDbOnFailure();
             throw new Horde_ActiveSync_Exception($e);
+        }
+    }
+
+    /**
+     * Whether $uid is a valid mailmap message_uid (IMAP integer).
+     *
+     * @param mixed $uid  Candidate server id.
+     *
+     * @return boolean
+     */
+    protected function _isMailMapMessageUid($uid)
+    {
+        if (is_int($uid)) {
+            return $uid >= 0;
+        }
+
+        return is_string($uid) && $uid !== '' && ctype_digit($uid);
+    }
+
+    /**
+     * Roll back an open DB transaction after a failed query so PostgreSQL
+     * does not leave the connection in SQLSTATE 25P02 (aborted txn).
+     */
+    protected function _rollbackDbOnFailure()
+    {
+        if (!$this->_db->transactionStarted()) {
+            return;
+        }
+        try {
+            $this->_db->rollbackDbTransaction();
+        } catch (Horde_Db_Exception $e) {
+            $this->_logger->err($e->getMessage());
         }
     }
 

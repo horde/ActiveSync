@@ -1838,6 +1838,14 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
         if (empty($this->_collection['serverid'])) {
             return false;
         }
+        // mailmap is email-only (IMAP integer UIDs); ignore PIM UUID ids.
+        if (is_int($uid)) {
+            if ($uid < 0) {
+                return false;
+            }
+        } elseif (!is_string($uid) || $uid === '' || !ctype_digit($uid)) {
+            return false;
+        }
         $query = [
             self::MESSAGE_UID => (string) $uid,
             self::SYNC_DEVID => $this->_deviceInfo->id,
