@@ -151,8 +151,53 @@ class Horde_ActiveSync_Connector_Importer
         // Don't support SMS, but can't tell client that. Send back a phoney
         // UID for any imported SMS objects.
         if ($class == Horde_ActiveSync::CLASS_SMS
-            || strpos($id, 'IGNORESMS_') === 0) {
+            || strpos((string) $id, 'IGNORESMS_') === 0) {
             return 'IGNORESMS_' . $clientid;
+        }
+
+        // Idempotent email Draft Modify: same SyncKey + ServerId must not
+        // append another IMAP message when the client retries a lost response.
+        if ($id
+            && $synckey
+            && ($message instanceof Horde_ActiveSync_Message_Mail)
+            && !empty($message->airsyncbasebody)
+            && ($applied = $this->_state->getAppliedPIMChange($id, $synckey))) {
+            $this->_logger->notice(
+                sprintf(
+                    'Duplicate draft modify for %s under %s; mapped to %s',
+                    $id,
+                    $synckey,
+                    $applied['id']
+                )
+            );
+            // Reply ServerEntryId stays $id (client ServerId); $applied['id']
+            // is only the post-append IMAP UID used for conversationindex.
+            return $this->_draftModifyStat($applied['id'], $message, $synckey, $id);
+        }
+
+        // Idempotent email flag Modify under the same SyncKey.
+        if ($id
+            && $synckey
+            && ($message instanceof Horde_ActiveSync_Message_Mail)
+            && empty($message->airsyncbasebody)
+            && $this->_state->isMailMapChangeApplied(
+                $id,
+                Horde_ActiveSync::CHANGE_TYPE_FLAGS,
+                $synckey
+            )) {
+            $this->_logger->notice(
+                sprintf(
+                    'Duplicate flag modify for %s under %s',
+                    $id,
+                    $synckey
+                )
+            );
+            return [
+                'id' => $id,
+                'mod' => 0,
+                'flags' => [],
+                'serverid' => $this->_folderId,
+            ];
         }
 
         // Changing an existing object
@@ -243,22 +288,43 @@ class Horde_ActiveSync_Connector_Importer
         }
         $stat['serverid'] = $this->_folderId;
 
-        // Record the state of the message.
-        // Email messages are only changed if they are Drafts or if we are
-        // updating flags.
-        // When CHANGING a draft message, we are actually deleting the old one
-        // and replacing it with a message (since we can't edit an existing
-        // IMAP message while keeping the UID the same). So, do not call
-        // updateState() for these messages since we don't want to ignore
-        // this as a PIM sourced change - the change will be caught during
-        // normal ping/sync cycle.
-        if ($message instanceof Horde_ActiveSync_Message_Mail) {
-            if (!empty($message->airsyncbasebody) && !empty($id)) {
-                // Changing an existing Draft mail.
-                return $stat;
+        // Email Draft Modify: IMAP append+delete creates a new UID. Record the
+        // applied mapping before mailmap so a lost response can be retried
+        // without another append, and suppress mirror Add/Delete export.
+        if ($message instanceof Horde_ActiveSync_Message_Mail
+            && !empty($message->airsyncbasebody)
+            && !empty($id)) {
+            if ($synckey) {
+                $this->_state->recordAppliedPIMChange($id, $stat, $synckey);
             }
+            $user = $this->_as->driver->getUser();
+            $this->_state->updateState(
+                Horde_ActiveSync::CHANGE_TYPE_DRAFT,
+                $stat,
+                Horde_ActiveSync::CHANGE_ORIGIN_PIM,
+                $user
+            );
+            $this->_state->updateState(
+                Horde_ActiveSync::CHANGE_TYPE_DELETE,
+                [
+                    'id' => $id,
+                    'mod' => !empty($stat['mod']) ? $stat['mod'] : 0,
+                    'serverid' => $this->_folderId,
+                ],
+                Horde_ActiveSync::CHANGE_ORIGIN_PIM,
+                $user
+            );
+            return $this->_draftModifyStat(
+                $stat['id'],
+                $message,
+                $synckey ?: '',
+                $id,
+                $stat
+            );
+        }
 
-            // Either a flag change, or adding a new Draft mail.
+        if ($message instanceof Horde_ActiveSync_Message_Mail) {
+            // Flag change or new Draft mail.
             $changeType = !empty($message->airsyncbasebody)
                 ? Horde_ActiveSync::CHANGE_TYPE_DRAFT
                 : Horde_ActiveSync::CHANGE_TYPE_FLAGS;
@@ -274,7 +340,68 @@ class Horde_ActiveSync_Connector_Importer
             $clientid
         );
 
+        // Email Add: mailmap has no sync_clientid; dual-write to sync_map so
+        // isDuplicatePIMAddition() can catch retries after a lost response.
+        if (!$id && $clientid
+            && ($message instanceof Horde_ActiveSync_Message_Mail)) {
+            $this->_state->recordPIMAddition(
+                $clientid,
+                $stat['id'],
+                $this->_folderId,
+                $synckey ?: null
+            );
+        }
+
         return $stat;
+    }
+
+    /**
+     * Build a Draft Modify stat array suitable for Sync replies, including
+     * conversation fields so EAS 16 clients accept the response on retry.
+     *
+     * SyncReplies must echo the client's ServerEntryId ($oldId). IMAP
+     * append+delete yields a new UID ($newId) that only the applied map and
+     * mailmap track; putting it in Replies makes Gmail reject the SyncKey.
+     *
+     * @param string|integer $newId  Post-append IMAP UID (conversationindex).
+     * @param Horde_ActiveSync_Message_Base $message
+     * @param string $synckey
+     * @param string|integer $oldId  Client ServerId for SyncReplies.
+     * @param array $stat  Optional driver stat to merge (atchash, etc.).
+     *
+     * @return array
+     */
+    protected function _draftModifyStat(
+        $newId,
+        Horde_ActiveSync_Message_Base $message,
+        $synckey,
+        $oldId,
+        array $stat = []
+    ) {
+        $out = array_merge(
+            [
+                'id' => $oldId,
+                'mod' => 0,
+                'flags' => [],
+            ],
+            $stat
+        );
+        // Force client ServerId even if $stat carried the new IMAP UID.
+        $out['id'] = $oldId;
+        $out['serverid'] = $this->_folderId;
+        // Stable conversation fields (not time()) so retries emit the same
+        // SyncReplies shape Gmail requires for Drafts up-sync. Never leave
+        // conversationid empty: Sync skips email Modify replies when both
+        // conversations and atchash are empty (!empty('') is false).
+        if ($message instanceof Horde_ActiveSync_Message_Mail) {
+            $subject = (string) $message->subject;
+            $out['conversationid'] = bin2hex(
+                $subject !== '' ? $subject : ('draft:' . $oldId)
+            );
+            $out['conversationindex'] = crc32($synckey . ':' . $oldId . ':' . $newId);
+        }
+
+        return $out;
     }
 
     /**
@@ -318,18 +445,42 @@ class Horde_ActiveSync_Connector_Importer
             return $ids;
         }
 
-        // Ask the backend to delete the message.
-        $mod = $this->_as->driver->getSyncStamp($this->_folderId);
-        $ids = $this->_as->driver->deleteMessage($this->_folderId, $ids);
+        $already = [];
+        $toDelete = [];
         foreach ($ids as $id) {
-            // Ignore SMS changes.
-            if (strpos($id, "IGNORESMS_") === 0) {
+            if (strpos((string) $id, 'IGNORESMS_') === 0) {
                 continue;
             }
-            $change = [];
-            $change['id'] = $id;
-            $change['mod'] = $mod;
-            $change['serverid'] = $this->_folderId;
+            // mailmap.message_uid is an IMAP integer; never query it for
+            // Notes/Calendar/Contacts/Tasks (UUID string server ids).
+            if ($class == Horde_ActiveSync::CLASS_EMAIL
+                && $this->_state->isMailMapChangeApplied(
+                    $id,
+                    Horde_ActiveSync::CHANGE_TYPE_DELETE
+                )) {
+                $already[] = $id;
+            } else {
+                $toDelete[] = $id;
+            }
+        }
+
+        $mod = $this->_as->driver->getSyncStamp($this->_folderId);
+        $deleted = $toDelete
+            ? $this->_as->driver->deleteMessage($this->_folderId, $toDelete)
+            : [];
+        if (!is_array($deleted)) {
+            $deleted = [];
+        }
+
+        // UIDs the driver did not return are treated as already gone so a
+        // retried Remove after a lost response is not reported as missing.
+        $gone = array_diff($toDelete, $deleted);
+        foreach ($deleted as $id) {
+            $change = [
+                'id' => $id,
+                'mod' => $mod,
+                'serverid' => $this->_folderId,
+            ];
             $this->_state->updateState(
                 Horde_ActiveSync::CHANGE_TYPE_DELETE,
                 $change,
@@ -337,8 +488,20 @@ class Horde_ActiveSync_Connector_Importer
                 $this->_as->driver->getUser()
             );
         }
+        foreach ($gone as $id) {
+            $this->_state->updateState(
+                Horde_ActiveSync::CHANGE_TYPE_DELETE,
+                [
+                    'id' => $id,
+                    'mod' => $mod,
+                    'serverid' => $this->_folderId,
+                ],
+                Horde_ActiveSync::CHANGE_ORIGIN_PIM,
+                $this->_as->driver->getUser()
+            );
+        }
 
-        return $ids;
+        return array_values(array_unique(array_merge($already, $deleted, $gone)));
     }
 
     /**
@@ -396,7 +559,31 @@ class Horde_ActiveSync_Connector_Importer
             $collectionClass = Horde_ActiveSync::CLASS_EMAIL;
         }
         $dst = $collections->getBackendIdForFolderUid($dst);
-        $results = $this->_as->driver->moveMessage($this->_folderId, $uids, $dst);
+        $synckey = $this->_state->getCurrentSyncKey();
+
+        $results = [];
+        $pending = [];
+        foreach ($uids as $uid) {
+            if ($synckey
+                && ($prev = $this->_state->getAppliedMailMove($uid, $synckey))) {
+                $results[$uid] = $prev;
+                continue;
+            }
+            $pending[] = $uid;
+        }
+
+        if ($pending) {
+            $moved = $this->_as->driver->moveMessage(
+                $this->_folderId,
+                $pending,
+                $dst
+            );
+            if (is_array($moved)) {
+                foreach ($moved as $old => $new) {
+                    $results[$old] = $new;
+                }
+            }
+        }
 
         // Check for any missing (not found) source messages.
         $missing = count($results) != count($uids)
@@ -408,7 +595,7 @@ class Horde_ActiveSync_Connector_Importer
         // sync, but some broken clients don't like this. Save the import
         // in the map table in case we need it later.
         $mod = $this->_as->driver->getSyncStamp($this->_folderId);
-        foreach ($uids as $uid) {
+        foreach ($pending as $uid) {
             if (empty($results[$uid])) {
                 continue;
             }
@@ -424,9 +611,17 @@ class Horde_ActiveSync_Connector_Importer
                 Horde_ActiveSync::CHANGE_ORIGIN_PIM,
                 $this->_as->driver->getUser()
             );
+            if ($synckey) {
+                $this->_state->recordAppliedMailMove(
+                    $uid,
+                    $results[$uid],
+                    $synckey,
+                    $dst
+                );
+            }
         }
 
-        return ['results' => $results, 'missing' => $missing];
+        return ['results' => $results, 'missing' => array_values($missing)];
     }
 
     /**
