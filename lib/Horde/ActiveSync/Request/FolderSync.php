@@ -88,6 +88,7 @@ class Horde_ActiveSync_Request_FolderSync extends Horde_ActiveSync_Request_Base
             $this->_handleError();
             return true;
         }
+        $initialHierarchySync = empty($synckey) || $synckey === '0';
 
         // Prepare the collections handler.
         $collections = $this->_activeSync->getCollectionsObject();
@@ -240,6 +241,13 @@ class Horde_ActiveSync_Request_FolderSync extends Horde_ActiveSync_Request_Base
             $this->_state->save();
         }
         $this->_cleanUpAfterPairing();
+
+        // Folders were kept across synckey=0 reset to avoid an empty-map race;
+        // drop any that are no longer in the live hierarchy. Skip when the live
+        // set is empty so a transient empty getFolderList() cannot wipe the map.
+        if ($initialHierarchySync && !empty($seenfolders)) {
+            $collections->reconcileHierarchyFolders($seenfolders);
+        }
 
         $collections->save();
 
