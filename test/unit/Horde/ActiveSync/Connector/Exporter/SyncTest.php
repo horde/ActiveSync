@@ -68,6 +68,53 @@ class SyncTest extends TestCase
         );
     }
 
+    public function testFetchIdsRecordsNotFoundFailuresAndRepliesStatusNotFound()
+    {
+        $fixture = $this->_createExporter(Horde_ActiveSync::VERSION_FOURTEEN);
+
+        $driver = $this->createMock(Horde_ActiveSync_Driver_Base::class);
+        $driver->method('fetch')
+            ->willThrowException(new \Horde_Exception_NotFound());
+
+        $collection = [
+            'serverid' => 'INBOX',
+            'fetchids' => ['169864'],
+        ];
+        $fixture->exporter->fetchIds($driver, $collection);
+
+        $this->assertSame(['169864'], $fixture->exporter->getFailedFetchIds());
+
+        $replies = $this->_decodeFetchReplies($this->_readExporterOutput($fixture));
+        $this->assertCount(1, $replies);
+        $this->assertSame('169864', $replies[0]['serverEntryId']);
+        $this->assertSame(
+            Horde_ActiveSync_Request_Sync::STATUS_NOTFOUND,
+            $replies[0]['status']
+        );
+    }
+
+    public function testFetchIdsResetsFailureListOnSuccessfulFetch()
+    {
+        $fixture = $this->_createExporter(Horde_ActiveSync::VERSION_FOURTEEN);
+
+        $failingDriver = $this->createMock(Horde_ActiveSync_Driver_Base::class);
+        $failingDriver->method('fetch')
+            ->willThrowException(new \Horde_Exception_NotFound());
+        $collection = [
+            'serverid' => 'INBOX',
+            'fetchids' => ['169864'],
+        ];
+        $fixture->exporter->fetchIds($failingDriver, $collection);
+        $this->assertSame(['169864'], $fixture->exporter->getFailedFetchIds());
+
+        $message = $this->createMock(\Horde_ActiveSync_Message_Base::class);
+        $driver = $this->createMock(Horde_ActiveSync_Driver_Base::class);
+        $driver->method('fetch')->willReturn($message);
+        $fixture->exporter->fetchIds($driver, $collection);
+
+        $this->assertSame([], $fixture->exporter->getFailedFetchIds());
+    }
+
     public function testSyncModifiedResponseIncludesServerEntryIdForEmailAttachmentChanges()
     {
         $collection = [
@@ -161,6 +208,9 @@ class SyncTest extends TestCase
         $versionRef = new ReflectionProperty(Horde_ActiveSync::class, '_version');
         $versionRef->setAccessible(true);
         $versionRef->setValue(null, $clientVersion);
+        $loggerRef = new ReflectionProperty(Horde_ActiveSync::class, '_logger');
+        $loggerRef->setAccessible(true);
+        $loggerRef->setValue(null, $logger);
 
         $exporter = new Horde_ActiveSync_Connector_Exporter_Sync($server, $encoder);
 
@@ -218,6 +268,53 @@ class SyncTest extends TestCase
                     $reply['serverEntryId'] = $content;
                 } elseif ($tag === Horde_ActiveSync::SYNC_CLIENTENTRYID) {
                     $reply['clientEntryId'] = $content;
+                } elseif ($tag === Horde_ActiveSync::SYNC_STATUS) {
+                    $reply['status'] = (int) $content;
+                }
+            }
+
+            $decoder->getElementEndTag();
+            $replies[] = $reply;
+        }
+
+        fclose($stream);
+
+        return $replies;
+    }
+
+    /**
+     * @return list<array{serverEntryId: ?string, status: ?int}>
+     */
+    protected function _decodeFetchReplies(string $wbxml): array
+    {
+        $stream = fopen('php://memory', 'wb+');
+        fwrite($stream, $wbxml);
+        rewind($stream);
+
+        $decoder = new Horde_ActiveSync_Wbxml_Decoder($stream);
+        $decoder->readWbxmlHeader();
+
+        $replies = [];
+        while (($next = $decoder->peek()) !== false
+            && $next[Horde_ActiveSync_Wbxml::EN_TYPE] === Horde_ActiveSync_Wbxml::EN_TYPE_STARTTAG
+            && $next[Horde_ActiveSync_Wbxml::EN_TAG] === Horde_ActiveSync::SYNC_FETCH
+        ) {
+            $decoder->getElementStartTag(Horde_ActiveSync::SYNC_FETCH);
+            $reply = [
+                'serverEntryId' => null,
+                'status' => null,
+            ];
+
+            while (($child = $decoder->peek()) !== false
+                && $child[Horde_ActiveSync_Wbxml::EN_TYPE] === Horde_ActiveSync_Wbxml::EN_TYPE_STARTTAG
+            ) {
+                $tag = $child[Horde_ActiveSync_Wbxml::EN_TAG];
+                $decoder->getElementStartTag($tag);
+                $content = $decoder->getElementContent();
+                $decoder->getElementEndTag();
+
+                if ($tag === Horde_ActiveSync::SYNC_SERVERENTRYID) {
+                    $reply['serverEntryId'] = $content;
                 } elseif ($tag === Horde_ActiveSync::SYNC_STATUS) {
                     $reply['status'] = (int) $content;
                 }
@@ -304,6 +401,10 @@ class SyncTest extends TestCase
         $versionRef = new ReflectionProperty(Horde_ActiveSync::class, '_version');
         $versionRef->setAccessible(true);
         $versionRef->setValue(null, null);
+
+        $loggerRef = new ReflectionProperty(Horde_ActiveSync::class, '_logger');
+        $loggerRef->setAccessible(true);
+        $loggerRef->setValue(null, null);
 
         parent::tearDown();
     }

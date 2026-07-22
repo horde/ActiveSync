@@ -379,5 +379,44 @@ class ImapFolderTest extends TestCase
         $this->assertEquals($msg_changes, $folder->messages());
     }
 
+    public function testGhostUidTracking()
+    {
+        $folder = new Horde_ActiveSync_Folder_Imap('INBOX', Horde_ActiveSync::CLASS_EMAIL);
 
+        $this->assertEquals([], $folder->ghostUids());
+
+        $folder->addGhostUids(['999']);
+        $folder->addGhostUids(['999', '1000']);
+        $this->assertEquals(['999', '1000'], $folder->ghostUids());
+
+        $folder->removeGhostUids(['999']);
+        $this->assertEquals(['1000'], $folder->ghostUids());
+
+        // Removing an unknown uid is a no-op.
+        $folder->removeGhostUids(['12345']);
+        $this->assertEquals(['1000'], $folder->ghostUids());
+    }
+
+    public function testGhostUidsSurviveSerialization()
+    {
+        $folder = new Horde_ActiveSync_Folder_Imap('INBOX', Horde_ActiveSync::CLASS_EMAIL);
+        $folder->setStatus([
+            Horde_ActiveSync_Folder_Imap::UIDVALIDITY => 100,
+            Horde_ActiveSync_Folder_Imap::UIDNEXT => 105,
+            Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ => 200,
+        ]);
+        $folder->setChanges([100, 101]);
+        $folder->updateState();
+        $folder->addGhostUids(['999']);
+
+        $restored = unserialize(serialize($folder));
+        $this->assertEquals(['999'], $restored->ghostUids());
+        $this->assertEquals([100, 101], $restored->messages());
+
+        // Serialized data without recorded ghosts unserializes to an
+        // empty list (BC with pre-ghost state rows).
+        $folder->removeGhostUids(['999']);
+        $restored = unserialize(serialize($folder));
+        $this->assertEquals([], $restored->ghostUids());
+    }
 }

@@ -17,6 +17,7 @@
  *
  * @copyright 2012-2020 Horde LLC (http://www.horde.org)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
+ * @author    Torben Dannhauer <torben@dannhauer.de>
  * @package   ActiveSync
  */
 class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implements Serializable
@@ -115,6 +116,19 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
      * @var array
      */
     protected $_pingStatus = [];
+
+    /**
+     * UIDs of "ghost" items: mail the client still holds (and e.g. retries
+     * SYNC_FETCH for) although it no longer exists in the IMAP folder and is
+     * untracked in $_messages. The regular change diff engine can never
+     * delete such items again, so they are recorded here and exported as
+     * synthetic deletions through the normal change pipeline.
+     *
+     * @see Horde_ActiveSync_State_Base::getChanges()
+     *
+     * @var array
+     */
+    protected $_ghostUids = [];
 
     /**
      * Set message changes.
@@ -556,6 +570,44 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
     }
 
     /**
+     * Record "ghost" UIDs for deferred eviction from the client.
+     *
+     * @param array $uids  The IMAP UIDs.
+     */
+    public function addGhostUids(array $uids)
+    {
+        $this->_ghostUids = array_values(
+            array_unique(array_merge($this->_ghostUids, $uids))
+        );
+    }
+
+    /**
+     * Return the recorded "ghost" UIDs awaiting eviction.
+     *
+     * @return array  The IMAP UIDs.
+     */
+    public function ghostUids()
+    {
+        return $this->_ghostUids;
+    }
+
+    /**
+     * Forget recorded "ghost" UIDs, e.g. after the eviction deletion was
+     * exported to the client.
+     *
+     * @param array $uids  The IMAP UIDs.
+     */
+    public function removeGhostUids(array $uids)
+    {
+        if (!count($this->_ghostUids)) {
+            return;
+        }
+        $this->_ghostUids = array_values(
+            array_diff($this->_ghostUids, $uids)
+        );
+    }
+
+    /**
      * Return the minimum IMAP UID contained in this folder.
      *
      * @return integer  The IMAP UID.
@@ -601,6 +653,9 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
         if (!empty($this->_pingStatus)) {
             $data['ps'] = $this->_pingStatus;
         }
+        if (!empty($this->_ghostUids)) {
+            $data['g'] = $this->_ghostUids;
+        }
 
         return $data;
     }
@@ -627,6 +682,7 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
             ? (bool) $data['hi']
             : !empty($this->_messages);
         $this->_pingStatus = !empty($data['ps']) ? $data['ps'] : [];
+        $this->_ghostUids = !empty($data['g']) ? $data['g'] : [];
 
         if (!empty($this->_status[self::HIGHESTMODSEQ]) && is_string($this->_messages)) {
             $this->_messages = $this->_fromSequenceString($this->_messages);

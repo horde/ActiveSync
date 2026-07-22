@@ -768,6 +768,22 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
 
                     // End SYNC_REPLIES
                     $this->_encoder->endTag();
+
+                    // Self-heal ghost items: a Fetch for a mail that is gone
+                    // from IMAP and untracked in the folder state means the
+                    // client still holds an item the server deleted long ago
+                    // (e.g. removed via IMAP/webmail; some clients never act
+                    // on the Fetch STATUS_NOTFOUND reply and retry forever).
+                    // Record the ghost id in the folder state; the eviction
+                    // deletion is exported through the regular change
+                    // pipeline on a later GetChanges Sync. It MUST NOT be
+                    // emitted in this response: iOS maild asserts (SIGABRT
+                    // crash loop) when a Sync response combines a Fetch
+                    // reply with a Remove command for the same item.
+                    $ghostIds = $this->_getGhostFetchIds($exporter, $collection);
+                    if (count($ghostIds)) {
+                        $this->_state->addGhostUids($ghostIds);
+                    }
                 }
 
                 // Save state
@@ -927,6 +943,61 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
         return $budget > 0
             && $cntCollection > 0
             && (microtime(true) - $syncOutputStart) >= $budget;
+    }
+
+    /**
+     * Return the server ids of failed client Fetch requests that reference
+     * "ghost" items: mail that no longer exists in the IMAP folder and is
+     * unknown to the server's folder state.
+     *
+     * Such items were deleted through another vector (IMAP client, webmail)
+     * and the Remove command sent back then was not (fully) applied by the
+     * client, which now retries the Fetch indefinitely against an item the
+     * change diff engine will never delete again. The caller records these
+     * ids in the folder state for deferred eviction through the regular
+     * change pipeline.
+     *
+     * Items that failed to fetch but are still tracked in the folder state
+     * are NOT reported: their deletion (if any) is detected and sent by the
+     * regular change diff engine.
+     *
+     * @param Horde_ActiveSync_Connector_Exporter_Sync $exporter  The
+     *     exporter that handled the collection's Fetch requests.
+     * @param array $collection     The collection array.
+     *
+     * @return array  The list of ghost server ids to evict.
+     */
+    protected function _getGhostFetchIds(
+        Horde_ActiveSync_Connector_Exporter_Sync $exporter,
+        array $collection
+    ) {
+        if (empty($collection['fetchids'])
+            || $collection['class'] != Horde_ActiveSync::CLASS_EMAIL) {
+            return [];
+        }
+        $failed = $exporter->getFailedFetchIds();
+        if (!count($failed)) {
+            return [];
+        }
+        $folderState = $this->_state->getFolderState();
+        if (!($folderState instanceof Horde_ActiveSync_Folder_Imap)) {
+            return [];
+        }
+        $known = $folderState->messages();
+        $ghosts = [];
+        foreach ($failed as $fetch_id) {
+            if (in_array($fetch_id, $known)) {
+                continue;
+            }
+            $this->_logger->info(sprintf(
+                'SYNC: Fetch for %s in %s failed and the item is untracked in folder state; recording ghost uid for deferred eviction from the client.',
+                $fetch_id,
+                $collection['id']
+            ));
+            $ghosts[] = $fetch_id;
+        }
+
+        return $ghosts;
     }
 
     /**

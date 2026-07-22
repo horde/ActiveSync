@@ -18,6 +18,7 @@
  *
  * @copyright 2009-2020 Horde LLC (http://www.horde.org)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
+ * @author    Torben Dannhauer <torben@dannhauer.de>
  * @package   ActiveSync
  */
 class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connector_Exporter_Base
@@ -28,6 +29,15 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
      * @var array
      */
     protected $_seenObjects = [];
+
+    /**
+     * Server ids of SYNC_FETCH requests that failed with a NotFound error
+     * during the last fetchIds() call. Used by the Sync handler to detect
+     * "ghost" items still present on the client but gone from the server.
+     *
+     * @var array
+     */
+    protected $_failedFetchIds = [];
 
     /**
      * Currently syncing collection.
@@ -303,10 +313,15 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
     /**
      * Send the SYNC_FETCH response for any items requested by the client.
      *
+     * Fetch requests that fail because the item no longer exists are
+     * answered with STATUS_NOTFOUND and recorded; they can be retrieved
+     * with getFailedFetchIds() after this method returns.
+     *
      * @param array $collection  The collection array.
      */
     public function fetchIds($driver, $collection)
     {
+        $this->_failedFetchIds = [];
         foreach ($collection['fetchids'] as $fetch_id) {
             try {
                 $data = $driver->fetch($collection['serverid'], $fetch_id, $collection);
@@ -328,6 +343,7 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
                         $fetch_id
                     )
                 );
+                $this->_failedFetchIds[] = $fetch_id;
                 $this->_encoder->startTag(Horde_ActiveSync::SYNC_FETCH);
                 $this->_encoder->startTag(Horde_ActiveSync::SYNC_SERVERENTRYID);
                 $this->_encoder->content($fetch_id);
@@ -338,6 +354,17 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
                 $this->_encoder->endTag();
             }
         }
+    }
+
+    /**
+     * Return the server ids of Fetch requests that failed with a NotFound
+     * error during the last fetchIds() call.
+     *
+     * @return array  The list of server ids.
+     */
+    public function getFailedFetchIds()
+    {
+        return $this->_failedFetchIds;
     }
 
     /**
