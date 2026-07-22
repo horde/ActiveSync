@@ -296,6 +296,32 @@ abstract class Horde_ActiveSync_State_Base
     }
 
     /**
+     * Return the folder state object loaded for the current collection.
+     *
+     * @return Horde_ActiveSync_Folder_Base|array|null  The folder state, an
+     *         empty array for FOLDERSYNC state, or null if no state loaded.
+     */
+    public function getFolderState()
+    {
+        return $this->_folder ?? null;
+    }
+
+    /**
+     * Record "ghost" UIDs in the loaded IMAP folder state for deferred
+     * eviction: the deletion is exported through the regular change pipeline
+     * on a later GetChanges SYNC (@see getChanges()). No-op for non-email
+     * folder state.
+     *
+     * @param array $uids  The IMAP UIDs.
+     */
+    public function addGhostUids(array $uids)
+    {
+        if ($this->_folder instanceof Horde_ActiveSync_Folder_Imap) {
+            $this->_folder->addGhostUids($uids);
+        }
+    }
+
+    /**
      * Update the $oldKey syncState to $newKey.
      *
      * @param string $newKey
@@ -831,6 +857,12 @@ abstract class Horde_ActiveSync_State_Base
                 $this->_logger->meta('STATE: No client changes, returning all messages.');
                 $this->_changes = $changes;
             }
+
+            // Evict "ghost" items recorded in the folder state: deletions
+            // the diff engine can never produce again (@see addGhostUids()).
+            // Injected in PING mode too so the client is woken to pick up
+            // the eviction on its next SYNC.
+            $this->_injectGhostUidDeletions();
         } else {
             // FOLDERSYNC changes.
             $this->_getFolderChanges();
@@ -1344,6 +1376,67 @@ abstract class Horde_ActiveSync_State_Base
                     $this->_folder->acknowledgeExportedMessage($change['id']);
                 }
                 break;
+
+            case Horde_ActiveSync::CHANGE_TYPE_DELETE:
+                // A delivered deletion also settles any recorded ghost
+                // eviction for this uid (no-op for regular deletions).
+                if (!empty($change['id'])) {
+                    $this->_folder->removeGhostUids([$change['id']]);
+                }
+                break;
+        }
+    }
+
+    /**
+     * Append synthetic deletions for recorded "ghost" UIDs to the current
+     * change set.
+     *
+     * Ghost items exist only on the client (e.g. a deletion Remove was never
+     * applied and the client retries SYNC_FETCH for the item forever). They
+     * are untracked in the folder state, so the diff engine will never
+     * delete them again; exporting a synthetic deletion through the normal
+     * change pipeline evicts them. The recorded uid is cleared once the
+     * deletion is exported (@see _acknowledgeExportedChange()).
+     *
+     * @see Horde_ActiveSync_Folder_Imap::addGhostUids()
+     */
+    protected function _injectGhostUidDeletions()
+    {
+        if (!$this->_folder instanceof Horde_ActiveSync_Folder_Imap) {
+            return;
+        }
+        $ghosts = $this->_folder->ghostUids();
+        if (!count($ghosts)) {
+            return;
+        }
+        // Initial sync batches are bare uid lists; never mix change hashes
+        // into them. Ghosts are delivered once the structure is normalized.
+        if (count($this->_changes) && !is_array(reset($this->_changes))) {
+            return;
+        }
+        $pending = [];
+        foreach ($this->_changes as $change) {
+            $pending[$change['id']] = true;
+        }
+        $known = $this->_folder->messages();
+        foreach ($ghosts as $uid) {
+            if (!empty($pending[$uid])) {
+                continue;
+            }
+            if (in_array($uid, $known)) {
+                // Tracked (again); the regular diff engine owns this uid.
+                $this->_folder->removeGhostUids([$uid]);
+                continue;
+            }
+            $this->_logger->info(sprintf(
+                'STATE: Injecting deletion for ghost uid %s in %s to evict it from the client.',
+                $uid,
+                $this->_collection['id']
+            ));
+            $this->_changes[] = [
+                'id' => $uid,
+                'type' => Horde_ActiveSync::CHANGE_TYPE_DELETE,
+            ];
         }
     }
 
