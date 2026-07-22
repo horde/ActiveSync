@@ -768,13 +768,14 @@ abstract class Horde_ActiveSync_State_Base
                             // this stuff. (Needs BC breaking changes in
                             // storage/state classes).
 
-                            // OL2013 is broken and duplicates the destination
-                            // email during MOVEITEMS requests (instead it
-                            // reassigns the existing email the new UID). Don't
-                            // send the ADD command for these changes.
+                            // Clients with QUIRK_REASSIGNS_UID_ON_MOVE (OL2013)
+                            // do not duplicate the destination email during
+                            // MOVEITEMS requests (they reassign the existing
+                            // email the new UID). Don't send the ADD command
+                            // for these changes.
                             if ($changes[$i]['type'] == Horde_ActiveSync::CHANGE_TYPE_CHANGE
                                 && $changes[$i]['flags'] == Horde_ActiveSync::FLAG_NEWMESSAGE
-                                && $this->_deviceInfo->deviceType != 'WindowsOutlook15') {
+                                && !$this->_deviceInfo->hasQuirk(Horde_ActiveSync_Device::QUIRK_REASSIGNS_UID_ON_MOVE)) {
                                 $this->_changes[] = $changes[$i];
                                 continue;
                             }

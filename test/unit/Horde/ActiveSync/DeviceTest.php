@@ -294,6 +294,28 @@ class DeviceTest extends TestCase
         $this->assertEquals($device->supported, ['contacts' => ['one', 'two']]);
     }
 
+    public function testReassignsUidOnMoveQuirk()
+    {
+        $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
+
+        // Outlook 2013 has the quirk.
+        $fixture = [
+            'deviceType' => 'WindowsOutlook15',
+            'userAgent' => 'Outlook/15.0 (15.0.4675.1000; MSI; x86)',
+        ];
+        $device = new Horde_ActiveSync_Device($state, $fixture);
+        $this->assertTrue($device->hasQuirk(Horde_ActiveSync_Device::QUIRK_REASSIGNS_UID_ON_MOVE));
+
+        // Other clients do not.
+        $fixture = [
+            'deviceType' => 'iPhone',
+            'userAgent' => 'Apple-iPhone6C1/1104.201',
+            'properties' => [Horde_ActiveSync_Device::OS => 'iOS 9.0.2 13A452'],
+        ];
+        $device = new Horde_ActiveSync_Device($state, $fixture);
+        $this->assertFalse($device->hasQuirk(Horde_ActiveSync_Device::QUIRK_REASSIGNS_UID_ON_MOVE));
+    }
+
     public function testIssetReportsNestedDeviceProperties()
     {
         $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
