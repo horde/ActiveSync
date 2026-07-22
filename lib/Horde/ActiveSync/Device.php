@@ -12,10 +12,21 @@
 /**
  * Horde_ActiveSync_Device:: Wraps all functionality related to device data.
  *
+ * This class is the single home for client-specific behavior:
+ *
+ * - Hard client-conditional branches in request handlers, exporters or
+ *   state code MUST go through hasQuirk() with a QUIRK_* constant defined
+ *   here — never as inline deviceType/userAgent string comparisons at the
+ *   call site.
+ * - Workarounds that are safe and correct for every client (e.g. output
+ *   keepalive for clients with hard read timeouts) stay client-agnostic;
+ *   the client that motivated them is named in a comment only.
+ *
  * @license   http://www.horde.org/licenses/gpl GPLv2
  *
  * @copyright 2010-2020 Horde LLC (http://www.horde.org)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
+ * @author    Torben Dannhauer <torben@dannhauer.de>
  * @package   ActiveSync
  *
  * @property string  $id               The device id.
@@ -97,6 +108,14 @@ class Horde_ActiveSync_Device
      * @since 2.40.0
      */
     public const QUIRK_SUPPORTS_TNEF = 3;
+
+    /**
+     * Outlook 2013 does not duplicate the destination email during
+     * MOVEITEMS requests; it reassigns the existing email the new UID
+     * instead, so the ADD command for the moved message must not be sent
+     * to clients with this quirk.
+     */
+    public const QUIRK_REASSIGNS_UID_ON_MOVE = 4;
 
     /**
      * Device properties.
@@ -722,6 +741,9 @@ class Horde_ActiveSync_Device
                 return (strpos($this->deviceType, 'MicrosoftOutlook') !== false
                     || strpos($this->deviceType, 'WindowsOutlook') != false
                     || strpos($this->userAgent, 'Outlook') !== false);
+
+            case self::QUIRK_REASSIGNS_UID_ON_MOVE:
+                return $this->deviceType == 'WindowsOutlook15';
 
             default:
                 return false;
