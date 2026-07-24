@@ -34,41 +34,6 @@ roadmap — do not implement those entries piecemeal on the FRAMEWORK_6_0 /
   Outlook weekly-series traffic. Documented in `doc/protocol-versions.md`
   (Tasks section).
 
-## Near-term reliability (FRAMEWORK_6_0)
-
-- **Sync response streaming ([#83](https://github.com/horde/ActiveSync/issues/83))
-  — implemented 2026-07-14, awaiting client validation**
-
-  Streams Sync WBXML incrementally (chunked HTTP for `Cmd=Sync` only) so
-  clients with ~30s read timeouts (Gmail Android) receive body bytes while
-  work continues. Covers both directions: per-message flush on export, and
-  — since the 2026-07-14 reporter test exposed a 55.7s silent
-  `FullDraftsUpSync` import phase — deferred import of client-sent commands
-  during response output with WBXML keep-alive tokens
-  (`Encoder::keepAlive()`) flushed between imports. Behaviour, config keys
-  (`streaming`, `maxmessagesperresponse`, `maxmessagetime`,
-  `maxrequestduration`, legacy `maxresponsetime`), error model, and operator
-  notes are documented in [`sync-streaming.md`](sync-streaming.md). Companion
-  changes live in `horde/rpc` (`Horde_Rpc_ActiveSync` streaming path) and
-  `horde/horde` (`rpc.php` config passthrough, `conf.xml` keys). Motivated
-  by [#77](https://github.com/horde/ActiveSync/issues/77).
-
-  **Remaining before #83 can close:**
-
-  - [x] Author deployment soak (streaming on): iOS Mail account re-add /
-    fresh mail sync clean (2026-07-14).
-  - [x] Reporter test round 1 (2026-07-14): export-path streaming confirmed
-    working (stalled Inbox catch-up completed immediately); found the
-    up-sync gap (Drafts import before first byte), fixed via deferred
-    import + keep-alives.
-  - [ ] Gmail Android re-validation of the up-sync path (reporter, feature
-    branch) — includes keep-alive token tolerance of Gmail's WBXML parser.
-  - [ ] Flip `streaming` default to `true` in `conf.xml` after validation.
-  - [ ] Move this entry to **Recently completed** when #83 closes.
-
-  Partial step toward “Request / response pipeline” and “Changes object”
-  below; not a substitute for the full Horde 6 response-object refactor.
-
 ## Operations and monitoring (out of library scope)
 
 - **EAS usage dashboard / “top-like” monitor**
@@ -323,6 +288,24 @@ active backlog; kept here so this file does not resurrect settled work.
   `complete` flag.
 - PING `StateGone` recovery for stale collection synckeys during long poll.
 - **Not supported:** `POOMTASKS:Regenerate=1` (documented limitation).
+
+### Sync response streaming ([#83](https://github.com/horde/ActiveSync/issues/83), 2026-07-24)
+
+- Incremental Sync WBXML delivery (chunked HTTP for `Cmd=Sync` only) so
+  clients with ~30s read timeouts (Gmail Android) receive body bytes while
+  work continues — export flush per message and deferred import of
+  client-sent commands with WBXML keep-alive tokens
+  (`Encoder::keepAlive()`).
+- Companion changes in `horde/rpc` (`Horde_Rpc_ActiveSync` streaming path)
+  and `horde/horde` (`rpc.php` config passthrough, `conf.xml` keys).
+- Config: `streaming` defaults to `true`; rollback via `streaming = false`
+  (restores buffered `Content-Length` + legacy `maxresponsetime`).
+- Validated: author iOS soak; reporter export-path + up-sync (Gmail
+  Android) confirmation. Design and operator notes:
+  [`sync-streaming.md`](sync-streaming.md). Motivated by
+  [#77](https://github.com/horde/ActiveSync/issues/77).
+- Partial step toward the Horde 6 “Request / response pipeline” and
+  “Changes object” work — not a substitute for that refactor.
 
 ### Email sync and polling performance ([#88](https://github.com/horde/ActiveSync/issues/88), 2026-07-24)
 

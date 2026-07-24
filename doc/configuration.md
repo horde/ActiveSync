@@ -176,7 +176,7 @@ ActiveSync → *Sync Response Delivery*):
 
 | Key | Default | Meaning |
 |-----|---------|---------|
-| `streaming` | `false` | Master switch for streaming Sync delivery |
+| `streaming` | `true` | Master switch for streaming Sync delivery |
 | `maxmessagesperresponse` | `10` | Count cap per response when streaming; more changes are announced via `MoreAvailable`. `0` = window size only |
 | `maxmessagetime` | `0` | Soft cap (seconds) for assembling a single message; stops the batch after a slow message. Streaming only. `0` = off |
 | `maxrequestduration` | `0` | Whole-request wall clock cap (seconds), measured from request start (includes import of client changes). Streaming only. `0` = off |

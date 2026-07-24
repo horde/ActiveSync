@@ -45,9 +45,10 @@ Streaming spans three packages:
 | `horde/rpc` `Horde_Rpc_ActiveSync` | For `Cmd=Sync` POST only: skips the full-response output buffer, disables zlib compression, sends no `Content-Length` (the web server applies chunked transfer-encoding). All other commands (`GetAttachment`, `ItemOperations`, `Ping`, …) keep the buffered `Content-Length` response |
 | `horde/activesync` `Request_Sync` + `Wbxml_Encoder` | Flushes WBXML incrementally (details below) |
 
-The feature is **opt-in** (`streaming = false` by default) and fully
-reversible: disabling it restores the buffered `Content-Length` path
-including the legacy `maxresponsetime` budget, with no other changes.
+The feature is **on by default** (`streaming = true`) and fully
+reversible: setting `streaming = false` restores the buffered
+`Content-Length` path including the legacy `maxresponsetime` budget, with
+no other changes.
 
 ### Export phase: incremental flushing
 
@@ -146,7 +147,7 @@ All keys under `$conf['activesync']['sync']` (for library embedders: the
 
 | Key | Default | Meaning |
 |-----|---------|---------|
-| `streaming` | `false` | Master switch for streaming Sync delivery |
+| `streaming` | `true` | Master switch for streaming Sync delivery |
 | `maxmessagesperresponse` | `10` | Count cap per response when streaming; more changes are announced via `MoreAvailable`. `0` = window size only |
 | `maxmessagetime` | `0` | Soft cap (seconds) for assembling a single message; stops the batch after a slow message. Streaming only. `0` = off |
 | `maxrequestduration` | `0` | Whole-request wall clock cap (seconds), measured from request start (includes the deferred import phase). Streaming only. `0` = off |

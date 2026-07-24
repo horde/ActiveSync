@@ -69,7 +69,8 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
 
     /**
      * Whether this Sync response is streamed to the client while the
-     * handler is still running (opt-in via the 'streaming' sync setting).
+     * handler is still running (controlled via the 'streaming' sync
+     * setting; enabled by default).
      *
      * @var boolean
      */
