@@ -7,9 +7,9 @@ see the doc index in the package `README.md` — in particular
 [`protocol-versions.md`](protocol-versions.md) (versions, commands, per-version
 behaviour) and [`configuration.md`](configuration.md) (deployment setup).
 
-Items are grouped by intent. The **Horde 6** section is a breaking-change
-roadmap — do not implement those entries piecemeal on the FRAMEWORK_6_0 /
-3.x line without an explicit migration plan.
+Items are grouped by intent. The **Horde 6 / FRAMEWORK_6_1** section is a
+breaking-change roadmap — do not implement those entries on the
+FRAMEWORK_6_0 / 3.x line.
 
 
 ## Deferred (low priority or no known client)
@@ -44,15 +44,44 @@ roadmap — do not implement those entries piecemeal on the FRAMEWORK_6_0 /
   (`logging.type = perdevice` in Horde config) is the supported debugging
   path today.
 
-## Horde 6 (breaking changes — planned refactor)
+## Horde 6 / FRAMEWORK_6_1 (breaking changes — planned refactor)
 
-Do not start these ad hoc. Each item touches public API surface, persisted
-state, or both.
+Do not start these ad hoc on FRAMEWORK_6_0. Each item touches public API
+surface, persisted state, or both. Target branch: **FRAMEWORK_6_1**.
+
+### Approach and instructions (agreed 2026-07)
+
+Co-maintainer agreement for the larger reworks:
+
+1. **Branch:** land this work on **FRAMEWORK_6_1**, not FRAMEWORK_6_0.
+2. **Build in `src/` first:** establish the clean PSR-4 architecture under
+   `src/` (`Horde\ActiveSync\...`) as the primary implementation.
+3. **Leave `lib/` alone:** do not rewrite or migrate the legacy
+   `Horde_ActiveSync_*` classmap tree in lockstep. Keep `lib/` stable so
+   FRAMEWORK_6_0 / 3.x consumers and the interim path stay untouched.
+4. **Feature switch:** when the `src/` stack is ready, introduce it behind a
+   toggle (config / feature flag) so deployments can switch between the
+   legacy `lib/` path and the new `src/` path. Make the cutover reversible
+   until the new stack is proven.
+
+Practical rules while implementing:
+
+- Prefer new classes, interfaces, and traits under `src/`; add tests against
+  those types.
+- Do not bulk-move or rename existing `lib/` classes as part of iterative
+  development.
+- Wire Core / driver / RPC integration so the feature switch selects which
+  stack handles a request — avoid dual-maintenance of the same logic in
+  both trees where possible (share via traits or thin adapters only when
+  needed).
+- Document the flag name and default (legacy until explicitly enabled) when
+  the switch lands.
 
 ### Architectural direction (review note, 2026-06-24)
 
 Larger refactor work should land together with these baseline changes rather
-than as isolated class extractions:
+than as isolated class extractions — still under the Approach above (`src/`
+first, `lib/` untouched, feature-switch cutover on FRAMEWORK_6_1):
 
 - Replace `horde/controller` (`Horde_Controller_Request_Http`) with
   `horde/http` request and response objects.
@@ -65,7 +94,7 @@ than as isolated class extractions:
   protected methods.
 
 The existing entries below predate this framing and should be folded into it
-when a migration plan is written.
+when work proceeds on FRAMEWORK_6_1.
 
 - Horde\ActiveSync owns the backend/repository interfaces and null implementations.
 - On a case-by-case basis, Horde\ActiveSync also owns default implementations as makes sense. These are marked final and reusable code is exposed as traits.
