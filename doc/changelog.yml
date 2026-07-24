@@ -1,4 +1,14 @@
 ---
+3.2.0:
+  api: 3.2.0
+  state:
+    release: stable
+    api: stable
+  date: 2026-07-24
+  license:
+    identifier: GPL-2.0-only
+    uri: https://spdx.org/licenses/GPL-2.0-only.html
+  notes: "Merge pull request #91 from horde/feat/sync-performance\ndocs(activesync): move #88 entry to recently completed in todo.md\nfeat(activesync): cut steady-state polling and export cost (#88)\nfeat(sync): evict ghost items via deferred synthetic deletions\nrefactor(activesync): centralize client quirks in Device::hasQuirk()\nfeat(activesync): persist folder UID map across FolderSync resets (#87)\nfeat(sync): idempotent email import so retries do not duplicate IMAP (#85) (#86)"
 3.1.0:
   api: 3.1.0
   state:
