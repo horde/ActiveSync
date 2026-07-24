@@ -165,6 +165,25 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     protected $_collectionLockFolderId = null;
 
     /**
+     * Memoized state rows for read-only (PING/heartbeat polling) loads,
+     * keyed by folder id. Each entry holds the synckey it was loaded for
+     * plus the already binary-decoded sync_mod/sync_data/sync_pending
+     * values. Invalidated on any mutating load or save for the folder.
+     *
+     * @see self::_loadStateReadonly()
+     * @var array
+     */
+    protected $_readonlyStateMemo = [];
+
+    /**
+     * Per-request cache of Horde_Db column metadata, keyed by table name.
+     * Schema does not change within a request.
+     *
+     * @var array
+     */
+    protected $_columnsCache = [];
+
+    /**
      * Const'r
      *
      * @param array  $params   Must contain:
@@ -628,10 +647,122 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
      */
     protected function _loadState()
     {
+        if ($this->_loadReadonly) {
+            $this->_loadStateReadonly();
+            return;
+        }
+
+        // A mutating load may change the state; drop any read-only memo.
+        unset($this->_readonlyStateMemo[$this->_stateFolderId()]);
+
         $this->_releaseStateRowLock(false);
 
         $results = $this->_acquireStateRowLock();
         $this->_loadStateFromResults($results);
+    }
+
+    /**
+     * Load the state represented by $syncKey for peeking only (PING /
+     * heartbeat polling): a plain SELECT without row lock, transaction, or
+     * garbage collection. Repeated loads of the same folder and synckey
+     * within this request are served from memory without touching the
+     * database; the state objects are still rehydrated from the raw blobs
+     * on every call, so each poll iteration operates on a pristine copy.
+     *
+     * The memo is invalidated by any mutating load or save for the folder;
+     * a synckey advanced by a parallel SYNC misses the memo and is read
+     * fresh from the database.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @throws Horde_ActiveSync_Exception, Horde_ActiveSync_Exception_StateGone
+     */
+    protected function _loadStateReadonly()
+    {
+        $folderid = $this->_stateFolderId();
+
+        $memo = $this->_readonlyStateMemo[$folderid] ?? null;
+        if ($memo && $memo['synckey'] === $this->_syncKey) {
+            $this->_applyStateData($memo['sync_mod'], $memo['sync_data'], $memo['sync_pending']);
+            return;
+        }
+        unset($this->_readonlyStateMemo[$folderid]);
+
+        $sql = 'SELECT sync_data, sync_devid, sync_mod, sync_pending FROM '
+            . $this->_syncStateTable . ' WHERE sync_key = ?';
+        $values = [$this->_syncKey];
+        if (!empty($this->_collection['id'])) {
+            $sql .= ' AND sync_folderid = ?';
+            $values[] = $this->_collection['id'];
+        }
+
+        try {
+            $results = $this->_db->selectOne($sql, $values);
+        } catch (Horde_Db_Exception $e) {
+            $this->_logger->err($e->getMessage());
+            throw new Horde_ActiveSync_Exception($e);
+        }
+        if (empty($results)) {
+            $this->_logger->warn(
+                sprintf(
+                    'STATE: Could not find state for synckey %s.',
+                    $this->_syncKey
+                )
+            );
+            throw new Horde_ActiveSync_Exception_StateGone();
+        }
+
+        // Decode binary columns once; memoize the decoded strings so the
+        // memo stays valid on drivers returning stream resources.
+        $columns = $this->_columns($this->_syncStateTable);
+        $syncMod = !empty($results['sync_mod']) ? $results['sync_mod'] : 0;
+        $rawSyncData = $columns['sync_data']->binaryToString($results['sync_data']);
+        $rawSyncPending = !empty($results['sync_pending'])
+            ? $columns['sync_pending']->binaryToString($results['sync_pending'])
+            : '';
+
+        $this->_readonlyStateMemo[$folderid] = [
+            'synckey' => $this->_syncKey,
+            'sync_mod' => $syncMod,
+            'sync_data' => $rawSyncData,
+            'sync_pending' => $rawSyncPending,
+        ];
+
+        $this->_applyStateData($syncMod, $rawSyncData, $rawSyncPending);
+    }
+
+    /**
+     * Return the folder id identifying the current state row.
+     *
+     * @return string
+     */
+    protected function _stateFolderId()
+    {
+        return !empty($this->_collection['id'])
+            ? $this->_collection['id']
+            : Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC;
+    }
+
+    /**
+     * Return (and cache per request) the column metadata for a table.
+     *
+     * @param string $table  The table name.
+     *
+     * @return array  The Horde_Db column objects, keyed by column name.
+     * @throws Horde_ActiveSync_Exception
+     */
+    protected function _columns($table)
+    {
+        if (!isset($this->_columnsCache[$table])) {
+            try {
+                $this->_columnsCache[$table] = $this->_db->columns($table);
+            } catch (Horde_Db_Exception $e) {
+                $this->_logger->err($e->getMessage());
+                throw new Horde_ActiveSync_Exception($e);
+            }
+        }
+
+        return $this->_columnsCache[$table];
     }
 
     /**
@@ -641,27 +772,38 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
      */
     protected function _loadStateFromResults($results)
     {
+        $columns = $this->_columns($this->_syncStateTable);
+        $rawSyncData = $columns['sync_data']->binaryToString($results['sync_data']);
+        $rawSyncPending = !empty($results['sync_pending'])
+            ? $columns['sync_pending']->binaryToString($results['sync_pending'])
+            : '';
+
+        $this->_applyStateData(
+            !empty($results['sync_mod']) ? $results['sync_mod'] : 0,
+            $rawSyncData,
+            $rawSyncPending
+        );
+    }
+
+    /**
+     * Populate the state object from the raw (binary-decoded) state row
+     * values.
+     *
+     * @param integer|string $syncMod  The sync_mod column value.
+     * @param string $rawSyncData      The serialized sync_data blob.
+     * @param string $rawSyncPending   The serialized sync_pending blob.
+     */
+    protected function _applyStateData($syncMod, $rawSyncData, $rawSyncPending)
+    {
         // Load the last known sync time for this collection
-        $this->_lastSyncStamp = !empty($results['sync_mod'])
-            ? $results['sync_mod']
-            : 0;
+        $this->_lastSyncStamp = !empty($syncMod) ? $syncMod : 0;
 
         // Pre-Populate the current sync timestamp in case this is only a
         // Client -> Server sync.
         $this->_thisSyncStamp = $this->_lastSyncStamp;
 
         // Restore any state or pending changes
-        try {
-            $columns = $this->_db->columns($this->_syncStateTable);
-        } catch (Horde_Db_Exception $e) {
-            $this->_logger->err($e->getMessage());
-            throw new Horde_ActiveSync_Exception($e);
-        }
-        $rawSyncData = $columns['sync_data']->binaryToString($results['sync_data']);
         $data = $this->_unserializeState($rawSyncData);
-        $rawSyncPending = !empty($results['sync_pending'])
-            ? $columns['sync_pending']->binaryToString($results['sync_pending'])
-            : '';
         $this->_syncPendingBlob = ($rawSyncPending !== '') ? $rawSyncPending : null;
         $pending = $this->_unserializeState($rawSyncPending);
 
@@ -728,6 +870,10 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                 $this->_releaseStateRowLock(false);
                 $this->_releaseCollectionLock(false);
                 throw new Horde_ActiveSync_Exception($e);
+            }
+            if ($updated) {
+                // sync_mod changed; refresh any read-only memo.
+                unset($this->_readonlyStateMemo[$this->_stateFolderId()]);
             }
         }
 
@@ -842,6 +988,9 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
      */
     protected function _saveSyncStateRow(array $params)
     {
+        // State is changing; any read-only memo for this folder is stale.
+        unset($this->_readonlyStateMemo[$params['sync_folderid']]);
+
         $where = [
             'sync_key = ? AND sync_folderid = ? AND sync_devid = ? AND sync_user = ?',
             [
@@ -2014,7 +2163,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             . ' WHERE cache_devid = ? AND cache_user = ?';
         try {
             $data = $this->_db->selectValue($sql, [$devid, $user]);
-            $columns = $this->_db->columns($this->_syncCacheTable);
+            $columns = $this->_columns($this->_syncCacheTable);
             $data = $columns['cache_data']->binaryToString($data);
         } catch (Horde_Db_Exception $e) {
             throw new Horde_ActiveSync_Exception($e);
@@ -2054,42 +2203,25 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     public function saveSyncCache(array $cache, $devid, $user, array $dirty = [])
     {
         $cache['timestamp'] = strval($cache['timestamp']);
-        $sql = 'SELECT count(*) FROM ' . $this->_syncCacheTable
+
+        // Load the currently stored cache. Also tells us whether a row
+        // exists at all (replaces the former SELECT count(*)).
+        $sql = 'SELECT cache_data FROM ' . $this->_syncCacheTable
             . ' WHERE cache_devid = ? AND cache_user = ?';
         try {
-            $have = $this->_db->selectValue($sql, [$devid, $user]);
+            $stored_raw = $this->_db->selectValue($sql, [$devid, $user]);
         } catch (Horde_Db_Exception $e) {
             $this->_logger->err($e->getMessage());
             throw new Horde_ActiveSync_Exception($e);
         }
-        $cache = serialize($cache);
-        if ($have) {
+
+        if (!$stored_raw) {
+            // No existing row; persist the full cache.
             $this->_logger->meta(
                 sprintf(
-                    'STATE: Replacing SYNC_CACHE entry for user %s and device %s: %s',
+                    'STATE: Adding new SYNC_CACHE entry for user %s and device %s.',
                     $user,
-                    $devid,
-                    $cache
-                )
-            );
-            $sql = 'UPDATE ' . $this->_syncCacheTable
-                . ' SET cache_data = ? WHERE cache_devid = ? AND cache_user = ?';
-            try {
-                $this->_db->update(
-                    $sql,
-                    [$cache, $devid, $user]
-                );
-            } catch (Horde_Db_Exception $e) {
-                $this->_logger->err($e->getMessage());
-                throw new Horde_ActiveSync_Exception($e);
-            }
-        } else {
-            $this->_logger->meta(
-                sprintf(
-                    'STATE: Adding new SYNC_CACHE entry for user %s and device %s: %s',
-                    $user,
-                    $devid,
-                    $cache
+                    $devid
                 )
             );
             $sql = 'INSERT INTO ' . $this->_syncCacheTable
@@ -2097,13 +2229,103 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             try {
                 $this->_db->insert(
                     $sql,
-                    [$cache, $devid, $user]
+                    [serialize($cache), $devid, $user]
                 );
             } catch (Horde_Db_Exception $e) {
                 $this->_logger->err($e->getMessage());
                 throw new Horde_ActiveSync_Exception($e);
             }
+            return;
         }
+
+        if (empty($dirty)) {
+            // Nothing changed; avoid the write completely.
+            $this->_logger->meta(
+                sprintf(
+                    'STATE: No dirty SYNC_CACHE fields for user %s and device %s, skipping save.',
+                    $user,
+                    $devid
+                )
+            );
+            return;
+        }
+
+        // Merge only the dirty properties into the stored data so parallel
+        // requests do not clobber each other's changes. Mirrors the
+        // field-level updates of the Mongo backend. A corrupt stored blob
+        // falls back to a full replace with the in-memory cache.
+        $columns = $this->_columns($this->_syncCacheTable);
+        $stored = $this->_unserializeState(
+            $columns['cache_data']->binaryToString($stored_raw)
+        );
+        $data = is_array($stored)
+            ? $this->_mergeDirtySyncCache($stored, $cache, $dirty)
+            : $cache;
+
+        $this->_logger->meta(
+            sprintf(
+                'STATE: Updating SYNC_CACHE fields [%s] for user %s and device %s.',
+                implode(',', array_keys($dirty)),
+                $user,
+                $devid
+            )
+        );
+        $sql = 'UPDATE ' . $this->_syncCacheTable
+            . ' SET cache_data = ? WHERE cache_devid = ? AND cache_user = ?';
+        try {
+            $this->_db->update(
+                $sql,
+                [serialize($data), $devid, $user]
+            );
+        } catch (Horde_Db_Exception $e) {
+            $this->_logger->err($e->getMessage());
+            throw new Horde_ActiveSync_Exception($e);
+        }
+    }
+
+    /**
+     * Merge the dirty properties of an in-memory sync cache into the stored
+     * sync cache data.
+     *
+     * The 'collections' property supports per-collection granularity: when
+     * its dirty entry is an array, only the listed collection ids are
+     * replaced (or removed when no longer present in the in-memory cache).
+     * A dirty entry of true replaces the whole property, as for any other
+     * property.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param array $stored  The currently stored sync cache data.
+     * @param array $cache   The in-memory sync cache data being saved.
+     * @param array $dirty   The dirty property map.
+     *
+     * @return array  The merged sync cache data.
+     */
+    protected function _mergeDirtySyncCache(array $stored, array $cache, array $dirty)
+    {
+        foreach ($dirty as $property => $value) {
+            if ($property == 'collections' && is_array($value)) {
+                if (!isset($stored['collections']) || !is_array($stored['collections'])) {
+                    $stored['collections'] = [];
+                }
+                foreach (array_keys($value) as $id) {
+                    if (isset($cache['collections'][$id])) {
+                        $stored['collections'][$id] = $cache['collections'][$id];
+                    } else {
+                        // Collection was removed from the cache.
+                        unset($stored['collections'][$id]);
+                    }
+                }
+                continue;
+            }
+            if (array_key_exists($property, $cache)) {
+                $stored[$property] = $cache[$property];
+            } else {
+                unset($stored[$property]);
+            }
+        }
+
+        return $stored;
     }
 
     /**

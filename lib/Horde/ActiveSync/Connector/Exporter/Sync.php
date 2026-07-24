@@ -24,11 +24,34 @@
 class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connector_Exporter_Base
 {
     /**
+     * Number of upcoming message changes to prefetch from the backend in a
+     * single bulk call.
+     */
+    public const PREFETCH_BATCH_SIZE = 10;
+
+    /**
      * Local cache of object ids we have already dealt with.
      *
      * @var array
      */
     protected $_seenObjects = [];
+
+    /**
+     * Prefetched message objects keyed by server id, consumed by
+     * _sendNextChange(). @see self::_prefetchMessages()
+     *
+     * @var array
+     */
+    protected $_prefetchedMessages = [];
+
+    /**
+     * Highest step index already covered by a prefetch attempt. Prevents
+     * re-fetching ids the backend could not return (they fall back to a
+     * single-message fetch instead).
+     *
+     * @var integer
+     */
+    protected $_prefetchUpToStep = -1;
 
     /**
      * Server ids of SYNC_FETCH requests that failed with a NotFound error
@@ -58,6 +81,8 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
     {
         parent::setChanges($changes, $collection);
         $this->_currentCollection = $collection;
+        $this->_prefetchedMessages = [];
+        $this->_prefetchUpToStep = -1;
     }
 
     /**
@@ -531,11 +556,7 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
                 case Horde_ActiveSync::CHANGE_TYPE_CHANGE:
                 case Horde_ActiveSync::CHANGE_TYPE_DRAFT:
                     try {
-                        $message = $this->_as->driver->getMessage(
-                            $this->_currentCollection['serverid'],
-                            $change['id'],
-                            $this->_currentCollection
-                        );
+                        $message = $this->_getChangeMessage($change);
                         $message->flags = (isset($change['flags'])) ? $change['flags'] : false;
                         $this->messageChange($change['id'], $message);
                     } catch (Horde_Exception_NotFound $e) {
@@ -628,6 +649,92 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
         $this->_as->state->updateState($change['type'], $change);
         $this->_step++;
         return true;
+    }
+
+    /**
+     * Return the message object for an exported change, using a batched
+     * backend prefetch when supported.
+     *
+     * Any id not present in the prefetch cache transparently falls back to
+     * a single-message fetch, preserving the per-message error semantics
+     * (e.g. Horde_Exception_NotFound for expunged messages).
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param array $change  The change array being exported.
+     *
+     * @return Horde_ActiveSync_Message_Base  The message object.
+     * @throws Horde_ActiveSync_Exception, Horde_Exception_NotFound
+     */
+    protected function _getChangeMessage(array $change)
+    {
+        $id = $change['id'];
+        if (!isset($this->_prefetchedMessages[$id])
+            && $this->_step > $this->_prefetchUpToStep) {
+            $this->_prefetchMessages();
+        }
+        if (isset($this->_prefetchedMessages[$id])) {
+            $message = $this->_prefetchedMessages[$id];
+            unset($this->_prefetchedMessages[$id]);
+            return $message;
+        }
+
+        return $this->_as->driver->getMessage(
+            $this->_currentCollection['serverid'],
+            $id,
+            $this->_currentCollection
+        );
+    }
+
+    /**
+     * Prefetch the next batch of exportable message changes in one bulk
+     * backend call. Ids the backend does not return (including all ids
+     * when the backend has no bulk support) are fetched individually by
+     * _getChangeMessage().
+     */
+    protected function _prefetchMessages()
+    {
+        $ids = [];
+        $total = count($this->_changes);
+        $last = $this->_step;
+        for ($i = $this->_step; $i < $total && count($ids) < self::PREFETCH_BATCH_SIZE; $i++) {
+            $last = $i;
+            $candidate = $this->_changes[$i];
+            if (!is_array($candidate)) {
+                // Initial sync: a bare uid implies CHANGE_TYPE_CHANGE.
+                $ids[] = $candidate;
+                continue;
+            }
+            if (!empty($candidate['ignore']) || empty($candidate['id'])) {
+                continue;
+            }
+            if ($candidate['type'] == Horde_ActiveSync::CHANGE_TYPE_CHANGE
+                || $candidate['type'] == Horde_ActiveSync::CHANGE_TYPE_DRAFT) {
+                $ids[] = $candidate['id'];
+            }
+        }
+        $this->_prefetchUpToStep = $last;
+        $this->_prefetchedMessages = [];
+
+        if (count($ids) < 2) {
+            return;
+        }
+
+        try {
+            $this->_prefetchedMessages = $this->_as->driver->getMessagesBulk(
+                $this->_currentCollection['serverid'],
+                $ids,
+                $this->_currentCollection
+            );
+        } catch (Horde_Exception $e) {
+            // Prefetching is an optimization only; the single-message path
+            // handles errors with full granularity.
+            $this->_logger->notice(sprintf(
+                'Bulk message prefetch failed, falling back to single fetches: %s',
+                $e->getMessage()
+            ));
+            $this->_prefetchedMessages = [];
+        }
     }
 
 }

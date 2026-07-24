@@ -16,6 +16,7 @@
  *
  * @copyright 2009-2020 Horde LLC (http://www.horde.org)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
+ * @author    Torben Dannhauer <torben@dannhauer.de>
  * @package   ActiveSync
  */
 abstract class Horde_ActiveSync_State_Base
@@ -129,6 +130,15 @@ abstract class Horde_ActiveSync_State_Base
      * @var string|Horde_Db_Value_Binary|null
      */
     protected $_syncPendingBlob;
+
+    /**
+     * True when the currently loaded state was requested read-only
+     * (PING/heartbeat polling peek).
+     *
+     * @see self::loadState()
+     * @var boolean
+     */
+    protected $_loadReadonly = false;
 
     /**
      * The type of request we are handling.
@@ -1173,18 +1183,26 @@ abstract class Horde_ActiveSync_State_Base
      *                           Horde_ActiveSync::REQUEST_TYPE constant.
      * @param string $id         The folder id this state represents. If empty
      *                           assumed to be a foldersync state.
+     * @param array $options     Options:
+     *   - readonly: (boolean)  Load the state for peeking only (PING /
+     *               heartbeat polling): no collection lock, no garbage
+     *               collection, and concrete drivers may serve repeated
+     *               loads of the same synckey from memory. Must not be
+     *               used when the request will mutate and persist this
+     *               state under locks. DEFAULT: false.
      *
      * @throws Horde_ActiveSync_Exception
      * @throws Horde_ActiveSync_Exception_StateGone
      * @throws Horde_ActiveSync_Exception_StaleState
      */
-    public function loadState(array $collection, $syncKey, $type = null, $id = null)
+    public function loadState(array $collection, $syncKey, $type = null, $id = null, array $options = [])
     {
         // Initialize the local members.
         $this->_collection = $collection;
         $this->_changes = null;
         $this->_syncPendingBlob = null;
         $this->_type = $type;
+        $this->_loadReadonly = !empty($options['readonly']);
 
         // If this is a FOLDERSYNC, mock the device id.
         if ($type == Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC && empty($id)) {
@@ -1238,6 +1256,13 @@ abstract class Horde_ActiveSync_State_Base
             throw new Horde_ActiveSync_Exception_StateGone('Invalid synckey');
         }
         $this->_syncKey = $syncKey;
+
+        if ($this->_loadReadonly) {
+            // Read-only peek: no collection lock and no garbage collection.
+            // Parallel SYNC requests are never blocked by a polling PING.
+            $this->_loadState();
+            return;
+        }
 
         $this->_acquireCollectionLock();
         try {

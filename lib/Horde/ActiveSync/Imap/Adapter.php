@@ -57,6 +57,15 @@ class Horde_ActiveSync_Imap_Adapter
     protected $_options = [];
 
     /**
+     * Prefetched mailbox status results for consumption by self::ping(),
+     * keyed by backend folder id (UTF-8 mailbox name).
+     *
+     * @see self::prefetchStatus()
+     * @var array
+     */
+    protected $_prefetchedStatus = [];
+
+    /**
      * Cont'r
      *
      * @param array $params  Parameters:
@@ -426,6 +435,9 @@ class Horde_ActiveSync_Imap_Adapter
      *                  DEFAULT: 0 (No MIME support)
      *   - protocolversion: (float)  The EAS protocol version to support.
      *                      DEFAULT: 2.5
+     *   - uid_keys: (boolean)  If true, key the returned array by the IMAP
+     *               message UID. Messages that could not be built are
+     *               omitted. DEFAULT: false (numerically indexed).
      *
      * @return array  An array of Horde_ActiveSync_Message_Mail objects.
      */
@@ -437,7 +449,12 @@ class Horde_ActiveSync_Imap_Adapter
         foreach ($results as $data) {
             if ($data->exists(Horde_Imap_Client::FETCH_STRUCTURE)) {
                 try {
-                    $ret[] = $this->_buildMailMessage($mbox, $data, $options);
+                    $message = $this->_buildMailMessage($mbox, $data, $options);
+                    if (!empty($options['uid_keys'])) {
+                        $ret[$data->getUid()] = $message;
+                    } else {
+                        $ret[] = $message;
+                    }
                 } catch (Horde_Exception_NotFound $e) {
                     $this->_logger->notice(sprintf(
                         'Unable to build message UID %s in %s: %s',
@@ -541,6 +558,70 @@ class Horde_ActiveSync_Imap_Adapter
     }
 
     /**
+     * Prefetch the IMAP status of multiple mailboxes in a single server
+     * round trip where possible (LIST-STATUS, RFC 5819) for later
+     * consumption by self::ping().
+     *
+     * Results are consumed exactly once: each ping() call removes its
+     * entry, so every poll iteration must prefetch again. This guarantees
+     * each iteration compares against fresh server data and changes made
+     * by other clients are always detected.
+     *
+     * Failures degrade gracefully: on any error the prefetch cache is left
+     * empty and ping() falls back to its per-mailbox STATUS call.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param array $folders  Backend folder ids (UTF-8 mailbox names).
+     */
+    public function prefetchStatus(array $folders)
+    {
+        $this->_prefetchedStatus = [];
+        if (count($folders) < 2) {
+            // A single mailbox gains nothing over the ping() fallback.
+            return;
+        }
+
+        // Note: non-CONDSTORE servers will return a highestmodseq of 0
+        $status_flags = Horde_Imap_Client::STATUS_HIGHESTMODSEQ
+            | Horde_Imap_Client::STATUS_UIDNEXT_FORCE
+            | Horde_Imap_Client::STATUS_MESSAGES
+            | Horde_Imap_Client::STATUS_FORCE_REFRESH;
+
+        $mboxes = [];
+        foreach ($folders as $folder) {
+            $mboxes[$folder] = new Horde_Imap_Client_Mailbox($folder);
+        }
+
+        try {
+            $results = $this->_getImapOb()->status(array_values($mboxes), $status_flags);
+        } catch (Horde_Imap_Client_Exception $e) {
+            $this->_logger->notice(sprintf(
+                'Unable to prefetch mailbox status, falling back to per-mailbox STATUS: %s',
+                $e->getMessage()
+            ));
+            return;
+        }
+
+        foreach ($mboxes as $folder => $mbox) {
+            $key = strval($mbox);
+            // Only accept complete entries; anything else falls back to the
+            // per-mailbox STATUS in ping().
+            if (isset($results[$key]['uidnext'])
+                && isset($results[$key]['messages'])
+                && isset($results[$key][Horde_ActiveSync_Folder_Imap::HIGHESTMODSEQ])) {
+                $this->_prefetchedStatus[$folder] = $results[$key];
+            }
+        }
+
+        $this->_logger->meta(sprintf(
+            'Prefetched status for %d of %d mailboxes.',
+            count($this->_prefetchedStatus),
+            count($mboxes)
+        ));
+    }
+
+    /**
      * Ping a mailbox. This detects only if any new messages have arrived in
      * the specified mailbox.
      *
@@ -552,21 +633,29 @@ class Horde_ActiveSync_Imap_Adapter
     public function ping(Horde_ActiveSync_Folder_Imap $folder)
     {
         $mbox = new Horde_Imap_Client_Mailbox($folder->serverid());
-        // Note: non-CONDSTORE servers will return a highestmodseq of 0
-        $status_flags = Horde_Imap_Client::STATUS_HIGHESTMODSEQ
-            | Horde_Imap_Client::STATUS_UIDNEXT_FORCE
-            | Horde_Imap_Client::STATUS_MESSAGES
-            | Horde_Imap_Client::STATUS_FORCE_REFRESH;
 
-        // Get IMAP status.
-        try {
-            $status = $this->_getImapOb()->status($mbox, $status_flags);
-        } catch (Horde_Imap_Client_Exception $e) {
-            // See if the folder disappeared.
-            if (!$this->_mailboxExists($mbox->utf8)) {
-                throw new Horde_ActiveSync_Exception_FolderGone();
+        if (isset($this->_prefetchedStatus[$folder->serverid()])) {
+            // Fresh status was prefetched for this poll iteration in a
+            // single round trip. Consume-once: see self::prefetchStatus().
+            $status = $this->_prefetchedStatus[$folder->serverid()];
+            unset($this->_prefetchedStatus[$folder->serverid()]);
+        } else {
+            // Note: non-CONDSTORE servers will return a highestmodseq of 0
+            $status_flags = Horde_Imap_Client::STATUS_HIGHESTMODSEQ
+                | Horde_Imap_Client::STATUS_UIDNEXT_FORCE
+                | Horde_Imap_Client::STATUS_MESSAGES
+                | Horde_Imap_Client::STATUS_FORCE_REFRESH;
+
+            // Get IMAP status.
+            try {
+                $status = $this->_getImapOb()->status($mbox, $status_flags);
+            } catch (Horde_Imap_Client_Exception $e) {
+                // See if the folder disappeared.
+                if (!$this->_mailboxExists($mbox->utf8)) {
+                    throw new Horde_ActiveSync_Exception_FolderGone();
+                }
+                throw new Horde_ActiveSync_Exception($e);
             }
-            throw new Horde_ActiveSync_Exception($e);
         }
 
         $this->_logger->meta(

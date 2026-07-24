@@ -28,6 +28,7 @@ Cross-cutting references, useful to all three:
 |-------|------|
 | Supported EAS protocol versions, negotiation, and what each version adds | [`doc/protocol-versions.md`](doc/protocol-versions.md) |
 | Streamed `Sync` response delivery — design, error model, tuning | [`doc/sync-streaming.md`](doc/sync-streaming.md) |
+| Heartbeat polling and export performance — batched STATUS, read-only state loads, bulk export | [`doc/sync-performance.md`](doc/sync-performance.md) |
 | Open work and the Horde 6 roadmap | [`doc/todo.md`](doc/todo.md) |
 
 ## At a glance
@@ -85,6 +86,10 @@ negotiation mechanics, and a per-version feature delta are in
   deferred up-sync import and WBXML keep-alives, so clients with ~30 s read
   timeouts survive large batches — see
   [`doc/sync-streaming.md`](doc/sync-streaming.md)
+- **Efficiency:** heartbeat polling batches all mailbox status checks into
+  one IMAP round trip and reuses memoized, lock-free state reads; message
+  export prefetches email items in batches — see
+  [`doc/sync-performance.md`](doc/sync-performance.md)
 
 ## Package layout
 

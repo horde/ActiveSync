@@ -17,6 +17,7 @@
  *
  * @copyright 2010-2020 Horde LLC (http://www.horde.org)
  * @author    Michael J Rubinsky <mrubinsk@horde.org>
+ * @author    Torben Dannhauer <torben@dannhauer.de>
  * @package   ActiveSync
  * @internal  Not intended for use outside of the ActiveSync library.
  */
@@ -1197,12 +1198,17 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
      * @param array $collection  The collection array.
      * @param boolean $requireSyncKey  Require collection to have a synckey and
      *                                 throw exception if it's not present.
+     * @param boolean $readonly  Load the state for peeking only (heartbeat
+     *                           polling): no locks, no garbage collection,
+     *                           repeated loads of an unchanged synckey may
+     *                           be served from memory.
+     *                           @see Horde_ActiveSync_State_Base::loadState()
      *
      * @throws Horde_ActiveSync_Exception_InvalidRequest
      * @throws Horde_ActiveSync_Exception_FolderGone
      * @throws Horde_ActiveSync_Exception_StaleState
      */
-    public function initCollectionState(array &$collection, $requireSyncKey = false)
+    public function initCollectionState(array &$collection, $requireSyncKey = false, $readonly = false)
     {
         // Clear the changes cache.
         $this->_changes = null;
@@ -1246,7 +1252,8 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
             $collection,
             $collection['synckey'],
             Horde_ActiveSync::REQUEST_TYPE_SYNC,
-            $collection['id']
+            $collection['id'],
+            ['readonly' => $readonly]
         );
     }
 
@@ -1356,12 +1363,46 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
                 }
             }
 
+            // Prefetch fresh IMAP status for all email folders polled below
+            // in a single round trip where the backend supports it
+            // (LIST-STATUS). Consumed by the backend's ping check; missing
+            // entries transparently fall back to per-mailbox STATUS.
+            $prefetch = [];
+            foreach ($this->_collections as $id => $collection) {
+                if (!empty($options['pingable'])
+                    && !$this->_cache->collectionIsPingable($id)) {
+                    continue;
+                }
+                if ($this->getCollectionClass($id) != Horde_ActiveSync::CLASS_EMAIL) {
+                    continue;
+                }
+                if (empty($collection['serverid'])) {
+                    try {
+                        $serverid = $this->getBackendIdForFolderUid($id);
+                    } catch (Horde_ActiveSync_Exception $e) {
+                        // Leave error handling to the per-collection loop.
+                        continue;
+                    }
+                } else {
+                    $serverid = $collection['serverid'];
+                }
+                if (!empty($serverid)) {
+                    $prefetch[] = $serverid;
+                }
+            }
+            if (count($prefetch) > 1) {
+                $this->_as->driver->prefetchFolderStatus($prefetch);
+            }
+
             // Check each collection we are interested in.
             foreach ($this->_collections as $id => $collection) {
                 $stateLoaded = false;
 
                 try {
-                    $this->initCollectionState($this->_collections[$id], true);
+                    // Read-only peek: the poll loop only detects changes; it
+                    // never persists state under locks. Unchanged synckeys
+                    // are rehydrated from memory instead of the database.
+                    $this->initCollectionState($this->_collections[$id], true, true);
                     $stateLoaded = true;
                 } catch (Horde_ActiveSync_Exception_StaleState $e) {
                     $this->_logger->notice(
