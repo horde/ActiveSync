@@ -271,6 +271,163 @@ class Horde_ActiveSync_Connector_ImporterIdempotentImportTest extends TestCase
         $this->assertSame([], $result['missing']);
     }
 
+    public function testDraftModifyRecordsDraftUidAlias(): void
+    {
+        $synckey = '{uuid}5';
+        $oldUid = '100';
+        $newUid = '101';
+        $message = $this->_draftMailMessage('Edited', 'Subject');
+
+        $state = $this->createMock(Horde_ActiveSync_State_Base::class);
+        $state->method('getAppliedPIMChange')->willReturn(null);
+        $state->expects($this->once())
+            ->method('recordDraftUidAlias')
+            ->with($oldUid, $newUid);
+
+        $driver = $this->createMock(Horde_ActiveSync_Driver_Base::class);
+        $driver->method('getUser')->willReturn('alice@example.com');
+        $driver->method('changeMessage')
+            ->willReturn(['id' => $newUid, 'mod' => 0, 'flags' => []]);
+
+        $importer = $this->_importer($state, $driver);
+        $stat = $importer->importMessageChange(
+            $oldUid,
+            $message,
+            $this->createMock(Horde_ActiveSync_Device::class),
+            false,
+            Horde_ActiveSync::CLASS_EMAIL,
+            $synckey
+        );
+
+        $this->assertSame($oldUid, $stat['id']);
+    }
+
+    public function testDraftModifyResolvesAliasedServerIdForBackend(): void
+    {
+        $synckey = '{uuid}7';
+        $clientId = '100';
+        $liveUid = '150';
+        $newUid = '201';
+        $message = $this->_draftMailMessage('Second edit', 'Subject');
+        $updates = [];
+
+        $state = $this->createMock(Horde_ActiveSync_State_Base::class);
+        $state->method('getAppliedPIMChange')->willReturn(null);
+        $state->method('getDraftUidForClientId')
+            ->with($clientId)
+            ->willReturn($liveUid);
+        // The alias moves along to the newest UID under the same client id.
+        $state->expects($this->once())
+            ->method('recordDraftUidAlias')
+            ->with($clientId, $newUid);
+        $state->method('updateState')
+            ->willReturnCallback(function ($type, $change) use (&$updates) {
+                $updates[] = [$type, $change['id'] ?? null];
+            });
+
+        $driver = $this->createMock(Horde_ActiveSync_Driver_Base::class);
+        $driver->method('getUser')->willReturn('alice@example.com');
+        // The backend must operate on the live UID, not the stale client id.
+        $driver->expects($this->once())
+            ->method('changeMessage')
+            ->with('INBOX/Drafts', $liveUid, $message, $this->anything())
+            ->willReturn(['id' => $newUid, 'mod' => 0, 'flags' => []]);
+
+        $importer = $this->_importer($state, $driver);
+        $stat = $importer->importMessageChange(
+            $clientId,
+            $message,
+            $this->createMock(Horde_ActiveSync_Device::class),
+            false,
+            Horde_ActiveSync::CLASS_EMAIL,
+            $synckey
+        );
+
+        // Reply stays on the client's ServerId.
+        $this->assertSame($clientId, $stat['id']);
+        // Mirror suppression: draft row for the new UID, delete row for the
+        // UID that was actually removed from IMAP (the live one).
+        $this->assertSame(
+            [
+                [Horde_ActiveSync::CHANGE_TYPE_DRAFT, $newUid],
+                [Horde_ActiveSync::CHANGE_TYPE_DELETE, $liveUid],
+            ],
+            $updates
+        );
+    }
+
+    public function testRemoveResolvesAliasedServerIdAndReportsClientId(): void
+    {
+        $clientId = '100';
+        $liveUid = '150';
+
+        $state = $this->createMock(Horde_ActiveSync_State_Base::class);
+        $state->method('getDraftUidForClientId')
+            ->with($clientId)
+            ->willReturn($liveUid);
+        $state->method('isMailMapChangeApplied')->willReturn(false);
+        $state->expects($this->once())
+            ->method('updateState')
+            ->with(
+                Horde_ActiveSync::CHANGE_TYPE_DELETE,
+                $this->callback(function ($change) use ($liveUid) {
+                    return ($change['id'] ?? null) === $liveUid;
+                }),
+                Horde_ActiveSync::CHANGE_ORIGIN_PIM,
+                'alice@example.com'
+            );
+        $state->expects($this->once())
+            ->method('removeDraftUidAliases')
+            ->with([$liveUid]);
+
+        $driver = $this->createMock(Horde_ActiveSync_Driver_Base::class);
+        $driver->method('getUser')->willReturn('alice@example.com');
+        $driver->method('getSyncStamp')->willReturn(1);
+        $driver->expects($this->once())
+            ->method('deleteMessage')
+            ->with($this->anything(), [$liveUid])
+            ->willReturn([$liveUid]);
+
+        $importer = $this->_importer($state, $driver);
+        $deleted = $importer->importMessageDeletion(
+            [$clientId],
+            Horde_ActiveSync::CLASS_EMAIL
+        );
+
+        // The client is told its own ServerId was deleted.
+        $this->assertSame([$clientId], $deleted);
+    }
+
+    public function testReadFlagResolvesAliasedServerId(): void
+    {
+        $clientId = '100';
+        $liveUid = '150';
+
+        $state = $this->createMock(Horde_ActiveSync_State_Base::class);
+        $state->method('getDraftUidForClientId')
+            ->with($clientId)
+            ->willReturn($liveUid);
+        $state->expects($this->once())
+            ->method('updateState')
+            ->with(
+                Horde_ActiveSync::CHANGE_TYPE_FLAGS,
+                $this->callback(function ($change) use ($liveUid) {
+                    return ($change['id'] ?? null) === $liveUid;
+                }),
+                Horde_ActiveSync::CHANGE_ORIGIN_PIM,
+                'alice@example.com'
+            );
+
+        $driver = $this->createMock(Horde_ActiveSync_Driver_Base::class);
+        $driver->method('getUser')->willReturn('alice@example.com');
+        $driver->expects($this->once())
+            ->method('setReadFlag')
+            ->with('INBOX/Drafts', $liveUid, 1);
+
+        $importer = $this->_importer($state, $driver);
+        $importer->importMessageReadFlag($clientId, 1);
+    }
+
     public function testFlagModifyRetryUnderSameSyncKeySkipsDriver(): void
     {
         $synckey = '{uuid}5';

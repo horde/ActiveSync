@@ -93,6 +93,31 @@ class SyncTest extends TestCase
         );
     }
 
+    public function testFetchIdsResolvesAliasedServerIdAndEchoesRequestedId()
+    {
+        $fixture = $this->_createExporter(Horde_ActiveSync::VERSION_SIXTEEN);
+        $fixture->state->method('getDraftUidForClientId')
+            ->willReturnMap([['55500', '55700']]);
+
+        $message = $this->createMock(\Horde_ActiveSync_Message_Base::class);
+        $driver = $this->createMock(Horde_ActiveSync_Driver_Base::class);
+        $driver->expects($this->once())
+            ->method('fetch')
+            ->with('INBOX/Drafts', '55700', $this->anything())
+            ->willReturn($message);
+
+        $collection = [
+            'serverid' => 'INBOX/Drafts',
+            'fetchids' => ['55500'],
+        ];
+        $fixture->exporter->fetchIds($driver, $collection);
+
+        $this->assertSame([], $fixture->exporter->getFailedFetchIds());
+        $replies = $this->_decodeFetchReplies($this->_readExporterOutput($fixture));
+        $this->assertCount(1, $replies);
+        $this->assertSame('55500', $replies[0]['serverEntryId']);
+    }
+
     public function testFetchIdsResetsFailureListOnSuccessfulFetch()
     {
         $fixture = $this->_createExporter(Horde_ActiveSync::VERSION_FOURTEEN);
@@ -146,6 +171,74 @@ class SyncTest extends TestCase
         );
 
         $this->assertCount(0, $replies);
+    }
+
+    /**
+     * A server-originated deletion of an edited draft must be exported under
+     * the ServerId the client holds (draft UID alias), not the post-append
+     * IMAP UID the client has never seen (Issue #92). State bookkeeping must
+     * stay on the live IMAP UID.
+     */
+    public function testDeletionExportedUnderAliasedClientServerId()
+    {
+        $fixture = $this->_createExporter(Horde_ActiveSync::VERSION_SIXTEEN);
+        $fixture->state->method('getDraftClientIdForUid')
+            ->willReturnMap([['55700', '55500']]);
+        $fixture->state->expects($this->once())
+            ->method('updateState')
+            ->with(
+                Horde_ActiveSync::CHANGE_TYPE_DELETE,
+                $this->callback(function ($change) {
+                    return $change['id'] === '55700';
+                })
+            );
+
+        $fixture->exporter->setChanges(
+            [['type' => Horde_ActiveSync::CHANGE_TYPE_DELETE, 'id' => '55700']],
+            ['class' => Horde_ActiveSync::CLASS_EMAIL, 'id' => 'drafts-uid']
+        );
+        $this->assertTrue($fixture->exporter->sendNextChange());
+
+        $replies = $this->_decodeRemoveReplies($this->_readExporterOutput($fixture));
+        $this->assertCount(1, $replies);
+        $this->assertSame('55500', $replies[0]['serverEntryId']);
+    }
+
+    public function testDeletionWithoutAliasExportsLiveUid()
+    {
+        $fixture = $this->_createExporter(Horde_ActiveSync::VERSION_SIXTEEN);
+        $fixture->state->method('getDraftClientIdForUid')->willReturn(null);
+
+        $fixture->exporter->setChanges(
+            [['type' => Horde_ActiveSync::CHANGE_TYPE_DELETE, 'id' => '55700']],
+            ['class' => Horde_ActiveSync::CLASS_EMAIL, 'id' => 'drafts-uid']
+        );
+        $this->assertTrue($fixture->exporter->sendNextChange());
+
+        $replies = $this->_decodeRemoveReplies($this->_readExporterOutput($fixture));
+        $this->assertCount(1, $replies);
+        $this->assertSame('55700', $replies[0]['serverEntryId']);
+    }
+
+    public function testFlagChangeExportedUnderAliasedClientServerId()
+    {
+        $fixture = $this->_createExporter(Horde_ActiveSync::VERSION_SIXTEEN);
+        $fixture->state->method('getDraftClientIdForUid')
+            ->willReturnMap([['55700', '55500']]);
+
+        $fixture->exporter->setChanges(
+            [[
+                'type' => Horde_ActiveSync::CHANGE_TYPE_FLAGS,
+                'id' => '55700',
+                'flags' => ['read' => 1],
+            ]],
+            ['class' => Horde_ActiveSync::CLASS_EMAIL, 'id' => 'drafts-uid']
+        );
+        $this->assertTrue($fixture->exporter->sendNextChange());
+
+        $replies = $this->_decodeModifyReplies($this->_readExporterOutput($fixture));
+        $this->assertCount(1, $replies);
+        $this->assertSame('55500', $replies[0]['serverEntryId']);
     }
 
     /**
@@ -217,6 +310,7 @@ class SyncTest extends TestCase
         return (object) [
             'exporter' => $exporter,
             'output' => $output,
+            'state' => $state,
         ];
     }
 

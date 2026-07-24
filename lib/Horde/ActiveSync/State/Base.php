@@ -332,6 +332,70 @@ abstract class Horde_ActiveSync_State_Base
     }
 
     /**
+     * Record a draft UID alias in the loaded IMAP folder state: the client
+     * keeps ServerId $clientId while the message now lives under IMAP UID
+     * $uid (EAS 16 Draft Modify = IMAP append+delete). No-op for non-email
+     * folder state.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param string|integer $clientId  The ServerId the client holds.
+     * @param string|integer $uid       The current IMAP UID.
+     */
+    public function recordDraftUidAlias($clientId, $uid)
+    {
+        if ($this->_folder instanceof Horde_ActiveSync_Folder_Imap) {
+            $this->_folder->setDraftUidAlias($uid, $clientId);
+        }
+    }
+
+    /**
+     * Return the client-facing ServerId for an IMAP UID, if the loaded
+     * folder state has a draft alias for it.
+     *
+     * @param string|integer $uid  The current IMAP UID.
+     *
+     * @return string|null  The ServerId the client holds, or null.
+     */
+    public function getDraftClientIdForUid($uid)
+    {
+        if ($this->_folder instanceof Horde_ActiveSync_Folder_Imap) {
+            return $this->_folder->draftClientIdForUid($uid);
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolve a (possibly stale) client ServerId to the live IMAP UID via
+     * the draft alias map in the loaded folder state.
+     *
+     * @param string|integer $clientId  The ServerId sent by the client.
+     *
+     * @return string|null  The live IMAP UID, or null when not aliased.
+     */
+    public function getDraftUidForClientId($clientId)
+    {
+        if ($this->_folder instanceof Horde_ActiveSync_Folder_Imap) {
+            return $this->_folder->draftUidForClientId($clientId);
+        }
+
+        return null;
+    }
+
+    /**
+     * Forget draft UID aliases, e.g. once the aliased message was deleted.
+     *
+     * @param array $uids  The current IMAP UIDs.
+     */
+    public function removeDraftUidAliases(array $uids)
+    {
+        if ($this->_folder instanceof Horde_ActiveSync_Folder_Imap) {
+            $this->_folder->removeDraftUidAliases($uids);
+        }
+    }
+
+    /**
      * Update the $oldKey syncState to $newKey.
      *
      * @param string $newKey
@@ -1405,9 +1469,11 @@ abstract class Horde_ActiveSync_State_Base
 
             case Horde_ActiveSync::CHANGE_TYPE_DELETE:
                 // A delivered deletion also settles any recorded ghost
-                // eviction for this uid (no-op for regular deletions).
+                // eviction and draft UID alias for this uid (no-op for
+                // regular deletions).
                 if (!empty($change['id'])) {
                     $this->_folder->removeGhostUids([$change['id']]);
+                    $this->_folder->removeDraftUidAliases([$change['id']]);
                 }
                 break;
         }
