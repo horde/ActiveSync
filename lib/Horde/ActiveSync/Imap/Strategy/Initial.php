@@ -31,6 +31,9 @@ class Horde_ActiveSync_Imap_Strategy_Initial extends Horde_ActiveSync_Imap_Strat
     {
         $this->_logger->meta('INITIAL SYNC');
         $query = new Horde_Imap_Client_Search_Query();
+        // Native Exchange semantics: EAS cannot represent a message flagged
+        // for deletion, so never export \Deleted messages as live items.
+        $query->flag(Horde_Imap_Client::FLAG_DELETED, false);
         if (!empty($options['sincedate'])) {
             $query->dateSearch(
                 new Horde_Date($options['sincedate']),

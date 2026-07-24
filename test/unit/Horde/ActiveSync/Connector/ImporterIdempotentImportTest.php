@@ -428,6 +428,172 @@ class Horde_ActiveSync_Connector_ImporterIdempotentImportTest extends TestCase
         $importer->importMessageReadFlag($clientId, 1);
     }
 
+    public function testNoOpDraftModifySkipsRewrite(): void
+    {
+        $clientId = '100';
+        // Same content modulo line endings and trailing whitespace.
+        $message = $this->_draftMailMessage("Line1\r\nLine2\n", 'Subject');
+
+        $state = $this->createMock(Horde_ActiveSync_State_Base::class);
+        $state->method('getAppliedPIMChange')->willReturn(null);
+        $state->expects($this->never())->method('recordAppliedPIMChange');
+        $state->expects($this->never())->method('recordDraftUidAlias');
+        $state->expects($this->never())->method('updateState');
+
+        $driver = $this->createMock(Horde_ActiveSync_Driver_Base::class);
+        $driver->expects($this->once())
+            ->method('fetch')
+            ->with(
+                'INBOX/Drafts',
+                $clientId,
+                $this->callback(function ($collection) {
+                    $pref = $collection['bodyprefs'][Horde_ActiveSync::BODYPREF_TYPE_PLAIN] ?? null;
+                    return is_array($pref) && $pref['truncationsize'] === 0;
+                })
+            )
+            ->willReturn($this->_draftMailMessage("Line1\nLine2", 'Subject'));
+        $driver->expects($this->never())->method('changeMessage');
+
+        $importer = $this->_importer($state, $driver);
+        $stat = $importer->importMessageChange(
+            $clientId,
+            $message,
+            $this->createMock(Horde_ActiveSync_Device::class),
+            false,
+            Horde_ActiveSync::CLASS_EMAIL,
+            '{uuid}5'
+        );
+
+        $this->assertSame($clientId, $stat['id']);
+        $this->assertSame(bin2hex('Subject'), $stat['conversationid']);
+        $this->assertArrayHasKey('conversationindex', $stat);
+    }
+
+    public function testDraftModifyWithChangedBodyStillRewrites(): void
+    {
+        $clientId = '100';
+        $newUid = '101';
+        $message = $this->_draftMailMessage('Edited body', 'Subject');
+
+        $state = $this->createMock(Horde_ActiveSync_State_Base::class);
+        $state->method('getAppliedPIMChange')->willReturn(null);
+
+        $driver = $this->createMock(Horde_ActiveSync_Driver_Base::class);
+        $driver->method('getUser')->willReturn('alice@example.com');
+        $driver->method('fetch')
+            ->willReturn($this->_draftMailMessage('Original body', 'Subject'));
+        $driver->expects($this->once())
+            ->method('changeMessage')
+            ->willReturn(['id' => $newUid, 'mod' => 0, 'flags' => []]);
+
+        $importer = $this->_importer($state, $driver);
+        $stat = $importer->importMessageChange(
+            $clientId,
+            $message,
+            $this->createMock(Horde_ActiveSync_Device::class),
+            false,
+            Horde_ActiveSync::CLASS_EMAIL,
+            '{uuid}5'
+        );
+
+        $this->assertSame($clientId, $stat['id']);
+    }
+
+    public function testDraftModifyWithAttachmentInstructionsSkipsNoOpCheck(): void
+    {
+        $clientId = '100';
+        $message = $this->_draftMailMessage('Body', 'Subject');
+        $atc = new Horde_ActiveSync_Message_AirSyncBaseAttachment([
+            'protocolversion' => Horde_ActiveSync::VERSION_SIXTEEN,
+        ]);
+        $message->airsyncbaseattachments = [$atc];
+
+        $state = $this->createMock(Horde_ActiveSync_State_Base::class);
+        $state->method('getAppliedPIMChange')->willReturn(null);
+
+        $driver = $this->createMock(Horde_ActiveSync_Driver_Base::class);
+        $driver->method('getUser')->willReturn('alice@example.com');
+        // Attachment add/remove always changes the message: no comparison
+        // fetch, straight to the rewrite.
+        $driver->expects($this->never())->method('fetch');
+        $driver->expects($this->once())
+            ->method('changeMessage')
+            ->willReturn(['id' => '101', 'mod' => 0, 'flags' => []]);
+
+        $importer = $this->_importer($state, $driver);
+        $stat = $importer->importMessageChange(
+            $clientId,
+            $message,
+            $this->createMock(Horde_ActiveSync_Device::class),
+            false,
+            Horde_ActiveSync::CLASS_EMAIL,
+            '{uuid}5'
+        );
+
+        $this->assertSame($clientId, $stat['id']);
+    }
+
+    public function testDraftModifyFetchFailureFallsBackToRewrite(): void
+    {
+        $clientId = '100';
+        $message = $this->_draftMailMessage('Body', 'Subject');
+
+        $state = $this->createMock(Horde_ActiveSync_State_Base::class);
+        $state->method('getAppliedPIMChange')->willReturn(null);
+
+        $driver = $this->createMock(Horde_ActiveSync_Driver_Base::class);
+        $driver->method('getUser')->willReturn('alice@example.com');
+        $driver->method('fetch')
+            ->willThrowException(new Horde_Exception_NotFound());
+        $driver->expects($this->once())
+            ->method('changeMessage')
+            ->willReturn(['id' => '101', 'mod' => 0, 'flags' => []]);
+
+        $importer = $this->_importer($state, $driver);
+        $stat = $importer->importMessageChange(
+            $clientId,
+            $message,
+            $this->createMock(Horde_ActiveSync_Device::class),
+            false,
+            Horde_ActiveSync::CLASS_EMAIL,
+            '{uuid}5'
+        );
+
+        $this->assertSame($clientId, $stat['id']);
+    }
+
+    public function testNoOpDraftModifyComparesAgainstAliasedLiveUid(): void
+    {
+        $clientId = '100';
+        $liveUid = '150';
+        $message = $this->_draftMailMessage('Body', 'Subject');
+
+        $state = $this->createMock(Horde_ActiveSync_State_Base::class);
+        $state->method('getAppliedPIMChange')->willReturn(null);
+        $state->method('getDraftUidForClientId')
+            ->with($clientId)
+            ->willReturn($liveUid);
+
+        $driver = $this->createMock(Horde_ActiveSync_Driver_Base::class);
+        $driver->expects($this->once())
+            ->method('fetch')
+            ->with('INBOX/Drafts', $liveUid, $this->anything())
+            ->willReturn($this->_draftMailMessage('Body', 'Subject'));
+        $driver->expects($this->never())->method('changeMessage');
+
+        $importer = $this->_importer($state, $driver);
+        $stat = $importer->importMessageChange(
+            $clientId,
+            $message,
+            $this->createMock(Horde_ActiveSync_Device::class),
+            false,
+            Horde_ActiveSync::CLASS_EMAIL,
+            '{uuid}7'
+        );
+
+        $this->assertSame($clientId, $stat['id']);
+    }
+
     public function testFlagModifyRetryUnderSameSyncKeySkipsDriver(): void
     {
         $synckey = '{uuid}5';
