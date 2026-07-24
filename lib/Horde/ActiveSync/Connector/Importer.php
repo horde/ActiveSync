@@ -172,7 +172,28 @@ class Horde_ActiveSync_Connector_Importer
             );
             // Reply ServerEntryId stays $id (client ServerId); $applied['id']
             // is only the post-append IMAP UID used for conversationindex.
+            // Refresh the wire-identity alias in case the original request
+            // died before the folder state was persisted.
+            $this->_state->recordDraftUidAlias($id, $applied['id']);
             return $this->_draftModifyStat($applied['id'], $message, $synckey, $id);
+        }
+
+        // The client may reference a draft by the ServerId it was told to
+        // keep although append+delete moved the message to a new IMAP UID
+        // (@see Horde_ActiveSync_Folder_Imap::setDraftUidAlias()). Resolve
+        // to the live UID for all backend operations; replies and the retry
+        // maps stay on the client's ServerId.
+        $backendId = $id;
+        if ($id
+            && ($message instanceof Horde_ActiveSync_Message_Mail)
+            && ($alias = $this->_state->getDraftUidForClientId($id))) {
+            $this->_logger->info(sprintf(
+                'Resolved draft alias %s to live UID %s in %s.',
+                $id,
+                $alias,
+                $this->_folderId
+            ));
+            $backendId = $alias;
         }
 
         // Idempotent email flag Modify under the same SyncKey.
@@ -181,7 +202,7 @@ class Horde_ActiveSync_Connector_Importer
             && ($message instanceof Horde_ActiveSync_Message_Mail)
             && empty($message->airsyncbasebody)
             && $this->_state->isMailMapChangeApplied(
-                $id,
+                $backendId,
                 Horde_ActiveSync::CHANGE_TYPE_FLAGS,
                 $synckey
             )) {
@@ -275,7 +296,7 @@ class Horde_ActiveSync_Connector_Importer
         }
 
         // Tell the backend about the change
-        if (!$stat = $this->_as->driver->changeMessage($this->_folderId, $id, $message, $device)) {
+        if (!$stat = $this->_as->driver->changeMessage($this->_folderId, $backendId, $message, $device)) {
             $this->_logger->err(
                 sprintf(
                     'Change message failed when updating %s',
@@ -297,6 +318,11 @@ class Horde_ActiveSync_Connector_Importer
             if ($synckey) {
                 $this->_state->recordAppliedPIMChange($id, $stat, $synckey);
             }
+            // Persist the wire identity: the client stays on $id while the
+            // message now lives under the post-append UID. Later
+            // server-originated changes are exported under $id and later
+            // client commands referencing $id resolve to the live UID.
+            $this->_state->recordDraftUidAlias($id, $stat['id']);
             $user = $this->_as->driver->getUser();
             $this->_state->updateState(
                 Horde_ActiveSync::CHANGE_TYPE_DRAFT,
@@ -307,7 +333,7 @@ class Horde_ActiveSync_Connector_Importer
             $this->_state->updateState(
                 Horde_ActiveSync::CHANGE_TYPE_DELETE,
                 [
-                    'id' => $id,
+                    'id' => $backendId,
                     'mod' => !empty($stat['mod']) ? $stat['mod'] : 0,
                     'serverid' => $this->_folderId,
                 ],
@@ -350,6 +376,15 @@ class Horde_ActiveSync_Connector_Importer
                 $this->_folderId,
                 $synckey ?: null
             );
+        }
+
+        // Replies must reference the ServerId the client holds, not the
+        // alias-resolved live UID (the state above keeps the live UID).
+        if ($id && $backendId !== $id
+            && ($message instanceof Horde_ActiveSync_Message_Mail)
+            && !empty($stat['id'])
+            && (string) $stat['id'] === (string) $backendId) {
+            $stat['id'] = $id;
         }
 
         return $stat;
@@ -447,20 +482,30 @@ class Horde_ActiveSync_Connector_Importer
 
         $already = [];
         $toDelete = [];
+        $clientIds = [];
         foreach ($ids as $id) {
             if (strpos((string) $id, 'IGNORESMS_') === 0) {
                 continue;
+            }
+            // The client may reference an edited draft by the ServerId it
+            // kept while append+delete moved the message to a new IMAP UID.
+            // Delete the live UID; report back the client's ServerId.
+            $backendId = $id;
+            if ($class == Horde_ActiveSync::CLASS_EMAIL
+                && ($alias = $this->_state->getDraftUidForClientId($id))) {
+                $backendId = $alias;
+                $clientIds[$backendId] = $id;
             }
             // mailmap.message_uid is an IMAP integer; never query it for
             // Notes/Calendar/Contacts/Tasks (UUID string server ids).
             if ($class == Horde_ActiveSync::CLASS_EMAIL
                 && $this->_state->isMailMapChangeApplied(
-                    $id,
+                    $backendId,
                     Horde_ActiveSync::CHANGE_TYPE_DELETE
                 )) {
                 $already[] = $id;
             } else {
-                $toDelete[] = $id;
+                $toDelete[] = $backendId;
             }
         }
 
@@ -475,24 +520,11 @@ class Horde_ActiveSync_Connector_Importer
         // UIDs the driver did not return are treated as already gone so a
         // retried Remove after a lost response is not reported as missing.
         $gone = array_diff($toDelete, $deleted);
-        foreach ($deleted as $id) {
-            $change = [
-                'id' => $id,
-                'mod' => $mod,
-                'serverid' => $this->_folderId,
-            ];
-            $this->_state->updateState(
-                Horde_ActiveSync::CHANGE_TYPE_DELETE,
-                $change,
-                Horde_ActiveSync::CHANGE_ORIGIN_PIM,
-                $this->_as->driver->getUser()
-            );
-        }
-        foreach ($gone as $id) {
+        foreach (array_merge($deleted, $gone) as $backendId) {
             $this->_state->updateState(
                 Horde_ActiveSync::CHANGE_TYPE_DELETE,
                 [
-                    'id' => $id,
+                    'id' => $backendId,
                     'mod' => $mod,
                     'serverid' => $this->_folderId,
                 ],
@@ -500,8 +532,17 @@ class Horde_ActiveSync_Connector_Importer
                 $this->_as->driver->getUser()
             );
         }
+        $this->_state->removeDraftUidAliases(array_merge($deleted, $gone));
 
-        return array_values(array_unique(array_merge($already, $deleted, $gone)));
+        // Report success under the ServerIds the client sent.
+        $confirmed = array_map(
+            function ($backendId) use ($clientIds) {
+                return $clientIds[$backendId] ?? $backendId;
+            },
+            array_merge($deleted, $gone)
+        );
+
+        return array_values(array_unique(array_merge($already, $confirmed)));
     }
 
     /**
@@ -512,8 +553,12 @@ class Horde_ActiveSync_Connector_Importer
      */
     public function importMessageReadFlag($id, $flag)
     {
+        // Resolve a draft UID alias so the flag lands on the live message
+        // and the mirror suppression row carries the live UID.
+        $backendId = $this->_state->getDraftUidForClientId($id) ?: $id;
+
         $change = [];
-        $change['id'] = $id;
+        $change['id'] = $backendId;
         $change['flags'] = ['read' => $flag];
         $change['parent'] = $this->_folderId;
         $this->_state->updateState(
@@ -523,7 +568,7 @@ class Horde_ActiveSync_Connector_Importer
             $this->_as->driver->getUser()
         );
 
-        $this->_as->driver->setReadFlag($this->_folderId, $id, $flag);
+        $this->_as->driver->setReadFlag($this->_folderId, $backendId, $flag);
     }
 
     /**
@@ -563,13 +608,22 @@ class Horde_ActiveSync_Connector_Importer
 
         $results = [];
         $pending = [];
+        $clientIds = [];
         foreach ($uids as $uid) {
             if ($synckey
                 && ($prev = $this->_state->getAppliedMailMove($uid, $synckey))) {
                 $results[$uid] = $prev;
                 continue;
             }
-            $pending[] = $uid;
+            // The client may reference an edited draft by the ServerId it
+            // kept while append+delete moved the message to a new IMAP UID.
+            $backendId = $uid;
+            if ($collectionClass == Horde_ActiveSync::CLASS_EMAIL
+                && ($alias = $this->_state->getDraftUidForClientId($uid))) {
+                $backendId = $alias;
+                $clientIds[$backendId] = $uid;
+            }
+            $pending[] = $backendId;
         }
 
         if ($pending) {
@@ -580,7 +634,7 @@ class Horde_ActiveSync_Connector_Importer
             );
             if (is_array($moved)) {
                 foreach ($moved as $old => $new) {
-                    $results[$old] = $new;
+                    $results[$clientIds[$old] ?? $old] = $new;
                 }
             }
         }
@@ -595,7 +649,8 @@ class Horde_ActiveSync_Connector_Importer
         // sync, but some broken clients don't like this. Save the import
         // in the map table in case we need it later.
         $mod = $this->_as->driver->getSyncStamp($this->_folderId);
-        foreach ($pending as $uid) {
+        foreach ($pending as $backendId) {
+            $uid = $clientIds[$backendId] ?? $backendId;
             if (empty($results[$uid])) {
                 continue;
             }
@@ -619,6 +674,8 @@ class Horde_ActiveSync_Connector_Importer
                     $dst
                 );
             }
+            // The message left this folder; its wire identity is settled.
+            $this->_state->removeDraftUidAliases([$backendId]);
         }
 
         return ['results' => $results, 'missing' => array_values($missing)];

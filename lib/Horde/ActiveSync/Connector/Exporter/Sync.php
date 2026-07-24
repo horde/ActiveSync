@@ -348,8 +348,13 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
     {
         $this->_failedFetchIds = [];
         foreach ($collection['fetchids'] as $fetch_id) {
+            // An edited draft lives under a post-append IMAP UID while the
+            // client fetches by the ServerId it kept. Fetch the live UID;
+            // the reply echoes the requested id.
+            $backend_id = $this->_as->state->getDraftUidForClientId($fetch_id)
+                ?: $fetch_id;
             try {
-                $data = $driver->fetch($collection['serverid'], $fetch_id, $collection);
+                $data = $driver->fetch($collection['serverid'], $backend_id, $collection);
                 $this->_encoder->startTag(Horde_ActiveSync::SYNC_FETCH);
                 $this->_encoder->startTag(Horde_ActiveSync::SYNC_SERVERENTRYID);
                 $this->_encoder->content($fetch_id);
@@ -549,6 +554,22 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
             $change = $this->_getNextChange();
         }
 
+        // An edited draft lives under a post-append IMAP UID while the
+        // client still holds the ServerId from before the edit. Encode the
+        // ServerId the client knows; state bookkeeping below stays on the
+        // live UID (@see Horde_ActiveSync_Folder_Imap::setDraftUidAlias()).
+        $wireId = $change['id'];
+        if (!empty($change['id'])
+            && ($clientId = $this->_as->state->getDraftClientIdForUid($change['id']))) {
+            $this->_logger->info(sprintf(
+                'Exporting change for %s under aliased client ServerId %s in %s.',
+                $change['id'],
+                $clientId,
+                $this->_currentCollection['id']
+            ));
+            $wireId = $clientId;
+        }
+
         // Actually export the change by calling the appropriate
         // method to output the correct wbxml for this change.
         if (empty($change['ignore'])) {
@@ -558,7 +579,7 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
                     try {
                         $message = $this->_getChangeMessage($change);
                         $message->flags = (isset($change['flags'])) ? $change['flags'] : false;
-                        $this->messageChange($change['id'], $message);
+                        $this->messageChange($wireId, $message);
                     } catch (Horde_Exception_NotFound $e) {
                         $this->_logger->notice(sprintf(
                             'Message gone or error reading message from server: %s',
@@ -594,11 +615,11 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
                     break;
 
                 case Horde_ActiveSync::CHANGE_TYPE_DELETE:
-                    $this->messageDeletion($change['id']);
+                    $this->messageDeletion($wireId);
                     break;
 
                 case Horde_ActiveSync::CHANGE_TYPE_SOFTDELETE:
-                    $this->messageDeletion($change['id'], true);
+                    $this->messageDeletion($wireId, true);
                     break;
 
                 case Horde_ActiveSync::CHANGE_TYPE_FLAGS:
@@ -636,7 +657,7 @@ class Horde_ActiveSync_Connector_Exporter_Sync extends Horde_ActiveSync_Connecto
                     }
 
                     // Export it.
-                    $this->messageChange($change['id'], $message);
+                    $this->messageChange($wireId, $message);
                     break;
 
                 case Horde_ActiveSync::CHANGE_TYPE_MOVE:

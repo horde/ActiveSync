@@ -131,6 +131,24 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
     protected $_ghostUids = [];
 
     /**
+     * Draft UID aliases: current IMAP UID => client-facing ServerId.
+     *
+     * An EAS 16 Draft Modify is applied as IMAP append+delete, so the
+     * message gets a new UID while the Sync reply keeps the client on the
+     * ServerId it sent (Gmail rejects the SyncKey otherwise). This map
+     * remembers that wire identity so later server-originated changes
+     * (Remove, flag updates) can be exported under the ServerId the client
+     * actually holds, and so client commands referencing the stale ServerId
+     * can be resolved back to the live IMAP UID.
+     *
+     * @see Horde_ActiveSync_Connector_Importer::importMessageChange()
+     * @see Horde_ActiveSync_Connector_Exporter_Sync::_sendNextChange()
+     *
+     * @var array
+     */
+    protected $_draftUidAliases = [];
+
+    /**
      * Set message changes.
      *
      * @param array $messages       An array of message UIDs.
@@ -592,6 +610,80 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
     }
 
     /**
+     * Record a draft UID alias: the client keeps ServerId $clientId while
+     * the message now lives under IMAP UID $uid.
+     *
+     * Any previous alias pointing to the same client ServerId is replaced,
+     * so repeated edits of the same draft keep a single entry.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param string|integer $uid       The current IMAP UID.
+     * @param string|integer $clientId  The ServerId the client holds.
+     */
+    public function setDraftUidAlias($uid, $clientId)
+    {
+        $uid = (string) $uid;
+        $clientId = (string) $clientId;
+        if ($uid === '' || $clientId === '' || $uid === $clientId) {
+            return;
+        }
+        foreach (array_keys($this->_draftUidAliases, $clientId, true) as $stale) {
+            unset($this->_draftUidAliases[$stale]);
+        }
+        $this->_draftUidAliases[$uid] = $clientId;
+    }
+
+    /**
+     * Return the client-facing ServerId for an IMAP UID, if aliased.
+     *
+     * @param string|integer $uid  The current IMAP UID.
+     *
+     * @return string|null  The ServerId the client holds, or null.
+     */
+    public function draftClientIdForUid($uid)
+    {
+        return $this->_draftUidAliases[(string) $uid] ?? null;
+    }
+
+    /**
+     * Return the current IMAP UID for a client-facing ServerId, if aliased.
+     *
+     * @param string|integer $clientId  The ServerId the client holds.
+     *
+     * @return string|null  The live IMAP UID, or null.
+     */
+    public function draftUidForClientId($clientId)
+    {
+        $uid = array_search((string) $clientId, $this->_draftUidAliases, true);
+
+        return $uid === false ? null : (string) $uid;
+    }
+
+    /**
+     * Forget draft UID aliases, e.g. once the deletion of the aliased
+     * message was exported to (or imported from) the client.
+     *
+     * @param array $uids  The current IMAP UIDs.
+     */
+    public function removeDraftUidAliases(array $uids)
+    {
+        foreach ($uids as $uid) {
+            unset($this->_draftUidAliases[(string) $uid]);
+        }
+    }
+
+    /**
+     * Return all recorded draft UID aliases (uid => client ServerId).
+     *
+     * @return array
+     */
+    public function draftUidAliases()
+    {
+        return $this->_draftUidAliases;
+    }
+
+    /**
      * Forget recorded "ghost" UIDs, e.g. after the eviction deletion was
      * exported to the client.
      *
@@ -656,6 +748,9 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
         if (!empty($this->_ghostUids)) {
             $data['g'] = $this->_ghostUids;
         }
+        if (!empty($this->_draftUidAliases)) {
+            $data['da'] = $this->_draftUidAliases;
+        }
 
         return $data;
     }
@@ -683,6 +778,9 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
             : !empty($this->_messages);
         $this->_pingStatus = !empty($data['ps']) ? $data['ps'] : [];
         $this->_ghostUids = !empty($data['g']) ? $data['g'] : [];
+        $this->_draftUidAliases = !empty($data['da'])
+            ? array_map('strval', $data['da'])
+            : [];
 
         if (!empty($this->_status[self::HIGHESTMODSEQ]) && is_string($this->_messages)) {
             $this->_messages = $this->_fromSequenceString($this->_messages);
