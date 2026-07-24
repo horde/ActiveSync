@@ -69,37 +69,6 @@ roadmap — do not implement those entries piecemeal on the FRAMEWORK_6_0 /
   Partial step toward “Request / response pipeline” and “Changes object”
   below; not a substitute for the full Horde 6 response-object refactor.
 
-- **Email sync performance ([#88](https://github.com/horde/ActiveSync/issues/88))
-  — implemented 2026-07-24, in author-deployment soak**
-
-  Cuts the steady-state cost of the PING/heartbeat loop and of message
-  export: one batched IMAP `STATUS` (LIST-STATUS) round trip per poll
-  iteration instead of one per folder; lock-free, memoized read-only state
-  loads on the polling path (no collection lock, no GC, no
-  `SELECT … FOR UPDATE`, zero SQL on unchanged synckeys); dirty-field
-  SyncCache saves on SQL (merge instead of blob overwrite, skip when
-  clean); batched email fetches in `Connector_Exporter_Sync` via the new
-  optional `Driver_Base::getMessagesBulk()`. Every optimization is a hint
-  with an explicit per-item fallback; foreign-client change detection is
-  unchanged (fresh data every iteration, prefetch consumed once). Design,
-  invariants, and observability are documented in
-  [`sync-performance.md`](sync-performance.md). Companion changes live in
-  `horde/core` (`Horde_Core_ActiveSync_Driver::prefetchFolderStatus()` /
-  `getMessagesBulk()`).
-
-  **Remaining before #88 can close:**
-
-  - [x] Unit coverage (adapter prefetch, read-only load/memo, SyncCache
-    merge, exporter prefetch) and full activesync/core suites green
-    (2026-07-24).
-  - [x] Author deployment verification: batched STATUS and read-only poll
-    path active in device logs, no errors (2026-07-24).
-  - [ ] Ralf Lang review of the plan/implementation, especially the SQL
-    query changes (requested in #88).
-  - [ ] Multi-day soak with several concurrent devices (PING + parallel
-    SYNC on the same folders).
-  - [ ] Move this entry to **Recently completed** when #88 closes.
-
 ## Operations and monitoring (out of library scope)
 
 - **EAS usage dashboard / “top-like” monitor**
@@ -354,6 +323,21 @@ active backlog; kept here so this file does not resurrect settled work.
   `complete` flag.
 - PING `StateGone` recovery for stale collection synckeys during long poll.
 - **Not supported:** `POOMTASKS:Regenerate=1` (documented limitation).
+
+### Email sync and polling performance ([#88](https://github.com/horde/ActiveSync/issues/88), 2026-07-24)
+
+- One batched IMAP `STATUS` (LIST-STATUS) round trip per PING/heartbeat
+  poll iteration instead of one per folder.
+- Lock-free, memoized read-only state loads on the polling path: no
+  collection lock, no GC, no `SELECT … FOR UPDATE`; zero SQL on unchanged
+  synckeys.
+- Dirty-field SyncCache saves on SQL (merge instead of blob overwrite,
+  skip when clean).
+- Batched email fetches in `Connector_Exporter_Sync` via the optional
+  `Driver_Base::getMessagesBulk()`; driver implementation in `horde/core`.
+- All optimizations are hints with explicit per-item fallbacks;
+  foreign-client change detection is unchanged. Design, invariants, and
+  observability: [`sync-performance.md`](sync-performance.md).
 
 ### Stability (3.0.0-RC1 and related)
 
