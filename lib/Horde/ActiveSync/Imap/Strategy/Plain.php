@@ -60,6 +60,12 @@ class Horde_ActiveSync_Imap_Strategy_Plain extends Horde_ActiveSync_Imap_Strateg
         $query = new Horde_Imap_Client_Fetch_Query();
         $query->flags();
         $flags = [];
+        // Native Exchange semantics: EAS cannot represent a message flagged
+        // for deletion. A tracked message that gained \Deleted is removed
+        // from the client; an untracked one is never exported.
+        $tracked = $this->_folder->messages();
+        $suppressed = [];
+        $flag_deleted = [];
         for ($i = 0; $i <= $cnt; $i++) {
             $ids = new Horde_Imap_Client_Ids(
                 array_slice(
@@ -79,6 +85,15 @@ class Horde_ActiveSync_Imap_Strategy_Plain extends Horde_ActiveSync_Imap_Strateg
                 throw new Horde_ActiveSync_Exception($e);
             }
             foreach ($fetch_ret as $uid => $data) {
+                if (array_search(Horde_Imap_Client::FLAG_DELETED, $data->getFlags()) !== false) {
+                    if (!in_array($uid, $suppressed)) {
+                        $suppressed[] = $uid;
+                        if (in_array($uid, $tracked)) {
+                            $flag_deleted[] = $uid;
+                        }
+                    }
+                    continue;
+                }
                 $flags[$uid] = [
                     'read' => (array_search(Horde_Imap_Client::FLAG_SEEN, $data->getFlags()) !== false) ? 1 : 0,
                 ];
@@ -89,14 +104,20 @@ class Horde_ActiveSync_Imap_Strategy_Plain extends Horde_ActiveSync_Imap_Strateg
             }
         }
         if (!empty($flags)) {
-            $this->_folder->setChanges($search_ret['match']->ids, $flags);
+            $this->_folder->setChanges(
+                array_diff($search_ret['match']->ids, $suppressed),
+                $flags
+            );
         }
         $this->_folder->setRemoved(
-            $this->_imap_ob->vanished(
-                $this->_mbox,
-                null,
-                ['ids' => new Horde_Imap_Client_Ids($this->_folder->messages())]
-            )->ids
+            array_merge(
+                $this->_imap_ob->vanished(
+                    $this->_mbox,
+                    null,
+                    ['ids' => new Horde_Imap_Client_Ids($this->_folder->messages())]
+                )->ids,
+                $flag_deleted
+            )
         );
 
         return $this->_folder;

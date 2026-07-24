@@ -196,6 +196,32 @@ class Horde_ActiveSync_Connector_Importer
             $backendId = $alias;
         }
 
+        // No-op email Draft Modify: some clients (e.g. Gmail) echo a Modify
+        // for every draft Add/Change they receive even though the user
+        // changed nothing. Applying it as IMAP append+delete would rewrite
+        // the message under a new UID and materialize the client's copy
+        // over server-side state (e.g. resurrect a draft a third-party IMAP
+        // client already flagged \Deleted). Native Exchange does not rewrite
+        // an item when a Modify carries no changes; neither do we.
+        if ($id
+            && ($message instanceof Horde_ActiveSync_Message_Mail)
+            && !empty($message->airsyncbasebody)
+            && $this->_isNoOpDraftModify($message, $backendId)) {
+            $this->_logger->notice(
+                sprintf(
+                    'Draft modify for %s carries no changes; acknowledging without rewrite.',
+                    $id
+                )
+            );
+            return $this->_draftModifyStat(
+                $backendId,
+                $message,
+                $synckey ?: '',
+                $id,
+                ['id' => $backendId, 'mod' => 0, 'flags' => []]
+            );
+        }
+
         // Idempotent email flag Modify under the same SyncKey.
         if ($id
             && $synckey
@@ -437,6 +463,116 @@ class Horde_ActiveSync_Connector_Importer
         }
 
         return $out;
+    }
+
+    /**
+     * Determine whether an incoming Draft Modify carries no changes compared
+     * to the message currently stored on the server.
+     *
+     * EAS Modify semantics: an omitted property keeps its server value, so
+     * only properties the client actually sent can change the message. The
+     * comparison is deliberately conservative — any doubt (fetch failure,
+     * attachment instructions, unexpected shape, mismatch) reports a change
+     * so the regular rewrite path runs.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param Horde_ActiveSync_Message_Mail $message  The incoming message.
+     * @param string|integer $id  The live IMAP UID of the current draft.
+     *
+     * @return boolean  True when the Modify would not change the message.
+     */
+    protected function _isNoOpDraftModify(
+        Horde_ActiveSync_Message_Mail $message,
+        $id
+    ) {
+        // Attachment add/remove instructions always change the message.
+        if (!empty($message->airsyncbaseattachments)) {
+            return false;
+        }
+
+        $body = $message->airsyncbasebody;
+        try {
+            $current = $this->_as->driver->fetch($this->_folderId, $id, [
+                'protocolversion' => $message->getProtocolVersion(),
+                'bodyprefs' => [
+                    $body->type => [
+                        'type' => $body->type,
+                        'truncationsize' => 0,
+                    ],
+                ],
+                'mimesupport' => 0,
+            ]);
+        } catch (Horde_Exception $e) {
+            return false;
+        }
+        if (!($current instanceof Horde_ActiveSync_Message_Mail)
+            || empty($current->airsyncbasebody)
+            || (int) $current->airsyncbasebody->type !== (int) $body->type) {
+            return false;
+        }
+
+        foreach (['subject', 'to', 'cc', 'bcc'] as $field) {
+            $sent = $message->$field;
+            if (is_null($sent) || $sent === false || $sent === '') {
+                continue;
+            }
+            if (trim((string) $sent) !== trim((string) $current->$field)) {
+                return false;
+            }
+        }
+        foreach (['importance', 'read'] as $field) {
+            $sent = $message->$field;
+            if (is_null($sent) || $sent === false || $sent === '') {
+                continue;
+            }
+            if ((int) $sent !== (int) $current->$field) {
+                return false;
+            }
+        }
+
+        // A requested follow-up flag state that differs is a change; an
+        // empty <Flag/> container carries no request.
+        $sentFlag = !empty($message->flag) ? (int) $message->flag->flagstatus : 0;
+        $currentFlag = !empty($current->flag) ? (int) $current->flag->flagstatus : 0;
+        if ($sentFlag && $sentFlag !== $currentFlag) {
+            return false;
+        }
+
+        if (!empty($message->categories)
+            && $message->categories != ($current->categories ?: [])) {
+            return false;
+        }
+
+        return $this->_draftBodyString($body->data)
+            === $this->_draftBodyString($current->airsyncbasebody->data);
+    }
+
+    /**
+     * Normalize AirSyncBaseBody data for comparison: resolve streams and
+     * unify line endings / trailing whitespace.
+     *
+     * @param mixed $data  The body data (string, stream resource, or
+     *                     Horde_Stream).
+     *
+     * @return string  The normalized body text.
+     */
+    protected function _draftBodyString($data)
+    {
+        // Leave streams rewound: when the comparison reports a change, the
+        // regular rewrite path still needs to read the body from the start.
+        if ($data instanceof Horde_Stream) {
+            $string = $data->getString(0);
+            $data->rewind();
+            $data = $string;
+        } elseif (is_resource($data)) {
+            rewind($data);
+            $contents = stream_get_contents($data);
+            rewind($data);
+            $data = $contents;
+        }
+
+        return rtrim(str_replace("\r\n", "\n", (string) $data));
     }
 
     /**

@@ -120,6 +120,7 @@ class Horde_ActiveSync_Imap_Strategy_Modseq extends Horde_ActiveSync_Imap_Strate
         $query->flags();
         $changes = [];
         $categories = [];
+        $flag_deleted = [];
         for ($i = 0; $i <= $cnt; $i++) {
             $ids = new Horde_Imap_Client_Ids(
                 array_slice(
@@ -142,6 +143,7 @@ class Horde_ActiveSync_Imap_Strategy_Modseq extends Horde_ActiveSync_Imap_Strate
                 $changes,
                 $flags,
                 $categories,
+                $flag_deleted,
                 $fetch_ret,
                 $options,
                 $current_modseq
@@ -167,11 +169,16 @@ class Horde_ActiveSync_Imap_Strategy_Modseq extends Horde_ActiveSync_Imap_Strate
             $this->_logger->err($e->getMessage());
             throw new Horde_ActiveSync_Exception($e);
         }
-        $this->_folder->setRemoved($deleted->ids);
+        // Messages that gained the \Deleted flag are removed from the client
+        // as well: native Exchange semantics know no "flagged for deletion"
+        // state, so EAS clients must not keep showing such mail as live.
+        $this->_folder->setRemoved(array_merge($deleted->ids, $flag_deleted));
         $this->_logger->meta(
             sprintf(
-                'Found %d deleted messages.',
-                $deleted->count()
+                'Found %d deleted messages (%d expunged, %d flagged \\Deleted).',
+                $deleted->count() + count($flag_deleted),
+                $deleted->count(),
+                count($flag_deleted)
             )
         );
 
@@ -239,6 +246,10 @@ class Horde_ActiveSync_Imap_Strategy_Modseq extends Horde_ActiveSync_Imap_Strate
      * @param array &$changes                             Changes array.
      * @param array &$flags                               Flags array.
      * @param array &$categories                          Categories array.
+     * @param array &$flag_deleted                        Tracked UIDs that
+     *                                                    gained the \Deleted
+     *                                                    flag; to be removed
+     *                                                    from the client.
      * @param Horde_Imap_Client_Fetch_Results $fetch_ret  Fetch results.
      * @param array $options                              Options array.
      * @param integer $modseq                             Current MODSEQ.
@@ -247,6 +258,7 @@ class Horde_ActiveSync_Imap_Strategy_Modseq extends Horde_ActiveSync_Imap_Strate
         &$changes,
         &$flags,
         &$categories,
+        &$flag_deleted,
         $fetch_ret,
         $options,
         $modseq
@@ -256,12 +268,24 @@ class Horde_ActiveSync_Imap_Strategy_Modseq extends Horde_ActiveSync_Imap_Strate
 
         // Filter out any changes that we already know about.
         $fetch_keys = $fetch_ret->ids();
-        $result_set = array_diff($fetch_keys, $changes);
+        $result_set = array_diff($fetch_keys, $changes, $flag_deleted);
+        $tracked = $this->_folder->messages();
 
         foreach ($result_set as $uid) {
             // Ensure no changes after the current modseq have been returned.
             $data = $fetch_ret[$uid];
             if ($data->getModSeq() <= $modseq) {
+                if (array_search(Horde_Imap_Client::FLAG_DELETED, $data->getFlags()) !== false) {
+                    // Native Exchange semantics: EAS cannot represent a
+                    // message flagged for deletion. A tracked message that
+                    // gained \Deleted is removed from the client; an
+                    // untracked one is never exported. Losing the flag later
+                    // makes the (then untracked) message a regular Add again.
+                    if (in_array($uid, $tracked)) {
+                        $flag_deleted[] = $uid;
+                    }
+                    continue;
+                }
                 $changes[] = $uid;
                 $flags[$uid] = [
                     'read' => (array_search(Horde_Imap_Client::FLAG_SEEN, $data->getFlags()) !== false) ? 1 : 0,
