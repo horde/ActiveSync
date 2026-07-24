@@ -90,6 +90,22 @@ The authoritative list with full signatures and docblocks is
 `Horde_ActiveSync_Driver_Mock` (+ `MockConnector`) in this package is a
 minimal reference stack used by the unit and integration tests.
 
+### Optional batching hooks
+
+Two non-abstract methods can be overridden for performance; both default
+to "not supported" and the library falls back to the per-item calls, so
+existing drivers need no changes:
+
+- `prefetchFolderStatus(array $folders)` — called once per heartbeat poll
+  iteration with all pinged email folder ids; batch your status lookups in
+  one backend round trip (the Horde driver issues a single IMAP
+  LIST-STATUS).
+- `getMessagesBulk($folderid, array $ids, array $collection)` — fetch
+  several items at once during export; ids missing from the result are
+  fetched individually via `getMessage()`.
+
+Design and fallback semantics: [`sync-performance.md`](sync-performance.md).
+
 ### Item conversion
 
 Sync items travel as `Horde_ActiveSync_Message_*` objects (typed,
@@ -127,7 +143,10 @@ The state backend persists: device records and per-user device pairings,
 policy keys, sync state per collection + sync key, incoming-change maps (to
 avoid mirroring client changes back), and the `SyncCache`. If you implement
 your own, subclass `Horde_ActiveSync_State_Base` and keep its locking and
-garbage-collection semantics — see [`architecture.md`](architecture.md).
+garbage-collection semantics — including the read-only load path used by
+the heartbeat poll loop (`loadState(..., ['readonly' => true])`, see
+[`sync-performance.md`](sync-performance.md)) — details in
+[`architecture.md`](architecture.md).
 
 ## Requirements and tests
 

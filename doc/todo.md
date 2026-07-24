@@ -1,6 +1,6 @@
 # ActiveSync TODO
 
-Last reviewed: 2026-07-14
+Last reviewed: 2026-07-24
 
 This file tracks **remaining** work. For what the library already supports,
 see the doc index in the package `README.md` — in particular
@@ -68,6 +68,37 @@ roadmap — do not implement those entries piecemeal on the FRAMEWORK_6_0 /
 
   Partial step toward “Request / response pipeline” and “Changes object”
   below; not a substitute for the full Horde 6 response-object refactor.
+
+- **Email sync performance ([#88](https://github.com/horde/ActiveSync/issues/88))
+  — implemented 2026-07-24, in author-deployment soak**
+
+  Cuts the steady-state cost of the PING/heartbeat loop and of message
+  export: one batched IMAP `STATUS` (LIST-STATUS) round trip per poll
+  iteration instead of one per folder; lock-free, memoized read-only state
+  loads on the polling path (no collection lock, no GC, no
+  `SELECT … FOR UPDATE`, zero SQL on unchanged synckeys); dirty-field
+  SyncCache saves on SQL (merge instead of blob overwrite, skip when
+  clean); batched email fetches in `Connector_Exporter_Sync` via the new
+  optional `Driver_Base::getMessagesBulk()`. Every optimization is a hint
+  with an explicit per-item fallback; foreign-client change detection is
+  unchanged (fresh data every iteration, prefetch consumed once). Design,
+  invariants, and observability are documented in
+  [`sync-performance.md`](sync-performance.md). Companion changes live in
+  `horde/core` (`Horde_Core_ActiveSync_Driver::prefetchFolderStatus()` /
+  `getMessagesBulk()`).
+
+  **Remaining before #88 can close:**
+
+  - [x] Unit coverage (adapter prefetch, read-only load/memo, SyncCache
+    merge, exporter prefetch) and full activesync/core suites green
+    (2026-07-24).
+  - [x] Author deployment verification: batched STATUS and read-only poll
+    path active in device logs, no errors (2026-07-24).
+  - [ ] Ralf Lang review of the plan/implementation, especially the SQL
+    query changes (requested in #88).
+  - [ ] Multi-day soak with several concurrent devices (PING + parallel
+    SYNC on the same folders).
+  - [ ] Move this entry to **Recently completed** when #88 closes.
 
 ## Operations and monitoring (out of library scope)
 
@@ -153,6 +184,15 @@ when a migration plan is written.
 - Fold `SyncCache` and per-collection state into the device object where
   practical.
 - Implement `Horde_ActiveSync_SyncKey` as a first-class type.
+- Replace the PHP `serialize()` blobs in `sync_data` / `cache_data` with a
+  versioned, cheaper serialization format (deferred from
+  [#88](https://github.com/horde/ActiveSync/issues/88); see
+  [`sync-performance.md`](sync-performance.md) *Deferred work*).
+- Dedicated columns (or tables) for hot SyncCache fields (`timestamp`,
+  `lasthbsyncstarted`, per-collection synckeys) so partial reads and
+  compare-and-swap writes replace blob merges — supersedes the interim
+  dirty-field merge from #88 and overlaps “Stronger SyncCache CAS /
+  partial-field save” above.
 
 ### Driver and backend shape
 
@@ -197,6 +237,11 @@ when a migration plan is written.
 - Pass `FILTERTYPE_*` to the driver by constant, not precomputed cutoff
   timestamps (supersedes the near-term `INCOMPLETETASKS` fix style).
 - Split `getMessage()` into per-class methods with shared base logic.
+- Merge the per-message envelope/structure and body FETCHes in
+  `Imap_EasMessageBuilder` / `Imap_MessageBodyData` into one IMAP command
+  per export batch (deferred from
+  [#88](https://github.com/horde/ActiveSync/issues/88) — high risk in the
+  message-building hot path for modest gain).
 - `Horde_ActiveSync_Change_Filter` (or equivalent) for client-specific
   workarounds. Some MOVEITEMS duplication issues were fixed in the past, but
   there is no general filter framework.

@@ -3,8 +3,9 @@
 How the library works internally. Read this before changing protocol logic.
 Companion documents: [`protocol-versions.md`](protocol-versions.md) for
 per-version behaviour, [`sync-streaming.md`](sync-streaming.md) for the
-streamed `Sync` delivery design, and [`todo.md`](todo.md) for the Horde 6
-refactor roadmap.
+streamed `Sync` delivery design, [`sync-performance.md`](sync-performance.md)
+for the heartbeat-polling and export batching design, and
+[`todo.md`](todo.md) for the Horde 6 refactor roadmap.
 
 ## Component map
 
@@ -77,7 +78,10 @@ is the heart of the library. A `Sync` request runs in two phases:
   `SyncCache`), enabling cheap looping sync.
 - `HeartbeatInterval` / `Wait` turn the request into a hanging sync: the
   handler polls for changes (`Collections::pollForChanges()`) until the
-  heartbeat expires or changes arrive.
+  heartbeat expires or changes arrive. Each poll iteration batches the
+  IMAP status checks for all pinged email folders into one round trip and
+  loads collection state through a lock-free, memoized read-only path —
+  see [`sync-performance.md`](sync-performance.md).
 
 ### Phase 2 — respond (encoder)
 
@@ -92,8 +96,11 @@ For each collection:
    the streaming count cap) decides truncation, announced via
    `MoreAvailable` *before* the `Commands` block (MS-ASCMD ordering rule).
 4. `Connector_Exporter_Sync` streams each change: fetches the item from the
-   driver, encodes it (`Message_*::encodeStream()`), and records it in the
-   change map so the client's echo is not mirrored back.
+   driver — prefetching upcoming email items in batches via
+   `getMessagesBulk()` where the driver supports it (see
+   [`sync-performance.md`](sync-performance.md)) — encodes it
+   (`Message_*::encodeStream()`), and records it in the change map so the
+   client's echo is not mirrored back.
 5. Replies for client commands (`SyncReplies`: server ids for adds, status
    for failures, EAS 16 `modifiedids`) are encoded.
 6. A **new sync key** is written with the resulting state. The client
@@ -118,6 +125,10 @@ State backends (`State_Sql`, `State_Mongo`) persist, per device + user:
 - **SyncCache** (`horde_activesync_cache`): cross-request collection
   metadata (folder list, per-collection options, hierarchy sync key,
   pingable flags) enabling EAS ≥ 12.1 empty and looping Sync requests.
+  Saves are dirty-field aware on both backends: only properties marked
+  dirty are merged into the stored cache, so concurrent writers (a PING
+  heartbeat and a parallel SYNC) do not clobber each other's fields (see
+  [`sync-performance.md`](sync-performance.md)).
 
 Two sync keys per collection are kept alive so a lost response can be
 replayed; garbage collection trims older generations. When state and client
@@ -161,7 +172,9 @@ Mail is the only class where the library itself contains substantial data
 logic (other classes convert in the backend):
 
 - `Imap_Adapter` wraps a `Horde_Imap_Client` factory and implements folder
-  stat/changes/fetch for the driver.
+  stat/changes/fetch for the driver, including the batched multi-mailbox
+  status prefetch consumed by `ping()`
+  ([`sync-performance.md`](sync-performance.md)).
 - Change detection strategies in `Imap_Strategy_*`: `Modseq`
   (CONDSTORE/QRESYNC servers), `Plain` (fallback polling), `Initial` (first
   sync).

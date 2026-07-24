@@ -523,6 +523,22 @@ abstract class Horde_ActiveSync_Driver_Base
     }
 
     /**
+     * Hint to the backend that the given email folders are about to be
+     * polled for changes, allowing implementations to prefetch status
+     * information for all folders in a single backend round trip.
+     *
+     * Purely an optimization hint: the default implementation is a no-op
+     * and backends remain fully functional without it.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param array $folders  An array of backend folder ids.
+     */
+    public function prefetchFolderStatus(array $folders)
+    {
+    }
+
+    /**
      * Delete a folder on the server.
      *
      * @param string $id  The server's folder id.
@@ -693,6 +709,29 @@ abstract class Horde_ActiveSync_Driver_Base
      * @throws Horde_ActiveSync_Exception, Horde_Exception_NotFound
      */
     abstract public function getMessage($folderid, $id, array $collection);
+
+    /**
+     * Obtain multiple ActiveSync messages from the backend in as few
+     * backend round trips as the driver supports.
+     *
+     * Purely an optimization hint for exporters: the returned array is
+     * keyed by message id and MAY omit any (or all) requested ids. Callers
+     * MUST fall back to self::getMessage() for missing ids to preserve
+     * per-message error semantics. The default implementation returns an
+     * empty array (no bulk support).
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param string $folderid   The server's folder id the messages are in.
+     * @param array $ids         The server's message ids.
+     * @param array $collection  The collection data. @see self::getMessage()
+     *
+     * @return array  Horde_ActiveSync_Message_Base objects keyed by id.
+     */
+    public function getMessagesBulk($folderid, array $ids, array $collection)
+    {
+        return [];
+    }
 
     /**
      * Delete a message

@@ -603,6 +603,7 @@ class Horde_ActiveSync_SyncCache
             }
             if (isset($collection['bodypartprefs'])) {
                 $this->_data['collections'][$collection['id']]['bodypartprefs'] = $collection['bodypartprefs'];
+                $this->_markCollectionsDirty($collection['id']);
             }
             if (isset($collection['pingable'])) {
                 $this->_data['collections'][$collection['id']]['pingable'] = $collection['pingable'];
