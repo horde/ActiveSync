@@ -149,6 +149,17 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
     protected $_draftUidAliases = [];
 
     /**
+     * Whether the one-time convergence sweep for messages already flagged
+     * \Deleted has run for this folder. Messages flagged before the server
+     * started honoring \Deleted never produce another MODSEQ event, so the
+     * Modseq strategy polls them exactly once and removes them from the
+     * client.
+     *
+     * @var boolean
+     */
+    protected $_deletedSwept = false;
+
+    /**
      * Set message changes.
      *
      * @param array $messages       An array of message UIDs.
@@ -684,6 +695,24 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
     }
 
     /**
+     * Whether the one-time \Deleted convergence sweep has run.
+     *
+     * @return boolean
+     */
+    public function deletedSwept()
+    {
+        return $this->_deletedSwept;
+    }
+
+    /**
+     * Mark the one-time \Deleted convergence sweep as done.
+     */
+    public function setDeletedSwept()
+    {
+        $this->_deletedSwept = true;
+    }
+
+    /**
      * Forget recorded "ghost" UIDs, e.g. after the eviction deletion was
      * exported to the client.
      *
@@ -751,6 +780,9 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
         if (!empty($this->_draftUidAliases)) {
             $data['da'] = $this->_draftUidAliases;
         }
+        if ($this->_deletedSwept) {
+            $data['dsw'] = true;
+        }
 
         return $data;
     }
@@ -781,6 +813,7 @@ class Horde_ActiveSync_Folder_Imap extends Horde_ActiveSync_Folder_Base implemen
         $this->_draftUidAliases = !empty($data['da'])
             ? array_map('strval', $data['da'])
             : [];
+        $this->_deletedSwept = !empty($data['dsw']);
 
         if (!empty($this->_status[self::HIGHESTMODSEQ]) && is_string($this->_messages)) {
             $this->_messages = $this->_fromSequenceString($this->_messages);

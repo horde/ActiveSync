@@ -169,6 +169,19 @@ class Horde_ActiveSync_Imap_Strategy_Modseq extends Horde_ActiveSync_Imap_Strate
             $this->_logger->err($e->getMessage());
             throw new Horde_ActiveSync_Exception($e);
         }
+        // One-time convergence sweep: messages that were already flagged
+        // \Deleted before this server started honoring the flag never bump
+        // MODSEQ again, so they would linger on the client forever. Poll
+        // them once per folder and remove them from the client too.
+        if (!$this->_folder->deletedSwept()
+            && ($swept = $this->_sweepFlagDeleted()) !== false) {
+            $flag_deleted = array_values(array_unique(array_merge(
+                $flag_deleted,
+                $swept
+            )));
+            $this->_folder->setDeletedSwept();
+        }
+
         // Messages that gained the \Deleted flag are removed from the client
         // as well: native Exchange semantics know no "flagged for deletion"
         // state, so EAS clients must not keep showing such mail as live.
@@ -206,6 +219,45 @@ class Horde_ActiveSync_Imap_Strategy_Modseq extends Horde_ActiveSync_Imap_Strate
         }
 
         return $this->_folder;
+    }
+
+    /**
+     * Search the folder once for tracked messages already carrying the
+     * \Deleted flag (e.g. flagged before the server honored the flag).
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @return array|false  The flagged tracked UIDs, or false when the
+     *                      search failed (the sweep must be retried).
+     */
+    protected function _sweepFlagDeleted()
+    {
+        $tracked = $this->_folder->messages();
+        if (empty($tracked)) {
+            return [];
+        }
+
+        $query = new Horde_Imap_Client_Search_Query();
+        $query->flag(Horde_Imap_Client::FLAG_DELETED, true);
+        $query->ids(new Horde_Imap_Client_Ids($tracked));
+        try {
+            $search_ret = $this->_imap_ob->search(
+                $this->_mbox,
+                $query,
+                ['results' => [Horde_Imap_Client::SEARCH_RESULTS_MATCH]]
+            );
+        } catch (Horde_Imap_Client_Exception $e) {
+            $this->_logger->err($e->getMessage());
+            return false;
+        }
+        if ($search_ret['count']) {
+            $this->_logger->meta(sprintf(
+                'Deleted-flag sweep found %d tracked messages to remove.',
+                $search_ret['count']
+            ));
+        }
+
+        return $search_ret['match']->ids;
     }
 
     /**
