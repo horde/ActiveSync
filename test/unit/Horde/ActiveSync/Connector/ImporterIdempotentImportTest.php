@@ -469,6 +469,38 @@ class Horde_ActiveSync_Connector_ImporterIdempotentImportTest extends TestCase
         $this->assertArrayHasKey('conversationindex', $stat);
     }
 
+    public function testNoOpDraftModifyIgnoresReadStateDifference(): void
+    {
+        // Gmail hardcodes Read 0 in echoed Modifies; a draft another client
+        // displayed (\Seen) must still be detected as a no-op — read state
+        // is metadata, not content (issue #94 follow-up).
+        $clientId = '100';
+        $message = $this->_draftMailMessage('Body', 'Subject');
+        $message->read = 0;
+
+        $current = $this->_draftMailMessage('Body', 'Subject');
+        $current->read = Horde_ActiveSync_Message_Mail::FLAG_READ_SEEN;
+
+        $state = $this->createMock(Horde_ActiveSync_State_Base::class);
+        $state->method('getAppliedPIMChange')->willReturn(null);
+
+        $driver = $this->createMock(Horde_ActiveSync_Driver_Base::class);
+        $driver->method('fetch')->willReturn($current);
+        $driver->expects($this->never())->method('changeMessage');
+
+        $importer = $this->_importer($state, $driver);
+        $stat = $importer->importMessageChange(
+            $clientId,
+            $message,
+            $this->createMock(Horde_ActiveSync_Device::class),
+            false,
+            Horde_ActiveSync::CLASS_EMAIL,
+            '{uuid}5'
+        );
+
+        $this->assertSame($clientId, $stat['id']);
+    }
+
     public function testDraftModifyWithChangedBodyStillRewrites(): void
     {
         $clientId = '100';
