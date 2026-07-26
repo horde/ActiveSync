@@ -504,11 +504,20 @@ class Horde_ActiveSync_Connector_Importer
                 'mimesupport' => 0,
             ]);
         } catch (Horde_Exception $e) {
+            $this->_logger->info(sprintf(
+                'Draft no-op check for %s: fetch failed (%s); assuming change.',
+                $id,
+                $e->getMessage()
+            ));
             return false;
         }
         if (!($current instanceof Horde_ActiveSync_Message_Mail)
             || empty($current->airsyncbasebody)
             || (int) $current->airsyncbasebody->type !== (int) $body->type) {
+            $this->_logger->info(sprintf(
+                'Draft no-op check for %s: unexpected message shape; assuming change.',
+                $id
+            ));
             return false;
         }
 
@@ -518,17 +527,19 @@ class Horde_ActiveSync_Connector_Importer
                 continue;
             }
             if (trim((string) $sent) !== trim((string) $current->$field)) {
-                return false;
+                return $this->_logDraftMismatch($id, $field);
             }
         }
-        foreach (['importance', 'read'] as $field) {
-            $sent = $message->$field;
-            if (is_null($sent) || $sent === false || $sent === '') {
-                continue;
-            }
-            if ((int) $sent !== (int) $current->$field) {
-                return false;
-            }
+
+        // NOTE: the POOMMAIL:Read state is deliberately NOT compared. A
+        // draft's read state is metadata, not content — a difference must
+        // never cost an append+delete rewrite. Gmail hardcodes Read 0 in
+        // its echoed Modifies, so comparing read would rewrite any draft
+        // that was ever displayed (\Seen) by another client.
+        $sent = $message->importance;
+        if (!is_null($sent) && $sent !== false && $sent !== ''
+            && (int) $sent !== (int) $current->importance) {
+            return $this->_logDraftMismatch($id, 'importance');
         }
 
         // A requested follow-up flag state that differs is a change; an
@@ -536,16 +547,39 @@ class Horde_ActiveSync_Connector_Importer
         $sentFlag = !empty($message->flag) ? (int) $message->flag->flagstatus : 0;
         $currentFlag = !empty($current->flag) ? (int) $current->flag->flagstatus : 0;
         if ($sentFlag && $sentFlag !== $currentFlag) {
-            return false;
+            return $this->_logDraftMismatch($id, 'flag');
         }
 
         if (!empty($message->categories)
             && $message->categories != ($current->categories ?: [])) {
-            return false;
+            return $this->_logDraftMismatch($id, 'categories');
         }
 
-        return $this->_draftBodyString($body->data)
-            === $this->_draftBodyString($current->airsyncbasebody->data);
+        if ($this->_draftBodyString($body->data)
+            !== $this->_draftBodyString($current->airsyncbasebody->data)) {
+            return $this->_logDraftMismatch($id, 'body');
+        }
+
+        return true;
+    }
+
+    /**
+     * Log which field failed the draft no-op comparison.
+     *
+     * @param string|integer $id  The message UID being compared.
+     * @param string $field       The mismatching field.
+     *
+     * @return boolean  Always false, for use as a return shortcut.
+     */
+    protected function _logDraftMismatch($id, $field)
+    {
+        $this->_logger->info(sprintf(
+            'Draft no-op check for %s: %s differs; applying as rewrite.',
+            $id,
+            $field
+        ));
+
+        return false;
     }
 
     /**
