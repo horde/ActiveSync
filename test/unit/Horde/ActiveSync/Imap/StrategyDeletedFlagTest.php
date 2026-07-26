@@ -186,10 +186,99 @@ class Horde_ActiveSync_Imap_StrategyDeletedFlagTest extends TestCase
         $this->assertSame([52, 53], $result->added());
     }
 
+    public function testModseqSweepRemovesPreexistingDeletedOnFirstPoll(): void
+    {
+        // Folder tracking 52 and 53; 53 was flagged \Deleted before the
+        // server honored the flag (no further MODSEQ event will occur).
+        $folder = $this->_modseqFolder([52, 53], false);
+
+        $imap = $this->_imapMock();
+        $imap->expects($this->exactly(2))
+            ->method('search')
+            ->willReturnCallback(function ($mbox, $query) {
+                // Second call is the sweep (SEARCH DELETED on tracked ids).
+                if (strpos((string) $query, 'DELETED') !== false) {
+                    return [
+                        'count' => 1,
+                        'match' => new Horde_Imap_Client_Ids([53]),
+                    ];
+                }
+                return [
+                    'count' => 0,
+                    'match' => new Horde_Imap_Client_Ids([]),
+                ];
+            });
+        $this->_mockBatchedFetch($imap, $this->_fetchResults([]));
+        $imap->method('vanished')
+            ->willReturn(new Horde_Imap_Client_Ids([]));
+
+        $strategy = new Horde_ActiveSync_Imap_Strategy_Modseq(
+            $this->_factory($imap),
+            $this->_status(10),
+            $folder,
+            $this->_logger()
+        );
+        $result = $strategy->getChanges([
+            'protocolversion' => Horde_ActiveSync::VERSION_SIXTEEN,
+        ]);
+
+        $this->assertSame([53], $result->removed());
+        $this->assertTrue($result->deletedSwept());
+    }
+
+    public function testModseqSweepStateSurvivesSerialization(): void
+    {
+        $folder = $this->_modseqFolder([52], false);
+        $this->assertFalse($folder->deletedSwept());
+        $folder->setDeletedSwept();
+
+        $restored = new Horde_ActiveSync_Folder_Imap(
+            'INBOX',
+            Horde_ActiveSync::CLASS_EMAIL
+        );
+        $restored->unserialize($folder->serialize());
+
+        $this->assertTrue($restored->deletedSwept());
+    }
+
+    public function testModseqSweepNotMarkedDoneWhenSearchFails(): void
+    {
+        $folder = $this->_modseqFolder([52, 53], false);
+
+        $imap = $this->_imapMock();
+        $imap->method('search')
+            ->willReturnCallback(function ($mbox, $query) {
+                if (strpos((string) $query, 'DELETED') !== false) {
+                    throw new Horde_Imap_Client_Exception('sweep failed');
+                }
+                return [
+                    'count' => 0,
+                    'match' => new Horde_Imap_Client_Ids([]),
+                ];
+            });
+        $this->_mockBatchedFetch($imap, $this->_fetchResults([]));
+        $imap->method('vanished')
+            ->willReturn(new Horde_Imap_Client_Ids([]));
+
+        $strategy = new Horde_ActiveSync_Imap_Strategy_Modseq(
+            $this->_factory($imap),
+            $this->_status(10),
+            $folder,
+            $this->_logger()
+        );
+        $result = $strategy->getChanges([
+            'protocolversion' => Horde_ActiveSync::VERSION_SIXTEEN,
+        ]);
+
+        // The sweep must be retried on the next poll.
+        $this->assertSame([], $result->removed());
+        $this->assertFalse($result->deletedSwept());
+    }
+
     /**
      * A folder tracking $uids on a CONDSTORE server at MODSEQ 5.
      */
-    protected function _modseqFolder(array $uids): Horde_ActiveSync_Folder_Imap
+    protected function _modseqFolder(array $uids, bool $swept = true): Horde_ActiveSync_Folder_Imap
     {
         $folder = new Horde_ActiveSync_Folder_Imap(
             'INBOX',
@@ -203,6 +292,9 @@ class Horde_ActiveSync_Imap_StrategyDeletedFlagTest extends TestCase
         ]);
         $folder->setChanges($uids);
         $folder->updateState();
+        if ($swept) {
+            $folder->setDeletedSwept();
+        }
 
         return $folder;
     }
