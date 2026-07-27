@@ -403,6 +403,196 @@ class SyncStreamingTest extends TestCase
         $this->assertSame(['id' => 'F1'], $collection);
     }
 
+    public function testImportInstanceIdRemovesAcceptsMultiplePerUid()
+    {
+        $sync = $this->_syncRequestWithoutConstructor();
+
+        $importer = $this->createMock(Horde_ActiveSync_Connector_Importer::class);
+        $importer->expects($this->exactly(3))
+            ->method('importMessageDeletion')
+            ->willReturnCallback(function ($ids, $class, $instanceids) {
+                $this->assertTrue($instanceids);
+                $this->assertSame(Horde_ActiveSync::CLASS_CALENDAR, $class);
+                $this->assertCount(1, $ids);
+                return $ids;
+            });
+
+        $collection = [
+            'id' => 'A1',
+            'class' => Horde_ActiveSync::CLASS_CALENDAR,
+        ];
+
+        $this->_invokeSyncMethod(
+            $sync,
+            '_importInstanceIdRemoves',
+            [
+                $importer,
+                &$collection,
+                [
+                    'series-uid' => [
+                        '20250801T120000Z',
+                        '20250808T120000Z',
+                    ],
+                    // Legacy single-string form still supported.
+                    'other-uid' => '20250901T120000Z',
+                ],
+            ]
+        );
+    }
+
+    public function testResolveOrphanInstanceIdRemovesMapsToSingleAdd()
+    {
+        $sync = $this->_syncRequestWithoutConstructor();
+        $ref = new ReflectionClass($sync);
+        $loggerProp = $ref->getProperty('_logger');
+        $loggerProp->setAccessible(true);
+        $loggerProp->setValue(
+            $sync,
+            new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null())
+        );
+
+        $collection = [
+            'orphan_instanceid_removes' => [
+                '20260803T110000Z',
+                '20260810T110000Z',
+            ],
+            'clientids' => [
+                'client-1' => 'server-uid-42',
+            ],
+            'instanceid_removes' => [
+                'server-uid-42' => ['20260817T110000Z'],
+            ],
+        ];
+
+        $this->_invokeSyncMethod(
+            $sync,
+            '_resolveOrphanInstanceIdRemoves',
+            [&$collection]
+        );
+
+        $this->assertArrayNotHasKey('orphan_instanceid_removes', $collection);
+        $this->assertSame(
+            [
+                'server-uid-42' => [
+                    '20260817T110000Z',
+                    '20260803T110000Z',
+                    '20260810T110000Z',
+                ],
+            ],
+            $collection['instanceid_removes']
+        );
+    }
+
+    public function testResolveOrphanInstanceIdRemovesDropsWhenAmbiguous()
+    {
+        $sync = $this->_syncRequestWithoutConstructor();
+        $ref = new ReflectionClass($sync);
+        $loggerProp = $ref->getProperty('_logger');
+        $loggerProp->setAccessible(true);
+        $loggerProp->setValue(
+            $sync,
+            new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null())
+        );
+
+        $collection = [
+            'orphan_instanceid_removes' => ['20260803T110000Z'],
+            'clientids' => [
+                'client-1' => 'server-a',
+                'client-2' => 'server-b',
+            ],
+        ];
+
+        $this->_invokeSyncMethod(
+            $sync,
+            '_resolveOrphanInstanceIdRemoves',
+            [&$collection]
+        );
+
+        $this->assertArrayNotHasKey('orphan_instanceid_removes', $collection);
+        $this->assertArrayNotHasKey('instanceid_removes', $collection);
+    }
+
+    public function testRunDeferredSyncCommandsImportsAllInstanceRemoves()
+    {
+        $sync = $this->_syncRequestWithoutConstructor();
+        $ref = new ReflectionClass($sync);
+
+        $appdata = $this->createMock(Horde_ActiveSync_Message_Base::class);
+
+        $importer = $this->createMock(Horde_ActiveSync_Connector_Importer::class);
+        $importer->expects($this->once())->method('init');
+        $importer->expects($this->once())
+            ->method('importMessageChange')
+            ->willReturn(['id' => 'series-uid', 'mod' => 1]);
+        $importer->expects($this->exactly(3))
+            ->method('importMessageDeletion')
+            ->willReturnCallback(function ($ids, $class, $instanceids) {
+                $this->assertTrue($instanceids);
+                $this->assertSame(['series-uid'], array_keys($ids));
+                return $ids;
+            });
+
+        $as = $this->createMock(Horde_ActiveSync::class);
+        $as->method('getImporter')->willReturn($importer);
+
+        $main = fopen('php://memory', 'wb+');
+        $encoder = $this->_encoder($main);
+
+        foreach ([
+            '_activeSync' => $as,
+            '_device' => $this->createMock(\Horde_ActiveSync_Device::class),
+            '_state' => $this->createMock(Horde_ActiveSync_State_Base::class),
+            '_encoder' => $encoder,
+            '_logger' => new Horde_ActiveSync_Log_Logger(new Horde_Log_Handler_Null()),
+            '_keepAliveInterval' => 15,
+            '_deferredCommands' => [
+                'A1' => [
+                    'commands' => [
+                        [
+                            'type' => Horde_ActiveSync::SYNC_ADD,
+                            'serverid' => false,
+                            'clientid' => 'client-cal',
+                            'appdata' => $appdata,
+                        ],
+                    ],
+                    // Multiple deletes for the known series uid.
+                    'instanceid_removes' => [
+                        'series-uid' => [
+                            '20250801T120000Z',
+                            '20250808T120000Z',
+                        ],
+                    ],
+                    // Orphan Remove from iOS (empty ServerEntryId), resolved
+                    // against the co-batched Add above.
+                    'orphan_instanceid_removes' => [
+                        '20250815T120000Z',
+                    ],
+                ],
+            ],
+        ] as $property => $value) {
+            $prop = $ref->getProperty($property);
+            $prop->setAccessible(true);
+            $prop->setValue($sync, $value);
+        }
+
+        $collection = [
+            'id' => 'A1',
+            'class' => Horde_ActiveSync::CLASS_CALENDAR,
+            'synckey' => '{uuid}5',
+            'conflict' => Horde_ActiveSync::CONFLICT_OVERWRITE_PIM,
+            'clientids' => [],
+        ];
+
+        $method = $ref->getMethod('_runDeferredSyncCommands');
+        $method->setAccessible(true);
+        $collectionArgs = [&$collection];
+        $method->invokeArgs($sync, $collectionArgs);
+
+        $this->assertSame(['client-cal' => 'series-uid'], $collection['clientids']);
+        $this->assertArrayNotHasKey('instanceid_removes', $collection);
+        $this->assertArrayNotHasKey('orphan_instanceid_removes', $collection);
+    }
+
     protected function _encoder($stream)
     {
         $encoder = new Horde_ActiveSync_Wbxml_Encoder(

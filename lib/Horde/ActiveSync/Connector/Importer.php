@@ -411,7 +411,7 @@ class Horde_ActiveSync_Connector_Importer
      * @param array $ids            Server message uids to delete
      * @param string $class         The server collection class.
      * @param boolean $instanceids  If true, $ids is a hash of
-     *                              instanceids => uids. @since 2.31.0
+     *                              uid => instanceid. @since 2.31.0
      *
      * @return array  An array containing ids of successfully deleted messages.
      */
