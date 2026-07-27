@@ -1125,17 +1125,99 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
      *
      * @param Horde_ActiveSync_Connector_Importer $importer  The importer.
      * @param array $collection         The collection array.
-     * @param array $instanceidRemoves  Hash of uid => instanceid.
+     * @param array $instanceidRemoves  Hash of uid => instanceid, or
+     *                                  uid => list of instanceids (when the
+     *                                  client deletes several occurrences of
+     *                                  the same series in one Sync).
      */
     protected function _importInstanceIdRemoves(
         $importer,
         array &$collection,
         array $instanceidRemoves
     ) {
-        foreach ($instanceidRemoves as $uid => $instanceid) {
-            $importer->importMessageDeletion([$uid => $instanceid], $collection['class'], true);
+        foreach ($instanceidRemoves as $uid => $instanceids) {
+            if (!is_array($instanceids)) {
+                $instanceids = [$instanceids];
+            }
+            foreach ($instanceids as $instanceid) {
+                $importer->importMessageDeletion(
+                    [$uid => $instanceid],
+                    $collection['class'],
+                    true
+                );
+            }
         }
     }
+
+    /**
+     * Count instance-delete entries, including multiple InstanceIds per uid.
+     *
+     * @param array $instanceidRemoves  Hash of uid => instanceid|instanceids.
+     *
+     * @return integer
+     */
+    protected function _countInstanceIdRemoves(array $instanceidRemoves)
+    {
+        $count = 0;
+        foreach ($instanceidRemoves as $instanceids) {
+            $count += is_array($instanceids) ? count($instanceids) : 1;
+        }
+
+        return $count;
+    }
+
+    /**
+     * Resolve EAS 16 instance Removes that arrived without a ServerEntryId.
+     *
+     * iOS often pairs a Remove(InstanceId) that omits ServerEntryId with an
+     * Add of the same recurring series in one Commands block. After the Add
+     * has produced a server uid via clientids, attach the orphaned InstanceIds
+     * to that uid so the occurrence is deleted (EXDATE) in the same sync.
+     *
+     * @param array $collection  The collection array, updated in place.
+     */
+    protected function _resolveOrphanInstanceIdRemoves(array &$collection)
+    {
+        if (empty($collection['orphan_instanceid_removes'])) {
+            return;
+        }
+        $orphans = $collection['orphan_instanceid_removes'];
+        unset($collection['orphan_instanceid_removes']);
+
+        $newUids = [];
+        if (!empty($collection['clientids'])) {
+            foreach ($collection['clientids'] as $serverid) {
+                if ($serverid) {
+                    $newUids[] = $serverid;
+                }
+            }
+        }
+        $newUids = array_values(array_unique($newUids));
+
+        if (count($newUids) !== 1) {
+            $this->_logger->warn(sprintf(
+                'Dropping %d instance Remove(s) with empty ServerEntryId; cannot resolve to a single co-batched Add (found %d).',
+                count($orphans),
+                count($newUids)
+            ));
+            return;
+        }
+
+        $uid = $newUids[0];
+        if (!isset($collection['instanceid_removes'][$uid])
+            || !is_array($collection['instanceid_removes'][$uid])) {
+            $collection['instanceid_removes'][$uid] = [];
+        }
+        foreach ($orphans as $instanceid) {
+            $collection['instanceid_removes'][$uid][] = $instanceid;
+        }
+        $this->_logger->info(sprintf(
+            'Resolved %d instance Remove(s) with empty ServerEntryId to ServerEntryId %s from co-batched Add.',
+            count($orphans),
+            $uid
+        ));
+    }
+
 
     /**
      * Import client-sent Sync commands that were queued during request
@@ -1218,12 +1300,26 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
             $count += count($deferred['removes']);
             $keepAlives += $this->_emitKeepAlive();
         }
+        // Orphans may have been queued without a ServerEntryId; resolve them
+        // against a single successful co-batched Add before importing.
+        if (!empty($deferred['orphan_instanceid_removes'])) {
+            $collection['orphan_instanceid_removes']
+                = $deferred['orphan_instanceid_removes'];
+        }
         if (!empty($deferred['instanceid_removes'])) {
+            $collection['instanceid_removes'] = $deferred['instanceid_removes'];
+        }
+        $this->_resolveOrphanInstanceIdRemoves($collection);
+
+        if (!empty($collection['instanceid_removes'])) {
+            $instanceCount = $this->_countInstanceIdRemoves(
+                $collection['instanceid_removes']
+            );
             try {
                 $this->_importInstanceIdRemoves(
                     $importer,
                     $collection,
-                    $deferred['instanceid_removes']
+                    $collection['instanceid_removes']
                 );
             } catch (Horde_Exception $e) {
                 $this->_logger->err(sprintf(
@@ -1232,7 +1328,8 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                     $e->getMessage()
                 ));
             }
-            $count += count($deferred['instanceid_removes']);
+            unset($collection['instanceid_removes']);
+            $count += $instanceCount;
             $keepAlives += $this->_emitKeepAlive();
         }
 
@@ -1715,7 +1812,17 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
 
                     case Horde_ActiveSync::SYNC_REMOVE:
                         if ($instanceid) {
-                            $collection['instanceid_removes'][$serverid] = $instanceid;
+                            if ($serverid) {
+                                // Several occurrence deletes for one series
+                                // share the same ServerEntryId; keep a list.
+                                $collection['instanceid_removes'][$serverid][]
+                                    = $instanceid;
+                            } else {
+                                // iOS may omit ServerEntryId when pairing the
+                                // Remove with an Add of the same series.
+                                $collection['orphan_instanceid_removes'][]
+                                    = $instanceid;
+                            }
                         } elseif ($serverid) {
                             // Work around broken clients that send empty $serverid.
                             $collection['removes'][] = $serverid;
@@ -1750,6 +1857,11 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                     = $collection['instanceid_removes'];
                 unset($collection['instanceid_removes']);
             }
+            if (!empty($collection['orphan_instanceid_removes'])) {
+                $this->_deferredCommands[$collection['id']]['orphan_instanceid_removes']
+                    = $collection['orphan_instanceid_removes'];
+                unset($collection['orphan_instanceid_removes']);
+            }
             $this->_logger->info(sprintf(
                 'Queued %d incoming changes for deferred import (streaming).',
                 $nchanges
@@ -1766,7 +1878,9 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                 );
                 unset($collection['removes']);
             }
-            // EAS 16.0 instance deletions.
+            // Resolve InstanceId Removes that omitted ServerEntryId against
+            // a co-batched Add, then import all EAS 16.0 instance deletions.
+            $this->_resolveOrphanInstanceIdRemoves($collection);
             if (!empty($collection['instanceid_removes'])
                 && !empty($collection['synckey'])) {
                 $this->_importInstanceIdRemoves(
