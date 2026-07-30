@@ -495,9 +495,7 @@ class Horde_ActiveSync_Imap_MessageBodyData
         }
 
         // Size of original part.
-        $text_size = !is_null($data->getBodyPartSize($text_id))
-            ? $data->getBodyPartSize($text_id)
-            : strlen($text);
+        $text_size = $this->_partSize($data->getBodyPartSize($text_id), $text);
 
         if (!empty($this->_options['bodyprefs'][Horde_ActiveSync::BODYPREF_TYPE_PLAIN]['truncationsize'])) {
             // EAS >= 12.0 truncation
@@ -627,9 +625,7 @@ class Horde_ActiveSync_Imap_MessageBodyData
         $charset = $html_mime->getCharset();
 
         // Size of the original HTML part.
-        $html_size = !is_null($data->getBodyPartSize($html_id))
-            ? $data->getBodyPartSize($html_id)
-            : strlen($html);
+        $html_size = $this->_partSize($data->getBodyPartSize($html_id), $html);
 
         if (!empty($this->_options['bodyprefs'][Horde_ActiveSync::BODYPREF_TYPE_HTML]['truncationsize'])) {
             $html = HordeString::substr(
@@ -738,9 +734,7 @@ class Horde_ActiveSync_Imap_MessageBodyData
             );
             $size = strlen($text);
         } else {
-            $size = !is_null($data->getBodyPartSize($id))
-                ? $data->getBodyPartSize($id)
-                : strlen($text);
+            $size = $this->_partSize($data->getBodyPartSize($id), $text);
         }
 
         if (!empty($this->_options['bodypartprefs']['truncationsize'])) {
@@ -821,6 +815,34 @@ class Horde_ActiveSync_Imap_MessageBodyData
         }
 
         return false;
+    }
+
+    /**
+     * Return a sane size for a body part, preferring the server-reported
+     * BINARY.SIZE but falling back to the length of the actually fetched
+     * content when the reported value is obviously bogus.
+     *
+     * Some IMAP servers return (uint64)-1 for BINARY.SIZE when they cannot
+     * compute the decoded size of a part; intval() saturates that value to
+     * PHP_INT_MAX, which would otherwise be exported to clients as
+     * EstimatedDataSize and force the truncated flag to true even for
+     * fully delivered bodies.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param integer|null $reported  The server-reported part size, or null
+     *                                when the server did not return one.
+     * @param string $text            The fetched (decoded) part content.
+     *
+     * @return integer  The part size, in bytes.
+     */
+    protected function _partSize($reported, $text)
+    {
+        if (is_null($reported) || $reported < 0 || $reported >= PHP_INT_MAX) {
+            return strlen($text);
+        }
+
+        return $reported;
     }
 
     /**
