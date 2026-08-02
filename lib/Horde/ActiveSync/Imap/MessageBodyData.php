@@ -838,11 +838,11 @@ class Horde_ActiveSync_Imap_MessageBodyData
      */
     protected function _partSize($reported, $text)
     {
-        if (is_null($reported) || $reported < 0 || $reported >= PHP_INT_MAX) {
+        if (is_null($reported) || $reported === '' || $reported < 0 || $reported >= PHP_INT_MAX) {
             return strlen($text);
         }
 
-        return $reported;
+        return (int)$reported;
     }
 
     /**

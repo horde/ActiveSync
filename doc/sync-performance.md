@@ -3,7 +3,8 @@
 Design document for the heartbeat/PING polling and export performance work.
 Internals context is in [`architecture.md`](architecture.md); the streamed
 `Sync` delivery design is a separate document
-([`sync-streaming.md`](sync-streaming.md)).
+([`sync-streaming.md`](sync-streaming.md)). Per-client body truncation and
+re-fetch behaviour is in [`clients.md`](clients.md).
 
 Tracking issue:
 [horde/ActiveSync#88](https://github.com/horde/ActiveSync/issues/88).

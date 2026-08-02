@@ -2,7 +2,9 @@
 
 Design document for streamed `Sync` response delivery. Operator-facing
 configuration is summarized in [`configuration.md`](configuration.md);
-internals context is in [`architecture.md`](architecture.md).
+internals context is in [`architecture.md`](architecture.md). Broader
+client truncation / re-fetch notes (including Gmail) are in
+[`clients.md`](clients.md).
 
 Tracking issues: problem report
 [horde/ActiveSync#77](https://github.com/horde/ActiveSync/issues/77),
