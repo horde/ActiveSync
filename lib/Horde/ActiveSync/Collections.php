@@ -31,6 +31,21 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
     public const COLLECTION_ERR_AUTHENTICATION      = -6;
 
     /**
+     * Minimum age (seconds) of an undrained SYNC backlog flag before a
+     * PING/looping SYNC reports the collection as changed. An actively
+     * draining client refreshes the flag with every windowed response,
+     * so only an abandoned drain becomes eligible.
+     */
+    public const BACKLOG_GRACE_PERIOD = 60;
+
+    /**
+     * Maximum number of recovery notifications for the same backlog flag.
+     * Prevents a stale flag from producing an endless PING/SYNC loop; the
+     * counter resets whenever a SYNC updates the flag.
+     */
+    public const BACKLOG_TRIGGER_MAX = 3;
+
+    /**
      * The collection data
      *
      * @var array
@@ -195,6 +210,9 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
             case 'updateCollection':
             case 'collectionExists':
             case 'updateWindowSize':
+            case 'setBacklogFlag':
+            case 'resetBacklogFlag':
+            case 'hasStaleBacklog':
                 return call_user_func_array([$this->_cache, $method], $parameters);
         }
 
@@ -1514,6 +1532,31 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
 
                 if (!empty($options['pingable']) && !$this->_cache->collectionIsPingable($id)) {
                     $this->_logger->notice(sprintf('COLLECTIONS: Skipping %s because it is not PINGable.', $id));
+                    continue;
+                }
+
+                // Self-heal an undrained windowed SYNC: the last SYNC
+                // response for this collection shipped MOREAVAILABLE, but
+                // the client never returned to continue draining (e.g. its
+                // sync loop died on a transient connection error) and the
+                // PING watermark would never report the old backlog as a
+                // change. Report the collection as changed so the client
+                // resumes the SYNC loop. Guarded by a grace period (an
+                // actively draining client refreshes the flag with every
+                // windowed response) and a trigger cap (a stale flag must
+                // not produce an endless PING/SYNC loop).
+                if ($this->_cache->hasStaleBacklog($id, self::BACKLOG_GRACE_PERIOD)
+                    && $this->_cache->getBacklogPingCount($id) < self::BACKLOG_TRIGGER_MAX) {
+                    $this->_cache->incrementBacklogPingCount($id);
+                    $this->_logger->info(sprintf(
+                        'COLLECTIONS: Undrained SYNC backlog for %s; reporting the collection as changed to resume the client SYNC loop.',
+                        $id
+                    ));
+                    $dataavailable = true;
+                    $this->setGetChangesFlag($id);
+                    if (!empty($options['pingable'])) {
+                        $this->_cache->setPingChangeFlag($id);
+                    }
                     continue;
                 }
 
