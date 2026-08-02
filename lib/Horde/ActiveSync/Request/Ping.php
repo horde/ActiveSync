@@ -274,8 +274,15 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
             if ($changes !== true && $changes !== false) {
                 switch ($changes) {
                     case Horde_ActiveSync_Collections::COLLECTION_ERR_STALE:
-                        $this->_logger->info('Changes in cache detected during PING, exiting here.');
-                        return true;
+                        // A parallel request updated the sync cache and owns
+                        // the pending changes. Do not exit without output:
+                        // MS-ASCMD requires every PING response to carry a
+                        // status, and some clients (e.g. Nine) treat an
+                        // empty body as a dead connection and back off.
+                        // Fall through to send STATUS_NOCHANGES so the
+                        // client re-issues the PING cleanly.
+                        $this->_logger->info('Changes in cache detected during PING; parallel request owns them. Sending Status 1 for a clean re-PING.');
+                        break;
                     case Horde_ActiveSync_Collections::COLLECTION_ERR_FOLDERSYNC_REQUIRED:
                         $this->_statusCode = self::STATUS_FOLDERSYNCREQD;
                         $this->_handleGlobalError();
