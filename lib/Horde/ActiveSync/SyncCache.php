@@ -381,6 +381,106 @@ class Horde_ActiveSync_SyncCache
     }
 
     /**
+     * Record that the last SYNC response for a collection was windowed
+     * (MOREAVAILABLE): the server still holds unsent changes for it.
+     *
+     * Refreshed on every windowed response, so an actively draining client
+     * keeps the backlog timestamp fresh. Also resets the PING trigger
+     * counter (@see incrementBacklogPingCount()).
+     *
+     * @param string $id  The collection id.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     */
+    public function setBacklogFlag($id)
+    {
+        if (empty($this->_data['collections'][$id])) {
+            $this->_logger->warn(
+                sprintf(
+                    'Collection %s was asked to set the backlog flag but does not exist.',
+                    $id
+                )
+            );
+            return;
+        }
+        $this->_data['collections'][$id]['backlog'] = time();
+        $this->_data['collections'][$id]['backlogpings'] = 0;
+        $this->_markCollectionsDirty($id);
+    }
+
+    /**
+     * Clear a collection's backlog flag: a SYNC completed without
+     * MOREAVAILABLE, so no unsent changes remain server-side.
+     *
+     * @param string $id  The collection id.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     */
+    public function resetBacklogFlag($id)
+    {
+        if (empty($this->_data['collections'][$id])
+            || (empty($this->_data['collections'][$id]['backlog'])
+                && empty($this->_data['collections'][$id]['backlogpings']))) {
+            return;
+        }
+        unset(
+            $this->_data['collections'][$id]['backlog'],
+            $this->_data['collections'][$id]['backlogpings']
+        );
+        $this->_markCollectionsDirty($id);
+    }
+
+    /**
+     * Does the collection have an undrained SYNC backlog that has not been
+     * refreshed for at least $grace seconds (i.e. the client stopped its
+     * windowed SYNC loop mid-drain)?
+     *
+     * @param string $id      The collection id.
+     * @param integer $grace  Minimum age of the backlog flag in seconds.
+     *
+     * @return boolean
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     */
+    public function hasStaleBacklog($id, $grace)
+    {
+        return !empty($this->_data['collections'][$id]['backlog'])
+            && (time() - $this->_data['collections'][$id]['backlog']) >= $grace;
+    }
+
+    /**
+     * Return the number of PING/looping-SYNC recovery triggers already fired
+     * for the collection's current backlog flag.
+     *
+     * @param string $id  The collection id.
+     *
+     * @return integer
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     */
+    public function getBacklogPingCount($id)
+    {
+        return (int)($this->_data['collections'][$id]['backlogpings'] ?? 0);
+    }
+
+    /**
+     * Count a backlog-triggered recovery notification for the collection.
+     *
+     * @param string $id  The collection id.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     */
+    public function incrementBacklogPingCount($id)
+    {
+        if (empty($this->_data['collections'][$id])) {
+            return;
+        }
+        $this->_data['collections'][$id]['backlogpings'] =
+            $this->getBacklogPingCount($id) + 1;
+        $this->_markCollectionsDirty($id);
+    }
+
+    /**
      * Refresh the cached collections from the state backend.
      *
      */

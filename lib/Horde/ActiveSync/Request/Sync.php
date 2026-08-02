@@ -429,6 +429,7 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
         foreach ($this->_collections as $id => $collection) {
             $statusCode = self::STATUS_SUCCESS;
             $changecount = 0;
+            $forceChanges = false;
 
             if ($over_window || $cnt_global > $this->_collections->getDefaultWindowSize()) {
                 // Client-sent commands must still be imported (matching the
@@ -806,6 +807,19 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
                         $this->_state->updateSyncStamp();
                     } catch (Horde_ActiveSync_Exception $e) {
                         $this->_logger->err($e->getMessage());
+                    }
+                }
+
+                // Track an undrained windowed-SYNC backlog so PING can
+                // resume the client's SYNC loop if it dies mid-drain
+                // (@see Horde_ActiveSync_Collections::pollForChanges()).
+                // Only meaningful when this request actually attempted a
+                // server-side export for the collection.
+                if (!empty($collection['getchanges']) && empty($forceChanges)) {
+                    if (!empty($changecount) && $exporter->hasPendingChanges()) {
+                        $this->_collections->setBacklogFlag($id);
+                    } else {
+                        $this->_collections->resetBacklogFlag($id);
                     }
                 }
             }
@@ -1363,6 +1377,11 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
     protected function _sendOverWindowResponse($collection)
     {
         $this->_logger->meta('Over window maximum, skip polling for this request.');
+
+        // The collection is skipped in this response but the client is told
+        // MOREAVAILABLE below; remember the backlog so PING can recover the
+        // drain in case the client never returns.
+        $this->_collections->setBacklogFlag($collection['id']);
         $this->_encoder->startTag(Horde_ActiveSync::SYNC_FOLDER);
 
         // Not sent in > 12.0
