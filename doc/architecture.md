@@ -2,7 +2,8 @@
 
 How the library works internally. Read this before changing protocol logic.
 Companion documents: [`protocol-versions.md`](protocol-versions.md) for
-per-version behaviour, [`sync-streaming.md`](sync-streaming.md) for the
+per-version behaviour, [`clients.md`](clients.md) for observed client
+truncation / re-fetch quirks, [`sync-streaming.md`](sync-streaming.md) for the
 streamed `Sync` delivery design, [`sync-performance.md`](sync-performance.md)
 for the heartbeat-polling and export batching design, and
 [`todo.md`](todo.md) for the Horde 6 refactor roadmap.

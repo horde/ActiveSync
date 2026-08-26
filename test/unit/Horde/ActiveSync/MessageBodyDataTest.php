@@ -72,6 +72,158 @@ class MessageBodyDataTest extends TestCase
         $this->assertEquals(15, $mbd->plain['size']);
     }
 
+    /**
+     * Some IMAP servers return (uint64)-1 for BINARY.SIZE when they cannot
+     * compute a part's decoded size; intval() saturates this to PHP_INT_MAX.
+     * Ensure such bogus sizes fall back to the actual content length instead
+     * of being exported as EstimatedDataSize with a forced truncated flag.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     */
+    public function testBogusBinarySizeFallsBackToContentLength()
+    {
+        $fetch_data = new Horde_Imap_Client_Data_Fetch();
+        $fetch_data->setUid(1600);
+        $fetch_data->setBodyPart('1', 'plain text body', '8bit');
+        // (uint64)-1 as returned by a broken server; intval() saturates
+        // this to PHP_INT_MAX.
+        $fetch_data->setBodyPartSize('1', '18446744073709551615');
+        $populated = new Horde_Imap_Client_Fetch_Results();
+        $populated[$fetch_data->getUid()] = $fetch_data;
+
+        $imap_client = $this->getMockBuilder(Horde_Imap_Client_Socket::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['fetch'])
+            ->getMock();
+        $imap_client->expects($this->once())
+            ->method('fetch')
+            ->willReturn($populated);
+
+        $plain = new Horde_Mime_Part();
+        $plain->setType('text/plain');
+        $plain->setContents('plain text body');
+        $mime = new Horde_ActiveSync_Mime($plain);
+
+        $mbd = new Horde_ActiveSync_Imap_MessageBodyData(
+            [
+                'imap' => $imap_client,
+                'mime' => $mime,
+                'uid' => 1600,
+                'mbox' => new Horde_Imap_Client_Mailbox('INBOX'),
+            ],
+            [
+                'protocolversion' => 16.0,
+                'bodyprefs' => [
+                    Horde_ActiveSync::BODYPREF_TYPE_PLAIN => [
+                        'truncationsize' => 500,
+                    ],
+                ],
+            ]
+        );
+
+        $this->assertEquals(15, $mbd->plain['size']);
+        $this->assertFalse($mbd->plain['truncated']);
+        $this->assertIsInt($mbd->plain['size']);
+    }
+
+    /**
+     * Same bogus BINARY.SIZE path as the plain-text case, via _getHtmlPart().
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     */
+    public function testBogusBinarySizeFallsBackToContentLengthForHtml()
+    {
+        $htmlBody = '<p>hello</p>';
+        $fetch_data = new Horde_Imap_Client_Data_Fetch();
+        $fetch_data->setUid(1601);
+        $fetch_data->setBodyPart('1', $htmlBody, '8bit');
+        $fetch_data->setBodyPartSize('1', '18446744073709551615');
+        $populated = new Horde_Imap_Client_Fetch_Results();
+        $populated[$fetch_data->getUid()] = $fetch_data;
+
+        $imap_client = $this->getMockBuilder(Horde_Imap_Client_Socket::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['fetch'])
+            ->getMock();
+        $imap_client->expects($this->once())
+            ->method('fetch')
+            ->willReturn($populated);
+
+        $html = new Horde_Mime_Part();
+        $html->setType('text/html');
+        $html->setContents($htmlBody);
+        $mime = new Horde_ActiveSync_Mime($html);
+
+        $mbd = new Horde_ActiveSync_Imap_MessageBodyData(
+            [
+                'imap' => $imap_client,
+                'mime' => $mime,
+                'uid' => 1601,
+                'mbox' => new Horde_Imap_Client_Mailbox('INBOX'),
+            ],
+            [
+                'protocolversion' => 16.0,
+                'bodyprefs' => [
+                    Horde_ActiveSync::BODYPREF_TYPE_HTML => [
+                        'truncationsize' => 500,
+                    ],
+                ],
+            ]
+        );
+
+        $this->assertEquals(strlen($htmlBody), $mbd->html['estimated_size']);
+        $this->assertFalse($mbd->html['truncated']);
+        $this->assertIsInt($mbd->html['estimated_size']);
+    }
+
+    /**
+     * Same bogus BINARY.SIZE path via _getBodyPart() (BodyPart preference).
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     */
+    public function testBogusBinarySizeFallsBackToContentLengthForBodyPart()
+    {
+        $htmlBody = '<p>hello</p>';
+        $fetch_data = new Horde_Imap_Client_Data_Fetch();
+        $fetch_data->setUid(1602);
+        $fetch_data->setBodyPart('1', $htmlBody, '8bit');
+        $fetch_data->setBodyPartSize('1', '18446744073709551615');
+        $populated = new Horde_Imap_Client_Fetch_Results();
+        $populated[$fetch_data->getUid()] = $fetch_data;
+
+        $imap_client = $this->getMockBuilder(Horde_Imap_Client_Socket::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['fetch'])
+            ->getMock();
+        $imap_client->expects($this->once())
+            ->method('fetch')
+            ->willReturn($populated);
+
+        $html = new Horde_Mime_Part();
+        $html->setType('text/html');
+        $html->setContents($htmlBody);
+        $mime = new Horde_ActiveSync_Mime($html);
+
+        $mbd = new Horde_ActiveSync_Imap_MessageBodyData(
+            [
+                'imap' => $imap_client,
+                'mime' => $mime,
+                'uid' => 1602,
+                'mbox' => new Horde_Imap_Client_Mailbox('INBOX'),
+            ],
+            [
+                'protocolversion' => 16.0,
+                'bodypartprefs' => [
+                    'truncationsize' => 500,
+                ],
+            ]
+        );
+
+        $this->assertEquals(strlen($htmlBody), $mbd->bodyPart['size']);
+        $this->assertFalse($mbd->bodyPart['truncated']);
+        $this->assertIsInt($mbd->bodyPart['size']);
+    }
+
     public function testReturnProperlyTruncatedHtml()
     {
         $imap_client = $this->getMockBuilder(Horde_Imap_Client_Socket::class)
