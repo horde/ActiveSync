@@ -431,6 +431,13 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
             $changecount = 0;
             $forceChanges = false;
 
+            // Force Sync body truncation only (not ItemOperations Fetch).
+            // Covers partial Sync where Options were restored from SyncCache.
+            Horde_ActiveSync::applyForcedTruncationSize(
+                $collection,
+                Horde_ActiveSync::getForcedTruncationSize($syncSettings)
+            );
+
             if ($over_window || $cnt_global > $this->_collections->getDefaultWindowSize()) {
                 // Client-sent commands must still be imported (matching the
                 // non-streaming flow, where imports happen during parsing
@@ -1232,7 +1239,6 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
         ));
     }
 
-
     /**
      * Import client-sent Sync commands that were queued during request
      * parsing (streaming only).
@@ -1314,6 +1320,7 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
             $count += count($deferred['removes']);
             $keepAlives += $this->_emitKeepAlive();
         }
+
         // Orphans may have been queued without a ServerEntryId; resolve them
         // against a single successful co-batched Add before importing.
         if (!empty($deferred['orphan_instanceid_removes'])) {
@@ -2068,6 +2075,12 @@ class Horde_ActiveSync_Request_Sync extends Horde_ActiveSync_Request_SyncBase
         if (!empty($options['class']) && $options['class'] == 'SMS') {
             return;
         }
+
+        // Optional server override for BodyPreference / MIMETruncation (0 = off).
+        Horde_ActiveSync::applyForcedTruncationSize(
+            $options,
+            Horde_ActiveSync::getForcedTruncationSize($this->_driver->getSyncConfig())
+        );
 
         $collection = array_merge($collection, $options);
     }
