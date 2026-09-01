@@ -1357,4 +1357,104 @@ class Horde_ActiveSync
         }
     }
 
+    /**
+     * Resolve activesync/sync forcetruncationsize from sync config.
+     *
+     * Falls back to deprecated maximumtruncationsize when the renamed key
+     * is not present (horde/base#143 installs).
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param array $syncConfig  activesync/sync settings from Horde config.
+     *
+     * @return integer  Forced TruncationSize in bytes; 0 = honor client.
+     */
+    public static function getForcedTruncationSize(array $syncConfig)
+    {
+        if (array_key_exists('forcetruncationsize', $syncConfig)) {
+            return (int)$syncConfig['forcetruncationsize'];
+        }
+
+        return (int)($syncConfig['maximumtruncationsize'] ?? 0);
+    }
+
+    /**
+     * Apply a server-forced truncation size, overriding the client value.
+     *
+     * When $forced is positive, the client-requested size is replaced
+     * whether it is larger or smaller. A value of 0 (or less) leaves the
+     * client value unchanged.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param integer|false|null $size    Client size in bytes, or false/null
+     *                                    for unlimited / no truncation.
+     * @param integer $forced              Server override in bytes; 0 = off.
+     *
+     * @return integer|false|null  The effective truncation size.
+     */
+    public static function forceTruncationSize($size, $forced)
+    {
+        $forced = (int)$forced;
+        if ($forced <= 0) {
+            return $size;
+        }
+
+        return $forced;
+    }
+
+    /**
+     * Apply activesync/sync/forcetruncationsize to collection/options data.
+     *
+     * Mutates bodyprefs, bodypartprefs, truncation, and mimetruncation in
+     * place when a positive forced size is configured. ItemOperations Fetch
+     * is not affected.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param array $options   Sync/collection options (by reference).
+     * @param integer $forced  Forced TruncationSize in bytes; 0 = honor client.
+     */
+    public static function applyForcedTruncationSize(array &$options, $forced)
+    {
+        $forced = (int)$forced;
+        if ($forced <= 0) {
+            return;
+        }
+
+        if (!empty($options['bodyprefs']) && is_array($options['bodyprefs'])) {
+            foreach ($options['bodyprefs'] as &$pref) {
+                if (!is_array($pref)) {
+                    continue;
+                }
+                $pref['truncationsize'] = self::forceTruncationSize(
+                    $pref['truncationsize'] ?? 0,
+                    $forced
+                );
+            }
+            unset($pref);
+        }
+
+        if (!empty($options['bodypartprefs']) && is_array($options['bodypartprefs'])) {
+            $options['bodypartprefs']['truncationsize'] = self::forceTruncationSize(
+                $options['bodypartprefs']['truncationsize'] ?? 0,
+                $forced
+            );
+        }
+
+        if (array_key_exists('mimetruncation', $options)) {
+            $options['mimetruncation'] = self::forceTruncationSize(
+                $options['mimetruncation'],
+                $forced
+            );
+        }
+
+        if (array_key_exists('truncation', $options)) {
+            $options['truncation'] = self::forceTruncationSize(
+                $options['truncation'],
+                $forced
+            );
+        }
+    }
+
 }

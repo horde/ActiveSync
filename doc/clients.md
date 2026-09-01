@@ -77,9 +77,9 @@ and a `BodyPreference` **without** `TruncationSize` (full body). Horde
 responds with the complete body and no `Truncated` flag.
 
 **Implication:** Nine already limits Sync payload itself and can repair
-truncation on demand. A server-side maximum truncation cap is unnecessary for
-Nine; if one were applied, Nine would still recover via the button (provided
-ItemOperations Fetch remains uncapped).
+truncation on demand. A server-side forced Sync truncation size is
+unnecessary for Nine when left at 0; when set, Nine can still recover via
+ItemOperations Fetch (which remains uncapped).
 
 ## iOS Mail
 
@@ -110,7 +110,9 @@ rather than a single byte count.
 
 - Prefer leaving Sync body size to the client unless you have a measured
   bandwidth reason and understand which devices you serve.
-- Capping Sync truncation helps bandwidth only for clients that request large
-  bodies; it permanently harms Gmail users; Nine and iOS can recover.
+- Forcing a low Sync truncation size saves bandwidth for clients that
+  re-fetch (Nine, iOS); forcing a high value can reduce permanent clipping
+  on Gmail, which never re-fetches. See forcetruncationsize in Horde
+  configuration.
 - Full-body-on-demand paths (ItemOperations mailbox Fetch) should stay
   uncapped so well-behaved clients can complete truncated messages.
