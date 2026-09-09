@@ -1211,6 +1211,7 @@ class Horde_ActiveSync_Imap_Adapter
         $imap_query->charset('UTF-8', false);
 
         $mboxes = [];
+        $hasDate = false;
         foreach ($query as $q) {
             foreach ($q as $key => $value) {
                 switch ($key) {
@@ -1229,6 +1230,7 @@ class Horde_ActiveSync_Imap_Adapter
                         }
                         break;
                     case Horde_ActiveSync_Message_Mail::POOMMAIL_DATERECEIVED:
+                        $hasDate = true;
                         $op = $q['op'] ?? '';
                         if ($op == Horde_ActiveSync_Request_Search::SEARCH_GREATERTHAN) {
                             $query_range = Horde_Imap_Client_Search_Query::DATE_SINCE;
@@ -1246,6 +1248,11 @@ class Horde_ActiveSync_Imap_Adapter
                         break;
                     case 'subquery':
                         $imap_query->andSearch([$this->_buildSubQuery($value)]);
+                        foreach ($value as $sub) {
+                            if (!empty($sub['value'][Horde_ActiveSync_Message_Mail::POOMMAIL_DATERECEIVED])) {
+                                $hasDate = true;
+                            }
+                        }
                         break;
                 }
             }
@@ -1268,7 +1275,20 @@ class Horde_ActiveSync_Imap_Adapter
             $mboxes = $unique;
         }
 
+        usort($mboxes, static function ($a, $b) {
+            $aInbox = strcasecmp((string) $a->utf8, 'INBOX') === 0 ? 0 : 1;
+            $bInbox = strcasecmp((string) $b->utf8, 'INBOX') === 0 ? 0 : 1;
+
+            return $aInbox <=> $bInbox;
+        });
+
+        $progress = $options['progress'] ?? null;
+        $windows = is_callable($progress) && !$hasDate
+            ? $this->_mailboxSearchDateWindows()
+            : [['since' => null, 'before' => null]];
+
         $results = [];
+        $seen = [];
         foreach ($mboxes as $mbox) {
             if ($this->_clientDisconnected()) {
                 $this->_logger->meta(
@@ -1277,29 +1297,123 @@ class Horde_ActiveSync_Imap_Adapter
                 break;
             }
 
-            try {
-                $search_res = $this->_getImapOb()->search(
-                    $mbox,
-                    $imap_query,
-                    [
-                        'results' => [ Horde_Imap_Client::SEARCH_RESULTS_MATCH, Horde_Imap_Client::SEARCH_RESULTS_SAVE, Horde_Imap_Client::SEARCH_RESULTS_COUNT ],
-                        'sort' => [ Horde_Imap_Client::SORT_REVERSE, Horde_Imap_Client::SORT_ARRIVAL ],
-                    ]
-                );
-            } catch (Horde_Imap_Client_Exception $e) {
-                throw new Horde_ActiveSync_Exception($e);
-            }
-            if ($search_res['count'] == 0) {
-                continue;
-            }
+            foreach ($windows as $window) {
+                if ($this->_clientDisconnected()) {
+                    $this->_logger->meta(
+                        'FIND/Search: Client disconnected during mailbox search.'
+                    );
+                    break 2;
+                }
 
-            $ids = $search_res['match']->ids;
-            foreach ($ids as $id) {
-                $results[] = [ 'uniqueid' => $mbox->utf8 . ':' . $id, 'searchfolderid' => $mbox->utf8 ];
+                if (is_callable($progress)) {
+                    $progress();
+                }
+
+                $windowQuery = $this->_queryWithDateWindow(
+                    $imap_query,
+                    $window['since'],
+                    $window['before']
+                );
+
+                try {
+                    $search_res = $this->_getImapOb()->search(
+                        $mbox,
+                        $windowQuery,
+                        [
+                            'results' => [
+                                Horde_Imap_Client::SEARCH_RESULTS_MATCH,
+                                Horde_Imap_Client::SEARCH_RESULTS_COUNT,
+                            ],
+                            'sort' => [
+                                Horde_Imap_Client::SORT_REVERSE,
+                                Horde_Imap_Client::SORT_ARRIVAL,
+                            ],
+                        ]
+                    );
+                } catch (Horde_Imap_Client_Exception $e) {
+                    $this->_logger->err(sprintf(
+                        'SEARCH: IMAP search failed for %s: %s',
+                        $mbox->utf8,
+                        $e->getMessage()
+                    ));
+                    continue;
+                }
+                if ($search_res['count'] == 0) {
+                    continue;
+                }
+
+                foreach ($search_res['match']->ids as $id) {
+                    $uniqueid = $mbox->utf8 . ':' . $id;
+                    if (isset($seen[$uniqueid])) {
+                        continue;
+                    }
+                    $seen[$uniqueid] = true;
+                    $results[] = [
+                        'uniqueid' => $uniqueid,
+                        'searchfolderid' => $mbox->utf8,
+                    ];
+                }
             }
         }
 
         return $results;
+    }
+
+    /**
+     * Date windows used to split an unbounded mailbox TEXT search into
+     * shorter IMAP commands so WBXML keep-alives can be emitted between
+     * them. Newest mail first.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @return array<int, array{since: ?Horde_Date, before: ?Horde_Date}>
+     */
+    protected function _mailboxSearchDateWindows(): array
+    {
+        $now = time();
+        $d7 = new Horde_Date($now - 86400 * 7);
+        $d30 = new Horde_Date($now - 86400 * 30);
+        $d90 = new Horde_Date($now - 86400 * 90);
+        $d365 = new Horde_Date($now - 86400 * 365);
+
+        return [
+            ['since' => $d7, 'before' => null],
+            ['since' => $d30, 'before' => $d7],
+            ['since' => $d90, 'before' => $d30],
+            ['since' => $d365, 'before' => $d90],
+            ['since' => null, 'before' => $d365],
+        ];
+    }
+
+    /**
+     * Clone $query and AND the given SINCE/BEFORE constraints.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param Horde_Imap_Client_Search_Query $query   Base query.
+     * @param Horde_Date|null                 $since  SINCE date, or null.
+     * @param Horde_Date|null                 $before BEFORE date, or null.
+     *
+     * @return Horde_Imap_Client_Search_Query
+     */
+    protected function _queryWithDateWindow(
+        Horde_Imap_Client_Search_Query $query,
+        ?Horde_Date $since,
+        ?Horde_Date $before
+    ): Horde_Imap_Client_Search_Query {
+        if ($since === null && $before === null) {
+            return $query;
+        }
+
+        $windowed = clone $query;
+        if ($since !== null) {
+            $windowed->dateSearch($since, Horde_Imap_Client_Search_Query::DATE_SINCE);
+        }
+        if ($before !== null) {
+            $windowed->dateSearch($before, Horde_Imap_Client_Search_Query::DATE_BEFORE);
+        }
+
+        return $windowed;
     }
 
     /**

@@ -49,10 +49,14 @@ opened.
 permanently cuts the displayed body. Gmail’s performance model is to
 front-load a large body during folder Sync; there is no later repair path.
 
-**Related:** Gmail can abort a long `Sync` if the server is silent for
-~30 seconds — see [`sync-streaming.md`](sync-streaming.md). Occasional
-client-side `SSLHandshakeException` retries before a successful Sync have
-also been seen; those failures never reach the HTTP access log.
+**Related:** Gmail can abort a long `Sync` **or** `Search` if the server
+is silent for ~30 seconds (`SocketTimeout from network when sending
+request with timeout 30000ms`). Search is especially exposed: Gmail
+sends `Store=Mailbox`, `DeepTraversal`, FreeText only, and no date
+window, so Horde TEXT-searches the whole IMAP store. See
+[`sync-streaming.md`](sync-streaming.md). Occasional client-side
+`SSLHandshakeException` retries before a successful Sync have also
+been seen; those failures never reach the HTTP access log.
 
 External report of clipped messages without “View entire”:
 [Reddit thread](https://www.reddit.com/r/GMail/comments/1gaz7z1/messages_are_clipped_without_a_view_entire/).

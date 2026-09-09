@@ -44,8 +44,8 @@ Streaming spans three packages:
 | Layer | Behaviour when streaming is enabled |
 |-------|-------------------------------------|
 | `horde/horde` `rpc.php` | Passes `$conf['activesync']['sync']['streaming']` to the RPC layer |
-| `horde/rpc` `Horde_Rpc_ActiveSync` | For `Cmd=Sync` POST only: skips the full-response output buffer, disables zlib compression, sends no `Content-Length` (the web server applies chunked transfer-encoding). All other commands (`GetAttachment`, `ItemOperations`, `Ping`, …) keep the buffered `Content-Length` response |
-| `horde/activesync` `Request_Sync` + `Wbxml_Encoder` | Flushes WBXML incrementally (details below) |
+| `horde/rpc` `Horde_Rpc_ActiveSync` | For `Cmd=Sync` and `Cmd=Search` POST: skips the full-response output buffer, disables zlib compression, sends no `Content-Length` (the web server applies chunked transfer-encoding). All other commands (`GetAttachment`, `ItemOperations`, `Ping`, …) keep the buffered `Content-Length` response |
+| `horde/activesync` `Request_Sync` / `Request_Search` + `Wbxml_Encoder` | Flushes WBXML incrementally (details below) |
 
 The feature is **on by default** (`streaming = true`) and fully
 reversible: setting `streaming = false` restores the buffered
@@ -118,6 +118,35 @@ Real-world client tolerance is still being validated in
 [horde/ActiveSync#77](https://github.com/horde/ActiveSync/issues/77); the
 emission throttle exists so strict client parsers see only a handful of
 redundant tokens per response instead of hundreds.
+
+### Search: keep-alives during IMAP
+
+Gmail Android `Search` uses the same ~30 s `SocketTimeout` as Sync
+([horde/ActiveSync#104](https://github.com/horde/ActiveSync/issues/104)).
+A typical Gmail mailbox search is `Store=Mailbox`, `DeepTraversal`,
+FreeText only, and no date window — Horde therefore TEXT-searches every
+IMAP folder. On a large store that IMAP work can take well over 30 s
+before the first WBXML result byte exists.
+
+When streaming is enabled, `Request_Search`:
+
+- writes the Search command status preamble and flushes it immediately
+  after parsing the request (first body bytes on the wire before IMAP
+  starts),
+- passes a `progress` callback into `queryMailbox()` so a keep-alive is
+  considered before each IMAP `SEARCH` (throttled by
+  `keepaliveinterval`),
+- date-chunks an unbounded FreeText search (7 / 30 / 90 / 365 days,
+  then older) so no single IMAP command has to scan the entire folder
+  silently,
+- flushes after the store status and after each encoded hit.
+
+The IMAP adapter searches INBOX first so the `Range 0-9` page Gmail
+requests is populated from the mailbox users actually look at.
+
+The problem statement above is Sync-centric; the timeout invariant is
+the same: **once a Search request is accepted, response bytes keep
+flowing until the response is complete.**
 
 ## Error model: pre-commit vs post-commit
 
