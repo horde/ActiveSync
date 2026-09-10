@@ -195,4 +195,11 @@ class Horde_ActiveSync_FindKqlTest extends TestCase
         $this->assertStringContainsString('TEXT', (string) $q);
         $this->assertStringContainsString('kind:email', (string) $q);
     }
+
+    public function testIsStructuredDetectsKqlButNotPlainFreetext()
+    {
+        $this->assertFalse(Horde_ActiveSync_Find_Kql::isStructured('train station'));
+        $this->assertTrue(Horde_ActiveSync_Find_Kql::isStructured('from:alice@example.com'));
+        $this->assertTrue(Horde_ActiveSync_Find_Kql::isStructured('subject:meeting AND from:bob@example.com'));
+    }
 }

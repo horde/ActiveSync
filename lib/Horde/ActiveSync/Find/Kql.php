@@ -63,6 +63,29 @@ class Horde_ActiveSync_Find_Kql
     }
 
     /**
+     * Whether $text uses KQL operators or property restrictions.
+     *
+     * Plain FreeText (Gmail mailbox Search) is not structured and should
+     * not be turned into an IMAP TEXT/body scan.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param string $text  Raw query string from the client.
+     */
+    public static function isStructured(string $text): bool
+    {
+        $text = trim($text);
+        if ($text === '') {
+            return false;
+        }
+
+        return (bool) preg_match(
+            '/\b(AND|OR|NOT)\b|[()]|\b(from|to|cc|bcc|subject|body|participants|category|attachment|attachmentnames|importance|hasattachment|isread|isflagged|received|sent|size|kind)\s*(:|>=|<=|>|<)/i',
+            $text
+        );
+    }
+
+    /**
      * @param array<int, array{type: string, value: string}> $tokens
      *
      * @return array|null

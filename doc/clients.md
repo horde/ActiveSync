@@ -20,10 +20,15 @@ Each client section records:
 - Whether the client acts on `AirSyncBase:Truncated` (or legacy
   `BodyTruncated`) by fetching the remainder later
 - The mechanism used for a full-body fetch, if any
+- Mailbox `Search` / `Find` request shape and timeouts, when observed
 - Other quirks that affect server design or operator expectations
 
 EAS is client-driven: the server cannot push the remainder of a truncated
 body. A client that never re-fetches treats Sync truncation as permanent.
+
+Client-specific **code** lives in `Horde_ActiveSync_Device::hasQuirk()`
+(`QUIRK_*` constants). This document records what was observed; handlers
+must not sniff User-Agent strings themselves.
 
 ## Gmail for Android
 
@@ -49,14 +54,38 @@ opened.
 permanently cuts the displayed body. Gmail’s performance model is to
 front-load a large body during folder Sync; there is no later repair path.
 
-**Related:** Gmail can abort a long `Sync` **or** `Search` if the server
-is silent for ~30 seconds (`SocketTimeout from network when sending
-request with timeout 30000ms`). Search is especially exposed: Gmail
-sends `Store=Mailbox`, `DeepTraversal`, FreeText only, and no date
-window, so Horde TEXT-searches the whole IMAP store. See
-[`sync-streaming.md`](sync-streaming.md). Occasional client-side
-`SSLHandshakeException` retries before a successful Sync have also
-been seen; those failures never reach the HTTP access log.
+**Mailbox Search** (observed 2026-09-09, Gmail
+`Android-Mail/2026.08.17`, EAS 16.0,
+[horde/ActiveSync#104](https://github.com/horde/ActiveSync/issues/104)):
+
+| Field | Value |
+|-------|-------|
+| Command | `Cmd=Search`, `Store=Mailbox` |
+| Query | `FolderType=Email`, FreeText only (no collection id, no `DateReceived`) |
+| Options | `RebuildResults`, `DeepTraversal`, `Range=0-9` |
+| Search body preference | HTML (`Type=2`), `TruncationSize=20000` (distinct from Sync’s 200000) |
+
+Two independent timeouts:
+
+1. **Time to first byte (~30s).** If the HTTP response body is silent,
+   Gmail logs `SocketTimeout from network when sending request with
+   timeout 30000ms` and shows “Problem syncing”. Streaming keep-alives
+   address this for every client.
+2. **Complete document (~40s).** Gmail does not treat an open Search
+   stream as success. After `Status 1` with no `Result` / `Range` /
+   `Total` / closing tags it logs `No result returned in searchMessages`
+   (~44s in the follow-up log) and discards the request. Keep-alives
+   alone are not enough.
+
+Gmail therefore has
+`Horde_ActiveSync_Device::QUIRK_SEARCH_NEEDS_COMPLETE_DOCUMENT_FAST`.
+That quirk (not inline User-Agent checks) enables a time-bounded,
+header-first IMAP search so Horde can close a valid Search envelope in
+time. Other clients keep a full IMAP scan. See
+[`sync-streaming.md`](sync-streaming.md).
+
+Occasional client-side `SSLHandshakeException` retries before a successful
+Sync have also been seen; those failures never reach the HTTP access log.
 
 External report of clipped messages without “View entire”:
 [Reddit thread](https://www.reddit.com/r/GMail/comments/1gaz7z1/messages_are_clipped_without_a_view_entire/).
@@ -85,6 +114,10 @@ truncation on demand. A server-side forced Sync truncation size is
 unnecessary for Nine when left at 0; when set, Nine can still recover via
 ItemOperations Fetch (which remains uncapped).
 
+**Mailbox Search:** not captured against this deployment. Nine does not
+have `QUIRK_SEARCH_NEEDS_COMPLETE_DOCUMENT_FAST`; mailbox Search keeps a
+full IMAP scan, with streaming keep-alives if streaming is enabled.
+
 ## iOS Mail
 
 | Field | Value |
@@ -102,13 +135,20 @@ Exact default `TruncationSize` can vary by iOS / Mail version; treat the
 “small Sync preview + full fetch on open” pattern as the important invariant
 rather than a single byte count.
 
+**Mailbox Search:** not captured as `Cmd=Search` in the logs used here.
+iOS 16.0 unified search uses the `Find` command (including an All
+Mailboxes virtual folder id). iOS does not have
+`QUIRK_SEARCH_NEEDS_COMPLETE_DOCUMENT_FAST`; mailbox scans stay
+complete. Re-verify `Search` vs `Find` on a current iOS Mail soak
+before treating this as settled.
+
 ## Summary matrix
 
-| Client | Default TruncationSize (approx.) | Re-fetches truncated body? |
-|--------|----------------------------------|----------------------------|
-| Gmail Android | 200000 (HTML) | no |
-| Nine | 51200 (HTML) | yes (UI button → ItemOperations) |
-| iOS Mail | small preview | yes (on open → ItemOperations) |
+| Client | Default TruncationSize (approx.) | Re-fetches truncated body? | Mailbox Search |
+|--------|----------------------------------|-----------------------------|----------------|
+| Gmail Android | 200000 (HTML) | no | `Cmd=Search`, DeepTraversal, FreeText, Range 0-9; needs a finished document in ~40s |
+| Nine | 51200 (HTML) | yes (UI button → ItemOperations) | not observed; full IMAP scan |
+| iOS Mail | small preview | yes (on open → ItemOperations) | typically `Find` (EAS 16); full IMAP scan |
 
 ## Operator takeaway
 
@@ -120,3 +160,6 @@ rather than a single byte count.
   configuration.
 - Full-body-on-demand paths (ItemOperations mailbox Fetch) should stay
   uncapped so well-behaved clients can complete truncated messages.
+- Mailbox Search time-budget (`maxsearchtime`) applies only to devices
+  with `QUIRK_SEARCH_NEEDS_COMPLETE_DOCUMENT_FAST` (Gmail Android). Other
+  clients are not truncated by that cap.
