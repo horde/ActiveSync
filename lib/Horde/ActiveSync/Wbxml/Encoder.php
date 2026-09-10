@@ -291,10 +291,11 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
      * Flush pending output to the underlying stream and, when writing to the
      * SAPI output stream, on to the client.
      *
-     * Used by streaming Sync responses so each exported message reaches
-     * clients with hard read timeouts (e.g. Gmail Android at ~30 seconds)
-     * while the remaining batch is still being assembled. A no-op in effect
-     * when the output stream is a memory or temp stream (tests, buffers).
+     * Used by streaming Sync and Search responses so each exported
+     * message (or search hit) reaches clients with hard read timeouts
+     * (e.g. Gmail Android at ~30 seconds) while the remaining work is
+     * still in progress. A no-op in effect when the output stream is a
+     * memory or temp stream (tests, buffers).
      */
     public function flushOutput()
     {
@@ -322,9 +323,9 @@ class Horde_ActiveSync_Wbxml_Encoder extends Horde_ActiveSync_Wbxml
      * decoder) process it without any semantic effect. Streaming Sync
      * responses use this to keep response body bytes flowing while
      * long-running server work is in progress and no protocol content is
-     * available yet - e.g. while importing client-sent changes, which can
-     * take far longer than the hard ~30 second read timeout of some clients
-     * (Gmail Android).
+     * available yet - e.g. while importing client-sent Sync changes or
+     * running a mailbox Search, which can take far longer than the hard
+     * ~30 second read timeout of some clients (Gmail Android).
      *
      * @see doc/sync-streaming.md
      */

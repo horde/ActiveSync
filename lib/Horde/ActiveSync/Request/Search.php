@@ -93,6 +93,31 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
     protected $_collections;
 
     /**
+     * Whether this Search response is streamed to the client while the
+     * handler is still running (same 'streaming' sync setting as Sync).
+     *
+     * @var boolean
+     */
+    protected $_streaming = false;
+
+    /**
+     * Minimum seconds between WBXML keep-alive tokens during mailbox
+     * search (streaming only). Tunable via the 'keepaliveinterval' sync
+     * setting. Gmail Android aborts Search after 30s without body bytes.
+     *
+     * @var integer
+     */
+    protected $_keepAliveInterval = 15;
+
+    /**
+     * Timestamp of the last emitted keep-alive (or of the flushed
+     * response preamble).
+     *
+     * @var float
+     */
+    protected $_lastKeepAlive = 0.0;
+
+    /**
      * Handle request
      *
      * @return boolean
@@ -102,6 +127,11 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
         // See https://learn.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-ascmd/8211179b-14f3-44ab-9de6-b69ca2a48c4e
 
         $this->_logger->meta('Handling SEARCH command.');
+        $syncSettings = $this->_driver->getSyncConfig();
+        $this->_streaming = !empty($syncSettings['streaming']);
+        if (isset($syncSettings['keepaliveinterval'])) {
+            $this->_keepAliveInterval = max(0, (int) $syncSettings['keepaliveinterval']);
+        }
         $search_status = self::SEARCH_STATUS_SUCCESS;
         $store_status = self::STORE_STATUS_SUCCESS;
 
@@ -284,8 +314,41 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
 
         // In the Search command response, the Total element (section 2.2.3.184.3) indicates an estimate
         // of the total number of entries that matched the Query element (section 2.2.3.142.2) value.
+        $keepAlives = 0;
+        $searchStart = microtime(true);
+        $envelopeStarted = false;
         if ($store_status === self::STORE_STATUS_SUCCESS && $query) {
-            // Prepare search parameters
+            /* Time budget, header-first IMAP, and an early hit cap are
+             * quirk-gated. Streaming keep-alives stay client-agnostic. */
+            if ($this->_device
+                && $this->_device->hasQuirk(
+                    Horde_ActiveSync_Device::QUIRK_SEARCH_NEEDS_COMPLETE_DOCUMENT_FAST
+                )) {
+                $maxSearchTime = (int) ($syncSettings['maxsearchtime'] ?? 20);
+                if ($maxSearchTime > 0) {
+                    $options['deadline'] = microtime(true) + $maxSearchTime;
+                }
+                $options['maxresults'] = max($start + $limit, 50);
+                $options['headersearch'] = true;
+                $options['stats'] = (object) ['truncated' => false];
+            }
+
+            if ($this->_streaming) {
+                /* First body bytes on the wire before IMAP work starts.
+                 * Gmail Android Search uses a 30s SocketTimeout. */
+                $this->_encoder->startWBXML();
+                $this->_encoder->startTag(self::SEARCH_SEARCH);
+                $this->_encoder->startTag(self::SEARCH_STATUS);
+                $this->_encoder->content($search_status);
+                $this->_encoder->endTag();
+                $this->_encoder->flushOutput();
+                $this->_lastKeepAlive = microtime(true);
+                $envelopeStarted = true;
+                $options['progress'] = function () use (&$keepAlives) {
+                    $keepAlives += $this->_emitKeepAlive();
+                };
+            }
+
             $params = new Horde_ActiveSync_Search_Params(
                 type: $search_name,
                 query: $query,
@@ -296,7 +359,6 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
                 deepTraversal: $deepTraversal
             );
 
-            // Get search results from backend
             $results = $this->_driver->getSearchResults($params);
 
             /* not yet */
@@ -304,17 +366,30 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
             if ($results->rows === null) {
                 $store_status = self::STORE_STATUS_SERVERERR;
             }
+
+            $truncated = is_object($options['stats'] ?? null)
+                && !empty($options['stats']->truncated);
+            $this->_logger->info(sprintf(
+                'SEARCH: query completed in %.1fs, %d hit(s), %d keep-alive(s) emitted (streaming %s%s).',
+                microtime(true) - $searchStart,
+                $results->total,
+                $keepAlives,
+                $this->_streaming ? 'on' : 'off',
+                $truncated ? ', time budget reached' : ''
+            ));
         } else {
             $results = null;
         }
 
         /* Send output */
-        $this->_encoder->startWBXML();
-        $this->_encoder->startTag(self::SEARCH_SEARCH);
+        if (!$envelopeStarted) {
+            $this->_encoder->startWBXML();
+            $this->_encoder->startTag(self::SEARCH_SEARCH);
 
-        $this->_encoder->startTag(self::SEARCH_STATUS);
-        $this->_encoder->content($search_status);
-        $this->_encoder->endTag();
+            $this->_encoder->startTag(self::SEARCH_STATUS);
+            $this->_encoder->content($search_status);
+            $this->_encoder->endTag();
+        }
 
         $this->_encoder->startTag(self::SEARCH_RESPONSE);
         $this->_encoder->startTag(self::SEARCH_STORE);
@@ -322,6 +397,10 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
         $this->_encoder->startTag(self::SEARCH_STATUS);
         $this->_encoder->content($store_status);
         $this->_encoder->endTag();
+
+        if ($this->_streaming) {
+            $this->_encoder->flushOutput();
+        }
 
         if ($results && $results->rows) {
             foreach ($results->rows as $u) {
@@ -422,6 +501,9 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
                         $msg->encodeStream($this->_encoder);
                         $this->_encoder->endTag();//properties
                         $this->_encoder->endTag();//result
+                        if ($this->_streaming) {
+                            $this->_encoder->flushOutput();
+                        }
                 }
             }
 
@@ -512,6 +594,26 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
         }
 
         return $query;
+    }
+
+    /**
+     * Emit a WBXML keep-alive if the configured interval has elapsed since
+     * the last one (or since the flushed response preamble).
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @return integer  1 if a keep-alive was emitted, 0 otherwise.
+     */
+    protected function _emitKeepAlive()
+    {
+        $now = microtime(true);
+        if ($now - $this->_lastKeepAlive < $this->_keepAliveInterval) {
+            return 0;
+        }
+        $this->_lastKeepAlive = $now;
+        $this->_encoder->keepAlive();
+
+        return 1;
     }
 
     protected function _handleError(array $data)

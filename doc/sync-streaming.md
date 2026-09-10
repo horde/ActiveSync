@@ -44,8 +44,8 @@ Streaming spans three packages:
 | Layer | Behaviour when streaming is enabled |
 |-------|-------------------------------------|
 | `horde/horde` `rpc.php` | Passes `$conf['activesync']['sync']['streaming']` to the RPC layer |
-| `horde/rpc` `Horde_Rpc_ActiveSync` | For `Cmd=Sync` POST only: skips the full-response output buffer, disables zlib compression, sends no `Content-Length` (the web server applies chunked transfer-encoding). All other commands (`GetAttachment`, `ItemOperations`, `Ping`, …) keep the buffered `Content-Length` response |
-| `horde/activesync` `Request_Sync` + `Wbxml_Encoder` | Flushes WBXML incrementally (details below) |
+| `horde/rpc` `Horde_Rpc_ActiveSync` | For `Cmd=Sync` and `Cmd=Search` POST: skips the full-response output buffer, disables zlib compression, sends no `Content-Length` (the web server applies chunked transfer-encoding). All other commands (`GetAttachment`, `ItemOperations`, `Ping`, …) keep the buffered `Content-Length` response |
+| `horde/activesync` `Request_Sync` / `Request_Search` + `Wbxml_Encoder` | Flushes WBXML incrementally (details below) |
 
 The feature is **on by default** (`streaming = true`) and fully
 reversible: setting `streaming = false` restores the buffered
@@ -118,6 +118,47 @@ Real-world client tolerance is still being validated in
 [horde/ActiveSync#77](https://github.com/horde/ActiveSync/issues/77); the
 emission throttle exists so strict client parsers see only a handful of
 redundant tokens per response instead of hundreds.
+
+### Search: keep-alives during IMAP
+
+Gmail Android `Search` uses the same ~30 s `SocketTimeout` as Sync
+([horde/ActiveSync#104](https://github.com/horde/ActiveSync/issues/104)).
+A typical Gmail mailbox search is `Store=Mailbox`, `DeepTraversal`,
+FreeText only, Range `0-9`, and no date window. Observed client behaviour
+is in [`clients.md`](clients.md).
+
+When streaming is enabled, `Request_Search` (every client):
+
+- writes the Search command status preamble and flushes it immediately
+  after parsing the request (first body bytes on the wire before IMAP
+  starts),
+- passes a `progress` callback into `queryMailbox()` so a keep-alive is
+  considered before each IMAP `SEARCH` (throttled by
+  `keepaliveinterval`),
+- flushes after the store status and after each encoded hit.
+
+The IMAP adapter searches INBOX first so a `Range 0-9` page is
+populated from the mailbox users actually look at.
+
+Gmail also requires a **finished** Search document (Results / Range /
+Total) within ~40 s. Keep-alives do not satisfy that. That behaviour is
+`Horde_ActiveSync_Device::QUIRK_SEARCH_NEEDS_COMPLETE_DOCUMENT_FAST`.
+When the quirk is set, `Request_Search` additionally passes:
+
+- `headersearch` — plain FreeText becomes an IMAP header OR
+  (Subject/From/To/Cc); structured KQL is unchanged
+- `maxresults` — stop after enough hits for the requested Range (at
+  least 50)
+- `deadline` — `maxsearchtime` seconds (default 20); stop scanning and
+  close a valid envelope with whatever was found
+
+Other clients do not get that cap. They keep a full IMAP scan; streaming
+only keeps the socket alive until the document is complete.
+
+The timeout invariant for streaming is: **once a Search request is
+accepted, response bytes keep flowing until the response is complete.**
+For quirk clients the extra invariant is: **the WBXML envelope must
+close before the client’s overall Search wait.**
 
 ## Error model: pre-commit vs post-commit
 

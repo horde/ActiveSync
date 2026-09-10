@@ -1183,10 +1183,13 @@ class Horde_ActiveSync_Imap_Adapter
      * Perform an IMAP search based on a SEARCH request.
      *
      * @param array $query          The search query.
-     * @param array $options        The search options (currently not used).
+     * @param array $options        Search options:
+     *   - progress: (callable) Keep-alive callback between IMAP commands.
+     *   - deadline: (float) Unix timestamp after which scanning stops.
+     *   - maxresults: (int) Stop after this many hits (0 = no cap).
+     *   - headersearch: (bool) Map plain FreeText to header fields.
+     *   - stats: (object) Optional `{truncated: bool}` set on time-budget stop.
      * @param bool  $deepTraversal  If true, include sub-mailboxes of the target folder.
-     *
-     * @todo Implement $options support.
      *
      * @return array  Returns array containing an array of hashes:
      *   'uniqueid' => [The unique identifier of the result]
@@ -1211,6 +1214,8 @@ class Horde_ActiveSync_Imap_Adapter
         $imap_query->charset('UTF-8', false);
 
         $mboxes = [];
+        $hasDate = false;
+        $headersearch = !empty($options['headersearch']);
         foreach ($query as $q) {
             foreach ($q as $key => $value) {
                 switch ($key) {
@@ -1229,6 +1234,7 @@ class Horde_ActiveSync_Imap_Adapter
                         }
                         break;
                     case Horde_ActiveSync_Message_Mail::POOMMAIL_DATERECEIVED:
+                        $hasDate = true;
                         $op = $q['op'] ?? '';
                         if ($op == Horde_ActiveSync_Request_Search::SEARCH_GREATERTHAN) {
                             $query_range = Horde_Imap_Client_Search_Query::DATE_SINCE;
@@ -1241,11 +1247,16 @@ class Horde_ActiveSync_Imap_Adapter
                         break;
                     case Horde_ActiveSync_Request_Search::SEARCH_FREETEXT:
                         $imap_query->andSearch([
-                            Horde_ActiveSync_Find_Kql::toImapQuery($value),
+                            $this->_mailboxFreetextToImapQuery($value, $headersearch),
                         ]);
                         break;
                     case 'subquery':
                         $imap_query->andSearch([$this->_buildSubQuery($value)]);
+                        foreach ($value as $sub) {
+                            if (!empty($sub['value'][Horde_ActiveSync_Message_Mail::POOMMAIL_DATERECEIVED])) {
+                                $hasDate = true;
+                            }
+                        }
                         break;
                 }
             }
@@ -1268,7 +1279,23 @@ class Horde_ActiveSync_Imap_Adapter
             $mboxes = $unique;
         }
 
+        usort($mboxes, static function ($a, $b) {
+            $aInbox = strcasecmp((string) $a->utf8, 'INBOX') === 0 ? 0 : 1;
+            $bInbox = strcasecmp((string) $b->utf8, 'INBOX') === 0 ? 0 : 1;
+
+            return $aInbox <=> $bInbox;
+        });
+
+        $progress = $options['progress'] ?? null;
+        $deadline = isset($options['deadline']) ? (float) $options['deadline'] : null;
+        $maxresults = (int) ($options['maxresults'] ?? 0);
+        $stats = $options['stats'] ?? null;
+        $windows = !$hasDate && (is_callable($progress) || $deadline !== null)
+            ? $this->_mailboxSearchDateWindows()
+            : [['since' => null, 'before' => null]];
+
         $results = [];
+        $seen = [];
         foreach ($mboxes as $mbox) {
             if ($this->_clientDisconnected()) {
                 $this->_logger->meta(
@@ -1277,29 +1304,208 @@ class Horde_ActiveSync_Imap_Adapter
                 break;
             }
 
-            try {
-                $search_res = $this->_getImapOb()->search(
-                    $mbox,
-                    $imap_query,
-                    [
-                        'results' => [ Horde_Imap_Client::SEARCH_RESULTS_MATCH, Horde_Imap_Client::SEARCH_RESULTS_SAVE, Horde_Imap_Client::SEARCH_RESULTS_COUNT ],
-                        'sort' => [ Horde_Imap_Client::SORT_REVERSE, Horde_Imap_Client::SORT_ARRIVAL ],
-                    ]
-                );
-            } catch (Horde_Imap_Client_Exception $e) {
-                throw new Horde_ActiveSync_Exception($e);
-            }
-            if ($search_res['count'] == 0) {
-                continue;
+            if ($this->_searchDeadlineReached($deadline)) {
+                $this->_markSearchTruncated($stats);
+                $this->_logger->info(sprintf(
+                    'SEARCH: stopping IMAP scan after time budget with %d hit(s).',
+                    count($results)
+                ));
+                break;
             }
 
-            $ids = $search_res['match']->ids;
-            foreach ($ids as $id) {
-                $results[] = [ 'uniqueid' => $mbox->utf8 . ':' . $id, 'searchfolderid' => $mbox->utf8 ];
+            foreach ($windows as $window) {
+                if ($this->_clientDisconnected()) {
+                    $this->_logger->meta(
+                        'FIND/Search: Client disconnected during mailbox search.'
+                    );
+                    break 2;
+                }
+
+                if ($this->_searchDeadlineReached($deadline)) {
+                    $this->_markSearchTruncated($stats);
+                    $this->_logger->info(sprintf(
+                        'SEARCH: stopping IMAP scan after time budget with %d hit(s).',
+                        count($results)
+                    ));
+                    break 2;
+                }
+
+                if (is_callable($progress)) {
+                    $progress();
+                }
+
+                $windowQuery = $this->_queryWithDateWindow(
+                    $imap_query,
+                    $window['since'],
+                    $window['before']
+                );
+
+                try {
+                    $search_res = $this->_getImapOb()->search(
+                        $mbox,
+                        $windowQuery,
+                        [
+                            'results' => [
+                                Horde_Imap_Client::SEARCH_RESULTS_MATCH,
+                                Horde_Imap_Client::SEARCH_RESULTS_COUNT,
+                            ],
+                            'sort' => [
+                                Horde_Imap_Client::SORT_REVERSE,
+                                Horde_Imap_Client::SORT_ARRIVAL,
+                            ],
+                        ]
+                    );
+                } catch (Horde_Imap_Client_Exception $e) {
+                    $this->_logger->err(sprintf(
+                        'SEARCH: IMAP search failed for %s: %s',
+                        $mbox->utf8,
+                        $e->getMessage()
+                    ));
+                    continue;
+                }
+                if ($search_res['count'] == 0) {
+                    continue;
+                }
+
+                foreach ($search_res['match']->ids as $id) {
+                    $uniqueid = $mbox->utf8 . ':' . $id;
+                    if (isset($seen[$uniqueid])) {
+                        continue;
+                    }
+                    $seen[$uniqueid] = true;
+                    $results[] = [
+                        'uniqueid' => $uniqueid,
+                        'searchfolderid' => $mbox->utf8,
+                    ];
+                    if ($maxresults > 0 && count($results) >= $maxresults) {
+                        return $results;
+                    }
+                }
             }
         }
 
         return $results;
+    }
+
+    /**
+     * Map mailbox FreeText to an IMAP query.
+     *
+     * Plain FreeText with $headersearch searches Subject/From/To/Cc
+     * (indexed headers). Structured KQL stays on the KQL parser.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param string $value          Raw FreeText from the client.
+     * @param bool   $headersearch   Whether to prefer header fields.
+     */
+    protected function _mailboxFreetextToImapQuery(
+        string $value,
+        bool $headersearch
+    ): Horde_Imap_Client_Search_Query {
+        if ($headersearch && !Horde_ActiveSync_Find_Kql::isStructured($value)) {
+            return $this->_headerFieldsQuery($value);
+        }
+
+        return Horde_ActiveSync_Find_Kql::toImapQuery($value);
+    }
+
+    /**
+     * IMAP OR of Subject, From, To, and Cc for a plain FreeText string.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     */
+    protected function _headerFieldsQuery(string $value): Horde_Imap_Client_Search_Query
+    {
+        $parts = [];
+        foreach (['Subject', 'From', 'To', 'Cc'] as $header) {
+            $part = new Horde_Imap_Client_Search_Query();
+            $part->charset('UTF-8', false);
+            $part->headerText($header, $value);
+            $parts[] = $part;
+        }
+
+        $query = new Horde_Imap_Client_Search_Query();
+        $query->charset('UTF-8', false);
+        $query->orSearch($parts);
+
+        return $query;
+    }
+
+    /**
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     */
+    protected function _searchDeadlineReached(?float $deadline): bool
+    {
+        return $deadline !== null && microtime(true) >= $deadline;
+    }
+
+    /**
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param object|null $stats  Optional stats object with a truncated flag.
+     */
+    protected function _markSearchTruncated(mixed $stats): void
+    {
+        if (is_object($stats)) {
+            $stats->truncated = true;
+        }
+    }
+
+    /**
+     * Date windows used to split an unbounded mailbox search into shorter
+     * IMAP commands so keep-alives can be emitted and a time budget can
+     * stop between windows. Newest mail first.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @return array<int, array{since: ?Horde_Date, before: ?Horde_Date}>
+     */
+    protected function _mailboxSearchDateWindows(): array
+    {
+        $now = time();
+        $d7 = new Horde_Date($now - 86400 * 7);
+        $d30 = new Horde_Date($now - 86400 * 30);
+        $d90 = new Horde_Date($now - 86400 * 90);
+        $d365 = new Horde_Date($now - 86400 * 365);
+
+        return [
+            ['since' => $d7, 'before' => null],
+            ['since' => $d30, 'before' => $d7],
+            ['since' => $d90, 'before' => $d30],
+            ['since' => $d365, 'before' => $d90],
+            ['since' => null, 'before' => $d365],
+        ];
+    }
+
+    /**
+     * Clone $query and AND the given SINCE/BEFORE constraints.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param Horde_Imap_Client_Search_Query $query   Base query.
+     * @param Horde_Date|null                 $since  SINCE date, or null.
+     * @param Horde_Date|null                 $before BEFORE date, or null.
+     *
+     * @return Horde_Imap_Client_Search_Query
+     */
+    protected function _queryWithDateWindow(
+        Horde_Imap_Client_Search_Query $query,
+        ?Horde_Date $since,
+        ?Horde_Date $before
+    ): Horde_Imap_Client_Search_Query {
+        if ($since === null && $before === null) {
+            return $query;
+        }
+
+        $windowed = clone $query;
+        if ($since !== null) {
+            $windowed->dateSearch($since, Horde_Imap_Client_Search_Query::DATE_SINCE);
+        }
+        if ($before !== null) {
+            $windowed->dateSearch($before, Horde_Imap_Client_Search_Query::DATE_BEFORE);
+        }
+
+        return $windowed;
     }
 
     /**
