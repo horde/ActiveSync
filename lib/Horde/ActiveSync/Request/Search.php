@@ -318,6 +318,21 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
         $searchStart = microtime(true);
         $envelopeStarted = false;
         if ($store_status === self::STORE_STATUS_SUCCESS && $query) {
+            /* Time budget, header-first IMAP, and an early hit cap are
+             * quirk-gated. Streaming keep-alives stay client-agnostic. */
+            if ($this->_device
+                && $this->_device->hasQuirk(
+                    Horde_ActiveSync_Device::QUIRK_SEARCH_NEEDS_COMPLETE_DOCUMENT_FAST
+                )) {
+                $maxSearchTime = (int) ($syncSettings['maxsearchtime'] ?? 20);
+                if ($maxSearchTime > 0) {
+                    $options['deadline'] = microtime(true) + $maxSearchTime;
+                }
+                $options['maxresults'] = max($start + $limit, 50);
+                $options['headersearch'] = true;
+                $options['stats'] = (object) ['truncated' => false];
+            }
+
             if ($this->_streaming) {
                 /* First body bytes on the wire before IMAP work starts.
                  * Gmail Android Search uses a 30s SocketTimeout. */
@@ -352,11 +367,15 @@ class Horde_ActiveSync_Request_Search extends Horde_ActiveSync_Request_SyncBase
                 $store_status = self::STORE_STATUS_SERVERERR;
             }
 
+            $truncated = is_object($options['stats'] ?? null)
+                && !empty($options['stats']->truncated);
             $this->_logger->info(sprintf(
-                'SEARCH: query completed in %.1fs, %d keep-alive(s) emitted (streaming %s).',
+                'SEARCH: query completed in %.1fs, %d hit(s), %d keep-alive(s) emitted (streaming %s%s).',
                 microtime(true) - $searchStart,
+                $results->total,
                 $keepAlives,
-                $this->_streaming ? 'on' : 'off'
+                $this->_streaming ? 'on' : 'off',
+                $truncated ? ', time budget reached' : ''
             ));
         } else {
             $results = null;

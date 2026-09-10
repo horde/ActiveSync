@@ -133,6 +133,116 @@ class ImapMailboxSearchTest extends TestCase
         );
     }
 
+    public function testQueryMailboxDateChunksWhenDeadlineProvided()
+    {
+        $order = [];
+        $queries = [];
+        $imap = $this->_imapClient($order, $queries);
+        $adapter = $this->_adapter($imap, ['INBOX']);
+
+        $adapter->queryMailbox(
+            $this->_freetextQuery(),
+            ['deadline' => microtime(true) + 30],
+            false
+        );
+
+        $this->assertCount(5, $queries);
+        $this->assertNotNull($queries[0]['date']);
+    }
+
+    public function testQueryMailboxStopsWhenDeadlineAlreadyPassed()
+    {
+        $order = [];
+        $stats = (object) ['truncated' => false];
+        $imap = $this->_imapClient($order);
+        $adapter = $this->_adapter($imap, ['INBOX', 'Sent']);
+
+        $results = $adapter->queryMailbox(
+            $this->_freetextQuery(),
+            [
+                'deadline' => microtime(true) - 1,
+                'stats' => $stats,
+            ],
+            false
+        );
+
+        $this->assertSame([], $results);
+        $this->assertSame([], $order);
+        $this->assertTrue($stats->truncated);
+    }
+
+    public function testQueryMailboxStopsAfterMaxResults()
+    {
+        $order = [];
+        $imap = $this->getMockBuilder(Horde_Imap_Client_Socket::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['search'])
+            ->getMock();
+        $imap->method('search')
+            ->willReturnCallback(function ($mbox) use (&$order) {
+                $order[] = (string) $mbox;
+
+                return [
+                    'count' => 20,
+                    'match' => new Horde_Imap_Client_Ids(range(1, 20)),
+                ];
+            });
+
+        $adapter = $this->_adapter($imap, ['INBOX', 'Sent']);
+        $results = $adapter->queryMailbox(
+            $this->_freetextQuery(),
+            ['maxresults' => 5],
+            false
+        );
+
+        $this->assertCount(5, $results);
+        $this->assertSame(['INBOX'], $order);
+        $this->assertSame('INBOX', $results[0]['searchfolderid']);
+    }
+
+    public function testQueryMailboxHeaderSearchForPlainFreetext()
+    {
+        $order = [];
+        $queries = [];
+        $imapText = [];
+        $imap = $this->_imapClient($order, $queries, $imapText);
+        $adapter = $this->_adapter($imap, ['INBOX']);
+
+        $adapter->queryMailbox(
+            $this->_freetextQuery(),
+            ['headersearch' => true],
+            false
+        );
+
+        $this->assertNotEmpty($imapText);
+        $this->assertStringContainsString('SUBJECT', $imapText[0]);
+        $this->assertStringContainsString('FROM', $imapText[0]);
+        $this->assertDoesNotMatchRegularExpression('/\bTEXT\b/', $imapText[0]);
+    }
+
+    public function testQueryMailboxKeepsKqlWhenHeaderSearchEnabled()
+    {
+        $order = [];
+        $queries = [];
+        $imapText = [];
+        $imap = $this->_imapClient($order, $queries, $imapText);
+        $adapter = $this->_adapter($imap, ['INBOX']);
+
+        $query = [[
+            'op' => Horde_ActiveSync_Request_Search::SEARCH_AND,
+            'value' => [
+                'FolderType' => Horde_ActiveSync::CLASS_EMAIL,
+                Horde_ActiveSync_Request_Search::SEARCH_FREETEXT => 'from:alice@example.com',
+            ],
+        ]];
+
+        $adapter->queryMailbox($query, ['headersearch' => true], false);
+
+        $this->assertNotEmpty($imapText);
+        $this->assertStringContainsString('FROM', $imapText[0]);
+        $this->assertStringNotContainsString('SUBJECT', $imapText[0]);
+    }
+
     protected function _freetextQuery(): array
     {
         return [[
@@ -145,23 +255,30 @@ class ImapMailboxSearchTest extends TestCase
     }
 
     /**
-     * @param string[]                    $order    Filled with mailbox names.
-     * @param array<int, array>|null       $queries  Optional query snapshots.
+     * @param string[]                    $order     Filled with mailbox names.
+     * @param array<int, array>|null       $queries   Optional query snapshots.
+     * @param string[]|null                $imapText Optional IMAP query strings.
      */
-    protected function _imapClient(array &$order = [], ?array &$queries = null)
-    {
+    protected function _imapClient(
+        array &$order = [],
+        ?array &$queries = null,
+        ?array &$imapText = null
+    ) {
         $imap = $this->getMockBuilder(Horde_Imap_Client_Socket::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['search'])
             ->getMock();
         $imap->method('search')
-            ->willReturnCallback(function ($mbox, $query) use (&$order, &$queries) {
+            ->willReturnCallback(function ($mbox, $query) use (&$order, &$queries, &$imapText) {
                 $order[] = (string) $mbox;
                 if ($queries !== null) {
                     $ref = new ReflectionClass($query);
                     $prop = $ref->getProperty('_search');
                     $prop->setAccessible(true);
                     $queries[] = $prop->getValue($query);
+                }
+                if ($imapText !== null) {
+                    $imapText[] = (string) $query;
                 }
 
                 return [

@@ -1183,10 +1183,13 @@ class Horde_ActiveSync_Imap_Adapter
      * Perform an IMAP search based on a SEARCH request.
      *
      * @param array $query          The search query.
-     * @param array $options        The search options (currently not used).
+     * @param array $options        Search options:
+     *   - progress: (callable) Keep-alive callback between IMAP commands.
+     *   - deadline: (float) Unix timestamp after which scanning stops.
+     *   - maxresults: (int) Stop after this many hits (0 = no cap).
+     *   - headersearch: (bool) Map plain FreeText to header fields.
+     *   - stats: (object) Optional `{truncated: bool}` set on time-budget stop.
      * @param bool  $deepTraversal  If true, include sub-mailboxes of the target folder.
-     *
-     * @todo Implement $options support.
      *
      * @return array  Returns array containing an array of hashes:
      *   'uniqueid' => [The unique identifier of the result]
@@ -1212,6 +1215,7 @@ class Horde_ActiveSync_Imap_Adapter
 
         $mboxes = [];
         $hasDate = false;
+        $headersearch = !empty($options['headersearch']);
         foreach ($query as $q) {
             foreach ($q as $key => $value) {
                 switch ($key) {
@@ -1243,7 +1247,7 @@ class Horde_ActiveSync_Imap_Adapter
                         break;
                     case Horde_ActiveSync_Request_Search::SEARCH_FREETEXT:
                         $imap_query->andSearch([
-                            Horde_ActiveSync_Find_Kql::toImapQuery($value),
+                            $this->_mailboxFreetextToImapQuery($value, $headersearch),
                         ]);
                         break;
                     case 'subquery':
@@ -1283,7 +1287,10 @@ class Horde_ActiveSync_Imap_Adapter
         });
 
         $progress = $options['progress'] ?? null;
-        $windows = is_callable($progress) && !$hasDate
+        $deadline = isset($options['deadline']) ? (float) $options['deadline'] : null;
+        $maxresults = (int) ($options['maxresults'] ?? 0);
+        $stats = $options['stats'] ?? null;
+        $windows = !$hasDate && (is_callable($progress) || $deadline !== null)
             ? $this->_mailboxSearchDateWindows()
             : [['since' => null, 'before' => null]];
 
@@ -1297,11 +1304,29 @@ class Horde_ActiveSync_Imap_Adapter
                 break;
             }
 
+            if ($this->_searchDeadlineReached($deadline)) {
+                $this->_markSearchTruncated($stats);
+                $this->_logger->info(sprintf(
+                    'SEARCH: stopping IMAP scan after time budget with %d hit(s).',
+                    count($results)
+                ));
+                break;
+            }
+
             foreach ($windows as $window) {
                 if ($this->_clientDisconnected()) {
                     $this->_logger->meta(
                         'FIND/Search: Client disconnected during mailbox search.'
                     );
+                    break 2;
+                }
+
+                if ($this->_searchDeadlineReached($deadline)) {
+                    $this->_markSearchTruncated($stats);
+                    $this->_logger->info(sprintf(
+                        'SEARCH: stopping IMAP scan after time budget with %d hit(s).',
+                        count($results)
+                    ));
                     break 2;
                 }
 
@@ -1352,6 +1377,9 @@ class Horde_ActiveSync_Imap_Adapter
                         'uniqueid' => $uniqueid,
                         'searchfolderid' => $mbox->utf8,
                     ];
+                    if ($maxresults > 0 && count($results) >= $maxresults) {
+                        return $results;
+                    }
                 }
             }
         }
@@ -1360,9 +1388,73 @@ class Horde_ActiveSync_Imap_Adapter
     }
 
     /**
-     * Date windows used to split an unbounded mailbox TEXT search into
-     * shorter IMAP commands so WBXML keep-alives can be emitted between
-     * them. Newest mail first.
+     * Map mailbox FreeText to an IMAP query.
+     *
+     * Plain FreeText with $headersearch searches Subject/From/To/Cc
+     * (indexed headers). Structured KQL stays on the KQL parser.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param string $value          Raw FreeText from the client.
+     * @param bool   $headersearch   Whether to prefer header fields.
+     */
+    protected function _mailboxFreetextToImapQuery(
+        string $value,
+        bool $headersearch
+    ): Horde_Imap_Client_Search_Query {
+        if ($headersearch && !Horde_ActiveSync_Find_Kql::isStructured($value)) {
+            return $this->_headerFieldsQuery($value);
+        }
+
+        return Horde_ActiveSync_Find_Kql::toImapQuery($value);
+    }
+
+    /**
+     * IMAP OR of Subject, From, To, and Cc for a plain FreeText string.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     */
+    protected function _headerFieldsQuery(string $value): Horde_Imap_Client_Search_Query
+    {
+        $parts = [];
+        foreach (['Subject', 'From', 'To', 'Cc'] as $header) {
+            $part = new Horde_Imap_Client_Search_Query();
+            $part->charset('UTF-8', false);
+            $part->headerText($header, $value);
+            $parts[] = $part;
+        }
+
+        $query = new Horde_Imap_Client_Search_Query();
+        $query->charset('UTF-8', false);
+        $query->orSearch($parts);
+
+        return $query;
+    }
+
+    /**
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     */
+    protected function _searchDeadlineReached(?float $deadline): bool
+    {
+        return $deadline !== null && microtime(true) >= $deadline;
+    }
+
+    /**
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param object|null $stats  Optional stats object with a truncated flag.
+     */
+    protected function _markSearchTruncated(mixed $stats): void
+    {
+        if (is_object($stats)) {
+            $stats->truncated = true;
+        }
+    }
+
+    /**
+     * Date windows used to split an unbounded mailbox search into shorter
+     * IMAP commands so keep-alives can be emitted and a time budget can
+     * stop between windows. Newest mail first.
      *
      * @author Torben Dannhauer <torben@dannhauer.de>
      *

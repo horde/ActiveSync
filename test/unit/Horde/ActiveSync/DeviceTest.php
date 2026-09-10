@@ -316,6 +316,46 @@ class DeviceTest extends TestCase
         $this->assertFalse($device->hasQuirk(Horde_ActiveSync_Device::QUIRK_REASSIGNS_UID_ON_MOVE));
     }
 
+    public function testSearchNeedsCompleteDocumentFastQuirk()
+    {
+        $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();
+
+        $gmail = new Horde_ActiveSync_Device($state, [
+            'deviceType' => 'Android',
+            'userAgent' => 'Android-Mail/2026.08.17.Release',
+        ]);
+        $this->assertTrue(
+            $gmail->hasQuirk(Horde_ActiveSync_Device::QUIRK_SEARCH_NEEDS_COMPLETE_DOCUMENT_FAST)
+        );
+
+        $android = new Horde_ActiveSync_Device($state, [
+            'deviceType' => 'Android',
+            'userAgent' => 'Android/0.3',
+        ]);
+        $this->assertFalse(
+            $android->hasQuirk(Horde_ActiveSync_Device::QUIRK_SEARCH_NEEDS_COMPLETE_DOCUMENT_FAST)
+        );
+
+        $ios = new Horde_ActiveSync_Device($state, [
+            'deviceType' => 'iPhone',
+            'userAgent' => 'Apple-iPhone6C1/1104.201',
+            'properties' => [Horde_ActiveSync_Device::OS => 'iOS 9.0.2 13A452'],
+        ]);
+        $this->assertFalse(
+            $ios->hasQuirk(Horde_ActiveSync_Device::QUIRK_SEARCH_NEEDS_COMPLETE_DOCUMENT_FAST)
+        );
+
+        $nine = new Horde_ActiveSync_Device($state, [
+            'deviceType' => 'Android',
+            'userAgent' => 'hltevzw/KOT49H',
+            'properties' => [Horde_ActiveSync_Device::OS => 'Android 4.4.2.N900VVRUCNC4'],
+        ]);
+        $nine->id = '6E696E656331393035333833303331';
+        $this->assertFalse(
+            $nine->hasQuirk(Horde_ActiveSync_Device::QUIRK_SEARCH_NEEDS_COMPLETE_DOCUMENT_FAST)
+        );
+    }
+
     public function testIssetReportsNestedDeviceProperties()
     {
         $state = $this->getMockBuilder('Horde_ActiveSync_State_Base')->disableOriginalConstructor()->getMock();

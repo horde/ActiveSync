@@ -118,6 +118,18 @@ class Horde_ActiveSync_Device
     public const QUIRK_REASSIGNS_UID_ON_MOVE = 4;
 
     /**
+     * Gmail Android Search aborts unless a complete Search WBXML document
+     * (Store/Result/Range/Total) arrives within ~40s, even when bytes
+     * already started flowing. Clients with this quirk get a time-bounded,
+     * header-first mailbox search so the envelope can close in time.
+     * Other clients keep a full IMAP scan.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     * @see    https://github.com/horde/ActiveSync/issues/104
+     */
+    public const QUIRK_SEARCH_NEEDS_COMPLETE_DOCUMENT_FAST = 5;
+
+    /**
      * Device properties.
      *
      * @var array
@@ -744,6 +756,9 @@ class Horde_ActiveSync_Device
 
             case self::QUIRK_REASSIGNS_UID_ON_MOVE:
                 return $this->deviceType == 'WindowsOutlook15';
+
+            case self::QUIRK_SEARCH_NEEDS_COMPLETE_DOCUMENT_FAST:
+                return HordeString::lower((string) $this->clientType) === self::TYPE_GMAIL;
 
             default:
                 return false;

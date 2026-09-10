@@ -168,7 +168,7 @@ connection after ~30 seconds without response body bytes. A timed-out Sync
 can end up in a broken sync state. Streaming delivery sends WBXML
 incrementally so bytes keep flowing while the server works, in both
 directions for Sync (message export *and* import of client-sent changes)
-and during mailbox Search (IMAP TEXT scans). The complete design, error
+and during mailbox Search. The complete design, error
 model, and rationale are in
 [`sync-streaming.md`](sync-streaming.md); this section covers the operator
 view.
@@ -183,6 +183,7 @@ ActiveSync → *Sync Response Delivery*):
 | `maxmessagetime` | `0` | Soft cap (seconds) for assembling a single message; stops the batch after a slow message. Streaming only. `0` = off |
 | `maxrequestduration` | `0` | Whole-request wall clock cap (seconds), measured from request start (includes import of client changes). Streaming only. `0` = off |
 | `keepaliveinterval` | `15` | Minimum seconds between WBXML keep-alive tokens during import of client changes and during mailbox Search. `0` = one token per imported command / IMAP search |
+| `maxsearchtime` | `20` | Wall-clock cap (seconds) for mailbox Search IMAP work, **only** for devices with `QUIRK_SEARCH_NEEDS_COMPLETE_DOCUMENT_FAST` (Gmail Android). When exceeded, Horde returns the hits found so far as a complete Search document. `0` = no cap (Gmail may still abort) |
 | `maxresponsetime` | `25` | **Legacy** export-phase time budget; only honored when `streaming` is `false` |
 
 Rollback: set `streaming = false` to restore the buffered `Content-Length`
@@ -197,7 +198,7 @@ behaviour (including the `maxresponsetime` budget) with no other changes.
   `Queued N incoming changes for deferred import (streaming).` and
   `SYNC: imported N deferred incoming change(s) for collection F… in N.Ns,
   N keep-alive(s) emitted`. Search logs
-  `SEARCH: query completed in N.Ns, N keep-alive(s) emitted (streaming on|off)`.
+  `SEARCH: query completed in N.Ns, N hit(s), N keep-alive(s) emitted (streaming on|off[, time budget reached])`.
 - Web-server-level buffering or compression on
   `/Microsoft-Server-ActiveSync` can re-introduce the timeout even with
   streaming enabled — PHP cannot disable it from inside the request. Exclude
