@@ -1301,11 +1301,11 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
             )
         );
 
-        if (!empty($options['pingable'])) {
-            if ($this->collectionsNeedFolderResync()) {
-                return self::COLLECTION_ERR_FOLDERSYNC_REQUIRED;
-            }
+        // Repair collection/folder-cache skew on the server. Incremental
+        // FolderSync cannot do this (valid hierarchy synckey → Count 0).
+        $this->healCollectionsMissingFolderCache();
 
+        if (!empty($options['pingable'])) {
             $this->restorePingableCollectionsFromCache();
 
             // If pinging, make sure we have pingable collections. Note we can't
@@ -1702,14 +1702,45 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
     /**
      * True if a collection has item sync state but no folder cache entry.
      *
-     * The client must run FolderSync to remap folder ids (common after a
-     * partial cache reset or hierarchy invalidation).
+     * Historically this asked the client for FolderSync. Incremental FolderSync
+     * cannot repair that cache skew (no hierarchy changes → Count 0), so this
+     * now self-heals via healCollectionsMissingFolderCache() and returns false.
+     * Missing hierarchy synckey is still handled separately via haveHierarchy().
      *
      * @return boolean
      */
     public function collectionsNeedFolderResync()
     {
+        $this->healCollectionsMissingFolderCache();
+
+        return false;
+    }
+
+    /**
+     * Drop or rehydrate collections that have a synckey but no folders[] entry.
+     *
+     * If the uid is still in the persistent foldermap, restore the folders
+     * cache entry so PING/SYNC can resolve the backend id. Otherwise the
+     * collection is a ghost (deleted or remapped folder) and is removed.
+     * Requesting FolderSync is the wrong recovery: a valid hierarchy synckey
+     * produces Count 0 and livelocks cooperating clients (PING 7 → FolderSync).
+     *
+     * @return boolean  True if the sync cache was modified.
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     */
+    public function healCollectionsMissingFolderCache()
+    {
+        if ($this->_cache->countCollections() == 0) {
+            return false;
+        }
+
+        $changed = false;
+        $uidToBackend = array_flip($this->_cache->getFolderMap());
+
         foreach ($this->_cache->getCollections(false) as $id => $collection) {
+            if ($id === 'RI') {
+                continue;
+            }
             $synckey = $collection['synckey'] ?? '';
             if ($synckey === '' && !empty($collection['lastsynckey'])) {
                 $synckey = $collection['lastsynckey'];
@@ -1717,19 +1748,127 @@ class Horde_ActiveSync_Collections implements IteratorAggregate
             if ($synckey === '' || $synckey === '0') {
                 continue;
             }
-            if (!$this->_cache->getFolder($id)) {
+            if ($this->_cache->getFolder($id)) {
+                continue;
+            }
+
+            $backendId = $uidToBackend[$id] ?? '';
+            if ($backendId !== '' && $backendId !== false) {
+                $this->_restoreFolderCacheEntry($id, (string)$backendId, $collection);
                 $this->_logger->info(
                     sprintf(
-                        'COLLECTIONS: Collection %s has sync state but no folder cache entry; FolderSync required.',
-                        $id
+                        'COLLECTIONS: Restored folder cache entry for %s from foldermap (%s).',
+                        $id,
+                        $backendId
                     )
                 );
-
-                return true;
+                $changed = true;
+                continue;
             }
+
+            $this->_logger->notice(
+                sprintf(
+                    'COLLECTIONS: Dropping collection %s; has sync state but no folder cache entry or foldermap mapping.',
+                    $id
+                )
+            );
+            $this->_cache->removeCollection($id, true);
+            unset($this->_collections[$id]);
+            $changed = true;
         }
 
-        return false;
+        if ($changed) {
+            $this->save();
+        }
+
+        return $changed;
+    }
+
+    /**
+     * Rebuild a folders[] cache row from a known backend id.
+     *
+     * @param string $uid        EAS folder uid.
+     * @param string $backendId  Backend folder id.
+     * @param array  $collection Collection cache row.
+     */
+    protected function _restoreFolderCacheEntry($uid, $backendId, array $collection)
+    {
+        $class = !empty($collection['class'])
+            ? $collection['class']
+            : $this->_collectionClassFromFolderUid($uid);
+        $type = !empty($collection['type'])
+            ? $collection['type']
+            : $this->_folderTypeFromClass($class);
+
+        $version = !empty($this->_as->device->version)
+            ? $this->_as->device->version
+            : Horde_ActiveSync::VERSION_FOURTEEN;
+        $folder = new Horde_ActiveSync_Message_Folder(['protocolversion' => $version]);
+        $folder->serverid = $uid;
+        $folder->_serverid = $backendId;
+        $folder->type = $type;
+        $this->_cache->updateFolder($folder);
+
+        $cols = $this->_cache->getCollections(false);
+        if (!empty($cols[$uid])) {
+            $cols[$uid]['serverid'] = $backendId;
+            if (empty($cols[$uid]['class'])) {
+                $cols[$uid]['class'] = $class;
+            }
+            $this->_cache->updateCollection($cols[$uid]);
+        }
+        if (isset($this->_collections[$uid])) {
+            $this->_collections[$uid]['serverid'] = $backendId;
+            if (empty($this->_collections[$uid]['class'])) {
+                $this->_collections[$uid]['class'] = $class;
+            }
+        }
+    }
+
+    /**
+     * Derive a collection class from the deterministic EAS uid prefix.
+     *
+     * @param string $uid  EAS folder uid.
+     *
+     * @return string  Horde_ActiveSync::CLASS_* value.
+     */
+    protected function _collectionClassFromFolderUid($uid)
+    {
+        switch (substr($uid, 0, 1)) {
+            case 'A':
+                return Horde_ActiveSync::CLASS_CALENDAR;
+            case 'C':
+                return Horde_ActiveSync::CLASS_CONTACTS;
+            case 'T':
+                return Horde_ActiveSync::CLASS_TASKS;
+            case 'N':
+                return Horde_ActiveSync::CLASS_NOTES;
+            default:
+                return Horde_ActiveSync::CLASS_EMAIL;
+        }
+    }
+
+    /**
+     * Default folder type for a collection class when restoring a cache row.
+     *
+     * @param string $class  Horde_ActiveSync::CLASS_* value.
+     *
+     * @return integer  Horde_ActiveSync::FOLDER_TYPE_* value.
+     */
+    protected function _folderTypeFromClass($class)
+    {
+        switch ($class) {
+            case Horde_ActiveSync::CLASS_CALENDAR:
+                return Horde_ActiveSync::FOLDER_TYPE_USER_APPOINTMENT;
+            case Horde_ActiveSync::CLASS_CONTACTS:
+                return Horde_ActiveSync::FOLDER_TYPE_USER_CONTACT;
+            case Horde_ActiveSync::CLASS_TASKS:
+                return Horde_ActiveSync::FOLDER_TYPE_USER_TASK;
+            case Horde_ActiveSync::CLASS_NOTES:
+                return Horde_ActiveSync::FOLDER_TYPE_USER_NOTE;
+            default:
+                return Horde_ActiveSync::FOLDER_TYPE_USER_MAIL;
+        }
     }
 
     /**
