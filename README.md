@@ -19,6 +19,7 @@ The documentation is split by audience:
 | You are… | You want to… | Read |
 |----------|--------------|------|
 | **Administrator / end user** | Enable ActiveSync, configure protocol versions, streaming, logging, the web server endpoint, and per-user policy | [`doc/configuration.md`](doc/configuration.md) |
+| **Administrator / operator** | Monitor device health, triage live problems, and use the CLI and admin workflows | [`doc/ops-monitor.md`](doc/ops-monitor.md) |
 | **Library user / integrator** | Embed the library in your own product: server object, driver API, state backends, custom backends | [`doc/integration.md`](doc/integration.md) |
 | **ActiveSync developer** | Understand the internals: components, request lifecycle, Sync anatomy, state machine, tests | [`doc/architecture.md`](doc/architecture.md) |
 
