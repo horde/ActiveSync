@@ -180,7 +180,7 @@ class BacklogPingRecoveryTest extends TestCase
                 'initCollectionState',
                 'updateCollectionsFromCache',
                 'checkStaleRequest',
-                'collectionsNeedFolderResync',
+                'healCollectionsMissingFolderCache',
                 'restorePingableCollectionsFromCache',
                 'havePingableCollections',
                 'haveHierarchy',
@@ -191,7 +191,7 @@ class BacklogPingRecoveryTest extends TestCase
             ])
             ->getMock();
 
-        $collections->method('collectionsNeedFolderResync')->willReturn(false);
+        $collections->method('healCollectionsMissingFolderCache')->willReturn(false);
         $collections->method('havePingableCollections')->willReturn(true);
         $collections->method('haveHierarchy')->willReturn(true);
         $collections->method('checkStaleRequest')->willReturn(false);

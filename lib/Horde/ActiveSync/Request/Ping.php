@@ -151,12 +151,12 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
             $this->_logger->info('Handling empty PING request.');
             $isEmpty = true;
             $collections->loadCollectionsFromCache();
+            $collections->healCollectionsMissingFolderCache();
             $collections->restorePingableCollectionsFromCache();
             if ($collections->collectionCount() == 0
                 || !$collections->havePingableCollections()) {
-                if ($collections->collectionsNeedFolderResync()
-                    || ($this->_device->version >= Horde_ActiveSync::VERSION_TWELVEONE
-                        && !$collections->haveHierarchy())) {
+                if ($this->_device->version >= Horde_ActiveSync::VERSION_TWELVEONE
+                    && !$collections->haveHierarchy()) {
                     $this->_logger->info(
                         'Empty PING with stale folder or hierarchy state; requesting FolderSync.'
                     );
@@ -220,11 +220,11 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
                         'No collections loaded from explicit PING folder list; using cached collections.'
                     );
                     $collections->loadCollectionsFromCache();
+                    $collections->healCollectionsMissingFolderCache();
                     $collections->restorePingableCollectionsFromCache();
                     if ($collections->collectionCount() == 0) {
-                        if ($collections->collectionsNeedFolderResync()
-                            || ($this->_device->version >= Horde_ActiveSync::VERSION_TWELVEONE
-                                && !$collections->haveHierarchy())) {
+                        if ($this->_device->version >= Horde_ActiveSync::VERSION_TWELVEONE
+                            && !$collections->haveHierarchy()) {
                             $this->_logger->info(
                                 'Explicit PING with stale folder or hierarchy state; requesting FolderSync.'
                             );
@@ -246,6 +246,7 @@ class Horde_ActiveSync_Request_Ping extends Horde_ActiveSync_Request_Base
             } else {
                 // No FOLDERS supplied, use the cache.
                 $collections->loadCollectionsFromCache();
+                $collections->healCollectionsMissingFolderCache();
                 if ($collections->collectionCount() == 0) {
                     $this->_logger->warn('Empty PING request with no cached collections. Request full PING.');
                     $this->_statusCode = self::STATUS_MISSING;
