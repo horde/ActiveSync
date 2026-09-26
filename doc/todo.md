@@ -34,15 +34,13 @@ FRAMEWORK_6_0 / 3.x line.
   Outlook weekly-series traffic. Documented in `doc/protocol-versions.md`
   (Tasks section).
 
-## Operations and monitoring (out of library scope)
+## Operations and monitoring (implemented across packages)
 
-- **EAS usage dashboard / “top-like” monitor**
-
-  A live view of active devices, error rates, and stuck sync keys would be
-  valuable for operators but belongs in a separate admin tool or Horde UI
-  module, not in the protocol library. Per-device protocol logging
-  (`logging.type = perdevice` in Horde config) is the supported debugging
-  path today.
+The shared, storage-independent health evaluator and DTOs live in this
+library. The fleet snapshot service lives in `horde/core`; the
+`horde-activesync` CLI and ActiveSync Administration page live in
+`horde/horde` (the `horde/base` repository). See
+[`ops-monitor.md`](ops-monitor.md) for the health model and operator cookbook.
 
 ## Horde 6 / FRAMEWORK_6_1 (breaking changes — planned refactor)
 
