@@ -106,8 +106,8 @@ abstract class Horde_ActiveSync_Request_Base
     /**
      * Const'r
      *
-     * @param Horde_ActiveSync $as             The ActiveSync server.
-     * @param Horde_ActiveSync_Device $device  The device descriptor.
+     * @param Horde_ActiveSync $as  The ActiveSync server. The device
+     *                              descriptor is read from the server.
      *
      * @return Horde_ActiveSync_Request_Base
      */

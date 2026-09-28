@@ -15,6 +15,7 @@
   <source>
     <include>
       <directory suffix=".php">lib</directory>
+      <directory suffix=".php">src</directory>
     </include>
   </source>
   <testsuites>

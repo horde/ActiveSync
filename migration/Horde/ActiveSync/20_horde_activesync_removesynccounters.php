@@ -4,7 +4,7 @@ class HordeActiveSyncRemoveSyncCounters extends Horde_Db_Migration_Base
 {
     public function up()
     {
-        $this->announce('Removing SyncKeyCounter data from cache.', 'cli.message');
+        $this->announce('Removing SyncKeyCounter data from cache.');
         $sql = 'SELECT * FROM horde_activesync_cache';
         $rows = $this->_connection->select($sql);
         $insert_sql = 'UPDATE horde_activesync_cache SET cache_data = ? WHERE cache_devid = ? AND cache_user = ?';
