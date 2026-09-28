@@ -32,6 +32,12 @@ ActiveSync device, cache, and state rows into those facts. The snapshot
 service loads fleet state, and both operator interfaces consume its shared
 results.
 
+A device's collections are a `CollectionFactList`: an immutable map of
+`CollectionFacts`, keyed by collection id and readable with array access.
+Each fact copies `class`, `serverid`, `lastsynckey`, `backlog`,
+`backlogpings`, and `pingable` from the SyncCache row. Sync options such as
+window size, filter type, and body preferences stay on the cache row.
+
 ## Health model
 
 Device and collection status is one of `ok`, `warn`, or `critical`. The worst

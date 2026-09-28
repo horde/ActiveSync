@@ -292,7 +292,7 @@ class HealthEvaluatorTest extends TestCase
             lasthbsyncstarted: $values['lasthbsyncstarted'] ?? null,
             lastsyncendnormal: $values['lastsyncendnormal'] ?? null,
             foldersyncrequired: $values['foldersyncrequired'] ?? 0,
-            collections: $values['collections'] ?? []
+            collections: new CollectionFactList($values['collections'] ?? [])
         );
 
         return (new HealthEvaluator(

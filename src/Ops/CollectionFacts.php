@@ -17,6 +17,24 @@ declare(strict_types=1);
 
 namespace Horde\ActiveSync\Ops;
 
+/**
+ * Health inputs copied from one persisted SyncCache collection row.
+ *
+ * The cache stores collections as an associative array keyed by collection
+ * id. This snapshot keeps the fields the evaluator reads:
+ *
+ * - id: collection id, from the row key or the row's id value
+ * - class: EAS collection class (`class`)
+ * - serverid: backend folder id (`serverid`)
+ * - lastsynckey: persisted sync key (`lastsynckey`; the in-request
+ *   `synckey` alias is ignored)
+ * - backlog: unix time when MOREAVAILABLE was recorded (`backlog`)
+ * - backlogpings: recovery attempts (`backlogpings`)
+ * - pingable: whether the collection is included in PING (`pingable`)
+ *
+ * Window size, filter type, truncation, body preferences, and conflict
+ * policy stay on the cache row.
+ */
 final class CollectionFacts
 {
     public function __construct(

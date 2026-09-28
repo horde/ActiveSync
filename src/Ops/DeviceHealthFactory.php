@@ -117,9 +117,14 @@ final class DeviceHealthFactory
     }
 
     /**
-     * @return CollectionFacts[]
+     * Persisted SyncCache rows, keyed by collection id.
+     *
+     * Copied keys are id (or the row key), class, serverid, lastsynckey,
+     * backlog, backlogpings, and pingable.
+     *
+     * @param array<string, array<string, mixed>> $collections
      */
-    private static function collectionFacts(array $collections): array
+    private static function collectionFacts(array $collections): CollectionFactList
     {
         $facts = [];
         foreach ($collections as $id => $collection) {
@@ -140,7 +145,7 @@ final class DeviceHealthFactory
             );
         }
 
-        return $facts;
+        return new CollectionFactList($facts);
     }
 
     private static function nullableInt(mixed $value): ?int

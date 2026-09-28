@@ -105,11 +105,10 @@ final class HealthEvaluator
             );
         }
 
-        $collections = array_map(
-            fn (CollectionFacts $collection): CollectionHealth =>
-                $this->evaluateCollection($collection, $now),
-            $facts->collections
-        );
+        $collections = [];
+        foreach ($facts->collections as $collection) {
+            $collections[] = $this->evaluateCollection($collection, $now);
+        }
 
         $activityTimestamps = array_filter(
             [$facts->cacheTimestamp, $facts->lastSyncTs],

@@ -20,7 +20,7 @@ namespace Horde\ActiveSync\Ops;
 final class DeviceFacts
 {
     /**
-     * @param CollectionFacts[] $collections
+     * @param CollectionFactList $collections SyncCache snapshots keyed by collection id
      */
     public function __construct(
         public readonly string $user,
@@ -36,7 +36,7 @@ final class DeviceFacts
         public readonly ?int $lasthbsyncstarted,
         public readonly ?int $lastsyncendnormal,
         public readonly int $foldersyncrequired,
-        public readonly array $collections
+        public readonly CollectionFactList $collections
     ) {
     }
 }
