@@ -216,6 +216,37 @@ when work proceeds on FRAMEWORK_6_1.
 - `Horde_ActiveSync_Sync_Options` (and similar) for collection options /
   body preferences instead of raw arrays.
 - Collection object replacing the associative collection array in `Sync.php`.
+  The array carries ~34 keys across ~440 read sites (`Request/Sync.php` 181,
+  `SyncCache.php` 138, `Collections.php` 63) and mixes four concerns:
+  identity (`id`, `class`, `serverid`, `type`), persisted sync state
+  (`synckey`, `newsynckey`, `lastsynckey`, `getchanges`, `pingable`,
+  `backlog`, `backlogpings`), client-negotiated options (`windowsize`,
+  `filtertype`, `truncation`, `mimesupport`, `bodyprefs`, `conflict`,
+  `deletesasmoves`, `conversationmode`, …), and per-request scratch
+  (`clientids`, `fetchids`, `removes`, `modifiedids`, `importedchanges`,
+  `importfailures`, `atchash`, `instanceid_removes`, …). Target shape:
+  - `SyncCollection` for identity plus persisted sync state, with
+    `Horde_ActiveSync_SyncKey` as a first-class type (see *State, storage,
+    and identity* above); `Sync_Options` for the negotiated options; the
+    Changes object below for per-request scratch. Do not fold all four into
+    one interface.
+  - Storage stays an array. `SyncCache` hydrates rows into objects on load
+    and dehydrates on save; never `serialize()` the objects into
+    `cache_data`, which would change the blob format.
+  - `ArrayAccess` on the concrete `SyncCollection` class is a migration
+    shim so `$collection['class']` keeps working in `Sync.php`, ideally
+    logging deprecated access. Remove it once `Sync.php` is converted. Keep
+    it off the interface so the array API does not become permanent.
+  - Order: `SyncCache::addCollection()` first (it defines the persisted
+    fields), then `Collections.php`, then `Sync.php` (hot protocol path,
+    largest, riskiest).
+  - `Horde\ActiveSync\Ops\CollectionFacts` (health monitor, #100) is a
+    seven-field read-only projection built in
+    `DeviceHealthFactory::collectionFacts()`, the only place that converts
+    cache rows. Once `SyncCollection` exists, build the projection from it
+    or let `HealthEvaluator` consume `SyncCollection` directly; then drop
+    `CollectionFacts`. It is not the domain object and must not grow into
+    one.
 - Changes object (array, `SplFixedArray`, or temp stream) to cap memory on
   large initial mailbox syncs and to unify the `add` / `modify` / `delete`
   shapes between email and PIM collections. Streaming v1 ([#83](https://github.com/horde/ActiveSync/issues/83))
