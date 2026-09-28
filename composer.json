@@ -22,7 +22,7 @@
     "repositories": [],
     "require": {
         "horde/horde-installer-plugin": "dev-FRAMEWORK_6_0 || ^3 || ^2",
-        "php": "^7.4 || ^8",
+        "php": "^8.1",
         "horde/compress": "^3 || dev-FRAMEWORK_6_0",
         "horde/date": "^3 || dev-FRAMEWORK_6_0",
         "horde/exception": "^3 || dev-FRAMEWORK_6_0",
