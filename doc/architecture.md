@@ -136,6 +136,19 @@ replayed; garbage collection trims older generations. When state and client
 diverge irrecoverably, the handler answers with a sync-key error status and
 the client restarts from sync key 0 (full resync of that collection).
 
+**Locking without long transactions.** Mutating loads of a collection are
+serialized by a token row in `horde_activesync_collection_lock` (acquire =
+check-and-set in a transaction that is committed immediately; release =
+clear the token; a stale timeout covers crashed workers). The state row is
+read `FOR UPDATE` in a short, immediately committed transaction and written
+back by `save()` in another one. Between the two the request hands control
+to the backend (imports, `getSyncStamp()`, `getChanges()`), and **no
+`Horde_Db` transaction may be open at that point**: the backend shares the
+connection, `Horde_Db` nests transactions by counter only (no savepoints),
+and on PostgreSQL a single failed backend statement would abort the shared
+transaction (SQLSTATE `25P02`) and take every following state query of the
+request down with it ([#109](https://github.com/horde/ActiveSync/issues/109)).
+
 ## WBXML layer
 
 `Wbxml_Decoder` and `Wbxml_Encoder` implement EAS WBXML directly (no

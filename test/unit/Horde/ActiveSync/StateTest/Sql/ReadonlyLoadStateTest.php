@@ -51,7 +51,7 @@ class ReadonlyLoadStateTest extends TestCase
         );
 
         $this->assertFalse($this->_getProperty($state, '_collectionLockHeld'));
-        $this->assertFalse($this->_getProperty($state, '_stateRowLockHeld'));
+        $this->assertFalse($db->transactionStarted());
         $folderFirst = $this->_getProperty($state, '_folder');
         $this->assertInstanceOf(Horde_ActiveSync_Folder_Imap::class, $folderFirst);
         $this->assertEquals('INBOX', $folderFirst->serverid());
