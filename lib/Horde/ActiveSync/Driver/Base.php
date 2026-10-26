@@ -762,7 +762,14 @@ abstract class Horde_ActiveSync_Driver_Base
      *                          The activesync message
      * @param Horde_ActiveSync_Device $device  The device information
      *
-     * @return array|boolean    A stat array if successful, otherwise false.
+     * @return array|boolean    A stat array if successful. On failure either
+     *                          false (server error, the client may retry
+     *                          the item) or an array with only an 'error'
+     *                          key holding the
+     *                          Horde_ActiveSync_Request_Sync::STATUS_* code
+     *                          to report for the item - STATUS_INVALID when
+     *                          the backend rejected the client's data, so
+     *                          the client stops resending it.
      */
     abstract public function changeMessage($folderid, $id, Horde_ActiveSync_Message_Base $message, $device);
 
