@@ -120,23 +120,15 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     protected const COLLECTION_LOCK_TABLE = 'horde_activesync_collection_lock';
 
     /**
-     * True while a SELECT ... FOR UPDATE row lock is held for the loaded
-     * sync_key (released on save() or updateSyncStamp()).
-     *
-     * @var boolean
-     */
-    protected $_stateRowLockHeld = false;
-
-    /**
-     * True if this instance started the transaction that holds the row lock.
-     *
-     * @var boolean
-     */
-    protected $_stateRowLockTxnOwner = false;
-
-    /**
      * True while a collection lock is held (released on save(),
      * updateSyncStamp(), or updateServerIdInState()).
+     *
+     * The lock is the committed token row in COLLECTION_LOCK_TABLE, not an
+     * open database transaction: no Horde_Db transaction stays open while
+     * control is handed to the backend (imports, getSyncStamp(), ...). A
+     * failed backend statement must only fail that item - on PostgreSQL it
+     * would otherwise abort the shared transaction (SQLSTATE 25P02) and take
+     * every following state query of the request down with it.
      *
      * @var boolean
      */
@@ -148,14 +140,6 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
      * @var integer|null
      */
     protected $_collectionLockToken = null;
-
-    /**
-     * True if this instance started the transaction that holds the collection
-     * lock.
-     *
-     * @var boolean
-     */
-    protected $_collectionLockTxnOwner = false;
 
     /**
      * Folder id used for the active collection lock, if any.
@@ -209,52 +193,31 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     }
 
     /**
-     * Roll back any row lock left open when the request ends without save().
+     * Release a collection lock left behind when the request ends without
+     * save().
      */
     public function __destruct()
     {
-        if ($this->_stateRowLockHeld) {
-            $this->_releaseStateRowLock(false);
-        }
         if ($this->_collectionLockHeld) {
             $this->_releaseCollectionLock(false);
         }
     }
 
     /**
-     * Release a row lock opened by _loadState().
+     * Read the current sync state row.
      *
-     * @param boolean $commit  Commit (true) or roll back (false) the lock
-     *                         transaction when this instance owns it.
-     */
-    protected function _releaseStateRowLock($commit = false)
-    {
-        if (!$this->_stateRowLockHeld) {
-            return;
-        }
-
-        if ($this->_stateRowLockTxnOwner) {
-            try {
-                if ($commit) {
-                    $this->_db->commitDbTransaction();
-                } else {
-                    $this->_db->rollbackDbTransaction();
-                }
-            } catch (Horde_Db_Exception $e) {
-                $this->_logger->err($e->getMessage());
-            }
-        }
-
-        $this->_stateRowLockHeld = false;
-        $this->_stateRowLockTxnOwner = false;
-    }
-
-    /**
-     * Begin a transaction and lock the current sync state row for update.
+     * The row is selected FOR UPDATE inside a short transaction that is
+     * committed as soon as the row has been read: a parallel save() of the
+     * same sync_key is waited for and its committed row is returned, but no
+     * transaction is kept open across the request. Serializing mutating
+     * loads against each other is the job of the collection lock.
      *
+     * @return array  The state row (sync_data, sync_devid, sync_mod,
+     *                sync_pending).
      * @throws Horde_ActiveSync_Exception
+     * @throws Horde_ActiveSync_Exception_StateGone
      */
-    protected function _acquireStateRowLock()
+    protected function _readStateRow()
     {
         $started = false;
         if (!$this->_db->transactionStarted()) {
@@ -287,13 +250,16 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             throw new Horde_ActiveSync_Exception($e);
         }
 
-        if (empty($results)) {
-            if ($started) {
-                try {
-                    $this->_db->rollbackDbTransaction();
-                } catch (Horde_Db_Exception $e2) {
-                }
+        if ($started) {
+            try {
+                $this->_db->commitDbTransaction();
+            } catch (Horde_Db_Exception $e) {
+                $this->_logger->err($e->getMessage());
+                throw new Horde_ActiveSync_Exception($e);
             }
+        }
+
+        if (empty($results)) {
             $this->_logger->warn(
                 sprintf(
                     'STATE: Could not find state for synckey %s.',
@@ -302,9 +268,6 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             );
             throw new Horde_ActiveSync_Exception_StateGone();
         }
-
-        $this->_stateRowLockHeld = true;
-        $this->_stateRowLockTxnOwner = $started;
 
         return $results;
     }
@@ -403,6 +366,11 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     /**
      * Acquire an exclusive collection lock using portable SQL only.
      *
+     * The check-and-set of the lock token runs in a transaction that is
+     * committed before this method returns; the committed token row is the
+     * lock (bounded by STATE_ROW_LOCK_STALE_SECONDS). No transaction stays
+     * open while the request hands control to the backend.
+     *
      * @param string|null $folderId  Optional folder id override.
      *
      * @throws Horde_ActiveSync_Exception
@@ -463,9 +431,15 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                 [$token, $now, $user, $devid, $lockFolderid]
             );
 
+            // Publish the token: the lock must not depend on this
+            // connection's transaction state once the backend runs.
+            if ($started) {
+                $this->_db->commitDbTransaction();
+                $started = false;
+            }
+
             $this->_collectionLockHeld = true;
             $this->_collectionLockToken = $token;
-            $this->_collectionLockTxnOwner = $started;
             $this->_collectionLockFolderId = $lockFolderid;
         } catch (Throwable $e) {
             if ($started) {
@@ -473,7 +447,6 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                     $this->_db->rollbackDbTransaction();
                 } catch (Horde_Db_Exception $e2) {
                 }
-                $this->_collectionLockTxnOwner = false;
             }
 
             if ($this->_collectionLockIsBestEffort()) {
@@ -495,8 +468,15 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     /**
      * Release a collection lock acquired by _acquireCollectionLock().
      *
-     * @param boolean $commit  Commit (true) or roll back (false) the lock
-     *                         transaction when this instance owns it.
+     * The token is cleared in autocommit mode. If the clearing UPDATE fails
+     * while a transaction is open on the connection - a backend left it
+     * behind, or PostgreSQL aborted it after a failed backend statement -
+     * that transaction is rolled back and the UPDATE is retried once, so the
+     * lock row does not have to wait for the stale timeout.
+     *
+     * @param boolean $commit  Kept for the Horde_ActiveSync_State_Base
+     *                         contract; the token is cleared either way as
+     *                         the lock no longer lives in a transaction.
      */
     protected function _releaseCollectionLock($commit = false)
     {
@@ -505,35 +485,32 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
         }
 
         [$user, $devid, $lockFolderid] = $this->_collectionLockIdentity();
+        $sql = 'UPDATE ' . self::COLLECTION_LOCK_TABLE
+            . ' SET lock_token = NULL, lock_time = NULL'
+            . ' WHERE sync_user = ? AND sync_devid = ? AND sync_folderid = ?'
+            . ' AND lock_token = ?';
+        $values = [$user, $devid, $lockFolderid, $this->_collectionLockToken];
 
         try {
-            $this->_db->update(
-                'UPDATE ' . self::COLLECTION_LOCK_TABLE
-                . ' SET lock_token = NULL, lock_time = NULL'
-                . ' WHERE sync_user = ? AND sync_devid = ? AND sync_folderid = ?'
-                . ' AND lock_token = ?',
-                [$user, $devid, $lockFolderid, $this->_collectionLockToken]
-            );
+            $this->_db->update($sql, $values);
         } catch (Horde_Db_Exception $e) {
             $this->_logger->err($e->getMessage());
+            if ($this->_db->transactionStarted()) {
+                $this->_logger->warn(
+                    'STATE: Rolling back a foreign transaction left open on the state connection to release the collection lock.'
+                );
+                $this->_rollbackDbOnFailure();
+                try {
+                    $this->_db->update($sql, $values);
+                } catch (Horde_Db_Exception $e2) {
+                    $this->_logger->err($e2->getMessage());
+                }
+            }
         }
 
         $this->_collectionLockHeld = false;
         $this->_collectionLockToken = null;
         $this->_collectionLockFolderId = null;
-
-        if ($this->_collectionLockTxnOwner) {
-            try {
-                if ($commit) {
-                    $this->_db->commitDbTransaction();
-                } else {
-                    $this->_db->rollbackDbTransaction();
-                }
-            } catch (Horde_Db_Exception $e) {
-                $this->_logger->err($e->getMessage());
-            }
-            $this->_collectionLockTxnOwner = false;
-        }
     }
 
     /**
@@ -655,9 +632,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
         // A mutating load may change the state; drop any read-only memo.
         unset($this->_readonlyStateMemo[$this->_stateFolderId()]);
 
-        $this->_releaseStateRowLock(false);
-
-        $results = $this->_acquireStateRowLock();
+        $results = $this->_readStateRow();
         $this->_loadStateFromResults($results);
     }
 
@@ -867,7 +842,6 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                     ]
                 );
             } catch (Horde_Db_Exception $e) {
-                $this->_releaseStateRowLock(false);
                 $this->_releaseCollectionLock(false);
                 throw new Horde_ActiveSync_Exception($e);
             }
@@ -877,9 +851,6 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             }
         }
 
-        if ($this->_stateRowLockHeld) {
-            $this->_releaseStateRowLock($updated);
-        }
         if ($this->_collectionLockHeld) {
             $this->_releaseCollectionLock($updated);
         }
@@ -978,9 +949,10 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     /**
      * Persist sync state using Horde_Db (update, else insert).
      *
-     * When _loadState() has acquired a row lock, the save runs in that same
-     * transaction so concurrent PING/SYNC workers cannot interleave writes to
-     * sync_data or sync_pending for the same sync_key.
+     * The write runs in its own short transaction (unless the caller already
+     * opened one). Mutating SYNC workers for the same folder are serialized
+     * by the collection lock, so no row lock has to be carried from
+     * _loadState() to this point.
      *
      * @param array $params  Column data for horde_activesync_state.
      *
@@ -1001,9 +973,8 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             ],
         ];
         $started = false;
-        $lockHeld = $this->_stateRowLockHeld;
 
-        if (!$lockHeld && !$this->_db->transactionStarted()) {
+        if (!$this->_db->transactionStarted()) {
             $this->_db->beginDbTransaction();
             $started = true;
         }
@@ -1011,9 +982,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
         try {
             $updated = $this->_db->updateBlob($this->_syncStateTable, $params, $where);
             if ($updated) {
-                if ($lockHeld) {
-                    $this->_releaseStateRowLock(true);
-                } elseif ($started) {
+                if ($started) {
                     $this->_db->commitDbTransaction();
                 }
                 return;
@@ -1051,15 +1020,11 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                 }
             }
 
-            if ($lockHeld) {
-                $this->_releaseStateRowLock(true);
-            } elseif ($started) {
+            if ($started) {
                 $this->_db->commitDbTransaction();
             }
         } catch (Horde_Db_Exception $e) {
-            if ($lockHeld) {
-                $this->_releaseStateRowLock(false);
-            } elseif ($started) {
+            if ($started) {
                 try {
                     $this->_db->rollbackDbTransaction();
                 } catch (Horde_Db_Exception $e2) {

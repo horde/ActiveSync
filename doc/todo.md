@@ -392,6 +392,9 @@ active backlog; kept here so this file does not resurrect settled work.
   returning status `12` (SYNC) / `7` (PING) after five ignored responses;
   escalates to KEYMISMATCH / server error so broken clients can recover.
 - SQL/Mongo row locks for parallel state access.
+- `State_Sql` holds no DB transaction across backend calls: lock
+  transactions are committed on acquire, so a failed backend statement no
+  longer aborts the whole Sync on PostgreSQL (#109).
 - Reject and repair corrupt `sync_data` on load/save.
 - Separate PING watermark from SYNC modseq (iOS mail loop fix).
 - Hardened initial-sync ACK and KEYMISMATCH on corrupt state.
