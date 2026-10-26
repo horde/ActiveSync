@@ -293,7 +293,8 @@ class Horde_ActiveSync_Connector_Importer
                     $uid,
                     $message,
                     $device
-                ))) {
+                ))
+                && empty($stat['error'])) {
                 $stat['serverid'] = $this->_folderId;
                 $this->_state->updateState(
                     Horde_ActiveSync::CHANGE_TYPE_CHANGE,
@@ -322,16 +323,22 @@ class Horde_ActiveSync_Connector_Importer
         }
 
         // Tell the backend about the change
-        if (!$stat = $this->_as->driver->changeMessage($this->_folderId, $backendId, $message, $device)) {
+        $stat = $this->_as->driver->changeMessage($this->_folderId, $backendId, $message, $device);
+        if (!$stat || !empty($stat['error'])) {
+            // The backend may name the per-item status to report (e.g.
+            // STATUS_INVALID for rejected client data, which the client
+            // must not retry); a plain false is a retryable server error.
+            $status = !empty($stat['error'])
+                ? $stat['error']
+                : Horde_ActiveSync_Request_Sync::STATUS_SERVERERROR;
             $this->_logger->err(
                 sprintf(
-                    'Change message failed when updating %s',
-                    $id
+                    'Change message failed when updating %s (status %d)',
+                    $id,
+                    $status
                 )
             );
-            return $id
-                ? [0 => $id, 'error' => Horde_ActiveSync_Request_Sync::STATUS_SERVERERROR]
-                : [0 => false, 'error' => Horde_ActiveSync_Request_Sync::STATUS_SERVERERROR];
+            return [0 => $id ?: false, 'error' => $status];
         }
         $stat['serverid'] = $this->_folderId;
 
