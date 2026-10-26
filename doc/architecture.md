@@ -163,6 +163,12 @@ EAS code pages defined in `Wbxml.php`. Points worth knowing:
   detection against the change map, `changeMessage()` / `deleteMessage()` /
   `moveMessage()` calls, folder operations, and recording of client-origin
   changes so they are not exported back.
+  A failed `changeMessage()` returns either `false` — a server error,
+  reported as `Status 5` so the client may retry — or
+  `['error' => <Status>]` naming the per-item status; backends use
+  `Status 6` (`STATUS_INVALID`) when they *rejected the client's data*
+  (e.g. a Turba attribute over its configured length), so the client stops
+  resending an item the server will never accept.
 - `Connector_Exporter_Sync` walks the change list produced by
   `getServerChanges()` and encodes each change into the response, updating
   state as it goes.
