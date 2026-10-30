@@ -1,5 +1,7 @@
 <?php
 
+use Horde\Icalendar\Calendar\Vevent;
+
 /**
  * Shared recurrence conversion for ActiveSync message types.
  *
@@ -26,21 +28,10 @@ class Horde_ActiveSync_Utils_Recurrence
      *
      * @return string  InstanceType value ('0'–'3').
      */
-    public static function detectInstanceType(Horde_Icalendar_Vevent $vevent): string
+    public static function detectInstanceType(Vevent $vevent): string
     {
-        $hasRecurrenceId = false;
-        try {
-            $recurrenceId = $vevent->getAttribute('RECURRENCE-ID');
-            $hasRecurrenceId = !is_array($recurrenceId) && strlen((string) $recurrenceId);
-        } catch (Horde_Icalendar_Exception $e) {
-        }
-
-        $hasRrule = false;
-        try {
-            $rrule = $vevent->getAttribute('RRULE');
-            $hasRrule = !is_array($rrule) && strlen((string) $rrule);
-        } catch (Horde_Icalendar_Exception $e) {
-        }
+        $hasRecurrenceId = (string) $vevent->getPropertyValue('RECURRENCE-ID') !== '';
+        $hasRrule = (string) $vevent->getRrule() !== '';
 
         if ($hasRecurrenceId) {
             return $hasRrule ? '2' : '3';
@@ -55,23 +46,18 @@ class Horde_ActiveSync_Utils_Recurrence
 
     /**
      * Parse RRULE from a VEVENT into Horde_Date_Recurrence.
+     *
+     * @param Vevent     $vevent  The event carrying the RRULE.
+     * @param Horde_Date $start   The start of the first occurrence, resolved
+     *                            by the caller (DTSTART may use a time zone
+     *                            only the surrounding calendar can resolve).
      */
     public static function recurrenceFromVevent(
-        Horde_Icalendar_Vevent $vevent
+        Vevent $vevent,
+        Horde_Date $start
     ): ?Horde_Date_Recurrence {
-        try {
-            $rrule = $vevent->getAttribute('RRULE');
-        } catch (Horde_Icalendar_Exception $e) {
-            return null;
-        }
-
-        if (is_array($rrule) || !strlen((string) $rrule)) {
-            return null;
-        }
-
-        try {
-            $start = new Horde_Date($vevent->getAttribute('DTSTART'));
-        } catch (Horde_Exception $e) {
+        $rrule = (string) $vevent->getRrule();
+        if ($rrule === '') {
             return null;
         }
 
