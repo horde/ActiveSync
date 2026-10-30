@@ -1,5 +1,9 @@
 <?php
 
+use Horde\Icalendar\Calendar\VCalendar;
+use Horde\Icalendar\Component\AbstractComponent;
+use Horde\Icalendar\Enum\CalendarMethod;
+use Horde\Icalendar\IcalendarException;
 use Horde\Util\HordeString;
 
 /**
@@ -311,65 +315,67 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
         );
 
         // Parse the iTip.
-        $vCal = new Horde_Icalendar();
         try {
-            if ($vCal->parsevCalendar($data, 'VCALENDAR', $mime_part->getCharset())) {
-                $classes = $vCal->getComponentClasses();
-            } else {
-                $classes = [];
-            }
-        } catch (Horde_Icalendar_Exception $e) {
+            $calendar = AbstractComponent::fromString($data);
+        } catch (IcalendarException $e) {
             $this->_logger->err($e->getMessage());
             return;
         }
 
         // Exit if we can't parse/find any data.
-        if (empty($classes['horde_icalendar_vevent'])) {
+        if (!($calendar instanceof VCalendar) || $calendar->getEvents() === []) {
             return;
         }
 
-        // Many senders omit METHOD on text/calendar parts; treat as REQUEST (Bug #12083).
-        $method = HordeString::upper($vCal->getAttributeDefault('METHOD', 'REQUEST'));
-        $this->_easMessage->contentclass = 'urn:content-classes:calendarmessage';
+        // A sender that repeats METHOD must not break the sync; the first
+        // value counts. Many senders omit METHOD on text/calendar parts;
+        // treat as REQUEST (Bug #12083).
+        if ($calendar->getProperties()->count('METHOD') > 1) {
+            $this->_logger->debug('The iTip has more than one METHOD property, using the first.');
+        }
+        $method = $calendar->getMethod() ?? CalendarMethod::from('REQUEST');
 
-        switch ($method) {
-            case 'REQUEST':
-            case 'PUBLISH':
-                $this->_easMessage->messageclass = 'IPM.Schedule.Meeting.Request';
-                $mtg = Horde_ActiveSync::messageFactory('MeetingRequest');
-                $mtg->fromvEvent($vCal);
-                $this->_easMessage->meetingrequest = $mtg;
-                break;
-            case 'REPLY':
-                try {
-                    $reply_status = $this->_getiTipStatus($vCal);
-                    switch ($reply_status) {
+        $messageClass = null;
+        $hasMeetingData = true;
+        try {
+            switch ($method->value) {
+                case 'REQUEST':
+                case 'PUBLISH':
+                    $messageClass = 'IPM.Schedule.Meeting.Request';
+                    break;
+                case 'REPLY':
+                    switch ($this->_getiTipStatus($calendar)) {
                         case 'ACCEPTED':
-                            $this->_easMessage->messageclass = 'IPM.Schedule.Meeting.Resp.Pos';
+                            $messageClass = 'IPM.Schedule.Meeting.Resp.Pos';
                             break;
                         case 'DECLINED':
-                            $this->_easMessage->messageclass = 'IPM.Schedule.Meeting.Resp.Neg';
+                            $messageClass = 'IPM.Schedule.Meeting.Resp.Neg';
                             break;
                         case 'TENTATIVE':
-                            $this->_easMessage->messageclass = 'IPM.Schedule.Meeting.Resp.Tent';
+                            $messageClass = 'IPM.Schedule.Meeting.Resp.Tent';
                     }
-                    $mtg = Horde_ActiveSync::messageFactory('MeetingRequest');
-                    $mtg->fromvEvent($vCal);
-                    $this->_easMessage->meetingrequest = $mtg;
-                } catch (Horde_ActiveSync_Exception $e) {
-                    $this->_logger->err($e->getMessage());
-                }
-                break;
-            case 'CANCEL':
-                try {
-                    $mtg = Horde_ActiveSync::messageFactory('MeetingRequest');
-                    $mtg->fromvEvent($vCal);
-                    $this->_easMessage->meetingrequest = $mtg;
-                    $this->_easMessage->messageclass = Horde_ActiveSync_Message_Mail::CLASS_MEETING_CANCELED;
-                } catch (Horde_ActiveSync_Exception $e) {
-                    $this->_logger->err($e->getMessage());
-                }
-                break;
+                    break;
+                case 'CANCEL':
+                    $messageClass = Horde_ActiveSync_Message_Mail::CLASS_MEETING_CANCELED;
+                    break;
+                default:
+                    $hasMeetingData = false;
+            }
+
+            if ($hasMeetingData) {
+                $mtg = Horde_ActiveSync::messageFactory('MeetingRequest');
+                $mtg->fromCalendar($calendar, $method);
+                $this->_easMessage->meetingrequest = $mtg;
+            }
+        } catch (Horde_ActiveSync_Exception $e) {
+            // The mail is still delivered, just without the meeting data.
+            $this->_logger->err($e->getMessage());
+            return;
+        }
+
+        $this->_easMessage->contentclass = 'urn:content-classes:calendarmessage';
+        if ($messageClass !== null) {
+            $this->_easMessage->messageclass = $messageClass;
         }
     }
 
@@ -466,30 +472,25 @@ class Horde_ActiveSync_Imap_EasMessageBuilder
     /**
      * Return the attendee participation status.
      *
-     * @param Horde_Icalendar $vCal  The vCalendar component.
+     * @param VCalendar $calendar  The iTip.
      *
-     * @param Horde_Icalendar
+     * @return string  The upper-cased PARTSTAT of the first attendee, or
+     *                 NEEDS-ACTION if it has none (RFC 5545 default).
+     *
      * @throws Horde_ActiveSync_Exception
      */
-    protected function _getiTipStatus($vCal)
+    protected function _getiTipStatus(VCalendar $calendar)
     {
-        foreach ($vCal->getComponents() as $component) {
-            switch ($component->getType()) {
-                case 'vEvent':
-                    try {
-                        $atparams = $component->getAttribute('ATTENDEE', true);
-                    } catch (Horde_Icalendar_Exception $e) {
-                        throw new Horde_ActiveSync_Exception($e);
-                    }
-
-                    if (!is_array($atparams) || !isset($atparams[0])) {
-                        throw new Horde_Icalendar_Exception('Unexpected value');
-                    }
-
-                    // PARTSTAT is optional on ATTENDEE (RFC 5545 default: NEEDS-ACTION).
-                    return $atparams[0]['PARTSTAT'] ?? 'NEEDS-ACTION';
+        foreach ($calendar->getEvents() as $event) {
+            $attendees = $event->getAttendees();
+            if ($attendees === []) {
+                throw new Horde_ActiveSync_Exception('The iTip reply has no ATTENDEE.');
             }
+
+            return $attendees[0]->getParticipationStatus()->value;
         }
+
+        throw new Horde_ActiveSync_Exception('The iTip reply has no event.');
     }
 
     /**
