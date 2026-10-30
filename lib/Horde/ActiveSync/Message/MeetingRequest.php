@@ -1,5 +1,14 @@
 <?php
 
+use Horde\ActiveSync\Calendar\CalendarTimeResolver;
+use Horde\Date\DateException;
+use Horde\Date\Duration;
+use Horde\Icalendar\Calendar\Vevent;
+use Horde\Icalendar\Calendar\VCalendar;
+use Horde\Icalendar\Component\AbstractComponent;
+use Horde\Icalendar\Enum\CalendarMethod;
+use Horde\Icalendar\IcalendarException;
+use Horde\Icalendar\Property\Property;
 use Horde\Util\HordeString;
 
 /**
@@ -111,11 +120,18 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
     ];
 
     /**
-     * Copy of the vEvent object.
+     * The calendar the request/response is based on.
      *
-     * @var Horde_Icalendar_Vevent
+     * @var VCalendar|null
      */
-    protected $_vEvent;
+    protected $_calendar;
+
+    /**
+     * Resolves the date-times of the calendar being parsed.
+     *
+     * @var CalendarTimeResolver|null
+     */
+    protected $_resolver;
 
     /**
      * Const'r
@@ -144,81 +160,117 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
     }
 
     /**
-     * Create a meeting request from a vEvent.
+     * Create a meeting request from a calendar.
      *
-     * @param Horde_Icalendar_Vevent $vCal  The vEvent.
+     * @param VCalendar           $calendar  The parsed iTip.
+     * @param CalendarMethod|null $method    The iTip method. Defaults to the
+     *                                       calendar's METHOD, or REQUEST when
+     *                                       the sender omitted it (Bug #12083).
      *
      * @throws Horde_ActiveSync_Exception
      */
-    public function fromvEvent($vCal)
+    public function fromCalendar(VCalendar $calendar, ?CalendarMethod $method = null): void
     {
-        $method = HordeString::upper($vCal->getAttributeDefault('METHOD', 'REQUEST'));
-        foreach ($vCal->getComponents() as $component) {
-            switch ($component->getType()) {
-                case 'vEvent':
-                    $this->_vEvent = $component;
-                    $this->_parsevEvent($component, $method);
-                    break;
+        $method ??= $calendar->getMethod() ?? CalendarMethod::from('REQUEST');
+        $this->_calendar = $calendar;
+        $this->_resolver = new CalendarTimeResolver($calendar);
 
-                case 'vTimeZone':
-                    // Not sure what to do with Timezone yet/how to get it into
-                    // a TZ structure etc... For now, defaults to default timezone (as the
-                    // specs say it should for iCal without tz specified).
-                default:
-                    break;
-            }
+        $parsed = false;
+        foreach ($calendar->getEvents() as $vevent) {
+            $this->_parsevEvent($vevent, $method);
+            $parsed = true;
         }
 
         // Ensure we actually have a vEvent to parse.
-        if (empty($this->_vEvent)) {
+        if (!$parsed) {
             return;
         }
 
-        $tz = new Horde_Mapi_Timezone();
-        try {
+        if ($this->starttime instanceof Horde_Date) {
+            $tz = new Horde_Mapi_Timezone();
             $this->timezone = $tz->getSyncTZFromOffsets(
-                $tz->getOffsetsFromDate(new Horde_Date($this->_vEvent->getAttribute('DTSTART')))
+                $tz->getOffsetsFromDate($this->starttime)
             );
-        } catch (Horde_Icalendar_Exception $e) {
         }
         $this->alldayevent = (int) $this->_isAllDay();
     }
 
     /**
-     * Return the vEvent object the request/response is based on.
+     * Create a meeting request from a legacy iCalendar object.
      *
-     * @return Horde_Icalendar_vEvent
+     * @param Horde_Icalendar $vCal  The vCalendar.
+     *
+     * @deprecated Use fromCalendar().
+     *
+     * @throws Horde_ActiveSync_Exception
+     */
+    public function fromvEvent($vCal)
+    {
+        try {
+            $calendar = AbstractComponent::fromString($vCal->exportvCalendar());
+        } catch (IcalendarException $e) {
+            throw new Horde_ActiveSync_Exception($e->getMessage());
+        }
+        if (!$calendar instanceof VCalendar) {
+            throw new Horde_ActiveSync_Exception('The iCalendar data is not a VCALENDAR.');
+        }
+
+        $this->fromCalendar($calendar);
+    }
+
+    /**
+     * Return the vEvent the request/response is based on, as a legacy
+     * iCalendar component.
+     *
+     * Needed by consumers that still take the legacy object, such as the
+     * calendar/updateAttendee registry API.
+     *
+     * @deprecated Consumers should move to the typed calendar model.
+     *
+     * @return Horde_Icalendar_Vevent|null  Null when no event was parsed.
      */
     public function getvEvent()
     {
-        return $this->_vEvent;
+        if ($this->_calendar === null) {
+            return null;
+        }
+
+        $legacy = new Horde_Icalendar();
+        try {
+            if (!$legacy->parsevCalendar($this->_calendar->toString())) {
+                return null;
+            }
+        } catch (Horde_Icalendar_Exception $e) {
+            return null;
+        }
+
+        $vevent = null;
+        foreach ($legacy->getComponents() as $component) {
+            if ($component instanceof Horde_Icalendar_Vevent) {
+                $vevent = $component;
+            }
+        }
+
+        return $vevent;
     }
 
     /**
      * Parses a vEvent into the message properties.
      *
-     * @param Horde_Icalendar_Vevent $vevent  The vEvent to parse.
-     * @param string $method                  The method (e.g., 'REQUEST').
+     * @param Vevent         $vevent  The vEvent to parse.
+     * @param CalendarMethod $method  The iTip method.
      *
      * @throws Horde_ActiveSync_Exception
      */
-    protected function _parsevEvent($vevent, $method = 'REQUEST')
+    protected function _parsevEvent(Vevent $vevent, CalendarMethod $method)
     {
-        if ($method == 'REQUEST') {
-            $this->responserequested = '1';
-        } else {
-            $this->responserequested = '0';
-        }
+        $method = $method->value;
+        $this->responserequested = $method === 'REQUEST' ? '1' : '0';
 
         // EAS 14.1+: iOS only offers RSVP when MeetingMessageType is 1 or 2.
         if ($this->_version > Horde_ActiveSync::VERSION_FOURTEEN) {
             if ($method === 'REQUEST') {
-                try {
-                    $sequence = (int) $vevent->getAttributeDefault('SEQUENCE', 0);
-                } catch (Horde_Icalendar_Exception $e) {
-                    $sequence = 0;
-                }
-                $this->meetingmessagetype = $sequence > 0
+                $this->meetingmessagetype = $vevent->getSequence() > 0
                     ? self::MEETING_MESSAGE_UPDATE
                     : self::MEETING_MESSAGE_INITIAL;
             } elseif ($method === 'PUBLISH') {
@@ -228,103 +280,106 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
             }
         }
 
-        try {
-            $organizer = parse_url($vevent->getAttribute('ORGANIZER'));
-            $this->organizer = $organizer['path'];
-        } catch (Horde_Icalendar_Exception $e) {
+        $organizer = $vevent->getOrganizer()?->getEmail();
+        if ($organizer !== null && $organizer !== '') {
+            $this->organizer = $organizer;
         }
 
-        try {
-            $this->globalobjid = Horde_Mapi::createGoid($vevent->getAttributeDefault('UID', 'nouid'));
-            $this->starttime = new Horde_Date($vevent->getAttribute('DTSTART'));
-        } catch (Horde_Exception $e) {
-            throw new Horde_ActiveSync_Exception($e);
+        $start = $this->_resolveTime($vevent->getProperties()->get('DTSTART'));
+        if ($start === null) {
+            throw new Horde_ActiveSync_Exception('The calendar event has no usable DTSTART.');
+        }
+        $this->starttime = $start;
+        $this->globalobjid = Horde_Mapi::createGoid($vevent->getUid() ?? 'nouid');
+
+        $dtstamp = $this->_resolveTime($vevent->getProperties()->get('DTSTAMP'));
+        if ($dtstamp !== null) {
+            $this->dtstamp = $dtstamp;
         }
 
-        try {
-            $this->dtstamp = new Horde_Date($vevent->getAttribute('DTSTAMP'));
-        } catch (Horde_Exception $e) {
-        }
-
-        try {
-            $this->endtime = new Horde_Date($vevent->getAttribute('DTEND'));
-            $this->location = HordeString::truncate($vevent->getAttribute('LOCATION'), 255);
-        } catch (Horde_Icalendar_Exception $e) {
-        }
-
-        try {
-            $class = $vevent->getAttribute('CLASS');
-            if (!is_array($class)) {
-                $this->sensitivity = $class == 'PRIVATE'
-                    ? Horde_ActiveSync_Message_Appointment::SENSITIVITY_PRIVATE
-                    : ($class == 'CONFIDENTIAL' ? Horde_ActiveSync_Message_Appointment::SENSITIVITY_CONFIDENTIAL
-                        : ($class == 'PERSONAL' ? Horde_ActiveSync_Message_Appointment::SENSITIVITY_PERSONAL
-                            : Horde_ActiveSync_Message_Appointment::SENSITIVITY_NORMAL));
+        $end = $this->_resolveTime($vevent->getProperties()->get('DTEND'));
+        if ($end === null && $vevent->getDuration() !== null) {
+            try {
+                $end = new Horde_Date(
+                    $start->timestamp() + Duration::fromIcalendar($vevent->getDuration())->toSeconds()
+                );
+            } catch (DateException $e) {
+                $this->_logger->notice('Ignoring unparseable DURATION: ' . $e->getMessage());
             }
-        } catch (Horde_Icalendar_Exception $e) {
+        }
+        if ($end !== null) {
+            $this->endtime = $end;
         }
 
-        try {
-            $status = $vevent->getAttribute('STATUS');
-            if (!is_array($status)) {
-                $status = HordeString::upper($status);
-                $this->busystatus = $status == 'TENTATIVE' ? Horde_ActiveSync_Message_Appointment::BUSYSTATUS_TENTATIVE
-                    : ($status == 'CONFIRMED' ? Horde_ActiveSync_Message_Appointment::BUSYSTATUS_BUSY
-                        : Horde_ActiveSync_Message_Appointment::BUSYSTATUS_FREE);
-            }
-        } catch (Horde_Icalendar_Exception $e) {
+        $location = $vevent->getProperties()->get('LOCATION');
+        if ($location !== null) {
+            $this->location = HordeString::truncate($this->_textValue($location), 255);
         }
 
-        // vCalendar 1.0 alarms
-        try {
-            $alarm = $vevent->getAttribute('AALARM');
-            if (!is_array($alarm) && intval($alarm)) {
-                $this->reminder = intval($this->starttime->timestamp() - $alarm);
-            }
-        } catch (Horde_Icalendar_Exception $e) {
+        if ($vevent->getProperties()->has('CLASS')) {
+            $class = $vevent->getClassification()->value;
+            $this->sensitivity = $class === 'PRIVATE'
+                ? Horde_ActiveSync_Message_Appointment::SENSITIVITY_PRIVATE
+                : ($class === 'CONFIDENTIAL' ? Horde_ActiveSync_Message_Appointment::SENSITIVITY_CONFIDENTIAL
+                    : ($class === 'PERSONAL' ? Horde_ActiveSync_Message_Appointment::SENSITIVITY_PERSONAL
+                        : Horde_ActiveSync_Message_Appointment::SENSITIVITY_NORMAL));
+        }
+
+        $status = $vevent->getStatus()?->value;
+        if ($status !== null) {
+            $this->busystatus = $status === 'TENTATIVE' ? Horde_ActiveSync_Message_Appointment::BUSYSTATUS_TENTATIVE
+                : ($status === 'CONFIRMED' ? Horde_ActiveSync_Message_Appointment::BUSYSTATUS_BUSY
+                    : Horde_ActiveSync_Message_Appointment::BUSYSTATUS_FREE);
+        }
+
+        // vCalendar 1.0 alarms: the first field is the alarm's date-time.
+        $alarmTime = $this->_resolveTime($vevent->getProperties()->get('AALARM'));
+        if ($alarmTime !== null && $alarmTime->timestamp() < $start->timestamp()) {
+            $this->reminder = $start->timestamp() - $alarmTime->timestamp();
         }
 
         // vCalendar 2.0 alarms
-        foreach ($vevent->getComponents() as $alarm) {
-            if (!($alarm instanceof Horde_Icalendar_Valarm)) {
+        foreach ($vevent->getAlarms() as $alarm) {
+            $trigger = $alarm->getProperties()->get('TRIGGER');
+            if ($trigger === null) {
                 continue;
             }
-            try {
-                $trigger = $alarm->getAttribute('TRIGGER');
-                $triggerParams = $alarm->getAttribute('TRIGGER', true);
-            } catch (Horde_Icalendar_Exception $e) {
-                continue;
-            }
-            if (isset($triggerParams['VALUE'])
-                && $triggerParams['VALUE'] == 'DATE-TIME') {
-                if (isset($triggerParams['RELATED'])
-                    && $triggerParams['RELATED'] == 'END') {
-                    $this->reminder = intval($this->endtime->timestamp() - $trigger);
-                } else {
-                    $this->reminder = intval($this->starttime->timestamp() - $trigger);
+
+            if (strtoupper($trigger->getParameter('VALUE')?->getValue() ?? '') === 'DATE-TIME') {
+                $triggerTime = $this->_resolveTime($trigger);
+                if ($triggerTime !== null) {
+                    $this->reminder = $start->timestamp() - $triggerTime->timestamp();
                 }
-            } else {
-                $this->reminder = -intval($trigger);
+                continue;
+            }
+
+            try {
+                $this->reminder = -Duration::fromIcalendar($trigger->getValue())->toSeconds();
+            } catch (DateException $e) {
+                $this->_logger->notice('Ignoring unparseable alarm TRIGGER: ' . $e->getMessage());
             }
         }
 
         $this->_parseDisallowNewTimeProposal($vevent);
-        $this->_parseInstanceTypeAndRecurrence($vevent);
+        $this->_parseInstanceTypeAndRecurrence($vevent, $start);
     }
 
     /**
      * Populate instancetype, recurrenceid, and recurrences from VEVENT data.
      *
+     * @param Vevent     $vevent  The event.
+     * @param Horde_Date $start   The resolved start of the event.
+     *
      * @author Torben Dannhauer <torben@dannhauer.de>
      */
-    protected function _parseInstanceTypeAndRecurrence(Horde_Icalendar_Vevent $vevent): void
+    protected function _parseInstanceTypeAndRecurrence(Vevent $vevent, Horde_Date $start): void
     {
         $this->instancetype = Horde_ActiveSync_Utils_Recurrence::detectInstanceType($vevent);
 
         if (in_array($this->instancetype, ['2', '3'], true)) {
-            try {
-                $this->recurrenceid = new Horde_Date($vevent->getAttribute('RECURRENCE-ID'));
-            } catch (Horde_Exception $e) {
+            $recurrenceId = $this->_resolveTime($vevent->getProperties()->get('RECURRENCE-ID'));
+            if ($recurrenceId !== null) {
+                $this->recurrenceid = $recurrenceId;
             }
         }
 
@@ -332,7 +387,7 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
             return;
         }
 
-        $recurrence = Horde_ActiveSync_Utils_Recurrence::recurrenceFromVevent($vevent);
+        $recurrence = Horde_ActiveSync_Utils_Recurrence::recurrenceFromVevent($vevent, $start);
         if ($recurrence === null) {
             return;
         }
@@ -352,27 +407,77 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
     /**
      * Import iCal disallow-counter state for EAS 14+ meeting requests.
      */
-    protected function _parseDisallowNewTimeProposal(Horde_Icalendar_Vevent $vevent): void
+    protected function _parseDisallowNewTimeProposal(Vevent $vevent): void
     {
         if ($this->_version < Horde_ActiveSync::VERSION_FOURTEEN) {
             return;
         }
 
         foreach (self::DISALLOW_COUNTER_ATTRIBUTES as $name) {
-            try {
-                $value = $vevent->getAttribute($name);
-            } catch (Horde_Icalendar_Exception $e) {
-                continue;
-            }
-            if (is_array($value)) {
-                $value = reset($value);
-            }
-            if (is_string($value)
+            $value = $vevent->getPropertyValue($name);
+            if ($value !== null
                 && in_array(strtoupper(trim($value)), ['1', 'TRUE', 'YES'], true)) {
                 $this->disallownewtimeproposal = true;
                 return;
             }
         }
+    }
+
+    /**
+     * Resolve a date or date-time property to a Horde_Date.
+     *
+     * @param Property|null $property  The property.
+     *
+     * @return Horde_Date|null  Null if the property is missing or is not a
+     *                          date or date-time.
+     */
+    protected function _resolveTime(?Property $property): ?Horde_Date
+    {
+        if ($property === null || $this->_resolver === null) {
+            return null;
+        }
+
+        $resolved = $this->_resolver->resolve($property);
+        if ($resolved === null) {
+            return null;
+        }
+        if ($resolved->unresolvedTzid !== null) {
+            $this->_logger->notice(sprintf(
+                'Unknown time zone "%s" in %s, using the server time zone.',
+                $resolved->unresolvedTzid,
+                $property->getName()
+            ));
+        }
+
+        return new Horde_Date($resolved->timestamp);
+    }
+
+    /**
+     * Return the text of a property: transfer encoding and charset undone,
+     * iCalendar escapes resolved.
+     *
+     * @param Property $property  The text property.
+     *
+     * @return string  The UTF-8 text.
+     */
+    protected function _textValue(Property $property): string
+    {
+        $value = $property->getValue();
+
+        if (strtoupper($property->getParameter('ENCODING')?->getValue() ?? '') === 'QUOTED-PRINTABLE') {
+            $value = quoted_printable_decode($value);
+        }
+
+        $charset = $property->getParameter('CHARSET')?->getValue();
+        if ($charset !== null && strcasecmp($charset, 'UTF-8') !== 0) {
+            $value = HordeString::convertCharset($value, $charset, 'UTF-8');
+        }
+
+        return preg_replace_callback(
+            '/\\\\([nN,;\\\\])/',
+            static fn(array $m): string => strtolower($m[1]) === 'n' ? "\n" : $m[1],
+            $value
+        );
     }
 
     /**
@@ -382,6 +487,10 @@ class Horde_ActiveSync_Message_MeetingRequest extends Horde_ActiveSync_Message_B
      */
     protected function _isAllDay()
     {
+        if (!($this->starttime instanceof Horde_Date) || !($this->endtime instanceof Horde_Date)) {
+            return false;
+        }
+
         return ($this->starttime->hour == 0 && $this->starttime->min == 0 && $this->starttime->sec == 0
              && (($this->endtime->hour == 23 && $this->endtime->min == 59)
               || ($this->endtime->hour == 0 && $this->endtime->min == 0 && $this->endtime->sec == 0
