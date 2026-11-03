@@ -208,6 +208,24 @@ when work proceeds on FRAMEWORK_6_1.
   there is no general filter framework.
 - Move mail send/forward/reply helpers from `Horde_Core_ActiveSync_Mail` into
   the activesync package behind injectable mailer/identity dependencies.
+- **Backend error classification via SPL exceptions.** Today a backend
+  signals "client data rejected, do not retry" (Sync `Status 6`) by throwing
+  an exception that implements the marker interface
+  `Horde\Exception\InvalidDataThrowable`
+  ([horde/Exception#6](https://github.com/horde/Exception/pull/6),
+  [horde/Core#248](https://github.com/horde/Core/pull/248),
+  [#111](https://github.com/horde/ActiveSync/pull/111)). The marker exists
+  only because the legacy `<App>_Exception` classes are fixed to
+  `Horde_Exception_Wrapped` and cannot also extend an SPL type. When the
+  app exceptions move to `src/` (PSR-4), base them on the SPL hierarchy —
+  `HordeUnexpectedValueException` for "value does not fit the constraints"
+  (`Turba_Exception_InvalidAttribute` first) — keep `implements
+  InvalidDataThrowable` for the retry-policy contract, and let the `src/`
+  driver classify on `UnexpectedValueException` / `InvalidArgumentException`
+  as well (review note by ralflang on horde/Exception#6). Do not widen the
+  `lib/` `Horde_Core_ActiveSync_Driver::_importFailure()` check on
+  FRAMEWORK_6_0: a DB result that fails an enum check is also an
+  `UnexpectedValueException` but a server problem (`Status 5`).
 
 ### Sync data structures
 
