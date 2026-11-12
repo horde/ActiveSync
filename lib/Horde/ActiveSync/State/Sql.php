@@ -1244,7 +1244,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                 }
             }
 
-            Horde::log($e, 'ERR');
+            $this->_logger->err($e->getMessage());
             throw new Horde_ActiveSync_Exception($e);
         }
     }
