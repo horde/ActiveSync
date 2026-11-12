@@ -210,6 +210,19 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
     protected $_stateLockToken = null;
 
     /**
+     * Sync key (document _id) of the document the lock was acquired on.
+     *
+     * The lock stays on the document the state was loaded from. The instance
+     * moves on before the lock is released: setNewSyncKey() sets the key of
+     * the state to be saved, and loadState() sets the next key and
+     * collection before the previous lock is released. The lock must
+     * therefore never be addressed through the current sync key.
+     *
+     * @var string|null
+     */
+    protected $_stateLockSyncKey = null;
+
+    /**
      * True while a collection lock document is held.
      *
      * @var boolean
@@ -291,8 +304,24 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
     {
         return [
             self::MONGO_ID => $this->_syncKey,
-            self::SYNC_FOLDERID => $this->_collection['id'],
+            self::SYNC_FOLDERID => $this->_stateFolderId(),
         ];
+    }
+
+    /**
+     * Return the folder id identifying the current state document, as
+     * save() stores it: the collection id, or the FOLDERSYNC marker for the
+     * folder hierarchy state (which has no collection).
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @return string
+     */
+    protected function _stateFolderId()
+    {
+        return !empty($this->_collection['id'])
+            ? $this->_collection['id']
+            : Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC;
     }
 
     /**
@@ -377,14 +406,9 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
      */
     protected function _isOwnStateRow(array $owner)
     {
-        // Same folder id save() stores for the current request.
-        $folderId = !empty($this->_collection['id'])
-            ? $this->_collection['id']
-            : Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC;
-
         return (string) ($owner[self::SYNC_DEVID] ?? '') === (string) $this->_deviceInfo->id
             && (string) ($owner[self::SYNC_USER] ?? '') === (string) $this->_deviceInfo->user
-            && (string) ($owner[self::SYNC_FOLDERID] ?? '') === (string) $folderId;
+            && (string) ($owner[self::SYNC_FOLDERID] ?? '') === (string) $this->_stateFolderId();
     }
 
     /**
@@ -519,11 +543,13 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
         }
 
         try {
+            // Addressed by the key the lock was taken on, not by the
+            // current sync key (@see self::$_stateLockSyncKey).
             $this->_stateCollection()->update(
-                array_merge(
-                    $this->_stateRowLockQuery(),
-                    [self::SYNC_LOCK => $this->_stateLockToken]
-                ),
+                [
+                    self::MONGO_ID => $this->_stateLockSyncKey,
+                    self::SYNC_LOCK => $this->_stateLockToken,
+                ],
                 ['$unset' => [self::SYNC_LOCK => '']]
             );
         } catch (Exception $e) {
@@ -532,6 +558,7 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
 
         $this->_stateRowLockHeld = false;
         $this->_stateLockToken = null;
+        $this->_stateLockSyncKey = null;
     }
 
     /**
@@ -611,6 +638,7 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
             if (!empty($results)) {
                 $this->_stateRowLockHeld = true;
                 $this->_stateLockToken = $token;
+                $this->_stateLockSyncKey = $this->_syncKey;
                 return $results;
             }
 
@@ -1012,9 +1040,14 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
     /**
      * Persist sync state to HAS_state (update, else insert).
      *
-     * When _loadState() has acquired a document lock, the save runs as a single
+     * When _loadState() has acquired a document lock and the state is saved
+     * under the sync key it was loaded with, the save runs as a single
      * conditional update so concurrent PING/SYNC workers cannot interleave writes
      * to sync_data or sync_pending for the same sync_key.
+     *
+     * A state saved under a new sync key (the normal case after
+     * setNewSyncKey()) is a new document: it is inserted, and the lock on the
+     * document the state was loaded from is released afterwards.
      *
      * @param array $document  State document fields.
      *
@@ -1026,7 +1059,7 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
         $lockHeld = $this->_stateRowLockHeld;
 
         try {
-            if ($lockHeld) {
+            if ($lockHeld && $this->_syncKey === $this->_stateLockSyncKey) {
                 $query = array_merge(
                     $this->_stateRowLockQuery(),
                     [self::SYNC_LOCK => $this->_stateLockToken]
@@ -1049,6 +1082,7 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
 
                 $this->_stateRowLockHeld = false;
                 $this->_stateLockToken = null;
+                $this->_stateLockSyncKey = null;
                 return;
             }
 
@@ -1058,6 +1092,12 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
                 // Usually the key exists already because the last sync
                 // attempt failed - but it may also belong to another device.
                 $this->_recoverFromFailedStateInsert($document, $e);
+            }
+
+            if ($lockHeld) {
+                // The new key is stored; release the document the state
+                // was loaded from.
+                $this->_releaseStateRowLock(true);
             }
         } catch (Horde_ActiveSync_Exception $e) {
             if ($lockHeld) {

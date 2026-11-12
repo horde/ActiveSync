@@ -95,6 +95,7 @@ namespace Horde\ActiveSync\StateTest\Mongo {
             $this->_setProperty($state, '_thisSyncStamp', 11);
             $this->_setProperty($state, '_stateRowLockHeld', true);
             $this->_setProperty($state, '_stateLockToken', 12345);
+            $this->_setProperty($state, '_stateLockSyncKey', '{test-lock}3');
             $this->_setProperty($state, '_collectionLockHeld', true);
             $this->_setProperty($state, '_collectionLockToken', 67890);
             $this->_setProperty($state, '_collectionLockFolderId', 'Ftest');
@@ -150,6 +151,7 @@ namespace Horde\ActiveSync\StateTest\Mongo {
             $this->_setProperty($state, '_changes', null);
             $this->_setProperty($state, '_stateRowLockHeld', true);
             $this->_setProperty($state, '_stateLockToken', 99999);
+            $this->_setProperty($state, '_stateLockSyncKey', '{test-lock}2');
         }
 
         protected function _setProperty($object, $name, $value)
