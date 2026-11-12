@@ -212,6 +212,10 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
      * transaction is kept open across the request. Serializing mutating
      * loads against each other is the job of the collection lock.
      *
+     * Only a row stored for the requesting device and user is returned. A
+     * sync key that exists for another device is reported as missing state
+     * (device change, @see self::_isOwnStateRow()).
+     *
      * @return array  The state row (sync_data, sync_devid, sync_mod,
      *                sync_pending).
      * @throws Horde_ActiveSync_Exception
@@ -225,13 +229,7 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
             $started = true;
         }
 
-        $sql = 'SELECT sync_data, sync_devid, sync_mod, sync_pending FROM '
-            . $this->_syncStateTable . ' WHERE sync_key = ?';
-        $values = [$this->_syncKey];
-        if (!empty($this->_collection['id'])) {
-            $sql .= ' AND sync_folderid = ?';
-            $values[] = $this->_collection['id'];
-        }
+        [$sql, $values] = $this->_ownStateRowQuery();
         /* addLock() appends FOR UPDATE on MySQL/PostgreSQL but is a no-op on
          * SQLite (Horde_Db_Adapter_Pdo_Sqlite). SQLite's file-level locking
          * serializes writes anyway, so the row lock is advisory only there. */
@@ -260,16 +258,220 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
         }
 
         if (empty($results)) {
-            $this->_logger->warn(
-                sprintf(
-                    'STATE: Could not find state for synckey %s.',
-                    $this->_syncKey
-                )
-            );
+            $this->_logStateNotFound();
             throw new Horde_ActiveSync_Exception_StateGone();
         }
 
         return $results;
+    }
+
+    /**
+     * Build the query that reads the state row of the current sync key for
+     * the requesting device and user.
+     *
+     * The device and user restriction is what keeps a changed device from
+     * adopting another device's sync key series
+     * (@see self::_isOwnStateRow()).
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @return array  [SQL string, bound values].
+     */
+    protected function _ownStateRowQuery()
+    {
+        $sql = 'SELECT sync_data, sync_devid, sync_mod, sync_pending FROM '
+            . $this->_syncStateTable
+            . ' WHERE sync_key = ? AND sync_devid = ? AND sync_user = ?';
+        $values = [
+            $this->_syncKey,
+            $this->_deviceInfo->id,
+            $this->_deviceInfo->user,
+        ];
+        if (!empty($this->_collection['id'])) {
+            $sql .= ' AND sync_folderid = ?';
+            $values[] = $this->_collection['id'];
+        }
+
+        return [$sql, $values];
+    }
+
+    /**
+     * Tell whether a state row belongs to the requesting device, user and
+     * folder.
+     *
+     * DEVICE CHANGE - why state rows have an owner check
+     * --------------------------------------------------
+     * horde_activesync_state has the sync key as its only primary key, but
+     * every row also records the device (sync_devid), user (sync_user) and
+     * folder (sync_folderid) it was written for. Sync keys are generated per
+     * device, so normally nobody else ever presents them.
+     *
+     * A device change breaks that assumption. When an account is moved to a
+     * new phone (device-to-device transfer, restore from a backup), the
+     * client keeps its per-folder sync keys but reports a NEW DeviceId. The
+     * new device then presents sync keys that were issued to the old device.
+     * If the old phone stays online, two device ids advance the same key
+     * series ("{guid}N" -> "{guid}N+1") at the same time. Because only one
+     * row can exist per sync key, the device that falls behind can never
+     * store its next state: its UPDATE does not match (other sync_devid) and
+     * its INSERT violates the primary key. It then repeats the same SYNC
+     * request forever, each attempt ending in HTTP 500.
+     *
+     * The state of two devices must therefore never share a key series.
+     * Three places enforce this, all based on this ownership test:
+     *
+     *  1. Mutating loads (self::_ownStateRowQuery()): a sync key that is
+     *     stored for another device or user is treated as unknown. The
+     *     request gets Horde_ActiveSync_Exception_StateGone, which SYNC
+     *     answers with a key mismatch status; the client restarts the
+     *     folder with sync key 0 and receives a key series of its own. This
+     *     is what a changed device hits on its first SYNC.
+     *
+     *  2. Mutating loads (self::_assertNextSyncKeyAvailable()): if the NEXT
+     *     key of the series already belongs to another device, the series
+     *     has been continued by that device (rows written before check 1
+     *     existed, or a race). The requesting device is reset the same way,
+     *     before any client changes are imported or response data is sent.
+     *
+     *  3. Saving (self::_saveSyncStateRow()): a row owned by another device
+     *     is never overwritten. The save fails, and check 2 resets the
+     *     device on its next request.
+     *
+     * Read-only loads (PING, self::_loadStateReadonly()) are exempt on
+     * purpose; the reason is documented there.
+     *
+     * Resetting is always safe for the other device: a folder reset only
+     * deletes rows of the requesting device (self::_resetDeviceState()).
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param array $owner  A row as returned by self::_syncStateOwner().
+     *
+     * @return boolean
+     */
+    protected function _isOwnStateRow(array $owner)
+    {
+        return (string) $owner['sync_devid'] === (string) $this->_deviceInfo->id
+            && (string) $owner['sync_user'] === (string) $this->_deviceInfo->user
+            && (string) $owner['sync_folderid'] === (string) $this->_stateFolderId();
+    }
+
+    /**
+     * Return the owner columns of the state row stored under a sync key,
+     * regardless of which device it belongs to.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param string $syncKey  The sync key.
+     *
+     * @return array|null  Hash with sync_devid, sync_user and sync_folderid,
+     *                     or null if no row exists for the key.
+     * @throws Horde_Db_Exception
+     */
+    protected function _syncStateOwner($syncKey)
+    {
+        $row = $this->_db->selectOne(
+            'SELECT sync_devid, sync_user, sync_folderid FROM '
+            . $this->_syncStateTable . ' WHERE sync_key = ?',
+            [$syncKey]
+        );
+
+        return empty($row) ? null : $row;
+    }
+
+    /**
+     * Log why no state row could be loaded for the current sync key.
+     *
+     * A key that exists for another device is logged as such, so a device
+     * change (@see self::_isOwnStateRow()) can be told apart from state that
+     * is really gone. The lookup is diagnostic only: the caller raises
+     * Horde_ActiveSync_Exception_StateGone in both cases.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     */
+    protected function _logStateNotFound()
+    {
+        $owner = null;
+        try {
+            $owner = $this->_syncStateOwner($this->_syncKey);
+        } catch (Horde_Db_Exception $e) {
+            // Only the reason is lost; fall back to the generic message.
+            $this->_logger->err($e->getMessage());
+        }
+
+        if ($owner !== null && !$this->_isOwnStateRow($owner)) {
+            $this->_logger->warn(
+                sprintf(
+                    'STATE: Synckey %s is stored for device %s, not for the requesting device %s (device change). Treating the state as gone so the client resyncs with its own keys.',
+                    $this->_syncKey,
+                    $owner['sync_devid'],
+                    $this->_deviceInfo->id
+                )
+            );
+            return;
+        }
+
+        $this->_logger->warn(
+            sprintf(
+                'STATE: Could not find state for synckey %s.',
+                $this->_syncKey
+            )
+        );
+    }
+
+    /**
+     * Ensure the next sync key of the current series can be stored by the
+     * requesting device.
+     *
+     * If the next key already exists for another device, that device has
+     * continued this key series (device change,
+     * @see self::_isOwnStateRow()) and the requesting device could never
+     * save its next state. It is reset instead, while nothing has been
+     * imported or sent yet.
+     *
+     * A next key owned by the requesting device itself is fine: the client
+     * did not receive the previous response and repeats the request, and
+     * the save updates that row.
+     *
+     * Only mutating loads check this. Read-only loads (PING) never store a
+     * new key; the client is reset by the SYNC it sends once PING reports
+     * changes (@see self::_loadStateReadonly()).
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @throws Horde_ActiveSync_Exception
+     * @throws Horde_ActiveSync_Exception_StateGone
+     */
+    protected function _assertNextSyncKeyAvailable()
+    {
+        // Same key format loadState() accepts.
+        if (!preg_match('/^(\{[0-9A-Za-z-]+\})([0-9]+)$/', (string) $this->_syncKey, $matches)) {
+            return;
+        }
+        $nextKey = $matches[1] . ((int) $matches[2] + 1);
+
+        try {
+            $owner = $this->_syncStateOwner($nextKey);
+        } catch (Horde_Db_Exception $e) {
+            $this->_logger->err($e->getMessage());
+            throw new Horde_ActiveSync_Exception($e);
+        }
+
+        if ($owner === null || $this->_isOwnStateRow($owner)) {
+            return;
+        }
+
+        $this->_logger->warn(
+            sprintf(
+                'STATE: Next synckey %s is already stored for device %s (device change). The requesting device %s cannot continue this key series; treating the state as gone so the client resyncs with its own keys.',
+                $nextKey,
+                $owner['sync_devid'],
+                $this->_deviceInfo->id
+            )
+        );
+        throw new Horde_ActiveSync_Exception_StateGone(
+            'Sync key series continued by another device.'
+        );
     }
 
     /**
@@ -633,6 +835,9 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
         unset($this->_readonlyStateMemo[$this->_stateFolderId()]);
 
         $results = $this->_readStateRow();
+        // Device change: stop here if another device already continued
+        // this key series (@see self::_isOwnStateRow()).
+        $this->_assertNextSyncKeyAvailable();
         $this->_loadStateFromResults($results);
     }
 
@@ -663,6 +868,14 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
         }
         unset($this->_readonlyStateMemo[$folderid]);
 
+        // Deliberately NOT restricted to the requesting device, unlike
+        // _readStateRow(): after a device change
+        // (@see self::_isOwnStateRow()) the peek may read the row the key
+        // was copied from. That is harmless, as nothing is written here, and
+        // it keeps PING working until the client's next SYNC for the folder
+        // is reset. Reporting the state as gone instead would make
+        // Horde_ActiveSync_Collections::pollForChanges() drop the folder
+        // from the device's PING set, so nothing would trigger that SYNC.
         $sql = 'SELECT sync_data, sync_devid, sync_mod, sync_pending FROM '
             . $this->_syncStateTable . ' WHERE sync_key = ?';
         $values = [$this->_syncKey];
@@ -954,6 +1167,13 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
      * by the collection lock, so no row lock has to be carried from
      * _loadState() to this point.
      *
+     * The UPDATE only matches a row of the requesting device, user and
+     * folder. If it matches nothing and the INSERT then fails, the sync key
+     * is already taken: either by a parallel request of the same device
+     * (the row is updated instead) or by another device after a device
+     * change (the row is left alone and the save fails,
+     * @see self::_recoverFromFailedStateInsert()).
+     *
      * @param array $params  Column data for horde_activesync_state.
      *
      * @throws Horde_ActiveSync_Exception
@@ -996,28 +1216,21 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
                     $params['sync_key']
                 );
             } catch (Horde_Db_Exception $e) {
-                if (!$this->_syncStateExists($params['sync_key'])) {
-                    $this->_logger->err(
-                        sprintf(
-                            'STATE: Persist INSERT failed for synckey %s folder %s: %s',
-                            $params['sync_key'],
-                            $params['sync_folderid'],
-                            $e->getMessage()
-                        )
-                    );
-                    throw $e;
+                // PostgreSQL aborts the whole transaction when a statement
+                // fails: every further statement, including the lookup
+                // that decides how to recover, is rejected with SQLSTATE
+                // 25P02 until the transaction is rolled back. Nothing else
+                // was written in it (the UPDATE above matched no row), so
+                // start over with a fresh one.
+                //
+                // A caller's transaction is not ours to roll back. The
+                // recovery then only works on databases that keep a
+                // transaction usable after a constraint violation.
+                if ($started) {
+                    $this->_db->rollbackDbTransaction();
+                    $this->_db->beginDbTransaction();
                 }
-
-                $message = 'STATE: Concurrent insert for synckey '
-                    . $params['sync_key']
-                    . '; updating existing row.';
-                Horde::log($message, 'DEBUG');
-                $this->_logger->meta($message);
-
-                $updated = $this->_db->updateBlob($this->_syncStateTable, $params, $where);
-                if (!$updated) {
-                    throw $e;
-                }
+                $this->_recoverFromFailedStateInsert($params, $where, $e);
             }
 
             if ($started) {
@@ -1037,22 +1250,68 @@ class Horde_ActiveSync_State_Sql extends Horde_ActiveSync_State_Base
     }
 
     /**
-     * Check if a sync state row exists for the given sync key.
+     * Decide what to do after the INSERT of a state row failed.
      *
-     * @param string $syncKey  The sync key.
+     * Must run in a usable transaction (@see self::_saveSyncStateRow()).
      *
-     * @return boolean
+     *  - No row exists under the sync key: the INSERT failed for another
+     *    reason; the failure is passed on.
+     *  - The row belongs to the requesting device, user and folder: a
+     *    parallel request inserted it first; it is updated instead.
+     *  - The row belongs to another device: device change
+     *    (@see self::_isOwnStateRow()). The other device's state must not
+     *    be overwritten, so the failure is passed on. The requesting
+     *    device is reset on its next request by
+     *    self::_assertNextSyncKeyAvailable().
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param array $params          Column data for horde_activesync_state.
+     * @param array $where           The UPDATE condition matching the
+     *                               requesting device's own row.
+     * @param Horde_Db_Exception $e  The INSERT failure.
+     *
      * @throws Horde_Db_Exception
      */
-    protected function _syncStateExists($syncKey)
-    {
-        return (bool) $this->_db->selectValue(
-            sprintf(
-                'SELECT 1 FROM %s WHERE sync_key = ?',
-                $this->_db->quoteTableName($this->_syncStateTable)
-            ),
-            [$syncKey]
+    protected function _recoverFromFailedStateInsert(
+        array $params,
+        array $where,
+        Horde_Db_Exception $e
+    ) {
+        $owner = $this->_syncStateOwner($params['sync_key']);
+
+        if ($owner === null) {
+            $this->_logger->err(
+                sprintf(
+                    'STATE: Persist INSERT failed for synckey %s folder %s: %s',
+                    $params['sync_key'],
+                    $params['sync_folderid'],
+                    $e->getMessage()
+                )
+            );
+            throw $e;
+        }
+
+        if (!$this->_isOwnStateRow($owner)) {
+            $this->_logger->err(
+                sprintf(
+                    'STATE: Synckey %s is already stored for device %s (device change). Not overwriting it with the state of the requesting device %s.',
+                    $params['sync_key'],
+                    $owner['sync_devid'],
+                    $params['sync_devid']
+                )
+            );
+            throw $e;
+        }
+
+        $this->_logger->meta(
+            'STATE: Concurrent insert for synckey '
+            . $params['sync_key']
+            . '; updating existing row.'
         );
+        if (!$this->_db->updateBlob($this->_syncStateTable, $params, $where)) {
+            throw $e;
+        }
     }
 
     /**

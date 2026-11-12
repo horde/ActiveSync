@@ -296,6 +296,218 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
     }
 
     /**
+     * Query for the state document of the current sync key, restricted to
+     * the requesting device and user.
+     *
+     * The device and user restriction is what keeps a changed device from
+     * locking and adopting another device's sync key series
+     * (@see self::_isOwnStateRow()).
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @return array
+     */
+    protected function _ownStateRowQuery()
+    {
+        return array_merge(
+            $this->_stateRowLockQuery(),
+            [
+                self::SYNC_DEVID => $this->_deviceInfo->id,
+                self::SYNC_USER => $this->_deviceInfo->user,
+            ]
+        );
+    }
+
+    /**
+     * Tell whether a state document belongs to the requesting device, user
+     * and folder.
+     *
+     * DEVICE CHANGE - why state documents have an owner check
+     * -------------------------------------------------------
+     * HAS_state uses the sync key as document _id, but every document also
+     * records the device (sync_devid), user (sync_user) and folder
+     * (sync_folderid) it was written for. Sync keys are generated per
+     * device, so normally nobody else ever presents them.
+     *
+     * A device change breaks that assumption. When an account is moved to a
+     * new phone (device-to-device transfer, restore from a backup), the
+     * client keeps its per-folder sync keys but reports a NEW DeviceId. The
+     * new device then presents sync keys that were issued to the old device.
+     * If the old phone stays online, two device ids advance the same key
+     * series ("{guid}N" -> "{guid}N+1") at the same time, while only one
+     * document can exist per sync key. Without an owner check each device
+     * would load, lock and replace the documents of the other one, so both
+     * would continue from each other's folder state and pending changes.
+     * (The SQL driver hit the same conflict as an endless duplicate key
+     * failure, @see Horde_ActiveSync_State_Sql::_isOwnStateRow().)
+     *
+     * The state of two devices must therefore never share a key series.
+     * Three places enforce this, all based on this ownership test:
+     *
+     *  1. Mutating loads (self::_ownStateRowQuery()): a sync key that is
+     *     stored for another device or user is treated as unknown. The
+     *     request gets Horde_ActiveSync_Exception_StateGone, which SYNC
+     *     answers with a key mismatch status; the client restarts the
+     *     folder with sync key 0 and receives a key series of its own. This
+     *     is what a changed device hits on its first SYNC.
+     *
+     *  2. Mutating loads (self::_assertNextSyncKeyAvailable()): if the NEXT
+     *     key of the series already belongs to another device, the series
+     *     has been continued by that device (documents written before
+     *     check 1 existed, or a race). The requesting device is reset the
+     *     same way, before any client changes are imported or response data
+     *     is sent.
+     *
+     *  3. Saving (self::_recoverFromFailedStateInsert()): a document owned
+     *     by another device is never removed or replaced. The save fails,
+     *     and check 2 resets the device on its next request.
+     *
+     * Read-only loads (PING) are exempt on purpose; the reason is documented
+     * in self::_acquireStateRowLock().
+     *
+     * Resetting is always safe for the other device: a folder reset only
+     * removes documents of the requesting device
+     * (self::_resetDeviceState()).
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param array $owner  A document as returned by self::_syncStateOwner().
+     *
+     * @return boolean
+     */
+    protected function _isOwnStateRow(array $owner)
+    {
+        // Same folder id save() stores for the current request.
+        $folderId = !empty($this->_collection['id'])
+            ? $this->_collection['id']
+            : Horde_ActiveSync::REQUEST_TYPE_FOLDERSYNC;
+
+        return (string) ($owner[self::SYNC_DEVID] ?? '') === (string) $this->_deviceInfo->id
+            && (string) ($owner[self::SYNC_USER] ?? '') === (string) $this->_deviceInfo->user
+            && (string) ($owner[self::SYNC_FOLDERID] ?? '') === (string) $folderId;
+    }
+
+    /**
+     * Return the owner fields of the state document stored under a sync key,
+     * regardless of which device it belongs to.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param string $syncKey  The sync key.
+     *
+     * @return array|null  Hash with sync_devid, sync_user and sync_folderid,
+     *                     or null if no document exists for the key.
+     * @throws MongoException
+     */
+    protected function _syncStateOwner($syncKey)
+    {
+        $doc = $this->_stateCollection()->findOne(
+            [self::MONGO_ID => $syncKey],
+            [
+                self::SYNC_DEVID => true,
+                self::SYNC_USER => true,
+                self::SYNC_FOLDERID => true,
+            ]
+        );
+
+        return empty($doc) ? null : $doc;
+    }
+
+    /**
+     * Log why no state document could be loaded for the current sync key.
+     *
+     * A key that exists for another device is logged as such, so a device
+     * change (@see self::_isOwnStateRow()) can be told apart from state that
+     * is really gone. The lookup is diagnostic only: the caller raises
+     * Horde_ActiveSync_Exception_StateGone in both cases.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     */
+    protected function _logStateNotFound()
+    {
+        $owner = null;
+        try {
+            $owner = $this->_syncStateOwner($this->_syncKey);
+        } catch (MongoException $e) {
+            // Only the reason is lost; fall back to the generic message.
+            $this->_logger->err($e->getMessage());
+        }
+
+        if ($owner !== null
+            && (string) ($owner[self::SYNC_DEVID] ?? '') !== (string) $this->_deviceInfo->id) {
+            $this->_logger->warn(
+                sprintf(
+                    'STATE: Synckey %s is stored for device %s, not for the requesting device %s (device change). Treating the state as gone so the client resyncs with its own keys.',
+                    $this->_syncKey,
+                    $owner[self::SYNC_DEVID] ?? '',
+                    $this->_deviceInfo->id
+                )
+            );
+            return;
+        }
+
+        $this->_logger->warn(sprintf(
+            'Could not find state for synckey %s.',
+            $this->_syncKey
+        ));
+    }
+
+    /**
+     * Ensure the next sync key of the current series can be stored by the
+     * requesting device.
+     *
+     * If the next key already exists for another device, that device has
+     * continued this key series (device change,
+     * @see self::_isOwnStateRow()) and the requesting device could never
+     * save its next state. It is reset instead, while nothing has been
+     * imported or sent yet.
+     *
+     * A next key owned by the requesting device itself is fine: the client
+     * did not receive the previous response and repeats the request, and
+     * the save replaces that document.
+     *
+     * Only mutating loads check this. Read-only loads (PING) never store a
+     * new key; the client is reset by the SYNC it sends once PING reports
+     * changes.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @throws Horde_ActiveSync_Exception
+     * @throws Horde_ActiveSync_Exception_StateGone
+     */
+    protected function _assertNextSyncKeyAvailable()
+    {
+        // Same key format loadState() accepts.
+        if (!preg_match('/^(\{[0-9A-Za-z-]+\})([0-9]+)$/', (string) $this->_syncKey, $matches)) {
+            return;
+        }
+        $nextKey = $matches[1] . ((int) $matches[2] + 1);
+
+        try {
+            $owner = $this->_syncStateOwner($nextKey);
+        } catch (MongoException $e) {
+            $this->_logger->err($e->getMessage());
+            throw new Horde_ActiveSync_Exception($e);
+        }
+
+        if ($owner === null || $this->_isOwnStateRow($owner)) {
+            return;
+        }
+
+        $this->_logger->warn(
+            sprintf(
+                'STATE: Next synckey %s is already stored for device %s (device change). The requesting device %s cannot continue this key series; treating the state as gone so the client resyncs with its own keys.',
+                $nextKey,
+                $owner[self::SYNC_DEVID] ?? '',
+                $this->_deviceInfo->id
+            )
+        );
+        throw new Horde_ActiveSync_Exception_StateGone(
+            'Sync key series continued by another device.'
+        );
+    }
+
+    /**
      * Release a document lock opened by _loadState().
      *
      * @param boolean $commit  Unused for Mongo; kept for parity with Sql.
@@ -333,7 +545,20 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
     protected function _acquireStateRowLock()
     {
         $collection = $this->_stateCollection();
-        $baseQuery = $this->_stateRowLockQuery();
+        // Mutating loads only see documents of the requesting device, so a
+        // changed device cannot adopt another device's sync key series
+        // (@see self::_isOwnStateRow()).
+        //
+        // Read-only loads (PING) are deliberately NOT restricted: after a
+        // device change the peek may read the document the key was copied
+        // from. That is harmless, as PING stores no new key, and it keeps
+        // PING working until the client's next SYNC for the folder is reset.
+        // Reporting the state as gone instead would make
+        // Horde_ActiveSync_Collections::pollForChanges() drop the folder
+        // from the device's PING set, so nothing would trigger that SYNC.
+        $baseQuery = $this->_loadReadonly
+            ? $this->_stateRowLockQuery()
+            : $this->_ownStateRowQuery();
 
         try {
             $exists = $collection->count($baseQuery);
@@ -343,10 +568,7 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
         }
 
         if (!$exists) {
-            $this->_logger->warn(sprintf(
-                'Could not find state for synckey %s.',
-                $this->_syncKey
-            ));
+            $this->_logStateNotFound();
             throw new Horde_ActiveSync_Exception_StateGone();
         }
 
@@ -660,6 +882,14 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
     {
         $this->_releaseStateRowLock(false);
 
+        if (!$this->_loadReadonly) {
+            // Device change: stop here if another device already continued
+            // this key series (@see self::_isOwnStateRow()). Checked before
+            // the document lock is taken, so a rejected load leaves no lock
+            // behind.
+            $this->_assertNextSyncKeyAvailable();
+        }
+
         $results = $this->_acquireStateRowLock();
         $this->_loadStateFromResults($results);
     }
@@ -824,20 +1054,10 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
 
             try {
                 $collection->insert($document);
-            } catch (Exception $e) {
-                // Might exist already if the last sync attempt failed.
-                $this->_logger->notice(
-                    sprintf(
-                        'Previous request processing for synckey %s failed to be accepted by the client, removing previous state and trying again.',
-                        $this->_syncKey
-                    )
-                );
-                try {
-                    $collection->remove([self::MONGO_ID => $this->_syncKey]);
-                    $collection->insert($document);
-                } catch (Exception $e2) {
-                    throw new Horde_ActiveSync_Exception('Error saving state.');
-                }
+            } catch (MongoException $e) {
+                // Usually the key exists already because the last sync
+                // attempt failed - but it may also belong to another device.
+                $this->_recoverFromFailedStateInsert($document, $e);
             }
         } catch (Horde_ActiveSync_Exception $e) {
             if ($lockHeld) {
@@ -850,6 +1070,74 @@ class Horde_ActiveSync_State_Mongo extends Horde_ActiveSync_State_Base implement
             }
             throw new Horde_ActiveSync_Exception('Error saving state.');
         }
+    }
+
+    /**
+     * Decide what to do after inserting the state document of the current
+     * sync key failed.
+     *
+     * - A document of the requesting device exists: the client did not
+     *   accept the previous response and the key is stored again. The old
+     *   document is replaced.
+     * - A document of ANOTHER device exists: device change
+     *   (@see self::_isOwnStateRow()). It is left untouched and the save
+     *   fails; removing it would hand this device's state to the other
+     *   device. The requesting device is reset on its next request by
+     *   self::_assertNextSyncKeyAvailable().
+     * - No document exists: the insert failed for another reason, which is
+     *   reported as it is.
+     *
+     * @author Torben Dannhauer <torben@dannhauer.de>
+     *
+     * @param array $document    State document fields.
+     * @param MongoException $e  The failure of the insert.
+     *
+     * @throws MongoException  Converted to Horde_ActiveSync_Exception by
+     *                         self::_saveSyncStateRow().
+     */
+    protected function _recoverFromFailedStateInsert(array $document, MongoException $e)
+    {
+        $collection = $this->_stateCollection();
+        $owner = $this->_syncStateOwner($this->_syncKey);
+
+        if ($owner === null) {
+            $this->_logger->err(
+                sprintf(
+                    'STATE: Persist INSERT failed for synckey %s folder %s: %s',
+                    $this->_syncKey,
+                    $document[self::SYNC_FOLDERID],
+                    $e->getMessage()
+                )
+            );
+            throw $e;
+        }
+
+        if (!$this->_isOwnStateRow($owner)) {
+            $this->_logger->err(
+                sprintf(
+                    'STATE: Synckey %s is already stored for device %s (device change). Not replacing it; the requesting device %s is reset on its next request.',
+                    $this->_syncKey,
+                    $owner[self::SYNC_DEVID] ?? '',
+                    $this->_deviceInfo->id
+                )
+            );
+            throw $e;
+        }
+
+        $this->_logger->notice(
+            sprintf(
+                'Previous request processing for synckey %s failed to be accepted by the client, removing previous state and trying again.',
+                $this->_syncKey
+            )
+        );
+        // Restricted to the requesting device, so a document that another
+        // device stored in the meantime is never removed.
+        $collection->remove([
+            self::MONGO_ID => $this->_syncKey,
+            self::SYNC_DEVID => $this->_deviceInfo->id,
+            self::SYNC_USER => $this->_deviceInfo->user,
+        ]);
+        $collection->insert($document);
     }
 
     /**
