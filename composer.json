@@ -18,7 +18,7 @@
         "eas",
         "exchange"
     ],
-    "time": "2026-07-24",
+    "time": "2026-11-13",
     "repositories": [],
     "require": {
         "horde/horde-installer-plugin": "dev-FRAMEWORK_6_0 || ^3 || ^2",
@@ -51,9 +51,6 @@
     "autoload": {
         "psr-0": {
             "Horde_ActiveSync": "lib/"
-        },
-        "psr-4": {
-            "Horde\\ActiveSync\\": "src/"
         }
     },
     "autoload-dev": {

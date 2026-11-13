@@ -13,7 +13,7 @@ authors:
     active: true
     role: lead
 version:
-  release: 3.2.0
+  release: 3.3.0
   api: 3.0.0alpha1
 state:
   release: stable
@@ -73,6 +73,8 @@ ci-platform:
     - ext-bcmath
     - ext-dom
     - ext-hash
+    - ext-iconv
+    - ext-intl
     - ext-json
     - ext-pcre
     - ext-simplexml
@@ -83,6 +85,8 @@ ci-platform:
     - ext-bcmath
     - ext-dom
     - ext-hash
+    - ext-iconv
+    - ext-intl
     - ext-json
     - ext-pcre
     - ext-simplexml
@@ -93,6 +97,8 @@ ci-platform:
     - ext-bcmath
     - ext-dom
     - ext-hash
+    - ext-iconv
+    - ext-intl
     - ext-json
     - ext-pcre
     - ext-simplexml
@@ -103,6 +109,8 @@ ci-platform:
     - ext-bcmath
     - ext-dom
     - ext-hash
+    - ext-iconv
+    - ext-intl
     - ext-json
     - ext-pcre
     - ext-simplexml
@@ -113,6 +121,8 @@ ci-platform:
     - ext-bcmath
     - ext-dom
     - ext-hash
+    - ext-iconv
+    - ext-intl
     - ext-json
     - ext-pcre
     - ext-simplexml
@@ -123,6 +133,8 @@ ci-platform:
     - ext-bcmath
     - ext-dom
     - ext-hash
+    - ext-iconv
+    - ext-intl
     - ext-json
     - ext-pcre
     - ext-simplexml
