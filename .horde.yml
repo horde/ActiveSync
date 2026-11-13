@@ -53,6 +53,8 @@ dependencies:
 autoload:
   psr-0:
     Horde_ActiveSync: lib/
+  psr-4:
+    Horde\ActiveSync\: src/
 autoload-dev:
   psr-4:
     Horde\ActiveSync\:
